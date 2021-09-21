@@ -21,6 +21,20 @@ class ShipSwitchRule(object):
         split_rule = rule_string.split('|')
         conditions = split_rule[0]
         criteria = split_rule[1]
+        
+        """self.conditions and self.criteria init---by XVs32"""
+        """Or the "conditions" and "criteria" will stay for the next slot"""
+        """For example, having the following rules in the config json file:"""
+        """slot 1: rule A"""
+        """slot 2: rule B"""
+        """slot 3: rule C"""
+        """Would end up having:"""
+        """slot 1: rule A"""
+        """slot 2: rule A or rule B"""
+        """slot 3: rule A or rule B or rule C"""
+        """In this ShipSwitchRule object"""
+        self.conditions = []
+        self.criteria = []
 
         split_conditions = conditions.split(',')
         for condition in split_conditions:
@@ -97,10 +111,13 @@ class ShipSwitchRule(object):
         return False
 
     def ship_meets_criteria(self, ship):
+        
         if ship.local_id in flt.fleets.ships_in_fleets:
             return False
-        if ship.local_id in rep.repair.ships_under_repair:
-            return False
+        """load the ship even if it is under repair -- XVs32"""
+        """if ship.local_id in rep.repair.ships_under_repair:
+            return False"""
+        
         for criterion in self.criteria:
             if criterion[0] is ShipSwitcherCriteriaSlot0Enum.SHIP:
                 if not ship.sortno == criterion[1]:
