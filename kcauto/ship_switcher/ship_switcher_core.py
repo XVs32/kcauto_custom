@@ -28,7 +28,6 @@ class ShipSwitcherCore(object):
     def need_to_switch(self):
         if not cfg.config.ship_switcher.enabled or len(self.rules) == 0:
             return False
-
         if self._slots_to_switch:
             Log.log_msg("Need to switch ships.")
             return True
@@ -37,8 +36,10 @@ class ShipSwitcherCore(object):
     @property
     def _slots_to_switch(self):
         slots_to_switch = []
+        
         for slot_id in self.rules:
             rule = self.rules[slot_id]
+            
             if rule.need_to_switch():
                 replacement_idx, replacement_ship = (
                     self._find_replacement_ship(rule))
@@ -106,11 +107,16 @@ class ShipSwitcherCore(object):
             kca_u.kca.sleep(0.1)
 
     def _select_replacement_ship(self, ship_idx, ship):
-        target_page = (ship_idx // 10) + 1 if ship_idx > 9 else 1
+        
+        """ship_idx // 10 gives 0 when ship_idx < 10, the "if" statement is not needed---XVs32"""
+        """target_page = (ship_idx // 10) + 1 if ship_idx > 9 else 1"""
+        target_page = (ship_idx // 10) + 1
         Log.log_msg(
             f"Selecting lvl{ship.level} {ship.name} "
             f"(pg{target_page}#{ship_idx}).")
-        if target_page > 1:
+        
+        """Repeated code...?---XVs32"""
+        """if target_page > 1:
             tot_pages = shp.ships.current_ship_count // 10
             list_control_region = Region(
                 kca_u.kca.game_x + 625, kca_u.kca.game_y + 655, 495, 45)
@@ -118,7 +124,25 @@ class ShipSwitcherCore(object):
             nav.navigate_list.to_page(
                 list_control_region, tot_pages, self.current_shipcomp_page,
                 target_page, 'shipcomp')
-            self.current_shipcomp_page = target_page
+            self.current_shipcomp_page = target_page"""
+        
+        
+        """Floor division gives 9 pages when ship count == 96, which should be 10 pages ---XVs32"""
+        """tot_pages = shp.ships.current_ship_count // 10"""
+        """Since "current_ship_count" could never goes under 1, this could be"""
+        """tot_pages = (shp.ships.current_ship_count - 1) // 10 + 1"""
+        """Which is a bit cleaner and faster"""
+        tot_pages = shp.ships.current_ship_count // 10 + min(1, shp.ships.current_ship_count%10) 
+
+        list_control_region = Region(
+            kca_u.kca.game_x + 625, kca_u.kca.game_y + 655, 495, 45)
+        kca_u.kca.sleep(0.5)
+        nav.navigate_list.to_page(
+            list_control_region, tot_pages, self.current_shipcomp_page,
+            target_page, 'shipcomp')
+        self.current_shipcomp_page = target_page
+        
+        
         shipcomp_list_region = Region(
             kca_u.kca.game_x + 590,
             kca_u.kca.game_y + 225 + (ship_idx % 10 * 43),

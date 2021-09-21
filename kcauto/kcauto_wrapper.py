@@ -31,6 +31,9 @@ def kcauto_main():
                     _.kcauto.run_expedition_logic()
                     _.kcauto.run_resupply_logic(home_after=True)
                     _.kcauto.run_pvp_logic()
+                    """run ship switch before combat pvp -by xvs32"""
+                    _.kcauto.run_shipswitch_logic()
+                    _.kcauto.run_shipswitch_logic()
                     _.kcauto.run_combat_logic()
                     _.kcauto.run_repair_logic()
                     _.kcauto.run_shipswitch_logic()
