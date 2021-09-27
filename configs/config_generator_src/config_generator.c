@@ -2,6 +2,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include "cJSON.h"
+#include "scheduler.h"
+#include "quest.h"
+#include "ship_switch.h"
+#include "expedition.h"
+#include "pvp.h"
+#include "combat.h"
 
 void init(cJSON *root){
     
@@ -12,243 +18,13 @@ void init(cJSON *root){
     
     cJSON_AddBoolToObject(root, "passive_repair.enabled", 1);
     cJSON_AddNumberToObject(root, "passive_repair.repair_threshold", 1);
-    cJSON_AddNumberToObject(root, "passive_repair.slots_to_reserve", 1);
+    //cJSON_AddNumberToObject(root, "passive_repair.slots_to_reserve", 1);
     
     cJSON_AddBoolToObject(root, "event_reset.enabled", 1);
     cJSON_AddNumberToObject(root, "event_reset.frequency", 3);
     cJSON_AddNumberToObject(root, "event_reset.reset_difficulty", 3);
     cJSON_AddNumberToObject(root, "event_reset.farm_difficulty", 2);
 
-    return;
-}
-
-void scheduler(cJSON *root, int sorties_run, int stop_after_combat){
-
-    cJSON_AddBoolToObject(root, "scheduler.enabled", 1);
-
-    cJSON *rules = cJSON_CreateArray();
-    cJSON_AddItemToObject(root, "scheduler.rules", rules);
-    cJSON_AddItemToObject(rules, "", cJSON_CreateString("time:2300:stop:kcauto:"));
-
-    char buf[50];
-    if(stop_after_combat){
-        sprintf(buf, "sorties_run:%d:stop:kcauto:",sorties_run);
-        cJSON_AddItemToObject(rules, "", cJSON_CreateString(buf));
-    }
-    else{
-        sprintf(buf, "sorties_run:%d:stop:combat:",sorties_run);
-        cJSON_AddItemToObject(rules, "", cJSON_CreateString(buf));
-    }
-   
-   return; 
-}
-
-void quest(cJSON *root, int expedition_enable, int pvp_enable, int combat_enable, char *sortie_map){
-
-    cJSON_AddBoolToObject(root, "quest.enabled", 1);
-
-    cJSON *quests = cJSON_CreateArray();
-    cJSON_AddItemToObject(root, "quest.quests", quests);
-
-    if(combat_enable){
-        cJSON_AddItemToObject(quests, "", cJSON_CreateString("Bd1"));
-        cJSON_AddItemToObject(quests, "", cJSON_CreateString("Bd2"));
-        cJSON_AddItemToObject(quests, "", cJSON_CreateString("Bd3"));
-        cJSON_AddItemToObject(quests, "", cJSON_CreateString("Bw1"));
-        if(strcmp("1-5",sortie_map)==0){
-            cJSON_AddItemToObject(quests, "", cJSON_CreateString("Bd8"));
-            cJSON_AddItemToObject(quests, "", cJSON_CreateString("Bw5"));
-            cJSON_AddItemToObject(quests, "", cJSON_CreateString("Bw10"));
-            cJSON_AddItemToObject(quests, "", cJSON_CreateString("Bm5"));
-        }
-        else if(strcmp("1-6",sortie_map)==0){
-            cJSON_AddItemToObject(quests, "", cJSON_CreateString("Bd8"));
-            cJSON_AddItemToObject(quests, "", cJSON_CreateString("Bw5"));
-        }
-        else if(strcmp("2-1",sortie_map)==0){
-            cJSON_AddItemToObject(quests, "", cJSON_CreateString("Bd4"));
-            //cJSON_AddItemToObject(quests, "", cJSON_CreateString("Bd5"));
-            //cJSON_AddItemToObject(quests, "", cJSON_CreateString("Bd6"));
-            cJSON_AddItemToObject(quests, "", cJSON_CreateString("Bd7"));
-            cJSON_AddItemToObject(quests, "", cJSON_CreateString("Bw2"));
-            //cJSON_AddItemToObject(quests, "", cJSON_CreateString("Bw3"));
-            //cJSON_AddItemToObject(quests, "", cJSON_CreateString("Bw4"));
-        }
-        else if(strcmp("2-2",sortie_map)==0){
-            cJSON_AddItemToObject(quests, "", cJSON_CreateString("Bd5"));
-            cJSON_AddItemToObject(quests, "", cJSON_CreateString("Bd6"));
-            cJSON_AddItemToObject(quests, "", cJSON_CreateString("Bw3"));
-            cJSON_AddItemToObject(quests, "", cJSON_CreateString("Bw4"));
-        }
-        else if(strcmp("2-3",sortie_map)==0){
-            cJSON_AddItemToObject(quests, "", cJSON_CreateString("Bd4"));
-            cJSON_AddItemToObject(quests, "", cJSON_CreateString("Bd7"));
-            cJSON_AddItemToObject(quests, "", cJSON_CreateString("Bw2"));
-        }
-        else if(strcmp("3-3",sortie_map)==0){
-            cJSON_AddItemToObject(quests, "", cJSON_CreateString("Bd4"));
-            cJSON_AddItemToObject(quests, "", cJSON_CreateString("Bw2"));
-            cJSON_AddItemToObject(quests, "", cJSON_CreateString("Bw7"));
-        }
-        else if(strcmp("4-1",sortie_map)==0){
-            cJSON_AddItemToObject(quests, "", cJSON_CreateString("Bd4"));
-            cJSON_AddItemToObject(quests, "", cJSON_CreateString("Bd5"));
-            cJSON_AddItemToObject(quests, "", cJSON_CreateString("Bd6"));
-            cJSON_AddItemToObject(quests, "", cJSON_CreateString("Bd8"));
-            cJSON_AddItemToObject(quests, "", cJSON_CreateString("Bw2"));
-            //cJSON_AddItemToObject(quests, "", cJSON_CreateString("Bw3"));
-            //cJSON_AddItemToObject(quests, "", cJSON_CreateString("Bw4"));
-            cJSON_AddItemToObject(quests, "", cJSON_CreateString("Bw5"));
-            cJSON_AddItemToObject(quests, "", cJSON_CreateString("Bw6"));
-        }
-        else if(strcmp("4-2",sortie_map)==0){
-            cJSON_AddItemToObject(quests, "", cJSON_CreateString("Bd4"));
-            cJSON_AddItemToObject(quests, "", cJSON_CreateString("Bd8"));
-            cJSON_AddItemToObject(quests, "", cJSON_CreateString("Bw2"));
-            cJSON_AddItemToObject(quests, "", cJSON_CreateString("Bw5"));
-            cJSON_AddItemToObject(quests, "", cJSON_CreateString("Bw6"));
-        }
-        else if(strcmp("4-4",sortie_map)==0){
-            cJSON_AddItemToObject(quests, "", cJSON_CreateString("Bw8"));
-        }
-        else if(strcmp("5-2",sortie_map)==0){
-            cJSON_AddItemToObject(quests, "", cJSON_CreateString("Bw9"));
-        }
-    }
-
-    if(expedition_enable){
-        cJSON_AddItemToObject(quests, "", cJSON_CreateString("D2"));
-        cJSON_AddItemToObject(quests, "", cJSON_CreateString("D3"));
-        cJSON_AddItemToObject(quests, "", cJSON_CreateString("D4"));
-        cJSON_AddItemToObject(quests, "", cJSON_CreateString("D9"));
-        cJSON_AddItemToObject(quests, "", cJSON_CreateString("D11"));
-        cJSON_AddItemToObject(quests, "", cJSON_CreateString("D22"));
-    }
-
-    if(pvp_enable){
-        cJSON_AddItemToObject(quests, "", cJSON_CreateString("C2"));
-        cJSON_AddItemToObject(quests, "", cJSON_CreateString("C3"));
-        cJSON_AddItemToObject(quests, "", cJSON_CreateString("C4"));
-        cJSON_AddItemToObject(quests, "", cJSON_CreateString("C8"));
-        cJSON_AddItemToObject(quests, "", cJSON_CreateString("C16"));
-    }
-
-    //cJSON_AddItemToObject(quests, "", cJSON_CreateString("Bw6"));
-    //cJSON_AddItemToObject(quests, "", cJSON_CreateString("Bw7"));
-    //cJSON_AddItemToObject(quests, "", cJSON_CreateString("Bw8"));
-    //cJSON_AddItemToObject(quests, "", cJSON_CreateString("Bw9"));
-
-    //cJSON_AddItemToObject(quests, "", cJSON_CreateString("Bm1"));
-    //cJSON_AddItemToObject(quests, "", cJSON_CreateString("Bm2"));
-    //cJSON_AddItemToObject(quests, "", cJSON_CreateString("Bm3"));
-    //cJSON_AddItemToObject(quests, "", cJSON_CreateString("Bm4"));
-    //cJSON_AddItemToObject(quests, "", cJSON_CreateString("Bm6"));
-    //cJSON_AddItemToObject(quests, "", cJSON_CreateString("Bm7"));
-    //cJSON_AddItemToObject(quests, "", cJSON_CreateString("Bm8"));
-
-    //cJSON_AddItemToObject(quests, "", cJSON_CreateString("Bq1"));
-    //cJSON_AddItemToObject(quests, "", cJSON_CreateString("Bq2"));
-    //cJSON_AddItemToObject(quests, "", cJSON_CreateString("Bq3"));
-    //cJSON_AddItemToObject(quests, "", cJSON_CreateString("Bq4"));
-    //cJSON_AddItemToObject(quests, "", cJSON_CreateString("Bq5"));
-    //cJSON_AddItemToObject(quests, "", cJSON_CreateString("Bq6"));
-    //cJSON_AddItemToObject(quests, "", cJSON_CreateString("Bq7"));
-    //cJSON_AddItemToObject(quests, "", cJSON_CreateString("Bq8"));
-    //cJSON_AddItemToObject(quests, "", cJSON_CreateString("Bq9"));
-    //cJSON_AddItemToObject(quests, "", cJSON_CreateString("Bq10"));
-    //cJSON_AddItemToObject(quests, "", cJSON_CreateString("Bq11"));
-
-    //cJSON_AddItemToObject(quests, "", cJSON_CreateString("C29"));
-
-    //cJSON_AddItemToObject(quests, "", cJSON_CreateString("D24"));
-
-    cJSON_AddItemToObject(quests, "", cJSON_CreateString("E3"));
-    cJSON_AddItemToObject(quests, "", cJSON_CreateString("E4"));
-    
-    return;
-}
-
-void ship_switch(cJSON *root, int *id){
-
-   if(id == NULL){
-       cJSON_AddBoolToObject(root, "ship_switcher.enabled", 0);
-       cJSON_AddObjectToObject(root, "ship_switcher.slots");
-   }
-   else{
-       cJSON_AddBoolToObject(root, "ship_switcher.enabled", 1);
-       cJSON *spsw = cJSON_AddObjectToObject(root, "ship_switcher.slots");
-       int i;
-       char slot[5];
-       char condition[50];
-       for(i=0;i<6;i++){
-           sprintf(slot, "%d", i+1);
-           sprintf(condition, "morale:!=:0|ship:%d:>=:1:>=:0:!=:0::", id[i]);
-           cJSON_AddItemToObject(spsw, slot, cJSON_CreateString(condition));
-       }
-   }
-
-   return;
-}
-
-void expedition(cJSON *root, int enable, int *exp){
-
-    cJSON_AddBoolToObject(root, "expedition.enabled", enable);
-
-    cJSON *fleet[3];
-    int i;
-    char buf[50];
-    for(i=0;i<3;i++){
-        sprintf(buf,"expedition.fleet_%d",i+2);
-        fleet[i] = cJSON_CreateArray();
-        cJSON_AddItemToObject(root, buf, fleet[i]);
-
-        if(exp[i] == 0){
-            continue;
-        }
-        cJSON_AddItemToObject(fleet[i], "", cJSON_CreateNumber(exp[i]));
-    }
-
-    return;
-}
-
-void expedition_set(int *exp_dst, int mode){
-
-    switch(mode){
-        case 0: //optimal
-            exp_dst[0]=6;
-            exp_dst[1]=2;
-            exp_dst[2]=3;
-            break;
-        case 1: //fuel
-            exp_dst[0]=5;
-            exp_dst[1]=21;
-            exp_dst[2]=38;
-            break;
-        case 2: //ammo
-            exp_dst[0]=2;
-            exp_dst[1]=5;
-            exp_dst[2]=37;
-            break;
-        case 3: //steel
-            exp_dst[0]=3;
-            exp_dst[1]=37;
-            exp_dst[2]=38;
-            break;
-        case 4: //balance
-            exp_dst[0]=6;
-            exp_dst[1]=37;
-            exp_dst[2]=38;
-            break;
-        case 5: //night
-            exp_dst[0]=12;
-            exp_dst[1]=11;
-            exp_dst[2]=24;
-            break;
-        default:
-            exp_dst[0]=1;
-            exp_dst[1]=2;
-            exp_dst[2]=3;
-    }
     return;
 }
 
@@ -279,14 +55,6 @@ int option_to_expdst(int input){
     }
 }
 
-void pvp(cJSON *root, int enable, int fleet_preset){
-
-    cJSON_AddBoolToObject(root, "pvp.enabled", enable);
-    cJSON_AddNumberToObject(root, "pvp.fleet_preset", fleet_preset);
-
-    return;
-}
-
 int option_to_comdst(int input){
     switch(input){
         case 0:
@@ -304,68 +72,6 @@ int option_to_comdst(int input){
         default:
             return 0;
     }
-}
-
-
-void combat(cJSON *root, int enable, int fleet_preset, char* sortie_map){
-
-    cJSON_AddBoolToObject(root, "combat.enabled", enable);
-
-    cJSON_AddStringToObject(root, "combat.sortie_map", sortie_map);
-
-    cJSON_AddStringToObject(root, "combat.fleet_mode", "standard");
-    cJSON_AddItemToObject(root, "combat.node_selects", cJSON_CreateArray());
-    cJSON *retreat_points = cJSON_CreateArray();
-    cJSON_AddItemToObject(root, "combat.retreat_points", retreat_points);
-       /* case 52://5-2-c
-            cJSON_AddItemToObject(retreat_points, "", cJSON_CreateString("C"));
-            break;*/
-
-    cJSON_AddItemToObject(root, "combat.push_nodes", cJSON_CreateArray());
-
-    cJSON *node_formations = cJSON_CreateArray();
-    cJSON_AddItemToObject(root, "combat.node_formations", node_formations);
-    
-    cJSON *node_night_battles = cJSON_CreateArray();
-    cJSON_AddItemToObject(root, "combat.node_night_battles", node_night_battles);
-    char buf[50];
-    int i;
-    for(i=0;i<26;i++){
-        sprintf(buf,"%c:True",'A'+i);
-        cJSON_AddItemToObject(node_night_battles, "", cJSON_CreateString(buf));
-    }
-
-    cJSON_AddNumberToObject(root, "combat.retreat_limit", 4);
-
-    cJSON_AddNumberToObject(root, "combat.repair_limit", 3);
-    cJSON_AddNumberToObject(root, "combat.repair_timelimit_hours", 1);
-    cJSON_AddNumberToObject(root, "combat.repair_timelimit_minutes", 0);
-
-    cJSON_AddBoolToObject(root, "combat.check_fatigue", 1);
-
-    cJSON_AddItemToObject(root, "combat.lbas_groups", cJSON_CreateArray());
-    cJSON_AddItemToObject(root, "combat.lbas_group_1_nodes", cJSON_CreateArray());
-    cJSON_AddItemToObject(root, "combat.lbas_group_2_nodes", cJSON_CreateArray());
-    cJSON_AddItemToObject(root, "combat.lbas_group_3_nodes", cJSON_CreateArray());
-    cJSON_AddBoolToObject(root, "combat.check_lbas_fatigue", 0);
-    cJSON_AddBoolToObject(root, "combat.port_check", 0);
-    cJSON_AddBoolToObject(root, "combat.clear_stop", 0);
-    
-    if(enable){
-        cJSON_AddBoolToObject(root, "combat.reserve_repair_dock", 1);
-    }
-    else{
-        cJSON_AddBoolToObject(root, "combat.reserve_repair_dock", 0);
-    }
-
-    cJSON *combat_fleet = cJSON_CreateArray();
-    cJSON_AddItemToObject(root, "combat.fleet_presets", combat_fleet);
-    if(fleet_preset!=0){//use preset, no ship switch
-        cJSON_AddItemToObject(combat_fleet, "", cJSON_CreateNumber(fleet_preset));
-    }
-
-
-    return;
 }
 
 int main(int argc, const char * argv[]) {
@@ -456,11 +162,29 @@ int main(int argc, const char * argv[]) {
     int stop_after_combat;
     preset = 1;
     int sortie_area=1,sortie_level=1;
+    char retreat_pt[100] = "0";
     if(combat_enable == 1){
+        cJSON_AddNumberToObject(root, "passive_repair.slots_to_reserve", 2);//reserve 2 slots for combat
+        
         printf("Sortie area?\n");
         scanf("%d",&sortie_area);
         printf("Sortie level?\n");
         scanf("%d",&sortie_level);
+        
+        printf("Where to retreat sortie? Enter 0 for eof.\n");
+        int i=0;
+        
+        do{
+            scanf("%c",retreat_pt+i);
+            if(retreat_pt[i]>='a'&&retreat_pt[i]<='z'){
+                retreat_pt[i] -= ('a' - 'A'); //to uppercase
+            }
+            if(retreat_pt[i]<'0'||(retreat_pt[i]>'9'&&retreat_pt[i]<'A')||retreat_pt[i]>'Z'){
+                printf("Please input alphanumeric.\n");
+                continue;
+            }
+            i++;
+        }while(retreat_pt[i-1]!='0');
 
         printf("How many runs of sortie?\n");
         scanf("%d",&sortie_count);
@@ -476,31 +200,35 @@ int main(int argc, const char * argv[]) {
         printf("2 -- use fleet_preset 2\n");
         printf("3 -- use fleet_preset 3\n");
         scanf("%d",&preset);
+        
+        /////////////////////////start ship switch//////////////////////////////////////////
+        int *id;
+        id = malloc(sizeof(int)*10);
+        if(preset==0){
+            int i;
+            for(i=0;i<6;i++){
+                printf("#%d ship id?\n",i+1);
+                scanf("%d",&id[i]);
+            }
+        }
+        else{
+            id = NULL;
+        }
+        ship_switch(root, id);
+        free(id);
+        /////////////////////////end ship switch//////////////////////////////////////////
+        
+    }
+    else{
+        cJSON_AddNumberToObject(root, "passive_repair.slots_to_reserve", 0);//reserve 0 slot for combat
+        akashi_repair(root);
     }
     char comdst[5];
     sprintf(comdst,"%d-%d",sortie_area, sortie_level);
-    combat(root, combat_enable, preset, comdst);
+    combat(root, combat_enable, preset, retreat_pt, comdst);
     
     /////////////////////////end combat/////////////////////////////////////
-    /////////////////////////start ship switch//////////////////////////////////////////
-    
-    int *id;
-    id = malloc(sizeof(int)*10);
-    if(preset==0){
-        int i;
-        for(i=0;i<6;i++){
-            printf("#%d ship id?\n",i+1);
-            scanf("%d",&id[i]);
-        }
 
-    }
-    else{
-        id = NULL;
-    }
-    ship_switch(root, id);
-    free(id);
-
-    /////////////////////////end ship switch//////////////////////////////////////////
 
     scheduler(root, sortie_count,stop_after_combat);
 

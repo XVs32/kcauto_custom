@@ -89,12 +89,13 @@ class ShipSwitchRule(object):
 
         for condition in self.conditions:
             op = self._get_operator(condition[1])
-
+            
             if condition[0] is ShipSwitcherConditionSlot0Enum.LEVEL:
                 if op(slot_ship.level, condition[2]):
-                    Log.log_debug(
+                    Log.log_debug("""log_msg log_debug"""
                         f"{slot_ship.name} in Slot {self.slot_id} has met "
                         "level threshold to be switched out.")
+
                     return True
             elif condition[0] is ShipSwitcherConditionSlot0Enum.DAMAGE:
                 if op(slot_ship.damage, condition[2]):
