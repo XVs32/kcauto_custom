@@ -3,9 +3,9 @@
 #include <string.h>
 #include "cJSON.h"
 
-void expedition(cJSON *root, int enable, int *exp){
+void expedition(cJSON *root, int *exp){
 
-    cJSON_AddBoolToObject(root, "expedition.enabled", enable);
+    cJSON_AddBoolToObject(root, "expedition.enabled", 1);
 
     cJSON *fleet[3];
     int i;
@@ -21,46 +21,5 @@ void expedition(cJSON *root, int enable, int *exp){
         cJSON_AddItemToObject(fleet[i], "", cJSON_CreateNumber(exp[i]));
     }
 
-    return;
-}
-
-void expedition_set(int *exp_dst, int mode){
-
-    switch(mode){
-        case 0: //optimal
-            exp_dst[0]=6;
-            exp_dst[1]=2;
-            exp_dst[2]=3;
-            break;
-        case 1: //fuel
-            exp_dst[0]=5;
-            exp_dst[1]=21;
-            exp_dst[2]=38;
-            break;
-        case 2: //ammo
-            exp_dst[0]=2;
-            exp_dst[1]=5;
-            exp_dst[2]=37;
-            break;
-        case 3: //steel
-            exp_dst[0]=3;
-            exp_dst[1]=37;
-            exp_dst[2]=38;
-            break;
-        case 4: //balance
-            exp_dst[0]=6;
-            exp_dst[1]=37;
-            exp_dst[2]=38;
-            break;
-        case 5: //night
-            exp_dst[0]=12;
-            exp_dst[1]=11;
-            exp_dst[2]=24;
-            break;
-        default:
-            exp_dst[0]=1;
-            exp_dst[1]=2;
-            exp_dst[2]=3;
-    }
     return;
 }

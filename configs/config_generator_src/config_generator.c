@@ -9,7 +9,10 @@
 #include "pvp.h"
 #include "combat.h"
 
+char BASE_PATH[500];
+
 void init(cJSON *root){
+
     
     cJSON_AddNumberToObject(root, "general.jst_offset", 0);
     cJSON_AddStringToObject(root, "general.interaction_mode", "direct_control");
@@ -30,45 +33,22 @@ void init(cJSON *root){
 
 int option_to_expdst(int input){
     switch(input){
-        case 0:
-            return 2;
         case 1:
-            return 3;
+            return 2;
         case 2:
-            return 5;
+            return 3;
         case 3:
-            return 6;
+            return 5;
         case 4:
-            return 11;
+            return 6;
         case 5:
-            return 12;
+            return 11;
         case 6:
             return 21;
         case 7:
-            return 24;
-        case 8:
             return 37;
-        case 9:
+        case 8:
             return 38;
-        default:
-            return 0;
-    }
-}
-
-int option_to_comdst(int input){
-    switch(input){
-        case 0:
-            return 15;
-        case 1:
-            return 21;
-        case 2:
-            return 22;
-        case 3:
-            return 33;
-        case 4:
-            return 41;
-        case 5:
-            return 52;
         default:
             return 0;
     }
@@ -82,160 +62,148 @@ int main(int argc, const char * argv[]) {
 
     init(root);
 
-    /////////////////////////start expedition/////////////////////////////////////
-    
-    printf("Enable expedition?\n");
-    printf("0 -- NO\n");
-    printf("1 -- YES\n");
-    scanf("%d",&expedition_enable);
-
-    int mode = 0;
-    int fleet_dst[5];
-    if(expedition_enable == 1){
-        printf("Use preset?\n");
-        printf("0 -- NO\n");
-        printf("1 -- YES\n");
-        
-        int preset_enable;
-        scanf("%d",&preset_enable);
-        
-        if(preset_enable == 1){
-            printf("Expedition mode?\n");
-            printf("0 -- optimal\n");
-            printf("1 -- fuel\n");
-            printf("2 -- ammo\n");
-            printf("3 -- steel\n");
-            printf("4 -- balance\n");
-            printf("5 -- night\n");
-            scanf("%d",&mode);
-            expedition_set(fleet_dst, mode);
-        }
-        else{
-            int i;
-            for(i=0;i<3;i++){
-                printf("Fleet #%d expedition destination?\n",i+2);
-                printf("0 -- Long-distance practice sailing\n");
-                printf("1 -- Guard task\n");
-                printf("2 -- Marine escort mission\n");
-                printf("3 -- Air defense shooting exercises\n");
-                printf("4 -- Bauxite transport mission\n");
-                printf("5 -- Resource transportation mission\n");
-                printf("6 -- Northern Tokyo Express Operation\n");
-                printf("7 -- Northern Sea Route Maritime Escort\n");
-                printf("8 -- Tokyu Express\n");
-                printf("9 -- Tokyo Express (2)\n");
-                scanf("%d",&fleet_dst[i]);
-                fleet_dst[i] = option_to_expdst(fleet_dst[i]);
-            }
+    strcpy(BASE_PATH, argv[0]);
+    int i;
+    int len = strlen(BASE_PATH);
+    for(i=len-1;i>=0;i--){
+        if(BASE_PATH[i]=='/'){
+            BASE_PATH[i+1] = '\0';
+            break;
         }
     }
-    expedition(root, expedition_enable, fleet_dst);
+
+
+    /////////////////////////start expedition/////////////////////////////////////
+    
+    int fleet_dst[5];
+    for(i=0;i<3;i++){
+        printf("Fleet #%d expedition destination?\n",i+2);
+        printf("0 -- Disable\n");
+        printf("1 -- Long-distance practice sailing\n");
+        printf("2 -- Guard task\n");
+        printf("3 -- Marine escort mission\n");
+        printf("4 -- Air defense shooting exercises\n");
+        printf("5 -- Bauxite transport mission\n");
+        printf("6 -- Northern Tokyo Express Operation\n");
+        printf("7 -- Tokyu Express\n");
+        printf("8 -- Tokyo Express (2)\n");
+
+        scanf("%d",&fleet_dst[i]);
+        fleet_dst[i] = option_to_expdst(fleet_dst[i]);
+    }
+    
+    expedition(root, fleet_dst);
 
     /////////////////////////end expedition/////////////////////////////////////
     /////////////////////////start pvp//////////////////////////////////////////
     
-    printf("Enable pvp?\n");
-    printf("0 -- NO\n");
-    printf("1 -- YES\n");
-    scanf("%d",&pvp_enable);
 
-    int preset = 1;
-    if(pvp_enable == 1){
-        printf("pvp fleet?\n");
-        printf("1 -- use fleet_preset 1\n");
-        printf("2 -- use fleet_preset 2\n");
-        printf("3 -- use fleet_preset 3\n");
-        scanf("%d",&preset);
-    }
-    
-    pvp(root, pvp_enable, preset);
+    int pvp_preset;
+    printf("pvp?\n");
+    printf("0 -- Disable \n");
+    printf("1 -- Use fleet_preset 1\n");
+    printf("2 -- Use fleet_preset 2\n");
+    printf("3 -- Use fleet_preset 3\n");
+    printf("4 -- Use current fleet \n");
+    scanf("%d",&pvp_preset);
+
+    pvp(root, pvp_preset);
 
     /////////////////////////end pvp/////////////////////////////////////
     /////////////////////////start combat//////////////////////////////////////////
     
-    printf("Enable combat?\n");
-    printf("0 -- NO\n");
-    printf("1 -- YES\n");
-    scanf("%d",&combat_enable);
-
     int sortie_count;
     int stop_after_combat;
-    preset = 1;
+    int sortie_preset;
     int sortie_area=1,sortie_level=1;
     char retreat_pt[100] = "0";
-    if(combat_enable == 1){
-        cJSON_AddNumberToObject(root, "passive_repair.slots_to_reserve", 2);//reserve 2 slots for combat
+
+    cJSON_AddNumberToObject(root, "passive_repair.slots_to_reserve", 2);//reserve 2 slots for combat
         
-        printf("Sortie area?\n");
-        scanf("%d",&sortie_area);
+    printf("Sortie area?\n");
+    printf("0 -- Disable sortie\n");
+    printf("1 -- Naval Base Area\n");
+    printf("2 -- Southwestern island Area\n");
+    printf("3 -- Northern Area\n");
+    printf("4 -- Western Area\n");
+    printf("5 -- Southern Area\n");
+    printf("6 -- Central Area\n");
+    printf("7 -- Southwestern Area\n");
+    printf("8 -- Monthly quest preset\n");
+    printf("9 -- Quarterly quest preset\n");
+    scanf("%d",&sortie_area);
+
+    if(sortie_area<8){
         printf("Sortie level?\n");
-        scanf("%d",&sortie_level);
-        
-        printf("Where to retreat sortie? Enter 0 for eof.\n");
-        int i=0;
-        
-        do{
-            scanf("%c",retreat_pt+i);
-            if(retreat_pt[i]>='a'&&retreat_pt[i]<='z'){
-                retreat_pt[i] -= ('a' - 'A'); //to uppercase
-            }
-            if(retreat_pt[i]<'0'||(retreat_pt[i]>'9'&&retreat_pt[i]<'A')||retreat_pt[i]>'Z'){
-                printf("Please input alphanumeric.\n");
-                continue;
-            }
-            i++;
-        }while(retreat_pt[i-1]!='0');
-
-        printf("How many runs of sortie?\n");
-        scanf("%d",&sortie_count);
-
-        printf("Stop kc-auto after finish sortie?\n");
-        printf("0 -- NO\n");
-        printf("1 -- YES\n");
-        scanf("%d",&stop_after_combat);
-
-        printf("Combat fleet?\n");
-        printf("0 -- use custom fleet\n");
-        printf("1 -- use fleet_preset 1\n");
-        printf("2 -- use fleet_preset 2\n");
-        printf("3 -- use fleet_preset 3\n");
-        scanf("%d",&preset);
-        
-        /////////////////////////start ship switch//////////////////////////////////////////
-        int *id;
-        id = malloc(sizeof(int)*10);
-        if(preset==0){
-            int i;
-            for(i=0;i<6;i++){
-                printf("#%d ship id?\n",i+1);
-                scanf("%d",&id[i]);
-            }
-        }
-        else{
-            id = NULL;
-        }
-        ship_switch(root, id);
-        free(id);
-        /////////////////////////end ship switch//////////////////////////////////////////
-        
     }
-    else{
+    else if(sortie_area == 8){
+        printf("0 -- Bm2-6-1\n");
+        printf("1 -- Bm4-5-1\n");
+        printf("2 -- Bm6-4-2\n");
+        printf("3 -- Bm7-2-5\n");
+        printf("4 -- Bm8-1-2\n");
+        printf("5 -- Bm8-1-3\n");
+        printf("6 -- Bm3/Bm8-1-4\n");
+        printf("7 -- Bm8-2-1\n");
+        printf("8 -- 2-2-A\n");
+        printf("9 -- 5-2-C\n");
+    }
+    else if(sortie_area == 9){
+        printf("0 -- Bq3-1-6\n");
+        printf("1 -- Bq5-3-1\n");
+        printf("2 -- Bq5-3-2//notworking yet\n");
+        printf("3 -- Bq5-3-3\n");
+        printf("4 -- Bq9-1-3\n");
+        printf("5 -- Bq9/Bq11-1-4\n");
+        printf("6 -- Bq9/Bq11-2-1\n");
+        printf("7 -- Bq9/Bq11-2-2\n");
+        printf("8 -- Bq9/Bq11-2-3\n");
+    }
+
+    scanf("%d",&sortie_level);
+        
+    printf("How many runs of sortie?\n");
+    scanf("%d",&sortie_count);
+
+    printf("Stop kc-auto after finish sortie?\n");
+    printf("0 -- NO\n");
+    printf("1 -- YES\n");
+    scanf("%d",&stop_after_combat);
+
+    printf("Combat fleet?\n");
+    printf("0 -- use custom fleet\n");
+    printf("1 -- use fleet_preset 1\n");
+    printf("2 -- use fleet_preset 2\n");
+    printf("3 -- use fleet_preset 3\n");
+    printf("4 -- Use current fleet \n");
+    scanf("%d",&sortie_preset);
+    
+    char comdst[5];
+    sprintf(comdst,"%d-%d",sortie_area, sortie_level);
+    combat(root, sortie_preset, comdst);
+
+    
+    /////////////////////////end combat/////////////////////////////////////
+    /////////////////////////start ship switch//////////////////////////////////////////
+
+    if(sortie_level == 0){
         cJSON_AddNumberToObject(root, "passive_repair.slots_to_reserve", 0);//reserve 0 slot for combat
         akashi_repair(root);
     }
-    char comdst[5];
-    sprintf(comdst,"%d-%d",sortie_area, sortie_level);
-    combat(root, combat_enable, preset, retreat_pt, comdst);
-    
-    /////////////////////////end combat/////////////////////////////////////
+    else if(sortie_preset!=0){
+        ship_switch(root, "0-0");//disable ship switch
+    }
+    else if(sortie_preset==0){
+        ship_switch(root, comdst);
+    }
+    /////////////////////////end ship switch//////////////////////////////////////////
 
 
     scheduler(root, sortie_count,stop_after_combat);
 
-    quest(root, expedition_enable, pvp_enable, combat_enable, comdst);
+    quest(root, fleet_dst, pvp_preset, comdst);
 
-    char *string = NULL;
-    string = cJSON_Print(root);
+    char *string = cJSON_Print(root);
     if (string == NULL){
         fprintf(stderr, "Failed to print monitor.\n");
     }
@@ -243,17 +211,8 @@ int main(int argc, const char * argv[]) {
     
     FILE *json_file;
     char file_path[500];
-    strcpy(file_path, argv[0]);
-    int i;
-    int len = strlen(file_path);
-    int last_slash=0;
-    for(i=0;i<len;i++){
-        if(file_path[i]=='/'){
-            last_slash = i;
-        }
-    }
-    file_path[last_slash+1] = '\0';
 
+    strcpy(file_path, BASE_PATH);
     strcat(file_path, "config.json");
     json_file = fopen(file_path,"w");
     fprintf(json_file, "%s", string);

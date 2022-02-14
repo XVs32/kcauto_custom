@@ -3108,3 +3108,36 @@ CJSON_PUBLIC(void) cJSON_free(void *object)
 {
     global_hooks.deallocate(object);
 }
+
+
+////////////////////////////////added by marco start////////////////////////////////
+cJSON* read_json_file(const char *file_path){
+
+    FILE *json_file;
+    json_file = fopen(file_path, "r");
+    if(json_file == NULL){
+        printf("Error: Cannot read JSON file...\n");
+        return NULL;
+    }
+
+    fseek(json_file, 0 ,SEEK_END);
+    int file_size;
+    file_size = ftell(json_file);
+    fseek(json_file, 0, SEEK_SET);
+    char *str = malloc(sizeof(char)*file_size);
+    if(fread(str, sizeof(char), file_size, json_file) != file_size){
+        printf("Error: JSON file size not match.\n");
+        free(str);
+        fclose(json_file);
+        return NULL;
+    }
+    fclose(json_file);
+
+    cJSON *root = cJSON_Parse(str);
+    free(str);
+    
+    return root;
+}
+
+////////////////////////////////added by marco end////////////////////////////////
+

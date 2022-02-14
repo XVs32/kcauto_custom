@@ -178,7 +178,7 @@ CJSON_PUBLIC(const char *) cJSON_GetErrorPtr(void);
 
 ///////////////////// added by marco start////////////////////////////////////
 
-cJSON* read_json_file(char *file_path);
+cJSON* read_json_file(const char *file_path);
 
 ///////////////////// added by marco end////////////////////////////////////
 
