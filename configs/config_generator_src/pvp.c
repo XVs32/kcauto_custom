@@ -3,10 +3,19 @@
 #include <string.h>
 #include "cJSON.h"
 
-void pvp(cJSON *root, int enable, int fleet_preset){
+#define MIN(a,b) (((a)<(b))?(a):(b))
+#define MAX(a,b) (((a)>(b))?(a):(b))
 
-    cJSON_AddBoolToObject(root, "pvp.enabled", enable);
-    cJSON_AddNumberToObject(root, "pvp.fleet_preset", fleet_preset);
+void pvp(cJSON *root, int fleet_preset){
+
+    cJSON_AddBoolToObject(root, "pvp.enabled", MIN(1,fleet_preset));
+
+    if(fleet_preset == 4){
+        cJSON_AddNullToObject(root, "pvp.fleet_preset"); 
+    }
+    else{
+        cJSON_AddNumberToObject(root, "pvp.fleet_preset", fleet_preset);
+    }
 
     return;
 }
