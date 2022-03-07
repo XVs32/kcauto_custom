@@ -94,65 +94,65 @@ void ship_switch(cJSON *root, char *sortie_map){
     cJSON *preset_root = read_json_file(file_path);
     cJSON *map = cJSON_GetObjectItem(preset_root, comdst);
 
-	if(map == NULL){
+    if(map == NULL){
         printf("Warning: No preset found in %s, disable ship_switcher.\n", file_path);
-		cJSON_AddBoolToObject(root, "ship_switcher.enabled", 0);
-		cJSON_AddObjectToObject(root, "ship_switcher.slots");
-	}
-	else{
-		cJSON_AddBoolToObject(root, "ship_switcher.enabled", 1);
-		cJSON *spsw = cJSON_AddObjectToObject(root, "ship_switcher.slots");
-		int i;
-		char slot[5];
-		char condition[50];
-		for(i=0;i<6;i++){
+        cJSON_AddBoolToObject(root, "ship_switcher.enabled", 0);
+        cJSON_AddObjectToObject(root, "ship_switcher.slots");
+    }
+    else{
+        cJSON_AddBoolToObject(root, "ship_switcher.enabled", 1);
+        cJSON *spsw = cJSON_AddObjectToObject(root, "ship_switcher.slots");
+        int i;
+        char slot[5];
+        char condition[50];
+        for(i=0;i<6;i++){
             cJSON *ref = cJSON_GetArrayItem(map, i);
             char *ship_type = cJSON_GetObjectItem(ref, "type")->valuestring;
-    printf("shiptype %s\n", ship_type);
+            printf("shiptype %s\n", ship_type);
             int id = cJSON_GetObjectItem(ref, "id")->valueint;
-    printf("id %d\n", id);
+            printf("id %d\n", id);
 
             cJSON *ship = cJSON_GetObjectItem(preset_root, ship_type);
             int ship_id = cJSON_GetArrayItem(ship, id)->valueint; 
-    printf("ship_id %d\n", ship_id);
+            printf("ship_id %d\n", ship_id);
                    
             sprintf(slot, "%d", i+1);
-			sprintf(condition, "morale:!=:0|ship:%d:>=:1:>=:0:!=:0::", ship_id);
-			cJSON_AddItemToObject(spsw, slot, cJSON_CreateString(condition));
-		}
-	}
+            sprintf(condition, "morale:!=:0|ship:%d:>=:1:>=:0:!=:0::", ship_id);
+            cJSON_AddItemToObject(spsw, slot, cJSON_CreateString(condition));
+        }
+    }
 
-	return;
+    return;
 }
 
 void akashi_repair(cJSON *root){
-	
-	cJSON_AddBoolToObject(root, "ship_switcher.enabled", 1);
-	cJSON *spsw = cJSON_AddObjectToObject(root, "ship_switcher.slots");
-	
-	cJSON_AddStringToObject(spsw, "1", "morale:!=:0|ship:187:>=:1:>=:0:!=:0::");
-	
-	char cond[2048];
-	int i,j;
-	for(j=0;j<3;j++){
-		strcpy(cond,"damage:==:0,damage:>=:3|");
-		char slot[2] = {'\0'};
-		slot[0] = j + 2 + '0';
-		for(i=0;i<22;i++){
-			if(i==12-1||i==15-1){continue;}
-			char buf[50];
-			sprintf(buf,"class:%d:!=:1:==:1:!=:0::,",i+1);
-			strcat(cond,buf);
-			sprintf(buf,"class:%d:!=:1:==:2:!=:0::,",i+1);
-			strcat(cond,buf);
-		}
-		cond[strlen(cond)-1] = '\0'; //drop the last commarc and end the string.
-		cJSON_AddStringToObject(spsw, slot, cond);
-	}
-	
-	//switch in a whatever no damage DD, for easier PvP for others, cannot use morale here, or this will keep switching lol
-	cJSON_AddStringToObject(spsw, "5", "damage:!=:0|class:2:!=:1:==:0:!=:0::");
-	cJSON_AddStringToObject(spsw, "6", "damage:!=:0|class:2:!=:1:==:0:!=:0::");
-	
-	return;
+    
+    cJSON_AddBoolToObject(root, "ship_switcher.enabled", 1);
+    cJSON *spsw = cJSON_AddObjectToObject(root, "ship_switcher.slots");
+    
+    cJSON_AddStringToObject(spsw, "1", "morale:!=:0|ship:187:>=:1:>=:0:!=:0::");
+    
+    char cond[2048];
+    int i,j;
+    for(j=0;j<3;j++){
+        strcpy(cond,"damage:==:0,damage:>=:3|");
+        char slot[2] = {'\0'};
+        slot[0] = j + 2 + '0';
+        for(i=0;i<22;i++){
+            if(i==12-1||i==15-1){continue;}
+            char buf[50];
+            sprintf(buf,"class:%d:!=:1:==:1:!=:0::,",i+1);
+            strcat(cond,buf);
+            sprintf(buf,"class:%d:!=:1:==:2:!=:0::,",i+1);
+            strcat(cond,buf);
+        }
+        cond[strlen(cond)-1] = '\0'; //drop the last commarc and end the string.
+        cJSON_AddStringToObject(spsw, slot, cond);
+    }
+    
+    //switch in a whatever no damage DD, for easier PvP for others, cannot use morale here, or this will keep switching lol
+    cJSON_AddStringToObject(spsw, "5", "damage:!=:0|class:2:!=:1:==:0:!=:0::");
+    cJSON_AddStringToObject(spsw, "6", "damage:!=:0|class:2:!=:1:==:0:!=:0::");
+    
+    return;
 }
