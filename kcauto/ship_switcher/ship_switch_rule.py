@@ -79,14 +79,23 @@ class ShipSwitchRule(object):
     @property
     def ship_in_slot(self):
         if len(flt.fleets.fleets[1].ship_data) < self.slot_id:
-            raise ValueError(
+            
+            return None
+            
+            """Original version which raise an error if you don't have ship in a slot -- XVs32"""
+            """raise ValueError(
                 f"Slot {self.slot_id} is empty in first fleet. Please "
-                "pre-fill slots with Ship Switcher rules.")
+                "pre-fill slots with Ship Switcher rules.")"""
+            
         return flt.fleets.fleets[1].ship_data[self.slot_id - 1]
 
     def need_to_switch(self):
         slot_ship = self.ship_in_slot
-
+        
+        """This slot could be switch if it is empty -- XVs32"""
+        if slot_ship == None:
+            return True
+        
         for condition in self.conditions:
             op = self._get_operator(condition[1])
             

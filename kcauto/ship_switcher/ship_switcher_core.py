@@ -49,13 +49,57 @@ class ShipSwitcherCore(object):
                         'replacement_idx': replacement_idx,
                         'replacement_ship': replacement_ship})
         return slots_to_switch
+    
+    """Check the specified slot only -- XVs32"""
+    def _slot_to_switch(self, slot_id):
+        slot_to_switch = None
+        
+        rule = self.rules[slot_id]
+        
+        if rule.need_to_switch():
+            replacement_idx, replacement_ship = (
+                self._find_replacement_ship(rule))
+            if replacement_idx is not None:
+                slot_to_switch={
+                    'slot_id': slot_id,
+                    'replacement_idx': replacement_idx,
+                    'replacement_ship': replacement_ship}
+        return slot_to_switch
 
     def goto(self):
         nav.navigate.to('fleetcomp')
         self.current_shipcomp_page = 1
 
     def switch_ships(self):
-        slots_to_switch = [s['slot_id'] for s in self._slots_to_switch]
+        
+        flag = False
+        
+        """For all 6 slots -- XVs32"""
+        for i in range(1,7): 
+            slot_to_switch = self._slot_to_switch(i)
+            
+            if slot_to_switch is not None:
+                
+                flag = True
+                
+                slot_id = slot_to_switch['slot_id']
+                replacement_idx = slot_to_switch['replacement_idx']
+                replacement_ship = slot_to_switch['replacement_ship']
+                rule = self.rules[slot_id]
+                Log.log_msg(f"Switching {rule.ship_in_slot} in Slot {slot_id}.")
+                self._select_switch_button(slot_id)
+                kca_u.kca.sleep(1)
+                self._reset_shiplist()
+                self._select_replacement_ship(replacement_idx, replacement_ship)
+                kca_u.kca.sleep()
+                if self._switch_ship(replacement_ship):
+                    sts.stats.ship_switcher.ships_switched += 1
+                    
+        if flag is True:
+            com.combat.set_next_sortie_time(override=True)
+        
+        """Old version of switch ship, save for now, delete if new version works -- XVs32"""
+        """slots_to_switch = [s['slot_id'] for s in self._slots_to_switch]
         for swap_data in self._slots_to_switch:
             slot_id = swap_data['slot_id']
             replacement_idx = swap_data['replacement_idx']
@@ -71,7 +115,7 @@ class ShipSwitcherCore(object):
                 sts.stats.ship_switcher.ships_switched += 1
                 slots_to_switch.remove(slot_id)
         if len(slots_to_switch) == 0:
-            com.combat.set_next_sortie_time(override=True)
+            com.combat.set_next_sortie_time(override=True)"""
 
     def _find_replacement_ship(self, rule):
         for idx, ship in enumerate(self._local_ships_sorted_by_levels):
