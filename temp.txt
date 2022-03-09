@@ -1,0 +1,20 @@
+[92m[2022-03-09 12:08:26] Initializing kcauto.[0m
+[92m[2022-03-09 12:08:26] Config successfully loaded.[0m
+[92m[2022-03-09 12:08:26] Fleet 1 activated.[0m
+[94m[2022-03-09 12:08:26] Hooking into Chrome.[0m
+[92m[2022-03-09 12:08:26] Connected to Chrome[0m
+[92m[2022-03-09 12:08:26] Initializing kcauto vv8.0.0-rc1 in command-line mode with the 'do_nothing' config file.[0m
+[94m[2022-03-09 12:08:27] Finding kancolle.[0m
+[92m[2022-03-09 12:08:30] Game found. Initializing regions.[0m
+[94m[2022-03-09 12:08:30] kcauto is initializing.[0m
+[94m[2022-03-09 12:08:32] At home[0m
+[94m[2022-03-09 12:08:32] Refreshing home.[0m
+[92m[2022-03-09 12:08:36] Fleet 2 activated.[0m
+[92m[2022-03-09 12:08:36] Fleet 3 activated.[0m
+[92m[2022-03-09 12:08:36] Fleet 4 activated.[0m
+[94m[2022-03-09 12:08:36] Fleet 4 is away on assignment.[0m
+[94m[2022-03-09 12:08:36] Fleet 4 returns at 2022-03-09 13:26:38.[0m
+[92m[2022-03-09 12:08:38] kcauto has been running for 0d 0h 0m 11s (loop 1).[0m
+[92m[2022-03-09 12:08:38] Active Scheduler rules:[0m
+[92m[2022-03-09 12:08:38] - Stop kcauto. at 2022-03-09 12:21:26[0m
+[92m[2022-03-09 12:08:38] Fuel:88881 (Δ0 : 0.00/hr) / Ammo:74751 (Δ0 : 0.00/hr) / Steel:117487 (Δ0 : 0.00/hr) / Bauxite:87237 (Δ0 : 0.00/hr) / Bucket:1102 (Δ0 : 0.00/hr)[0m
