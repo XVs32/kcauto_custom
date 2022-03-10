@@ -122,6 +122,13 @@ class ShipSwitchRule(object):
 
     def ship_meets_criteria(self, ship):
         
+        if ship is None:
+            for criterion in self.criteria:
+                if criterion[0] is ShipSwitcherCriteriaSlot0Enum.SHIP and criterion[1] == -1:
+                    Log.log_msg(f"Switch-in criteria says remove this slot.")
+                    return True
+            return False
+        
         if ship.local_id in flt.fleets.ships_in_fleets:
             return False
         """load the ship even if it is under repair -- XVs32"""
