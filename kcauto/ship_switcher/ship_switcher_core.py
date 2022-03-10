@@ -1,5 +1,7 @@
 from pyvisauto import Region
 
+import fleet.fleet_core as flt
+
 import combat.combat_core as com
 import config.config_core as cfg
 import nav.nav as nav
@@ -85,8 +87,21 @@ class ShipSwitcherCore(object):
                 slot_id = slot_to_switch['slot_id']
                 replacement_idx = slot_to_switch['replacement_idx']
                 replacement_ship = slot_to_switch['replacement_ship']
+                
+                """The rule says remove the ship in this slot -- XVs32"""
+                if replacement_idx < 0:
+                    j = len(flt.fleets.fleets[1].ship_data) - slot_id + 1
+                    while j > 0:
+                        self._select_switch_button(slot_id)
+                        self._select_remove_button()
+                        j = j-1
+                    
+                    """End the switching process since the slots after this slot are empty"""
+                    break
+                
                 rule = self.rules[slot_id]
                 Log.log_msg(f"Switching {rule.ship_in_slot} in Slot {slot_id}.")
+                
                 self._select_switch_button(slot_id)
                 kca_u.kca.sleep(1)
                 self._reset_shiplist()
@@ -118,6 +133,11 @@ class ShipSwitcherCore(object):
             com.combat.set_next_sortie_time(override=True)"""
 
     def _find_replacement_ship(self, rule):
+        
+        """If the slot needs to be empty"""
+        if rule.ship_meets_criteria(None):
+            return (-1, None)
+        
         for idx, ship in enumerate(self._local_ships_sorted_by_levels):
             if rule.ship_meets_criteria(ship):
                 return (idx, ship)
@@ -134,6 +154,17 @@ class ShipSwitcherCore(object):
             slot_button_region, 'shipswitcher|shiplist_button.png')
         kca_u.kca.wait_vanish(
             slot_button_region, 'shipswitcher|shiplist_button.png')
+        kca_u.kca.r['top'].hover()
+        
+    def _select_remove_button(self):
+        slot_button_region = Region(
+            kca_u.kca.game_x + 1100,
+            kca_u.kca.game_y + 650,
+            100, 50)
+        kca_u.kca.click_existing(
+            slot_button_region, 'shipswitcher|shiplist_shipremove_button.png')
+        kca_u.kca.wait_vanish(
+            slot_button_region, 'shipswitcher|shiplist_shipremove_button.png')
         kca_u.kca.r['top'].hover()
 
     def _reset_shiplist(self):
@@ -158,18 +189,6 @@ class ShipSwitcherCore(object):
         Log.log_msg(
             f"Selecting lvl{ship.level} {ship.name} "
             f"(pg{target_page}#{ship_idx}).")
-        
-        """Repeated code...?---XVs32"""
-        """if target_page > 1:
-            tot_pages = shp.ships.current_ship_count // 10
-            list_control_region = Region(
-                kca_u.kca.game_x + 625, kca_u.kca.game_y + 655, 495, 45)
-            kca_u.kca.sleep(0.5)
-            nav.navigate_list.to_page(
-                list_control_region, tot_pages, self.current_shipcomp_page,
-                target_page, 'shipcomp')
-            self.current_shipcomp_page = target_page"""
-        
         
         """Floor division gives 9 pages when ship count == 96, which should be 10 pages ---XVs32"""
         """tot_pages = shp.ships.current_ship_count // 10"""
