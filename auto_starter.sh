@@ -5,16 +5,21 @@
 
 
 init(){
-    rm $BASEDIR/click_matrix.npz
+    
 
     BASEDIR=$(dirname "$0")
 
     WEEKDAY=$(date +%u)
-    echo $WEEKDAY
+    echo WEEKDAY:$WEEKDAY
 
-    $PVP=3
-    $STOP=1
-    $PRESET=0
+    DAY=$(date +%d)
+    echo DAY:$DAY
+    
+    rm $BASEDIR/click_matrix.npz
+
+    PVP=3
+    STOP=1
+    PRESET=0
 }
 
 get_resources(){
@@ -29,11 +34,8 @@ get_resources(){
     AMMO=$(echo $RESOURCE | awk -F":| " '{print $4}')
     STEEL=$(echo $RESOURCE | awk -F":| " '{print $6}')
     BAUXITE=$(echo $RESOURCE | awk -F":| " '{print $8}')
-    
-    echo $FUEL
-    echo $AMMO
-    echo $STEEL
-    echo $BAUXITE
+
+    echo FUEL:$FUEL AMMO:$AMMO STEEL:$STEEL BAUXITE:$BAUXITE
 }
 
 start_up(){
@@ -42,6 +44,15 @@ start_up(){
 
 5_2_C(){
     echo ${EXP[0]} ${EXP[1]} ${EXP[2]} $PVP 8 9 $1 1 3 | $BASEDIR/start_up.sh
+}
+
+drop(){
+    PRESET=0
+    start_up 6 3 $1 
+}
+
+night_shift(){
+    python3.7 $BASEDIR/kcauto --cli --cfg night_shift
 }
 
 init
@@ -78,24 +89,79 @@ fi
 
 STOP=1
 PVP=3
+PRESET=0
 
 case $WEEKDAY in
     1)
         5_2_C 2
-
-    ;;
+        drop 1
+        start_up 8 2 1
+        start_up 8 7 2
+        start_up 8 3 1
+        start_up 8 4 1
+        start_up 8 5 1
+        start_up 8 6 1
+        5_2_C 5
+        start_up 2 1 5
+        
+        STOP=0
+        start_up 0 0 0
+        ;;
     2)
-    ;;
+        drop 1
+        start_up 8 1 1
+        start_up 8 0 1
+        5_2_C 12
+        start_up 2 1 5
+        
+        STOP=0
+        start_up 0 0 0
+        ;;
     3)
-    ;;
+        drop 1
+        start_up 2 5 1
+        5_2_C 8
+        start_up 2 1 5
+        start_up 1 5 5
+        
+        STOP=0
+        start_up 0 0 0
+        ;;
     4)
-    ;;
+        drop 1
+        start_up 3 5 1
+        5_2_C 9
+        start_up 3 3 9
+        
+        STOP=0
+        start_up 0 0 0
+        ;;
     5)
-    ;;
+        drop 1
+        start_up 3 5 1
+        5_2_C 6
+        start_up 8 7 12
+        
+        STOP=0
+        start_up 0 0 0
+        ;;
     6)
-    ;;
+        drop 1
+        5_2_C 7
+        start_up 8 7 12
+        
+        STOP=0
+        start_up 0 0 0
+        ;;
     *)
-    ;;
-
-
+        drop 1
+        5_2_C 11
+        start_up 8 7 5
+        start_up 1 5 3
+        
+        STOP=0
+        start_up 0 0 0
+        ;;
+esac
+night_shift
 
