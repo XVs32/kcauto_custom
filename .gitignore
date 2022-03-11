@@ -42,13 +42,12 @@ venv/
 ENV/
 env.bak/
 venv.bak/
-
-*.json
+.screenshot*.png
 *.log
 *.npz
+*.json
 data/temp/*.json
-!configs/config.json
-!configs/fleet_preset.json
+!configs/*.json
 !data/combat/*.json
 !data/combat/*/*.json
 !data/quests/*.json

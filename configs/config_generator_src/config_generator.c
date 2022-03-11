@@ -137,27 +137,27 @@ int main(int argc, const char * argv[]) {
         printf("Sortie level?\n");
     }
     else if(sortie_area == 8){
-        printf("0 -- Bm2-6-1\n");
-        printf("1 -- Bm4-5-1\n");
-        printf("2 -- Bm6-4-2\n");
-        printf("3 -- Bm7-2-5\n");
-        printf("4 -- Bm8-1-2\n");
-        printf("5 -- Bm8-1-3\n");
-        printf("6 -- Bm3/Bm8-1-4\n");
-        printf("7 -- Bm8-2-1\n");
-        printf("8 -- 2-2-A\n");
-        printf("9 -- 5-2-C\n");
+        printf("0 -- Bm4-5-1\n");
+        printf("1 -- Bm6-4-2\n");
+        printf("2 -- Bm7-2-5\n");
+        printf("3 -- Bm8-1-2\n");
+        printf("4 -- Bm8-1-3\n");
+        printf("5 -- Bm3/Bm8-1-4\n");
+        printf("6 -- Bm8-2-1\n");
+        printf("7 -- 2-2-A\n");
+        printf("8 -- 5-2-C\n");
     }
     else if(sortie_area == 9){
         printf("0 -- Bq3-1-6\n");
-        printf("1 -- Bq5-3-1\n");
-        printf("2 -- Bq5-3-2//notworking yet\n");
-        printf("3 -- Bq5-3-3\n");
-        printf("4 -- Bq9-1-3\n");
-        printf("5 -- Bq9/Bq11-1-4\n");
-        printf("6 -- Bq9/Bq11-2-1\n");
-        printf("7 -- Bq9/Bq11-2-2\n");
-        printf("8 -- Bq9/Bq11-2-3\n");
+        printf("1 -- Bq4-6-3\n");
+        printf("2 -- Bq5-3-1\n");
+        printf("3 -- Bq5-3-2//notworking yet\n");
+        printf("4 -- Bq5-3-3\n");
+        printf("5 -- Bq9-1-3\n");
+        printf("6 -- Bq9/Bq11-1-4\n");
+        printf("7 -- Bq9/Bq11-2-1\n");
+        printf("8 -- Bq9/Bq11-2-2\n");
+        printf("9 -- Bq9/Bq11-2-3\n");
     }
 
     scanf("%d",&sortie_level);

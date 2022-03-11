@@ -16,7 +16,7 @@ void ship_switch(cJSON *root, char *sortie_map){
     printf("%s\n", file_path);
     
     
-    char comdst[8];
+    char comdst[32];
     strcpy(comdst, sortie_map);
     
     if(comdst[0] == '0'){
@@ -25,34 +25,33 @@ void ship_switch(cJSON *root, char *sortie_map){
     else if(comdst[0] == '8'){
         switch(comdst[2]){
             case '0':
-                strcpy(comdst, "Bm2-6-1");
-                break;
-            case '1':
                 strcpy(comdst, "Bm4-5-1");
                 break;
-            case '2':
+            case '1':
                 strcpy(comdst, "Bm6-4-2");
                 break;
-            case '3':
+            case '2':
                 strcpy(comdst, "Bm7-2-5");
                 break;
-            case '4':
+            case '3':
                 strcpy(comdst, "Bm8-1-2");
                 break;
-            case '5':
+            case '4':
                 strcpy(comdst, "Bm8-1-3");
                 break;
-            case '6':
+            case '5':
                 strcpy(comdst, "Bm3/Bm8-1-4");
                 break;
-            case '7':
+            case '6':
                 strcpy(comdst, "Bm8-2-1");
                 break;
-            case '8':
+            case '7':
                 strcpy(comdst, "2-2-A");
                 break;
-            case '9':
+            case '8':
                 strcpy(comdst, "5-2-C");
+                break;
+            case '9':
                 break;
         }
     }
@@ -62,27 +61,30 @@ void ship_switch(cJSON *root, char *sortie_map){
                 strcpy(comdst, "Bq3-1-6");
                 break;
             case '1':
-                strcpy(comdst, "Bq5-3-1");
+                strcpy(comdst, "Bq4-6-3");
                 break;
             case '2':
-                strcpy(comdst, "Bq5-3-2");
+                strcpy(comdst, "Bq5-3-1");
                 break;
             case '3':
-                strcpy(comdst, "Bq5-3-3");
+                strcpy(comdst, "Bq5-3-2");
                 break;
             case '4':
-                strcpy(comdst, "Bq9-1-3");
+                strcpy(comdst, "Bq5-3-3");
                 break;
             case '5':
-                strcpy(comdst, "Bq9/Bq11-1-4");
+                strcpy(comdst, "Bq9-1-3");
                 break;
             case '6':
-                strcpy(comdst, "Bq9/Bq11-2-1");
+                strcpy(comdst, "Bq9/Bq11-1-4");
                 break;
             case '7':
-                strcpy(comdst, "Bq9/Bq11-2-2");
+                strcpy(comdst, "Bq9/Bq11-2-1");
                 break;
             case '8':
+                strcpy(comdst, "Bq9/Bq11-2-2");
+                break;
+            case '9':
                 strcpy(comdst, "Bq9/Bq11-2-3");
                 break;
         }
@@ -109,15 +111,22 @@ void ship_switch(cJSON *root, char *sortie_map){
             cJSON *ref = cJSON_GetArrayItem(map, i);
             char *ship_type = cJSON_GetObjectItem(ref, "type")->valuestring;
             printf("shiptype %s\n", ship_type);
-            int id = cJSON_GetObjectItem(ref, "id")->valueint;
-            printf("id %d\n", id);
+            
+            if(strcmp(ship_type,"NULL") == 0){//Tell the ship_switcher to remove the ship in this slot
+                sprintf(slot, "%d", i+1);
+                sprintf(condition, "morale:!=:0|ship:-1:>=:1:>=:0:!=:0::");
+            }
+            else{
+                int id = cJSON_GetObjectItem(ref, "id")->valueint;
+                printf("id %d\n", id);
 
-            cJSON *ship = cJSON_GetObjectItem(preset_root, ship_type);
-            int ship_id = cJSON_GetArrayItem(ship, id)->valueint; 
-            printf("ship_id %d\n", ship_id);
-                   
-            sprintf(slot, "%d", i+1);
-            sprintf(condition, "morale:!=:0|ship:%d:>=:1:>=:0:!=:0::", ship_id);
+                cJSON *ship = cJSON_GetObjectItem(preset_root, ship_type);
+                int ship_id = cJSON_GetArrayItem(ship, id)->valueint; 
+                printf("ship_id %d\n", ship_id);
+
+                sprintf(slot, "%d", i+1);
+                sprintf(condition, "morale:!=:0|ship:%d:>=:1:>=:0:!=:0::", ship_id);
+            }
             cJSON_AddItemToObject(spsw, slot, cJSON_CreateString(condition));
         }
     }
