@@ -43,12 +43,12 @@ start_up(){
 }
 
 5_2_C(){
-    echo ${EXP[0]} ${EXP[1]} ${EXP[2]} $PVP 8 9 $1 1 3 | $BASEDIR/start_up.sh
+    echo ${EXP[0]} ${EXP[1]} ${EXP[2]} $PVP 8 8 $1 1 0 | $BASEDIR/start_up.sh
 }
 
 drop(){
     PRESET=0
-    start_up 6 3 $1 
+    start_up 2 3 $1 
 }
 
 night_shift(){
@@ -162,6 +162,6 @@ case $WEEKDAY in
         STOP=0
         start_up 0 0 0
         ;;
-esac
+esac 
 night_shift
 

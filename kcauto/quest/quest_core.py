@@ -37,7 +37,7 @@ class QuestCore(CoreBase):
         self._load_quest_data()
 
     def _load_quest_data(self):
-        Log.log_debug("Loading Quest data.")
+        Log.log_msg("Loading Quest data.")
         quest_data = JsonData.load_json('data|quests|quests.json')
         for quest_name in quest_data:
             quest = Quest(quest_name, quest_data[quest_name])
@@ -47,14 +47,14 @@ class QuestCore(CoreBase):
 
     def need_to_check(self, context):
         if datetime.now() > self.quest_reset_time:
-            Log.log_debug("Quest check triggered by time.")
+            Log.log_msg("Quest check triggered by time.")
             self._reset_next_quest_reset_time()
             return True
         if self._get_quests_to_check_by_interval():
-            Log.log_debug("Quest check triggered by interval.")
+            Log.log_msg("Quest check triggered by interval.")
             return True
         if context is not None and context != self.last_checked_context:
-            Log.log_debug("Quest check triggered by context change.")
+            Log.log_msg("Quest check triggered by context change.")
             return True
 
     def update_quest_data(self, data):
@@ -67,7 +67,7 @@ class QuestCore(CoreBase):
         """Added by XVs32"""
         self.tot_page = math.ceil(len(self.visible_quests)/5)-1
         
-        Log.log_debug(self.visible_quests_str)
+        Log.log_msg(self.visible_quests_str)
 
     def manage_quests(self, context=None, fast_check=True):
         # dismiss Ooyodo
@@ -84,7 +84,7 @@ class QuestCore(CoreBase):
         else:
             self._turn_in_quests(context)
             self._toggle_quests(context)
-        Log.log_debug(
+        Log.log_msg(
             f"Tracked quests: {list(self.next_check_intervals.keys())}")
 
     @property
@@ -97,90 +97,85 @@ class QuestCore(CoreBase):
         return return_string
 
     def _turn_in_quests(self, context):
-        Log.log_debug(
+        Log.log_msg(
             f"Checking for quests to turn in and deactivate with {context} "
             "context.")
         quest_turned_in = False
         relevant_quests = self._filter_quest_by_context(context)
         interval_check_quests = self._get_quests_to_check_by_interval()
-        Log.log_debug(f"Relevant quests: {relevant_quests}")
-        Log.log_debug(f"Quests to check: {interval_check_quests}")
-        Log.log_debug("Navigating to active quests tab.")
+        Log.log_msg(f"Relevant quests: {relevant_quests}")
+        Log.log_msg(f"Quests to check: {interval_check_quests}")
+        Log.log_msg("Navigating to active quests tab.")
+        
         kca_u.kca.click_existing('left', 'quest|filter_tab_active.png')
+        api.api.update_from_api({KCSAPIEnum.QUEST_LIST}) #update visible_quests
+        kca_u.kca.wait(
+            'left', 'quest|filter_tab_active_active.png', NEAR_EXACT)
         
         """Added by XVs32"""
         self.cur_page = 0
         
-        api.api.update_from_api({KCSAPIEnum.QUEST_LIST})
-        kca_u.kca.wait(
-            'left', 'quest|filter_tab_active_active.png', NEAR_EXACT)
-        no_action_taken = False
-        while not no_action_taken:
-            page_processed = False
-            while not page_processed:
-                for idx, quest in enumerate(self.visible_quests):
-                    if quest == -1:
-                        page_processed = True
-                        no_action_taken = True
-                        break
+        while 1:
+            for idx, quest in enumerate(self.visible_quests):
+                if quest == -1:
+                    break
 
-                    if quest['api_no'] not in self.quest_library:
-                        if quest['api_state'] == 3:
-                            self._turn_in_quest_idx(idx)
-                            quest_turned_in = True
-                        else:
-                            continue
-
-                    quest_i = self.quest_library[quest['api_no']]
-                    if quest['api_state'] == 2 and quest_i in relevant_quests:
-                        Log.log_debug(f"Quest {quest_i.name} already active.")
-                        if quest_i.name not in self.next_check_intervals:
-                            # relevant quest active but not tracked; add to
-                            # tracking with fresh intervals
-                            self._track_quest(quest_i)
-                        elif quest_i.name in interval_check_quests:
-                            # quest is expected to be completed, but it isn't;
-                            # re-track it with fresh intervals
-                            self._track_quest(quest_i)
-                            
-                    """Edited by XVs32"""
+                if quest['api_no'] not in self.quest_library:
                     if quest['api_state'] == 3 and (self.cur_page+1)*5>idx:
-                        Log.log_msg(f"Turning in quest {quest_i.name}.")
-                        
-                        """Edited by XVs32"""
                         self._turn_in_quest_idx(idx - self.cur_page*5)
-                        
-                        self._untrack_quest(quest_i)
-                        sts.stats.quest.quests_turned_in += 1
                         quest_turned_in = True
-                        break
-                        
+                    else:
+                        continue
+
+                quest_i = self.quest_library[quest['api_no']]
+                if quest['api_state'] == 2 and quest_i in relevant_quests:
+                    Log.log_msg(f"Quest {quest_i.name} already active.")
+                    if quest_i.name not in self.next_check_intervals:
+                        # relevant quest active but not tracked; add to
+                        # tracking with fresh intervals
+                        self._track_quest(quest_i)
+                    elif quest_i.name in interval_check_quests:
+                        # quest is expected to be completed, but it isn't;
+                        # re-track it with fresh intervals
+                        self._track_quest(quest_i)
+
+                """Edited by XVs32"""
+                if quest['api_state'] == 3 and (self.cur_page+1)*5>idx:
+                    Log.log_msg(f"Turning in quest {quest_i.name}.")
+
                     """Edited by XVs32"""
-                    if quest_i not in relevant_quests and context is not None and (self.cur_page+1)*5>idx:
-                        Log.log_msg(f"Deactivating quest {quest_i.name}.")
-                        
-                        """Edited by XVs32"""
-                        self._click_quest_idx(idx - self.cur_page*5)
-                        
-                        self._untrack_quest(quest_i)
-                        sts.stats.quest.quests_deactivated += 1
-                        break
-                page_processed = True
+                    self._turn_in_quest_idx(idx - self.cur_page*5)
+
+                    self._untrack_quest(quest_i)
+                    sts.stats.quest.quests_turned_in += 1
+                    quest_turned_in = True
+                    continue
+
+                """Edited by XVs32"""
+                if (quest['api_state'] == 2
+                    and quest_i not in relevant_quests
+                    and context is not None
+                    and (self.cur_page+1)*5>idx
+                    and quest_i.name in cfg.config.quest.quests):
+                    Log.log_msg(f"Deactivating quest {quest_i.name}.")
+
+                    self._click_quest_idx(idx - self.cur_page*5)
+
+                    self._untrack_quest(quest_i)
+                    sts.stats.quest.quests_deactivated += 1
+                    continue
+                    
             if self.cur_page < self.tot_page:
                 kca_u.kca.click_existing(
                     'lower_right', 'global|page_next.png', pad=PAGE_NAV)
-                
-                """Deleted by XVs32"""
-                #api.api.update_from_api({KCSAPIEnum.QUEST_LIST})
-                """Added by XVs32"""
                 self.cur_page += 1
-                
             else:
-                no_action_taken = True
+                break;
         return quest_turned_in
-
+    
+    
     def _toggle_quests(self, context):
-        Log.log_debug(
+        Log.log_msg(
             f"Checking for quests to activate with {context} context.")
         # quests should only be activated at this point
         relevant_quests = self._filter_quest_by_context(context)
@@ -189,70 +184,49 @@ class QuestCore(CoreBase):
             key=lambda quest_type: self.QUEST_TYPE_WEIGHTS[quest_type])
 
         for quest_type in quest_types:
-            Log.log_debug(f"Navigating to {quest_type} quests tab.")
+            Log.log_msg(f"Navigating to {quest_type} quests tab.")
             kca_u.kca.click_existing(
                 'left', f'quest|filter_tab_{quest_type}.png')
-            
-            """Added by XVs32"""
-            self.cur_page = 0
-            
-            api.api.update_from_api({KCSAPIEnum.QUEST_LIST})
+            api.api.update_from_api({KCSAPIEnum.QUEST_LIST}) #update visible_quests
             kca_u.kca.wait(
                 'left', f'quest|filter_tab_{quest_type}_active.png',
                 NEAR_EXACT)
+            
+            self.cur_page = 0
 
             page_processed = False
-            while not page_processed:
+            while 1:
                 for idx, quest in enumerate(self.visible_quests):
                     if quest == -1:
-                        page_processed = True
                         break
 
                     if quest['api_no'] not in self.quest_library:
                         continue
 
                     quest_i = self.quest_library[quest['api_no']]
-                    if quest['api_state'] == 1 and quest_i in relevant_quests and (self.cur_page+1)*5>idx:
-                        
-                        Log.log_msg(f"Activating quest {quest_i.name}.")
-                        self._track_quest(quest_i)
-                        
-                        """Edited by XVs32"""
-                        self._click_quest_idx(idx - self.cur_page*5)
-                        
-                        sts.stats.quest.quests_activated += 1
-                        continue
-                    """Edited by XVs32"""
-                    if (
-                            quest['api_state'] == 2
-                            and quest_i not in relevant_quests 
-                            and (self.cur_page+1)*5>idx):
-                        Log.log_msg(f"Deactivating quest {quest_i.name}.")
-                        
-                        """Edited by XVs32"""
-                        self._click_quest_idx(idx - self.cur_page*5)
-                        
-                        self._untrack_quest(quest_i)
-                        sts.stats.quest.quests_deactivated += 1
-                        continue
-                        
-                """Edited by XVs32"""
-                Log.log_debug(f"we are done at cur_page {self.cur_page}.")
-                Log.log_debug(f"we are done at tot_page {self.tot_page}.")
+                    Log.log_msg(f"Checking quset {quest_i.name}.")
+                    
+                    if (    (self.cur_page+1)*5 - idx > 0 
+                        and (self.cur_page+1)*5 - idx < 6):
+                        if quest_i in relevant_quests and quest['api_state'] == 1:
+                            Log.log_msg(f"Activating quest {quest_i.name}.")
+                            self._click_quest_idx(idx - self.cur_page*5)
+                            self._track_quest(quest_i)
+                            sts.stats.quest.quests_activated += 1
+                        elif (quest_i not in relevant_quests 
+                              and quest['api_state'] == 2
+                              and quest_i.name in cfg.config.quest.quests):
+                            Log.log_msg(f"Deactivating quest {quest_i.name}.")
+                            self._click_quest_idx(idx - self.cur_page*5)
+                            self._untrack_quest(quest_i)
+                            sts.stats.quest.quests_deactivated += 1
+                
                 if self.cur_page < self.tot_page:
                     kca_u.kca.click_existing(
                         'lower_right', 'global|page_next.png', pad=PAGE_NAV)
-                    """Deleted by XVs32"""
-                    #api.api.update_from_api({KCSAPIEnum.QUEST_LIST})
-                    """Added by XVs32"""
                     self.cur_page += 1
-                    """Added by XVs32"""
-                    Log.log_debug(f"we are now at cur_page {self.cur_page}.")
-                    continue
-                    
-                page_processed = True
-
-
+                else:
+                    break;
 
     def _filter_quest_by_context(self, context):
         relevant_quests = []
@@ -295,15 +269,15 @@ class QuestCore(CoreBase):
         return quest_types
 
     def _turn_in_quest_idx(self, idx):
-        Log.log_debug(f"Turning in quest at position {idx}.")
+        Log.log_msg(f"Turning in quest at position {idx}.")
         self._click_quest_idx(idx)
         kca_u.kca.wait('kc', 'quest|accept_reward_button.png', 30)
         while kca_u.kca.click_existing('kc', 'quest|accept_reward_button.png'):
             kca_u.kca.sleep(3)
-        api.api.update_from_api({KCSAPIEnum.QUEST_LIST})
+        api.api.update_from_api({KCSAPIEnum.QUEST_LIST}) #update visible_quests
 
     def _click_quest_idx(self, idx):
-        Log.log_debug(f"Clicking quest at position {idx}.")
+        Log.log_msg(f"Clicking quest at position {idx}.")
         
         quest_list_region = Region(
             kca_u.kca.game_x + 230, kca_u.kca.game_y + 173 + (idx * 102),
@@ -314,11 +288,11 @@ class QuestCore(CoreBase):
         kca_u.kca.sleep(1)
 
     def _untrack_quest(self, quest):
-        Log.log_debug(f"No longer tracking quest {quest.name}.")
+        Log.log_msg(f"No longer tracking quest {quest.name}.")
         self.next_check_intervals.pop(quest.name, None)
 
     def _track_quest(self, quest):
-        Log.log_debug(f"Tracking quest {quest.name}.")
+        Log.log_msg(f"Tracking quest {quest.name}.")
         self.next_check_intervals[quest.name] = self._generate_intervals(quest)
 
     def _generate_intervals(self, quest):
