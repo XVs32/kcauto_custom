@@ -143,7 +143,7 @@ void akashi_repair(cJSON *root){
     
     char cond[2048];
     int i,j;
-    for(j=0;j<3;j++){
+    for(j=0;j<5;j++){
         strcpy(cond,"damage:==:0,damage:>=:3|");
         char slot[2] = {'\0'};
         slot[0] = j + 2 + '0';
@@ -155,13 +155,13 @@ void akashi_repair(cJSON *root){
             sprintf(buf,"class:%d:!=:1:==:2:!=:0::,",i+1);
             strcat(cond,buf);
         }
-        cond[strlen(cond)-1] = '\0'; //drop the last commarc and end the string.
+        cond[strlen(cond)-1] = '\0'; //drop the last commar and end the string.
         cJSON_AddStringToObject(spsw, slot, cond);
     }
     
-    //switch in a whatever no damage DD, for easier PvP for others, cannot use morale here, or this will keep switching lol
+    /*//switch in a whatever no damage DD, for easier PvP for others, cannot use morale here, or this will keep switching lol
     cJSON_AddStringToObject(spsw, "5", "damage:!=:0|class:2:!=:1:==:0:!=:0::");
-    cJSON_AddStringToObject(spsw, "6", "damage:!=:0|class:2:!=:1:==:0:!=:0::");
+    cJSON_AddStringToObject(spsw, "6", "damage:!=:0|class:2:!=:1:==:0:!=:0::");*/
     
     return;
 }

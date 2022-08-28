@@ -180,13 +180,15 @@ int main(int argc, const char * argv[]) {
     
     char comdst[5];
     sprintf(comdst,"%d-%d",sortie_area, sortie_level);
+    
+    printf("test:%s\n",comdst);
     combat(root, sortie_preset, comdst);
 
     
     /////////////////////////end combat/////////////////////////////////////
     /////////////////////////start ship switch//////////////////////////////////////////
 
-    if(sortie_level == 0){
+    if(sortie_area == 0){
         cJSON_AddNumberToObject(root, "passive_repair.slots_to_reserve", 0);//reserve 0 slot for combat
         akashi_repair(root);
     }
