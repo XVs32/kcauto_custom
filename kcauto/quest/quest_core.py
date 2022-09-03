@@ -111,19 +111,25 @@ class QuestCore(CoreBase):
         api.api.update_from_api({KCSAPIEnum.QUEST_LIST}) #update visible_quests
         kca_u.kca.wait(
             'left', 'quest|filter_tab_active_active.png', NEAR_EXACT)
+
         
-        """Added by XVs32"""
-        self.cur_page = 0
+        quest_offset = 0
         
         while 1:
             for idx, quest in enumerate(self.visible_quests):
+                
+                quest_pos = idx - quest_offset
+                
                 if quest == -1:
                     break
 
                 if quest['api_no'] not in self.quest_library:
-                    if quest['api_state'] == 3 and (self.cur_page+1)*5>idx:
-                        self._turn_in_quest_idx(idx - self.cur_page*5)
+                    if quest['api_state'] == 3 and (self.cur_page+1)*5>quest_pos:
+                        self._turn_in_quest_idx(quest_pos - self.cur_page*5)
+                        quest_offset += 1
                         quest_turned_in = True
+                        
+                        
                     else:
                         continue
 
@@ -140,11 +146,12 @@ class QuestCore(CoreBase):
                         self._track_quest(quest_i)
 
                 """Edited by XVs32"""
-                if quest['api_state'] == 3 and (self.cur_page+1)*5>idx:
+                if quest['api_state'] == 3 and (self.cur_page+1)*5>quest_pos:
                     Log.log_msg(f"Turning in quest {quest_i.name}.")
 
                     """Edited by XVs32"""
-                    self._turn_in_quest_idx(idx - self.cur_page*5)
+                    self._turn_in_quest_idx(quest_pos - self.cur_page*5)
+                    quest_offset += 1
 
                     self._untrack_quest(quest_i)
                     sts.stats.quest.quests_turned_in += 1
@@ -155,11 +162,12 @@ class QuestCore(CoreBase):
                 if (quest['api_state'] == 2
                     and quest_i not in relevant_quests
                     and context is not None
-                    and (self.cur_page+1)*5>idx
+                    and (self.cur_page+1)*5>quest_pos
                     and quest_i.name in cfg.config.quest.quests):
                     Log.log_msg(f"Deactivating quest {quest_i.name}.")
 
-                    self._click_quest_idx(idx - self.cur_page*5)
+                    self._click_quest_idx(quest_pos - self.cur_page*5)
+                    quest_offset += 1
 
                     self._untrack_quest(quest_i)
                     sts.stats.quest.quests_deactivated += 1
@@ -171,6 +179,9 @@ class QuestCore(CoreBase):
                 self.cur_page += 1
             else:
                 break;
+            
+        """Added by XVs32"""
+        self.cur_page = 0
         return quest_turned_in
     
     
