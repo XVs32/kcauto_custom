@@ -3,14 +3,20 @@
 #start kcauto#
 ##############
 
+WEEKDAY=$1
 
 init(){
-    
 
     BASEDIR=$(dirname "$0")
+    echo $0
 
-    WEEKDAY=$(date +%u)
-    echo WEEKDAY:$WEEKDAY
+    if [ -z $WEEKDAY ]
+    then
+        WEEKDAY=$(date +%u)
+        echo WEEKDAY:$WEEKDAY
+    else
+        echo WEEKDAY overide:$WEEKDAY
+    fi
 
     DAY=$(date +%d)
     echo DAY:$DAY
@@ -56,6 +62,8 @@ night_shift(){
 }
 
 init
+
+
 
 get_resources
 
