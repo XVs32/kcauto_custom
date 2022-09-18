@@ -161,11 +161,14 @@ class Kcauto(object):
             self.handle_home_after(True)
 
     def run_shipswitch_logic(self, home_after=False):
-        if ssw.ship_switcher.need_to_switch:
+        
+        switch_list = ssw.ship_switcher.get_ship_switch_list()
+        
+        if switch_list:
             nav.navigate.to('home')
             self.fast_check_for_expedition()
             ssw.ship_switcher.goto()
-            ssw.ship_switcher.switch_ships()
+            ssw.ship_switcher.switch_ships(switch_list)
             self.handle_home_after(home_after)
             if not home_after:
                 self.end_loop_at_port = True

@@ -78,25 +78,21 @@ class ShipSwitchRule(object):
 
     @property
     def ship_in_slot(self):
+        """Return None if the slot is empty -- XVs32"""
         if len(flt.fleets.fleets[1].ship_data) < self.slot_id:
-            
             return None
-            
-            """Original version which raise an error if you don't have ship in a slot -- XVs32"""
-            """raise ValueError(
-                f"Slot {self.slot_id} is empty in first fleet. Please "
-                "pre-fill slots with Ship Switcher rules.")"""
             
         return flt.fleets.fleets[1].ship_data[self.slot_id - 1]
 
-    def need_to_switch(self):
+    def is_switch_out(self):
         slot_ship = self.ship_in_slot
         
-        """This slot could be switch if it is empty -- XVs32"""
-        if slot_ship == None:
-            return True
-        
         for condition in self.conditions:
+            
+            """This slot could be switch if it is empty -- XVs32"""
+            if slot_ship == None:
+                return True
+            
             op = self._get_operator(condition[1])
             
             if condition[0] is ShipSwitcherConditionSlot0Enum.LEVEL:
@@ -120,7 +116,7 @@ class ShipSwitchRule(object):
                     return True
         return False
 
-    def ship_meets_criteria(self, ship):
+    def is_meet_criteria(self, ship):
         
         if ship is None:
             for criterion in self.criteria:
@@ -128,6 +124,9 @@ class ShipSwitchRule(object):
                     Log.log_msg(f"Switch-in criteria says remove this slot.")
                     return True
             return False
+        
+        print("flt.fleets.ships_in_fleets")
+        print(flt.fleets.ships_in_fleets)
         
         if ship.local_id in flt.fleets.ships_in_fleets:
             return False
