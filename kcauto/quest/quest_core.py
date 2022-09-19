@@ -245,6 +245,8 @@ class QuestCore(CoreBase):
             quest_groups = ['B', 'E']
         elif context == 'pvp':
             quest_groups = ['C', 'E']
+        elif context == 'factory':
+            quest_groups = ['F', 'E']
         else:
             quest_groups = ['E']
 

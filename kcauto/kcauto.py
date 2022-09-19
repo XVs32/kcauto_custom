@@ -175,11 +175,11 @@ class Kcauto(object):
                 self.end_loop_at_port = True
 
     def run_quest_logic(
-            self, context=None, fast_check=False, home_after=False):
+            self, context=None, fast_check=False, home_after=False, force=False):
         if not qst.quest.enabled:
             return False
 
-        if qst.quest.need_to_check(context):
+        if qst.quest.need_to_check(context) or force == True:
             self.find_kancolle()
             self.fast_check_for_expedition()
             qst.quest.goto()
@@ -192,28 +192,33 @@ class Kcauto(object):
 
         self.find_kancolle()
         self.fast_check_for_expedition()
-        #self.run_quest_logic('factory', fast_check=False)
+        self.run_quest_logic('factory', fast_check=False)
+        nav.navigate.to('home')
+
+        """ 
         fty.factory.goto()
         fty.factory.develop_logic(1)
-        self.run_quest_logic('factory', fast_check=True, home_after=True)
+        self.run_quest_logic('factory', fast_check=True, home_after=True, force=True)
+        nav.navigate.to('home')
+        """ 
+
         """ 
         fty.factory.goto()
         fty.factory.build_logic(oil, ammo, steel, bauxite, count)
-        self.run_quest_logic('factory', fast_check=True, home_after=True)
+        self.run_quest_logic('factory', fast_check=True, home_after=True, force=True)
+        nav.navigate.to('home')
         """
         fty.factory.goto()
         fty.factory.develop_logic(3)
-        self.run_quest_logic('factory', fast_check=True, home_after=True)
+        self.run_quest_logic('factory', fast_check=True, home_after=True, force=True)
+        nav.navigate.to('home')
         
         """
         fty.factory.goto()
         fty.factory.build_logic(oil, ammo, steel, bauxite, count)
-        self.run_quest_logic('factory', fast_check=True, home_after=True)
+        self.run_quest_logic('factory', fast_check=True, home_after=True, force=True)
+        nav.navigate.to('home')
         """
-
-
-        
-         
 
     def handle_home_after(self, home_after):
         if home_after:

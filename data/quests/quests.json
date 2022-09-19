@@ -280,5 +280,25 @@
     "id": 504,
     "type": "daily",
     "intervals": [15, 15, 15]
+  },
+  "F5": {
+    "id": 605,
+    "type": "daily",
+    "intervals": [0, 0, 0]
+  },
+  "F6": {
+    "id": 606,
+    "type": "daily",
+    "intervals": [0, 0, 0]
+  },
+  "F7": {
+    "id": 607,
+    "type": "daily",
+    "intervals": [0, 0, 0]
+  },
+  "F8": {
+    "id": 608,
+    "type": "daily",
+    "intervals": [0, 0, 0]
   }
 }
