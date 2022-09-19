@@ -11,6 +11,7 @@ from util.logger import Log
 
 
 class FactoryCore(object):
+    enabled = False
     order_oil_region        = {1    : "order_oil_region_1",
                                10   : "order_oil_region_10",
                                100  : "order_oil_region_100"}
@@ -29,12 +30,19 @@ class FactoryCore(object):
                                order_bauxite_region]
 
     def __init__(self):
+        self.enabled = cfg.config.factory.enabled
         pass
 
     def develop_logic(self, count):
         self.goto()
         oil, ammo, steel, bauxite = self.read_config_develop()
-        self.develop(oil, ammo, steel, bauxite, count)
+        return self.develop(oil, ammo, steel, bauxite, count)
+        
+
+    def build_logic(self, count):
+        self.goto()
+        oil, ammo, steel, bauxite = self.read_config_build()
+        return self.build(oil, ammo, steel, bauxite, count)
 
     def goto(self):
         nav.navigate.to('development')
@@ -89,8 +97,83 @@ class FactoryCore(object):
                 kca_u.kca.r['top'].hover()
                 kca_u.kca.sleep()
 
+        return True
 
+    def build(self, oil, ammo, steel, bauxite, count):
+        """Place the build order"""
+        """Assume currently at factory page when called"""
 
+        while count > 0:
+
+            kca_u.kca.sleep(1)
+            """return false if both slots are occupied"""
+            if  kca_u.kca.exists("build_slot_1_stat_region",
+                                "factory|build_progressing.png")\
+                and \
+                kca_u.kca.exists("build_slot_2_stat_region",
+                                "factory|build_progressing.png"):
+                return False
+
+            build_slot_stat = {1:"build_slot_1_stat_region",
+                               2:"build_slot_2_stat_region"}
+            build_slot = {1:"build_slot_1_region",
+                          2:"build_slot_2_region"}
+
+            """receive if a build is done"""
+            for i in range(1,3):
+                if kca_u.kca.exists(build_slot_stat[i],
+                                    "factory|build_finish.png"):
+                    kca_u.kca.r[build_slot[i]].click()
+                    kca_u.kca.wait('lower_right_corner', 'global|next_alt.png', 20)
+                    while kca_u.kca.exists('lower_right_corner', 'global|next_alt.png'):
+                        kca_u.kca.sleep()
+                        kca_u.kca.r['shipgirl'].click()
+                        kca_u.kca.r['top'].hover()
+                        kca_u.kca.sleep()
+                    kca_u.kca.wait('lower', 'factory|factory_init.png', 20)
+
+            """place the order on a empty slot"""
+            for j in range(1,3):
+                if kca_u.kca.exists(build_slot_stat[j],
+                                    "factory|build_ready.png"):
+                    """click build slot"""
+                    while not kca_u.kca.exists(
+                        'lower', "factory|develop_menu.png"):
+                        kca_u.kca.r[build_slot[j]].click()
+                        kca_u.kca.sleep(1)
+
+                    resource_list = [oil, ammo, steel, bauxite]
+
+                    for i in range(4):
+                        """The init 30 point of resource on the order"""
+                        resource = resource_list[i]
+                        resource -= 30
+                        while resource >= 100:
+                            print(self.order_resource_region[i][100])
+                            kca_u.kca.r[self.order_resource_region[i][100]].click()
+                            kca_u.kca.sleep
+                            resource -= 100
+                        while resource >= 10:
+                            print(self.order_resource_region[i][10])
+                            kca_u.kca.r[self.order_resource_region[i][10]].click()
+                            kca_u.kca.sleep
+                            resource -= 10
+                        while resource >= 1:
+                            print(self.order_resource_region[i][1])
+                            kca_u.kca.r[self.order_resource_region[i][1]].click()
+                            kca_u.kca.sleep
+                            resource -= 1
+
+                    kca_u.kca.r["order_confirm_region"].click()
+                    kca_u.kca.wait('lower', 'factory|factory_init.png', 20)
+                    
+                    count -= 1
+                    if count <= 0:
+                        break
+
+        """all requested build seccessfully done"""
+        return True
+                
     def read_config_develop(self):
         oil     = cfg.config.factory.develop["recipe"][0]
         ammo    = cfg.config.factory.develop["recipe"][1]
@@ -98,8 +181,12 @@ class FactoryCore(object):
         bauxite = cfg.config.factory.develop["recipe"][3]
         return oil, ammo, steel, bauxite
         
-
-
+    def read_config_build(self):
+        oil     = cfg.config.factory.build["recipe"][0]
+        ammo    = cfg.config.factory.build["recipe"][1]
+        steel   = cfg.config.factory.build["recipe"][2]
+        bauxite = cfg.config.factory.build["recipe"][3]
+        return oil, ammo, steel, bauxite
 
 
 
