@@ -190,35 +190,46 @@ class Kcauto(object):
 
     def run_factory_logic(self):
 
+        if not fty.factory.enabled:
+            return False
+
         self.find_kancolle()
         self.fast_check_for_expedition()
         self.run_quest_logic('factory', fast_check=False)
         nav.navigate.to('home')
 
-        """ 
-        fty.factory.goto()
-        fty.factory.develop_logic(1)
-        self.run_quest_logic('factory', fast_check=True, home_after=True, force=True)
-        nav.navigate.to('home')
-        """ 
+        if sts.stats.factory.current_phase() == 0:
+            fty.factory.goto()
+            if fty.factory.develop_logic(1) == True:
+                self.run_quest_logic('factory', fast_check=True, home_after=True, force=True)
+                nav.navigate.to('home')
+                sts.stats.factory.next_phase()
 
-        """ 
-        fty.factory.goto()
-        fty.factory.build_logic(oil, ammo, steel, bauxite, count)
-        self.run_quest_logic('factory', fast_check=True, home_after=True, force=True)
-        nav.navigate.to('home')
-        """
-        fty.factory.goto()
-        fty.factory.develop_logic(3)
-        self.run_quest_logic('factory', fast_check=True, home_after=True, force=True)
-        nav.navigate.to('home')
+        print(sts.stats.factory.work_phase)
+        print(sts.stats.factory.current_phase())
+
+        if sts.stats.factory.current_phase() == 1:
+            fty.factory.goto()
+            if fty.factory.build_logic(1) == True:
+                self.run_quest_logic('factory', fast_check=True, home_after=True, force=True)
+                nav.navigate.to('home')
+                sts.stats.factory.next_phase()
+
+        if sts.stats.factory.current_phase() == 2:
+            fty.factory.goto()
+            if fty.factory.develop_logic(3) == True:
+                self.run_quest_logic('factory', fast_check=True, home_after=True, force=True)
+                nav.navigate.to('home')
+                sts.stats.factory.next_phase()
         
-        """
-        fty.factory.goto()
-        fty.factory.build_logic(oil, ammo, steel, bauxite, count)
-        self.run_quest_logic('factory', fast_check=True, home_after=True, force=True)
-        nav.navigate.to('home')
-        """
+        if sts.stats.factory.current_phase() == 3:
+            fty.factory.goto()
+            if fty.factory.build_logic(3) == True:
+                self.run_quest_logic('factory', fast_check=True, home_after=True, force=True)
+                nav.navigate.to('home')
+                sts.stats.factory.next_phase()
+                """Daily factory process done, disable from now"""
+                fty.factory.enabled = False
 
     def handle_home_after(self, home_after):
         if home_after:
