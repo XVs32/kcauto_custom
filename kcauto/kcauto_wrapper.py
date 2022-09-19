@@ -25,18 +25,24 @@ def kcauto_main():
                 _.kcauto.hook_health_check()
                 _.kcauto.check_config()
                 if _.kcauto.scheduler_kca_active:
+
                     _.kcauto.initialization_check()
                     _.kcauto.check_for_expedition()
+                    """test only"""
+                    print("start")
+                    _.kcauto.run_factory_logic()
+                    print("end")
+                    """test only"""
+
                     _.kcauto.run_quest_logic(home_after=True)
                     _.kcauto.run_expedition_logic()
                     _.kcauto.run_resupply_logic(home_after=True)
                     _.kcauto.run_pvp_logic()
+                    _.kcauto.run_factory_logic()
                     """run ship switch before combat pvp -by xvs32"""
-                    _.kcauto.run_shipswitch_logic()
                     _.kcauto.run_shipswitch_logic()
                     _.kcauto.run_combat_logic()
                     _.kcauto.run_repair_logic()
-                    _.kcauto.run_shipswitch_logic()
                     _.kcauto.run_resupply_logic()
                     _.kcauto.run_quest_logic()
                     _.kcauto.check_end_loop_at_port()

@@ -53,3 +53,6 @@ data/temp/*.json
 !data/quests/*.json
 reference/
 
+configs/fleet_preset.json
+configs/config.json
+temp.txt
