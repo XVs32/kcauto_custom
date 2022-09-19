@@ -75,7 +75,8 @@ class FactoryCore(object):
 
             if count >= 3:
                 """click triple develop"""
-                kca_u.kca.click_existing(kca_u.kca.r["use_item_region"],"factory|do_not_use.png")
+                kca_u.kca.r["use_item_region"].click()
+                kca_u.kca.sleep
                 count -= 3
             else:
                 count -= 1
