@@ -6,6 +6,7 @@ import fleet.fleet_core as flt
 import util.click_tracker as clt
 from stats.combat import CombatStats
 from stats.expedition import ExpeditionStats
+from stats.factory import FactoryStats
 from stats.pvp import PvPStats
 from stats.quest import QuestStats
 from stats.rsc import ResourceStats
@@ -23,6 +24,7 @@ class Stats(object):
     loop_count = None
     combat = None
     expedition = None
+    factory = None
     pvp = None
     ship_switcher = None
     resupply = None
@@ -38,6 +40,7 @@ class Stats(object):
         self.loop_count = 0
         self.combat = CombatStats(self.start_time)
         self.expedition = ExpeditionStats(self.start_time)
+        self.factory = FactoryStats(self.start_time)
         self.pvp = PvPStats(self.start_time)
         self.ship_switcher = ShipSwitcherStats(self.start_time)
         self.resupply = ResupplyStats(self.start_time)
