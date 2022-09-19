@@ -274,6 +274,37 @@ class Kca(object):
             'formation_combined_fleet_3', x + 640, y + 445, 215, 45)
         self._create_or_shift_region(
             'formation_combined_fleet_4', x + 890, y + 445, 215, 45)
+        # factory-related regions
+        self._create_or_shift_region(
+            "order_confirm_region", x + 975, y + 635, 200, 50)
+        self._create_or_shift_region(
+            "use_item_region", x + 635, y + 580, 100, 20)
+        self._create_or_shift_region(
+            "develop_region", x + 215, y + 480, 200, 50)
+        self._create_or_shift_region(
+            "order_oil_region_1", x + 547, y + 227, 10, 5)
+        self._create_or_shift_region(
+            "order_oil_region_10", x + 742, y + 207, 5, 5)
+        self._create_or_shift_region(
+            "order_oil_region_100", x + 742, y + 247, 5, 5)
+        self._create_or_shift_region(
+            "order_ammo_region_1", x + 547, y + 422, 10, 5)
+        self._create_or_shift_region(
+            "order_ammo_region_10", x + 742, y + 407, 5, 5)
+        self._create_or_shift_region(
+            "order_ammo_region_100", x + 742, y + 447, 5, 5)
+        self._create_or_shift_region(
+            "order_steel_region_1", x + 887, y + 227, 10, 5)
+        self._create_or_shift_region(
+            "order_steel_region_10", x + 1082, y + 207, 5, 5)
+        self._create_or_shift_region(
+            "order_steel_region_100", x + 1082, y + 247, 5, 5)
+        self._create_or_shift_region(
+            "order_bauxite_region_1", x + 887, y + 422, 10, 5)
+        self._create_or_shift_region(
+            "order_bauxite_region_10", x + 1082, y + 407, 5, 5)
+        self._create_or_shift_region(
+            "order_bauxite_region_100", x + 1082, y + 447, 5, 5)
 
     def _create_or_shift_region(self, key, x, y, w, h):
         """Helper method for generating or shifting an existing Region's x

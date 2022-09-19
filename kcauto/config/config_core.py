@@ -10,6 +10,7 @@ from config.general import ConfigGeneral
 from config.passive_repair import ConfigPassiveRepair
 from config.pvp import ConfigPvP
 from config.quest import ConfigQuest
+from config.factory import ConfigFactory
 from config.scheduler import ConfigScheduler
 from config.ship_switcher import ConfigShipSwitcher
 from util.json_data import JsonData
@@ -27,6 +28,7 @@ class Config(object):
     ship_switcher = None
     passive_repair = None
     quest = None
+    factory = None
     scheduler = None
 
     def __init__(self):
@@ -68,6 +70,7 @@ class Config(object):
             new_ship_switcher = ConfigShipSwitcher(config_json)
             new_passive_repair = ConfigPassiveRepair(config_json)
             new_quest = ConfigQuest(config_json)
+            new_factory = ConfigFactory(config_json)
             new_scheduler = ConfigScheduler(config_json)
             update = True
         except Exception as e:
@@ -90,6 +93,7 @@ class Config(object):
             self.ship_switcher = new_ship_switcher
             self.passive_repair = new_passive_repair
             self.quest = new_quest
+            self.factory = new_factory
             self.scheduler = new_scheduler
             self.last_cfg_update_time = new_update_time
             return True

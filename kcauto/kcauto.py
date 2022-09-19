@@ -1,4 +1,5 @@
 import combat.combat_core as com
+import factory.factory_core as fty
 import config.config_core as cfg
 import expedition.expedition_core as exp
 import fleet_switcher.fleet_switcher_core as fsw
@@ -186,6 +187,33 @@ class Kcauto(object):
             sts.stats.quest.times_checked += 1
             self.handle_home_after(home_after)
             sts.stats.set_print_loop_end_stats()
+
+    def run_factory_logic(self):
+
+        self.find_kancolle()
+        self.fast_check_for_expedition()
+        #self.run_quest_logic('factory', fast_check=False)
+        fty.factory.goto()
+        fty.factory.develop_logic(1)
+        self.run_quest_logic('factory', fast_check=True, home_after=True)
+        """ 
+        fty.factory.goto()
+        fty.factory.build_logic(oil, ammo, steel, bauxite, count)
+        self.run_quest_logic('factory', fast_check=True, home_after=True)
+        """
+        fty.factory.goto()
+        fty.factory.develop_logic(3)
+        self.run_quest_logic('factory', fast_check=True, home_after=True)
+        
+        """
+        fty.factory.goto()
+        fty.factory.build_logic(oil, ammo, steel, bauxite, count)
+        self.run_quest_logic('factory', fast_check=True, home_after=True)
+        """
+
+
+        
+         
 
     def handle_home_after(self, home_after):
         if home_after:
