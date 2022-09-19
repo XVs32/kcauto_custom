@@ -276,6 +276,14 @@ class Kca(object):
             'formation_combined_fleet_4', x + 890, y + 445, 215, 45)
         # factory-related regions
         self._create_or_shift_region(
+            "build_slot_1_stat_region", x + 595, y + 180, 150, 60)
+        self._create_or_shift_region(
+            "build_slot_2_stat_region", x + 595, y + 305, 150, 60)
+        self._create_or_shift_region(
+            "build_slot_1_region", x + 900, y + 260, 60, 15)
+        self._create_or_shift_region(
+            "build_slot_2_region", x + 900, y + 380, 60, 15)
+        self._create_or_shift_region(
             "order_confirm_region", x + 975, y + 635, 200, 50)
         self._create_or_shift_region(
             "use_item_region", x + 635, y + 580, 100, 20)
