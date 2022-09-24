@@ -77,10 +77,6 @@ class ShipSwitcherCore(object):
         
         ship_list = self._local_ships_sorted_by_levels
         
-        print("//////////////////////////_local_ships_sorted_by_levels/////////////////////")
-        print(ship_list)
-        print("////////////////////////////_local_ships_sorted_by_levels/////////////////////")
-        
         """For all 6 slots -- XVs32"""
         for i in range(1,7):
             
