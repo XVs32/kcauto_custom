@@ -198,38 +198,41 @@ class Kcauto(object):
         self.run_quest_logic('factory', fast_check=False)
         nav.navigate.to('home')
 
-        if sts.stats.factory.current_phase() == 0:
+        anything_is_done = False
+
+        if "F5" in qst.quest.next_check_intervals.keys():
+            anything_is_done = True
             fty.factory.goto()
             if fty.factory.develop_logic(1) == True:
                 self.run_quest_logic('factory', fast_check=True, home_after=True, force=True)
                 nav.navigate.to('home')
-                sts.stats.factory.next_phase()
 
-        print(sts.stats.factory.work_phase)
-        print(sts.stats.factory.current_phase())
-
-        if sts.stats.factory.current_phase() == 1:
+        if "F6" in qst.quest.next_check_intervals.keys():
+            anything_is_done = True
             fty.factory.goto()
             if fty.factory.build_logic(1) == True:
                 self.run_quest_logic('factory', fast_check=True, home_after=True, force=True)
                 nav.navigate.to('home')
-                sts.stats.factory.next_phase()
 
-        if sts.stats.factory.current_phase() == 2:
+        if "F7" in qst.quest.next_check_intervals.keys():
+            anything_is_done = True
             fty.factory.goto()
             if fty.factory.develop_logic(3) == True:
                 self.run_quest_logic('factory', fast_check=True, home_after=True, force=True)
                 nav.navigate.to('home')
-                sts.stats.factory.next_phase()
         
-        if sts.stats.factory.current_phase() == 3:
+        if "F8" in qst.quest.next_check_intervals.keys():
+            anything_is_done = True
             fty.factory.goto()
-            if fty.factory.build_logic(3) == True:
-                self.run_quest_logic('factory', fast_check=True, home_after=True, force=True)
-                nav.navigate.to('home')
-                sts.stats.factory.next_phase()
-                """Daily factory process done, disable from now"""
-                fty.factory.enabled = False
+            """If F8 is already 80% done, one more build could finish the quest"""
+            """Therefore, no if == True here"""
+            fty.factory.build_logic(3)
+            self.run_quest_logic('factory', fast_check=True, home_after=True, force=True)
+            nav.navigate.to('home')
+
+        if anything_is_done == False:
+            """Daily factory process done, disable from now"""
+            fty.factory.enabled = False
 
     def handle_home_after(self, home_after):
         if home_after:
