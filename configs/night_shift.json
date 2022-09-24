@@ -13,6 +13,9 @@
   "expedition.fleet_4": [
     24
   ],
+  "factory.enabled":	false,
+  "factory.develop_recipe":	[10,10,10,10],
+  "factory.build_recipe":		[30, 30, 30, 30],
   "pvp.enabled": false,
   "pvp.fleet_preset": 3,
   "combat.enabled": false,
