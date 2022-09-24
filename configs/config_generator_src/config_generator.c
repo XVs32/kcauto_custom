@@ -8,6 +8,7 @@
 #include "expedition.h"
 #include "pvp.h"
 #include "combat.h"
+#include "factory.h"
 
 char BASE_PATH[500];
 
@@ -73,6 +74,14 @@ int main(int argc, const char * argv[]) {
     }
 
 
+    /////////////////////////start factory/////////////////////////////////////
+    int factory_enable = 0;
+    printf("Fleet #%d expedition destination?\n",i+2);
+    printf("0 -- Disable\n");
+    printf("1 -- Enable\n");
+    scanf("%d",&factory_enable);
+    factory(root, factory_enable);
+    /////////////////////////end factory/////////////////////////////////////
     /////////////////////////start expedition/////////////////////////////////////
     
     int fleet_dst[5];

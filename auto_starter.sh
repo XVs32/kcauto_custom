@@ -45,11 +45,11 @@ get_resources(){
 }
 
 start_up(){
-    echo ${EXP[0]} ${EXP[1]} ${EXP[2]} $PVP $1 $2 $3 $STOP $PRESET | $BASEDIR/start_up.sh
+    echo $FACTORY ${EXP[0]} ${EXP[1]} ${EXP[2]} $PVP $1 $2 $3 $STOP $PRESET | $BASEDIR/start_up.sh
 }
 
 5_2_C(){
-    echo ${EXP[0]} ${EXP[1]} ${EXP[2]} $PVP 8 8 $1 1 0 | $BASEDIR/start_up.sh
+    echo $FACTORY ${EXP[0]} ${EXP[1]} ${EXP[2]} $PVP 8 8 $1 1 0 | $BASEDIR/start_up.sh
 }
 
 drop(){
@@ -98,6 +98,7 @@ fi
 STOP=1
 PVP=3
 PRESET=0
+FACTORY=1
 
 case $WEEKDAY in
     1)

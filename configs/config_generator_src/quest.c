@@ -69,6 +69,11 @@ void quest(cJSON *root, int *expedition_dst, int pvp_preset, char *sortie_map){
     cJSON_AddItemToObject(quests, "", cJSON_CreateString("E3"));
     cJSON_AddItemToObject(quests, "", cJSON_CreateString("E4"));
 
+    cJSON_AddItemToObject(quests, "", cJSON_CreateString("F5"));
+    cJSON_AddItemToObject(quests, "", cJSON_CreateString("F6"));
+    cJSON_AddItemToObject(quests, "", cJSON_CreateString("F7"));
+    cJSON_AddItemToObject(quests, "", cJSON_CreateString("F8"));
+
     return; //disable costom quest list, see what's gonna happen
 
     if(sortie_map[0] != '0'){
