@@ -125,9 +125,6 @@ class ShipSwitchRule(object):
                     return True
             return False
         
-        print("flt.fleets.ships_in_fleets")
-        print(flt.fleets.ships_in_fleets)
-        
         if ship.local_id in flt.fleets.ships_in_fleets:
             return False
         """load the ship even if it is under repair -- XVs32"""
