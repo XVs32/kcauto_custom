@@ -421,10 +421,23 @@ class CombatCore(CoreBase):
 
     def _resolve_formation_prompt(self):
         Log.log_debug("Resolving formation prompt.")
+
         formation = (
             FormationEnum.COMBINED_FLEET_4
             if flt.fleets.combined_fleet
-            else FormationEnum.LINE_AHEAD)
+            else FormationEnum.VANGUARD)
+            
+        # if vanguard is not availible(not during a event)
+        if not (kca_u.kca.exists(
+                        'formation_vanguard',
+                        'fleet|formation_vanguard.png')
+            or kca_u.kca.exists(
+                        'formation_combined_fleet_4',
+                        'fleet|formation_combined_fleet_4.png')):
+            formation = (
+                FormationEnum.COMBINED_FLEET_4
+                if flt.fleets.combined_fleet
+                else FormationEnum.LINE_AHEAD)
 
         if self.current_node.name in cfg.config.combat.node_formations:
             Log.log_debug("Formation specified in config")
@@ -450,6 +463,12 @@ class CombatCore(CoreBase):
                 FormationEnum.COMBINED_FLEET_3
                 if flt.fleets.combined_fleet
                 else FormationEnum.DIAMOND)
+        elif self.current_node.boss_node:
+            Log.log_debug("Node is air node")
+            formation = (
+                FormationEnum.COMBINED_FLEET_4
+                if flt.fleets.combined_fleet
+                else FormationEnum.LINE_AHEAD)
 
         Log.log_msg(f"Selecting formation {formation.display_name}.")
         kca_u.kca.click_existing(
@@ -664,6 +683,10 @@ class CombatCore(CoreBase):
         self.nodes_run.append(next_node)
 
     def _get_next_node_from_edge(self, edge):
+        print("edge")
+        print(edge)
+        print("map_data.edges")
+        print(self.map_data.edges)
         return self.map_data.edges[edge][1]
 
 
