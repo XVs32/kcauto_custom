@@ -76,7 +76,7 @@ int main(int argc, const char * argv[]) {
 
     /////////////////////////start factory/////////////////////////////////////
     int factory_enable = 0;
-    printf("Fleet #%d expedition destination?\n",i+2);
+    printf("Fleet #%d auto factory?\n",i+2);
     printf("0 -- Disable\n");
     printf("1 -- Enable\n");
     scanf("%d",&factory_enable);
