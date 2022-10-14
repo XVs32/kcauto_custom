@@ -1,4 +1,5 @@
 import os
+from sys import path_hooks
 import PyChromeDevTools
 from datetime import datetime, timedelta
 from pyvisauto import Region, FindFailed, ImageMatch
@@ -481,12 +482,14 @@ class Kca(object):
             pad (tuple, optional): click region modifier. Defaults to
                 (0, 0, 0, 0).
         """
+        print("click is called")
         r = self._get_region(region)
         if (cfg.config.general.interaction_mode
                 is InteractionModeEnum.DIRECT_CONTROL):
             r.click(pad=pad)
         elif (cfg.config.general.interaction_mode
                 is InteractionModeEnum.CHROME_DRIVER):
+            print("google click is called")
             self._chrome_driver_click_method(region, pad)
 
     def click_existing(
@@ -656,7 +659,14 @@ class Kca(object):
         y_pad = game_y
         x = randint(r.x - x_pad - pad[3], r.x + r.w - x_pad + pad[1])
         y = randint(r.y - y_pad - pad[0], r.y + r.h - y_pad + pad[2])
-        self.visual_hook.Input.synthesizeTapGesture(x=x, y=y)
+
+        # @todo WARNNING!!!! 
+        # Hard coded until I can find a way to get the winodws bounding
+        css_x = 0
+        css_y = 136 
+
+        print(x + game_x - css_x ,y + game_y - css_y)
+        self.visual_hook.Input.synthesizeTapGesture(x=x, y=y + game_y - 136)
 
 
 kca = Kca()

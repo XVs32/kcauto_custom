@@ -41,7 +41,8 @@
             "types": ["sub"]
     },
         "K": {
-            "coords": [ 779,  342]
+            "coords": [ 779,  342],
+            "types": ["select"]
     },
         "L": {
             "coords": [ 749,  408],
