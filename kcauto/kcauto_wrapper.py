@@ -20,6 +20,8 @@ def kcauto_main():
             # startup methods
             _.kcauto.start_kancolle()
             _.kcauto.find_kancolle()
+            _.kcauto.find_dmm()
+
             while kca_loop:
                 # primary logic
                 _.kcauto.hook_health_check()

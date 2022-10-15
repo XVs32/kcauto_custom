@@ -66,17 +66,14 @@ class FactoryCore(object):
                 resource = resource_list[i]
                 resource -= 10
                 while resource >= 100:
-                    print(self.order_resource_region[i][100])
                     kca_u.kca.r[self.order_resource_region[i][100]].click()
                     kca_u.kca.sleep
                     resource -= 100
                 while resource >= 10:
-                    print(self.order_resource_region[i][10])
                     kca_u.kca.r[self.order_resource_region[i][10]].click()
                     kca_u.kca.sleep
                     resource -= 10
                 while resource >= 1:
-                    print(self.order_resource_region[i][1])
                     kca_u.kca.r[self.order_resource_region[i][1]].click()
                     kca_u.kca.sleep
                     resource -= 1
@@ -149,17 +146,14 @@ class FactoryCore(object):
                         resource = resource_list[i]
                         resource -= 30
                         while resource >= 100:
-                            print(self.order_resource_region[i][100])
                             kca_u.kca.r[self.order_resource_region[i][100]].click()
                             kca_u.kca.sleep
                             resource -= 100
                         while resource >= 10:
-                            print(self.order_resource_region[i][10])
                             kca_u.kca.r[self.order_resource_region[i][10]].click()
                             kca_u.kca.sleep
                             resource -= 10
                         while resource >= 1:
-                            print(self.order_resource_region[i][1])
                             kca_u.kca.r[self.order_resource_region[i][1]].click()
                             kca_u.kca.sleep
                             resource -= 1
