@@ -233,6 +233,29 @@ class Fleet(object):
         Log.log_debug(f"Visual health check results: {self.visual_health}")
         return self.visual_health
 
+    def get_fleet_id_and_name(self):
+        print("Fleet data:")
+
+        ship_type = self.ship_data[0].ship_type.name
+        for ship in self.ship_data:
+            if ship.ship_type.name != ship_type:
+                ship_type = ""
+                break
+        print("\t\"" + ship_type + "\":" , end ="\t")
+
+        print("[" , end ="")
+        for ship in self.ship_data:
+            print(str(ship.sortno) + ",", end ="")
+        print("\b],")
+
+        print("\t\"" + ship_type + "_NAME\":" , end ="")
+        print("[" , end ="")
+        for ship in self.ship_data:
+            print("\"" + ship.name_jp + "\",", end ="")
+        print("\b],")
+
+        return
+
     def __str__(self):
         if self.fleet_type == 'combat':
             return self.combat_fleet_status
