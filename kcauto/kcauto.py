@@ -31,6 +31,9 @@ class Kcauto(object):
 
     def find_kancolle(self):
         kca_u.kca.find_kancolle()
+    
+    def find_dmm(self):
+        kca_u.kca.find_dmm()
 
     def hook_health_check(self):
         kca_u.kca.hook_health_check()

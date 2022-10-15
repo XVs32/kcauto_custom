@@ -25,6 +25,8 @@ class Kca(object):
     ASSETS_FOLDER = 'assets'
     visual_hook = None
     api_hook = None
+    css_x = None
+    css_y = None
     game_x = None
     game_y = None
     last_ui = None
@@ -128,6 +130,28 @@ class Kca(object):
         self.sleep()
 
         return True
+
+    def find_dmm(self):
+        """Method that finds the dmm logo on-screen and provide the offset for chrome driver"""
+        Log.log_msg("Finding DMM.")
+        screen = Region()
+
+        try:
+            dmm_logo = self.find(
+                screen, f'global|dmm_logo.png')
+        except FindFailed:
+            Log.log_error("Could not find dmm reference point.")
+            raise FindFailed()
+
+        print(dmm_logo.x)
+        print(dmm_logo.y)
+
+        self.css_x = dmm_logo.x - 38
+        self.css_y = dmm_logo.y - 8
+
+        return True
+
+
 
     def find_kancolle(self):
         """Method that finds the Kancolle game on-screen and determine the UI
@@ -482,14 +506,12 @@ class Kca(object):
             pad (tuple, optional): click region modifier. Defaults to
                 (0, 0, 0, 0).
         """
-        print("click is called")
         r = self._get_region(region)
         if (cfg.config.general.interaction_mode
                 is InteractionModeEnum.DIRECT_CONTROL):
             r.click(pad=pad)
         elif (cfg.config.general.interaction_mode
                 is InteractionModeEnum.CHROME_DRIVER):
-            print("google click is called")
             self._chrome_driver_click_method(region, pad)
 
     def click_existing(
@@ -665,7 +687,6 @@ class Kca(object):
         css_x = 0
         css_y = 136 
 
-        print(x + game_x - css_x ,y + game_y - css_y)
         self.visual_hook.Input.synthesizeTapGesture(x=x, y=y + game_y - 136)
 
 
