@@ -26,9 +26,6 @@ class ShipSwitcherCore(object):
 
     def _intake_rules(self, slot_rules):
         
-        Log.log_debug("print slot_rules")
-        print(slot_rules)
-        
         self.rules = {}
         for slot_id in slot_rules:
             self.rules[slot_id] = ShipSwitchRule(slot_id, slot_rules[slot_id])
