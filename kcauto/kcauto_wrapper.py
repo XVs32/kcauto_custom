@@ -28,6 +28,7 @@ def kcauto_main():
 
                     _.kcauto.initialization_check()
                     _.kcauto.check_for_expedition()
+                    _.kcauto.run_print_fleet_logic()
                     _.kcauto.run_quest_logic(home_after=True)
                     _.kcauto.run_expedition_logic()
                     _.kcauto.run_resupply_logic(home_after=True)
