@@ -3,6 +3,7 @@ import factory.factory_core as fty
 import config.config_core as cfg
 import expedition.expedition_core as exp
 import fleet_switcher.fleet_switcher_core as fsw
+import fleet.fleet_core as flt
 import nav.nav as nav
 import pvp.pvp_core as pvp
 import quest.quest_core as qst
@@ -20,6 +21,7 @@ class Kcauto(object):
     """Primary kcauto class.
     """
     end_loop_at_port = False
+    is_first_print_fleet = True
 
     def __init__(self):
         kca_u.kca.hook_chrome(port=cfg.config.general.chrome_dev_port)
@@ -56,6 +58,16 @@ class Kcauto(object):
                 nav.navigate.to('refresh_home')
                 exp.expedition.receive_expedition()
                 sts.stats.set_print_loop_end_stats()
+
+    def run_print_fleet_logic(self):
+
+        if not com.combat.enabled and self.is_first_print_fleet:
+            self.is_first_print_fleet = False
+            nav.navigate.to('refresh_home')
+            flt.fleets.fleets[1].get_fleet_id_and_name()
+        else:
+            return False
+
 
     def fast_check_for_expedition(self):
         exp.expedition.receive_expedition()
@@ -160,6 +172,8 @@ class Kcauto(object):
             fsw.fleet_switcher.goto()
             fsw.fleet_switcher.switch_fleet(context)
             self.handle_home_after(True)
+
+    
 
     def run_shipswitch_logic(self, home_after=False):
         

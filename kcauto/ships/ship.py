@@ -10,6 +10,7 @@ from util.kc_time import KCTime
 
 class Ship(object):
     _name = None
+    _name_jp = None
     api_id = None
     sortno = None
     sort_id = None
@@ -39,6 +40,7 @@ class Ship(object):
                 self.sortno = ship['api_sortno']
                 self.sort_id = ship['api_sort_id']
                 self.name = ship['api_name']
+                self.name_jp = ship['api_name']
                 self.ship_type = ShipTypeEnum(ship['api_stype'])
                 self.ammo_max = ship['api_bull_max']
                 self.fuel_max = ship['api_fuel_max']
@@ -68,6 +70,16 @@ class Ship(object):
             elif name_db_entry['jp']:
                 value = name_db_entry['jp']
         self._name = value
+
+    @property
+    def name_jp(self):
+        return self._name_jp
+    @name_jp.setter
+    def name_jp(self, value):
+        if self.api_id in shp.ships.name_db:
+            name_db_entry = shp.ships.name_db[self.api_id]
+            self._name_jp = name_db_entry['jp']
+
 
     @property
     def hp_p(self):
