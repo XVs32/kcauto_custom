@@ -512,7 +512,7 @@ class Kca(object):
             r.click(pad=pad)
         elif (cfg.config.general.interaction_mode
                 is InteractionModeEnum.CHROME_DRIVER):
-            self._chrome_driver_click_method(region, pad)
+            self._chrome_driver_click_method(r, pad)
 
     def click_existing(
             self, region, asset, similarity=DEFAULT, pad=(0, 0, 0, 0),
