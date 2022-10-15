@@ -683,10 +683,6 @@ class CombatCore(CoreBase):
         self.nodes_run.append(next_node)
 
     def _get_next_node_from_edge(self, edge):
-        print("edge")
-        print(edge)
-        print("map_data.edges")
-        print(self.map_data.edges)
         return self.map_data.edges[edge][1]
 
 
