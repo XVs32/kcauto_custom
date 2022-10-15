@@ -47,12 +47,7 @@ venv.bak/
 *.npz
 *.json
 data/temp/*.json
-!configs/*.json
 !data/combat/*.json
 !data/combat/*/*.json
 !data/quests/*.json
 reference/
-
-configs/fleet_preset.json
-configs/config.json
-temp.txt
