@@ -53,8 +53,9 @@ start_up(){
 }
 
 drop(){
-    PRESET=0
-    start_up 2 3 $1 
+    #PRESET=0
+    #start_up 6 4 $1 
+    python3.7 $BASEDIR/kcauto --cli --cfg drop
 }
 
 night_shift(){
