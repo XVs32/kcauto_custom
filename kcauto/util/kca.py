@@ -146,8 +146,8 @@ class Kca(object):
         print(dmm_logo.x)
         print(dmm_logo.y)
 
-        self.css_x = dmm_logo.x - 38
-        self.css_y = dmm_logo.y - 8
+        self.css_x = dmm_logo.x
+        self.css_y = dmm_logo.y
 
         return True
 
@@ -675,19 +675,16 @@ class Kca(object):
             self.visual_hook.Page.getLayoutMetrics()[
                 'result']['layoutViewport']['clientWidth'])
         # 692,557 is the offset for the game start button
-        game_x = self.game_x if self.game_x else r.x - 692
-        game_y = self.game_y if self.game_y else r.y - 557
-        x_pad = game_x - ((layout_width - GAME_W) // 2)
-        y_pad = game_y
-        x = randint(r.x - x_pad - pad[3], r.x + r.w - x_pad + pad[1])
-        y = randint(r.y - y_pad - pad[0], r.y + r.h - y_pad + pad[2])
+        # game_x = self.game_x if self.game_x else r.x - 692
+        # game_y = self.game_y if self.game_y else r.y - 557
+        # x_pad = game_x - ((layout_width - GAME_W) // 2)
+        # y_pad = game_y
+        offset_x = randint(-pad[3], r.w + pad[1])
+        offset_y = randint(-pad[0], r.h + pad[2])
+        x = r.x - self.css_x
+        y = r.y - self.css_y
 
-        # @todo WARNNING!!!! 
-        # Hard coded until I can find a way to get the winodws bounding
-        css_x = 0
-        css_y = 136 
-
-        self.visual_hook.Input.synthesizeTapGesture(x=x, y=y + game_y - 136)
+        self.visual_hook.Input.synthesizeTapGesture(x= x + offset_x , y=y + offset_y)
 
 
 kca = Kca()
