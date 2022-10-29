@@ -1,6 +1,6 @@
 {
   "general.jst_offset": 0,
-  "general.interaction_mode": "direct_control",
+  "general.interaction_mode": "chrome_driver",
   "general.chrome_dev_port": 9222,
   "general.paused": false,
   "expedition.enabled": false,

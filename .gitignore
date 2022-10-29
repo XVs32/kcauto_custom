@@ -50,4 +50,5 @@ data/temp/*.json
 !data/combat/*.json
 !data/combat/*/*.json
 !data/quests/*.json
+!configs/template/*.json
 reference/
