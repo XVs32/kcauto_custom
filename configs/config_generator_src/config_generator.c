@@ -16,7 +16,8 @@ void init(cJSON *root){
 
     
     cJSON_AddNumberToObject(root, "general.jst_offset", 0);
-    cJSON_AddStringToObject(root, "general.interaction_mode", "direct_control");
+    cJSON_AddStringToObject(root, "general.interaction_mode", "chrome_driver");
+    //cJSON_AddStringToObject(root, "general.interaction_mode", "direct_control");
     cJSON_AddNumberToObject(root, "general.chrome_dev_port", 9222);
     cJSON_AddBoolToObject(root, "general.paused", 0);
     
