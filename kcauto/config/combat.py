@@ -86,9 +86,18 @@ class ConfigCombat(ConfigBase):
 
     @sortie_map.setter
     def sortie_map(self, value):
+        """ 
+            Method that set the value of _sortie_map
+        
+            args: 
+                value (str): The Id of a map, ex 1-1, 3-5, 6-4 
+        """
+        print("hit")
+        print(value)
         if not MapEnum.contains_value(value):
             raise ValueError("Invalid map specified")
         self._sortie_map = MapEnum(value)
+
 
     @property
     def fleet_mode(self):
