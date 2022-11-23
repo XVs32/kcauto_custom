@@ -5,6 +5,7 @@ class MapEnum(EnumBase):
     W1_1, W1_2, W1_3, W1_4, W1_5 = '1-1', '1-2', '1-3', '1-4', '1-5'
     W1_6 = '1-6'
     W2_1, W2_2, W2_3, W2_4, W2_5 = '2-1', '2-2', '2-3', '2-4', '2-5'
+    W2_2_C = '2-2-C'
     W3_1, W3_2, W3_3, W3_4, W3_5 = '3-1', '3-2', '3-3', '3-4', '3-5'
     W4_1, W4_2, W4_3, W4_4, W4_5 = '4-1', '4-2', '4-3', '4-4', '4-5'
     W5_1, W5_2, W5_3, W5_4, W5_5 = '5-1', '5-2', '5-3', '5-4', '5-5'
@@ -29,3 +30,7 @@ class MapEnum(EnumBase):
     @property
     def map(self):
         return int(self.value.split('-')[1])
+
+    @property
+    def world_and_map(self):
+        return self.value.split('-')[0] + "-" + self.value.split('-')[1] 
