@@ -61,15 +61,49 @@ class CombatCore(CoreBase):
     rescued_ships = []
     boss_api = False
     map_cleared = False
+    sortie_queue = []
+   
+    def __init__(self, sortie_map = ""):
+        """
+            Method to init combat module
+            Args:
+                sortie_map (str): The current sortie map, ex: "3-5"
+        """
 
-    def __init__(self):
-        self.update_from_config()
+        """If config did not specify sortie map, then it is auto select sortie map mode"""
+        if cfg.config.combat.sortie_map == MapEnum.auto_map_selete:
+            self.update_from_combat_map(sortie_map)
+        else:
+            self.update_from_config()
 
+ 
     def update_from_config(self):
         super().update_from_config()
         if self.enabled:
             self._load_map_data(cfg.config.combat.sortie_map)
             self.set_next_sortie_time()
+
+    def update_from_combat_map(self, value):
+        """
+            Method to update the utility data for combat module
+            only runs in auto select sortie map mode
+            
+            Args:
+                value (str): The current sortie map, ex: "3-5"
+            """
+        """The map has not been selected yet, it will be selected by auto map select in quest module"""
+        if value == "":
+            return 
+
+        super().update_from_config()
+
+        if self.enabled:
+            self._load_map_data(MapEnum(value))
+            self.set_next_sortie_time()
+        else:
+            raise ValueError("Using auto select sortie map mode but combat module disabled")
+
+
 
     def update_combat_map_list(self, data):
         Log.log_debug("Updating Combat map data from API.")
@@ -684,6 +718,20 @@ class CombatCore(CoreBase):
 
     def _get_next_node_from_edge(self, edge):
         return self.map_data.edges[edge][1]
+
+    def set_sortie_queue(self, sortie_queue):
+        """
+            method for other modules to set the sortie_queue in combat module
+            Args:
+                sortie_queue (str list): A list of sortie_map, ex: ["1-1", "2-3"]
+        """
+        self.sortie_queue = sortie_queue
+
+    def get_sortie_queue(self):
+        """
+            method for other modules to read the sortie_queue in combat module
+        """
+        return self.sortie_queue
 
 
 combat = CombatCore()
