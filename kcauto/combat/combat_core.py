@@ -184,19 +184,19 @@ class CombatCore(CoreBase):
                 f"{KCTime.datetime_to_str(self.next_sortie_time)}")
 
     def _validate_sortie_map(self, sortie_map):
-        if sortie_map.value in self.available_maps:
+        if sortie_map.world_and_map in self.available_maps:
             return True
         return False
 
     @property
     def _sortie_map_is_cleared(self):
-        if self.available_maps[cfg.config.combat.sortie_map.value]['cleared']:
+        if self.available_maps[cfg.config.combat.sortie_map.world_and_map]['cleared']:
             return True
         return False
 
     def _load_map_data(self, sortie_map):
-        if self.map_data is None or self.map_data.name != sortie_map.value:
-            data = JsonData.load_json(f'data|combat|{sortie_map.value}.json')
+        if self.map_data is None or self.map_data.name != sortie_map.world_and_map:
+            data = JsonData.load_json(f'data|combat|{sortie_map.world_and_map}.json')
             self.map_data = MapData(sortie_map, data)
 
     @property
@@ -210,10 +210,10 @@ class CombatCore(CoreBase):
 
     def _conduct_sortie(self, sortie_map):
         if not self._validate_sortie_map(sortie_map):
-            Log.log_warn(f"Map {sortie_map.value} is not available.")
+            Log.log_warn(f"Map {sortie_map.world_and_map} is not available.")
             return False
         if cfg.config.combat.clear_stop and self._sortie_map_is_cleared:
-            Log.log_msg(f"Map {sortie_map.value} has been cleared.")
+            Log.log_msg(f"Map {sortie_map.world_and_map} has been cleared.")
             self.enabled = False
             return False
         self._select_world(sortie_map)
@@ -253,7 +253,7 @@ class CombatCore(CoreBase):
             kca_u.kca.click_existing('right', 'combat|c_world_eo_arrow.png')
         kca_u.kca.r['top'].hover()
         kca_u.kca.click_existing(
-            'kc', f'combat|c_world_{sortie_map.value}.png')
+            'kc', f'combat|c_world_{sortie_map.world_and_map}.png')
         kca_u.kca.r['top'].hover()
 
     def _select_event_map(self, sortie_map):
@@ -267,7 +267,7 @@ class CombatCore(CoreBase):
                 cur_page += 1
         kca_u.kca.r['top'].hover()
         kca_u.kca.click_existing(
-            'kc', f'combat|_event_world_{sortie_map.value}.png')
+            'kc', f'combat|_event_world_{sortie_map.world_and_map}.png')
         if erst.reset.need_to_reset:
             erst.reset.reset_event_difficulty()
         else:
