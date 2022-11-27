@@ -29,8 +29,27 @@ class ShipSwitcherCore(object):
         self.rules = {}
         for slot_id in slot_rules:
             self.rules[slot_id] = ShipSwitchRule(slot_id, slot_rules[slot_id])
-    
 
+
+    def switch_slot_by_id(self, slot, ship_local_id):
+        """
+            method to switch a slot to a specified ship
+            Args:
+                slot(int): The slot to switch, index starts from one
+                ship_local_id(int): The target ship production id
+        """
+        self._select_switch_button(slot)
+        if ship_local_id == 99999:
+            """Remove ship in this slot"""
+            self._select_remove_button()
+        else:
+            ship_idx = self._get_ship_idx_by_local_id(ship_local_id)
+            kca_u.kca.sleep(1)
+            self._reset_shiplist()
+            self._select_replacement_ship(ship_idx)
+            kca_u.kca.sleep()
+            self._switch_ship()
+        return
 
     def switch_ships(self, switch_list):
         
@@ -51,7 +70,7 @@ class ShipSwitcherCore(object):
             self._reset_shiplist()
             self._select_replacement_ship(switch_info["idx"], switch_info["ship"])
             kca_u.kca.sleep()
-            if self._switch_ship(switch_info["ship"]):
+            if self._switch_ship():
                 sts.stats.ship_switcher.ships_switched += 1
         
         """Check if next combat possible, since new ship is switched in"""
@@ -103,7 +122,17 @@ class ShipSwitcherCore(object):
             Log.log_msg("Need to switch ships.")
             
         return switch_list
-    
+
+    def _get_ship_idx_by_local_id(self, local_id = 0):
+
+        ship_list = self._local_ships_sorted_by_levels
+
+        for i in range(len(ship_list)):
+            if ship_list[i].local_id == local_id:
+                return i
+
+        raise ValueError("Can not find the specified ship")
+
     def _find_replacement_ship(self, rule, ship_list):
         
         for idx, ship in enumerate(ship_list):
@@ -157,14 +186,17 @@ class ShipSwitcherCore(object):
                 cached=True)
             kca_u.kca.sleep(0.1)
 
-    def _select_replacement_ship(self, ship_idx, ship):
+    def _select_replacement_ship(self, ship_idx, ship = None):
         
         """ship_idx // 10 gives 0 when ship_idx < 10, the "if" statement is not needed---XVs32"""
         """target_page = (ship_idx // 10) + 1 if ship_idx > 9 else 1"""
         target_page = (ship_idx // 10) + 1
-        Log.log_msg(
-            f"Selecting lvl{ship.level} {ship.name} "
-            f"(pg{target_page}#{ship_idx}).")
+        if ship == None:
+            Log.log_msg(f"Selecting {ship_idx}")
+        else:
+            Log.log_msg(
+                f"Selecting lvl{ship.level} {ship.name} "
+                f"(pg{target_page}#{ship_idx}).")
         
         """Floor division gives 9 pages when ship count == 96, which should be 10 pages ---XVs32"""
         """tot_pages = shp.ships.current_ship_count // 10"""
@@ -191,7 +223,7 @@ class ShipSwitcherCore(object):
         kca_u.kca.wait(
             'lower_right', 'shipswitcher|shiplist_shipswitch_button.png')
 
-    def _switch_ship(self, ship):
+    def _switch_ship(self):
         if kca_u.kca.click_existing(
                 'lower_right', 'shipswitcher|shiplist_shipswitch_button.png',
                 cached=True):
@@ -210,6 +242,7 @@ class ShipSwitcherCore(object):
         temp_list = sorted(
             [s for s in temp_list],
             key=lambda s: s.level, reverse=True)
+
         return temp_list
 
     @property
