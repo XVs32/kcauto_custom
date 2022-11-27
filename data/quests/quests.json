@@ -2,208 +2,324 @@
   "Bd1": {
     "id": 201,
     "type": "daily",
-    "intervals": [1, 0, 0]
+    "intervals": [1, 0, 0],
+    "recommended_map": ["5-2-C"]
   },
   "Bd2": {
     "id": 216,
     "type": "daily",
-    "intervals": [1, 0, 0]
+    "intervals": [1, 0, 0],
+    "recommended_map": ["5-2-C"]
   },
   "Bd3": {
     "id": 210,
     "type": "daily",
-    "intervals": [5, 0, 0]
+    "intervals": [5, 0, 0],
+    "recommended_map": ["5-2-C"]
   },
   "Bd4": {
     "id": 211,
     "type": "other",
     "intervals": [2, 0, 0],
-    "enemy_context": ["carriers"]
+    "enemy_context": ["carriers"],
+    "recommended_map": ["2-1"]
   },
   "Bd5": {
     "id": 218,
     "type": "daily",
     "intervals": [2, 0, 0],
-    "enemy_context": ["transports"]
+    "enemy_context": ["transports"],
+    "recommended_map": ["2-2-C"]
   },
   "Bd6": {
     "id": 212,
     "type": "daily",
     "intervals": [2, 0, 0],
-    "enemy_context": ["transports"]
+    "enemy_context": ["transports"],
+    "recommended_map": ["2-2-C"]
   },
   "Bd7": {
     "id": 226,
     "type": "daily",
     "intervals": [5, 0, 0],
-    "map_context": ["2-1", "2-2", "2-3", "2-4", "2-5"]
+    "map_context": ["2-1", "2-2", "2-3", "2-4", "2-5"],
+    "recommended_map": ["2-1"]
   },
   "Bd8": {
     "id": 230,
     "type": "daily",
     "intervals": [2, 0, 0],
-    "enemy_context": ["subs"]
+    "enemy_context": ["subs"],
+    "recommended_map": ["1-5"]
   },
   "Bw1": {
     "id": 214,
     "type": "weekly",
-    "intervals": [12, 0, 0]
+    "intervals": [12, 0, 0],
+    "recommended_map": ["1-1"]
   },
   "Bw2": {
     "id": 220,
     "type": "weekly",
     "intervals": [5, 0, 0],
-    "enemy_context": ["carriers"]
+    "enemy_context": ["carriers"],
+    "recommended_map": ["2-1"]
   },
   "Bw3": {
     "id": 213,
     "type": "weekly",
     "intervals": [5, 0, 0],
-    "enemy_context": ["transports"]
+    "enemy_context": ["transports"],
+    "recommended_map": ["2-2-C"]
   },
   "Bw4": {
     "id": 221,
     "type": "weekly",
     "intervals": [10, 0, 0],
-    "enemy_context": ["transports"]
+    "enemy_context": ["transports"],
+    "recommended_map": ["2-2-C"]
   },
   "Bw5": {
     "id": 228,
     "type": "weekly",
     "intervals": [5, 0, 0],
-    "enemy_context": ["subs"]
+    "enemy_context": ["subs"],
+    "recommended_map": ["1-5"]
   },
   "Bw6": {
     "id": 229,
     "type": "weekly",
     "intervals": [12, 0, 0],
-    "map_context": ["4-1", "4-2", "4-3", "4-4", "4-5"]
+    "map_context": ["4-1", "4-2", "4-3", "4-4", "4-5"],
+    "recommended_map": ["4-1"]
   },
   "Bw7": {
     "id": 241,
     "type": "weekly",
     "intervals": [5, 0, 0],
-    "map_context": ["3-3", "3-4", "3-5"]
+    "map_context": ["3-3", "3-4", "3-5"],
+    "recommended_map": ["3-3"]
   },
   "Bw8": {
     "id": 242,
     "type": "weekly",
     "intervals": [1, 0, 0],
-    "map_context": ["4-4"]
+    "map_context": ["4-4"],
+    "recommended_map": ["4-4"]
   },
   "Bw9": {
     "id": 243,
     "type": "weekly",
     "intervals": [2, 0, 0],
-    "map_context": ["5-2"]
+    "map_context": ["5-2"],
+    "recommended_map": ["5-2"]
   },
   "Bw10": {
     "id": 261,
     "type": "weekly",
     "intervals": [3, 0, 0],
-    "map_context": ["1-5"]
+    "map_context": ["1-5"],
+    "recommended_map": ["1-5"]
   },
   "Bm1": {
     "id": 249,
     "type": "monthly",
-    "map_context": ["2-5"]
+    "map_context": ["2-5"],
+    "recommended_map": ["2-5"]
   },
   "Bm2": {
     "id": 256,
     "type": "monthly",
     "intervals": [1, 0, 0],
-    "map_context": ["6-1"]
+    "map_context": ["6-1"],
+    "recommended_map": ["6-1"]
   },
   "Bm3": {
     "id": 257,
     "type": "monthly",
-    "map_context": ["1-4"]
+    "map_context": ["1-4"],
+    "recommended_map": ["1-4"]
   },
   "Bm4": {
     "id": 259,
     "type": "monthly",
-    "map_context": ["5-1"]
+    "map_context": ["5-1"],
+    "recommended_map": ["5-1"]
   },
   "Bm5": {
     "id": 265,
     "type": "monthly",
     "intervals": [5, 0, 0],
-    "map_context": ["1-5"]
+    "map_context": ["1-5"],
+    "recommended_map": ["1-5"]
   },
   "Bm6": {
     "id": 264,
     "type": "monthly",
-    "map_context": ["4-2"]
+    "map_context": ["4-2"],
+    "recommended_map": ["4-2"]
   },
   "Bm7": {
     "id": 266,
     "type": "monthly",
-    "map_context": ["2-5"]
+    "map_context": ["2-5"],
+    "recommended_map": ["2-5"]
   },
   "Bm8": {
     "id": 280,
     "type": "monthly",
-    "map_context": ["1-2", "1-3", "1-4", "2-1"]
+    "map_context": ["1-2", "1-3", "1-4", "2-1"],
+    "recommended_map": ["1-2", "1-3", "1-4", "2-1"]
   },
   "Bq1": {
     "id": 822,
     "type": "other",
-    "map_context": ["2-4"]
+    "map_context": ["2-4"],
+    "recommended_map": ["2-4"]
   },
   "Bq2": {
     "id": 854,
     "type": "other",
-    "map_context": ["2-4", "6-1", "6-3", "6-4"]
+    "map_context": ["2-4", "6-1", "6-3", "6-4"],
+    "recommended_map": ["2-4", "6-1", "6-3", "6-4"]
   },
   "Bq3": {
     "id": 861,
     "type": "other",
-    "map_context": ["1-6"]
+    "map_context": ["1-6"],
+    "recommended_map": ["1-6"]
   },
   "Bq4": {
     "id": 862,
     "type": "other",
-    "map_context": ["6-3"]
+    "map_context": ["6-3"],
+    "recommended_map": ["6-3"]
   },
   "Bq5": {
     "id": 873,
     "type": "other",
-    "map_context": ["3-1", "3-2", "3-3"]
+    "map_context": ["3-1", "3-2", "3-3"],
+    "recommended_map": ["3-1", "3-2", "3-3"]
   },
   "Bq6": {
     "id": 875,
     "type": "other",
-    "map_context": ["5-4"]
+    "map_context": ["5-4"],
+    "recommended_map": ["5-4"]
   },
   "Bq7": {
     "id": 888,
     "type": "other",
-    "map_context": ["5-1", "5-3", "5-4"]
+    "map_context": ["5-1", "5-3", "5-4"],
+    "recommended_map": ["5-1", "5-3", "5-4"]
   },
   "Bq8": {
     "id": 893,
     "type": "other",
-    "map_context": ["1-5", "7-1", "7-2"]
+    "map_context": ["1-5", "7-1", "7-2"],
+    "recommended_map": ["1-5", "7-1", "7-2-1", "7-2-2"]
   },
   "Bq9": {
     "id": 894,
     "type": "other",
-    "map_context": ["1-3", "1-4", "2-1", "2-2", "2-3"]
+    "map_context": ["1-3", "1-4", "2-1", "2-2", "2-3"],
+    "recommended_map": ["1-3", "1-4", "2-1", "2-2", "2-3"]
   },
   "Bq10": {
     "id": 872,
     "type": "other",
-    "map_context": ["5-5", "6-2", "6-5", "7-2"]
+    "map_context": ["5-5", "6-2", "6-5", "7-2"],
+    "recommended_map": ["5-5", "6-2", "6-5", "7-2-2"]
   },
   "Bq11": {
     "id": 284,
     "type": "other",
-    "map_context": ["1-4", "2-1", "2-2", "2-3"]
+    "map_context": ["1-4", "2-1", "2-2", "2-3"],
+    "recommended_map": ["1-4", "2-1", "2-2", "2-3"]
   },
   "Bq12": {
-    "id": 284,
+    "id": 845,
     "type": "other",
-    "map_context": ["1-4", "2-1", "2-2", "2-3"]
+    "map_context": ["4-1", "4-2", "4-3", "4-4", "4-5"],
+    "recommended_map": ["4-1", "4-2", "4-3", "4-4", "4-5"]
+  },
+  "Bq13": {
+    "id": 903,
+    "type": "other",
+    "map_context": ["5-1", "5-4", "6-4", "6-5"],
+    "recommended_map": ["5-1", "5-4", "6-4", "6-5"]
+  },
+  "By1": {
+    "id": 904,
+    "type": "other",
+    "map_context": ["2-5", "3-4", "4-5", "5-3"],
+    "recommended_map": ["2-5", "3-4", "4-5", "5-3"]
+  },
+  "By2": {
+    "id": 905,
+    "type": "other",
+    "map_context": ["1-1", "1-2", "1-3", "1-5", "1-6"],
+    "recommended_map": ["1-1", "1-2", "1-3", "1-5", "1-6"]
+  },
+  "By3": {
+    "id": 912,
+    "type": "other",
+    "map_context": ["1-3", "2-1", "2-2", "2-3", "1-6"],
+    "recommended_map": ["1-3", "2-1", "2-2", "2-3", "1-6"]
+  },
+  "By4": {
+    "id": 914,
+    "type": "other",
+    "map_context": ["4-1", "4-2", "4-3", "4-4"],
+    "recommended_map": ["4-1", "4-2", "4-3", "4-4"]
+  },
+  "By5": {
+    "id": 928,
+    "type": "other",
+    "map_context": ["7-2-2", "7-3-2", "4-2"],
+    "recommended_map": ["7-2-2", "7-3-2", "4-2"]
+  },
+  "By6": {
+    "id": 944,
+    "type": "other",
+    "map_context": ["1-2", "1-3", "1-4"],
+    "recommended_map": ["1-2", "1-3", "1-4"]
+  },
+  "By7": {
+    "id": 945,
+    "type": "other",
+    "map_context": ["1-5", "2-1", "1-6"],
+    "recommended_map": ["1-5", "2-1", "1-6"]
+  },
+  "By8": {
+    "id": 946,
+    "type": "other",
+    "map_context": ["2-2", "2-3", "2-4"],
+    "recommended_map": ["2-2", "2-3", "2-4"]
+  },
+  "By9": {
+    "id": 947,
+    "type": "other",
+    "map_context": ["3-1", "3-3", "3-4", "3-5"],
+    "recommended_map": ["3-1", "3-3", "3-4", "3-5"]
+  },
+  "By10": {
+    "id": 948,
+    "type": "other",
+    "map_context": ["5-2", "5-5", "6-4", "6-5"],
+    "recommended_map": ["5-2", "5-5", "6-4", "6-5"]
+  },
+  "By11": {
+    "id": 973,
+    "type": "other",
+    "map_context": ["3-1", "3-3", "4-3", "7-3-2"],
+    "recommended_map": ["3-1", "3-3", "4-3", "7-3-2"]
+  },
+  "By12": {
+    "id": 975,
+    "type": "other",
+    "map_context": ["1-5", "2-3", "3-2", "5-3"],
+    "recommended_map": ["1-5", "2-3", "3-2", "5-3"]
   },
   "C2": {
     "id": 303,

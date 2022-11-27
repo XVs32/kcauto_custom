@@ -24,7 +24,7 @@ class EventReset(object):
         return sts.stats.combat.combat_sorties > self.next_reset_sortie_count
 
     def reset_event_difficulty(self):
-        map_name = cfg.config.combat.sortie_map.value
+        map_name = cfg.config.combat.sortie_map.world_and_map
         Log.log_msg(f"Resetting {map_name} difficulty.")
         self._dismiss_chalkboards()
         self._switch_difficulty(cfg.config.event_reset.reset_difficulty)

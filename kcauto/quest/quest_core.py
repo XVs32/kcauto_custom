@@ -10,6 +10,7 @@ import stats.stats_core as sts
 import util.kca as kca_u
 from constants import NEAR_EXACT, PAGE_NAV
 from kca_enums.kcsapi_paths import KCSAPIEnum
+from kca_enums.maps import MapEnum
 from quest.quest import Quest
 from util.core_base import CoreBase
 from util.json_data import JsonData
@@ -25,6 +26,9 @@ class QuestCore(CoreBase):
     max_quests = None
     quest_id_to_name = {}
     quest_library = {}
+    quest_priority_library = []
+    quest_to_sortie_maps = {}
+    relevant_quests = []
     last_checked_context = 'reset'
     next_check_intervals = {}
     cur_page = None
@@ -34,7 +38,9 @@ class QuestCore(CoreBase):
 
     def __init__(self):
         super().__init__()
+        super().update_from_config()
         self._load_quest_data()
+        self._load_quest_priority()
 
     def _load_quest_data(self):
         Log.log_msg("Loading Quest data.")
@@ -44,6 +50,31 @@ class QuestCore(CoreBase):
             self.quest_library[quest_name] = quest
             self.quest_library[quest.quest_id] = quest
             self.quest_id_to_name[quest_data[quest_name]['id']] = quest_name
+            self.quest_to_sortie_maps[quest_name] = quest_data[quest_name].get('recommended_map','')
+
+        print(self.quest_library)
+        print(self.quest_id_to_name)
+        print(self.quest_to_sortie_maps)
+
+    def _load_quest_priority(self):
+        self.quest_priority_library = []
+
+        Log.log_msg("Loading Quest priority data.")
+        quest_priority = JsonData.load_json('data|quests|quest_priority.json')
+        for quest_type in quest_priority:
+            for quest in quest_priority[quest_type]:
+                self.quest_priority_library.append(quest)
+
+    def _load_quest_required_sortie(self):
+        self.quest_to_sortie_maps = {} 
+        
+        Log.log_msg("Loading Quest to Sortie map data.")
+        quests = JsonData.load_json('data|quests|quest_to_sortie_map.json')
+
+        print(quests)
+        
+        for quest_name in quests:
+            self.quest_to_sortie_maps.append = quests[quest_name]
 
     def need_to_check(self, context):
         if datetime.now() > self.quest_reset_time:
@@ -73,6 +104,9 @@ class QuestCore(CoreBase):
         # dismiss Ooyodo
         kca_u.kca.r['center'].click()
         kca_u.kca.sleep(1)
+
+        self._auto_sortie_map_select()
+
         if context and context != self.last_checked_context:
             fast_check = False
             self.last_checked_context = context
@@ -101,7 +135,7 @@ class QuestCore(CoreBase):
             f"Checking for quests to turn in and deactivate with {context} "
             "context.")
         quest_turned_in = False
-        relevant_quests = self._filter_quest_by_context(context)
+        relevant_quests = self._get_quest_by_context(context)
         interval_check_quests = self._get_quests_to_check_by_interval()
         Log.log_msg(f"Relevant quests: {relevant_quests}")
         Log.log_msg(f"Quests to check: {interval_check_quests}")
@@ -178,20 +212,39 @@ class QuestCore(CoreBase):
                     'lower_right', 'global|page_next.png', pad=PAGE_NAV)
                 self.cur_page += 1
             else:
-                break;
+                break
             
         """Added by XVs32"""
         self.cur_page = 0
         return quest_turned_in
     
     
+    def _find_next_sorties_quests(self):
+        """Method that finds the next sorties quest to work on
+        """
+        self.relevant_quests = self._get_combat_quest()
+
+        for quest in self.quest_priority_library:
+            if quest in self.relevant_quests:
+                return quest
+        return None
+        
+
+
     def _toggle_quests(self, context):
+        """Method that active quest to work on
+
+            Args:
+                context (str): The current focus/task of kcauto (combat,pvp,factory,reset).
+        """
         Log.log_msg(
             f"Checking for quests to activate with {context} context.")
         # quests should only be activated at this point
-        relevant_quests = self._filter_quest_by_context(context)
+
+        self.relevant_quests = self._get_quest_by_context(context)
+
         quest_types = sorted(
-            list(self._get_types_from_quests(relevant_quests)),
+            list(self._get_types_from_quests(self.relevant_quests)),
             key=lambda quest_type: self.QUEST_TYPE_WEIGHTS[quest_type])
 
         for quest_type in quest_types:
@@ -219,12 +272,12 @@ class QuestCore(CoreBase):
                     
                     if (    (self.cur_page+1)*5 - idx > 0 
                         and (self.cur_page+1)*5 - idx < 6):
-                        if quest_i in relevant_quests and quest['api_state'] == 1:
+                        if quest_i in self.relevant_quests and quest['api_state'] == 1:
                             Log.log_msg(f"Activating quest {quest_i.name}.")
                             self._click_quest_idx(idx - self.cur_page*5)
                             self._track_quest(quest_i)
                             sts.stats.quest.quests_activated += 1
-                        elif (quest_i not in relevant_quests 
+                        elif (quest_i not in self.relevant_quests 
                               and quest['api_state'] == 2
                               and quest_i.name in cfg.config.quest.quests):
                             Log.log_msg(f"Deactivating quest {quest_i.name}.")
@@ -237,9 +290,45 @@ class QuestCore(CoreBase):
                         'lower_right', 'global|page_next.png', pad=PAGE_NAV)
                     self.cur_page += 1
                 else:
-                    break;
+                    break
 
-    def _filter_quest_by_context(self, context):
+    def _auto_sortie_map_select(self):
+
+        """Auto select sortie map mode"""
+        if cfg.config.combat.sortie_map == MapEnum.auto_map_selete:
+            if com.combat.get_sortie_queue() == [] :
+                next_quest = self._find_next_sorties_quests()
+
+                if next_quest != None:
+                    com.combat.set_sortie_queue(self._get_sortie_map_from_quest(next_quest))
+
+            #restart combat module with the new sortie map
+            if len(com.combat.get_sortie_queue()) > 0:
+                com.combat.__init__(com.combat.get_sortie_queue()[0])
+                cfg.config.combat.sortie_map = com.combat.get_sortie_queue()[0]
+            else:
+                com.combat.__init__()
+
+
+    def _get_sortie_map_from_quest(self, quest):
+        return self.quest_to_sortie_maps[quest]
+
+
+    def _get_combat_quest(self):
+        """Method that get all COMBAT quests name which is available in game and enabled in config"""
+        """Attention: Return quest name ONLY, no quest id is returned"""
+        quest_groups = ['B']
+
+        combat_quests = []
+        for quest_name in cfg.config.quest.quests:
+            if quest_name[0] not in quest_groups:
+                continue
+            combat_quests.append(quest_name)
+        
+        return combat_quests
+
+
+    def _get_quest_by_context(self, context):
         relevant_quests = []
         if context == 'combat':
             quest_groups = ['B', 'E']
