@@ -2,22 +2,58 @@ from pyvisauto import Region
 from random import choice
 from sys import exit
 
+import api.api_core as api
 import config.config_core as cfg
+import combat.combat_core as com
 import fleet.fleet_core as flt
 import nav.nav as nav
 import util.kca as kca_u
 from util.logger import Log
-
+import ship_switcher.ship_switcher_core as ssw
+from util.json_data import JsonData
+from kca_enums.kcsapi_paths import KCSAPIEnum
 
 class FleetSwitcherCore(object):
     max_presets = 0
     presets = {}
     next_combat_preset = None
+    fleet_preset = {}
 
     def __init__(self):
         self._set_next_combat_preset()
+        self._load_fleet_preset(self._load_fleet_list())
+
+    def api_init():
+        nav.navigate.to('refresh_home')
+        api.api.update_from_api({KCSAPIEnum.PORT})
+
+    def _load_fleet_list(self):
+        """
+            method to load the setting in fleet_list.json
+        """
+        fleet_list = JsonData.load_json('configs|fleet_list.json')
+        print("fleet_list")
+        print(fleet_list) 
+        return fleet_list
+
+    def _load_fleet_preset(self, fleet_list_data):
+        """
+            method to load the setting in fleet_preset.json
+            and output the fleet preset of each map
+        """
+        fleet_preset_data = JsonData.load_json('configs|fleet_preset.json')
+        self.fleet_preset = {}
+        for map_name in fleet_preset_data:
+            self.fleet_preset[map_name] = []
+            for i in range(0,len(fleet_preset_data[map_name])):
+                ship_type = fleet_preset_data[map_name][i]['type']
+                ship_order = fleet_preset_data[map_name][i]['id']
+                ship_id = fleet_list_data[ship_type][ship_order]
+                self.fleet_preset[map_name].append(ship_id)
+        print(self.fleet_preset)
 
     def update_fleetpreset_data(self, data):
+        print("update_fleetpreset_data")
         self.presets = {}
         self.max_presets = data['api_max_num']
         for preset_id in data['api_deck']:
@@ -45,24 +81,41 @@ class FleetSwitcherCore(object):
             if self.presets[preset_id] == flt.fleets.fleets[1].ship_ids:
                 Log.log_debug("Preset Fleet is already loaded.")
                 return False
+
+        print("debug start")
+        print(self.presets)
+        print(flt.fleets.fleets[1])
+        print(flt.fleets.fleets[1].ship_ids)
+
         Log.log_msg(f"Need to switch to Fleet Preset {preset_id}.")
         return True
 
     def goto(self):
         nav.navigate.to('fleetcomp')
-        kca_u.kca.click_existing(
-            'lower_left', 'fleetswitcher|fleetswitch_submenu.png')
-        kca_u.kca.wait(
-            'lower_left', 'fleetswitcher|fleetswitch_submenu_exit.png')
 
     def switch_fleet(self, context):
         preset_id = self._get_next_preset_id(context)
+
+        if preset_id == 0:
+            """Debug only, use current combat map when ready"""
+            curr
+            Log.log_msg(f"Switching to Fleet Preset for {current_map}.")
+
+            self.switch_to_costom_sleet("1-1")
+            return
+
         Log.log_msg(f"Switching to Fleet Preset {preset_id}.")
         if preset_id not in self.presets:
             Log.log_error(
                 f"Fleet Preset {preset_id} is not specified in-game. Please "
                 f"check your config.")
             exit(1)
+
+        """open preset menu"""
+        kca_u.kca.click_existing(
+            'lower_left', 'fleetswitcher|fleetswitch_submenu.png')
+        kca_u.kca.wait(
+            'lower_left', 'fleetswitcher|fleetswitch_submenu_exit.png')
 
         list_idx = (preset_id if preset_id < 5 else 5) - 1
         idx_offset = preset_id - 5
@@ -88,6 +141,24 @@ class FleetSwitcherCore(object):
 
         if context == 'combat':
             self._set_next_combat_preset()
+
+    def switch_to_costom_sleet(self, map_name):
+
+        empty_slot_count = 0
+
+        for i in range(0,6):
+            id = self.fleet_preset[map_name][i]
+            ssw.ship_switcher.switch_slot_by_id(i+1-empty_slot_count,id)
+            if id == 99999:
+                empty_slot_count += 1
+        
+        """Check if next combat possible, since new ship is switched in"""
+        """Refresh home to update ship list"""
+        com.combat.set_next_sortie_time(override=True)
+        nav.navigate.to('refresh_home')
+        api.api.update_from_api({KCSAPIEnum.PORT})
+
+
 
     def _scroll_preset_list(self, target_clicks):
         Log.log_debug(f"Scrolling to target preset ({target_clicks} clicks).")
