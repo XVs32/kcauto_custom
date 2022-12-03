@@ -38,6 +38,7 @@ class CombatStats(StatsBase):
 
     def __str__(self):
         if cfg.config.combat.enabled:
+            return_string = ""
             if com.combat.enabled:
                 return_string = (
                     "Next sortie at "

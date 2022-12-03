@@ -52,10 +52,6 @@ class QuestCore(CoreBase):
             self.quest_id_to_name[quest_data[quest_name]['id']] = quest_name
             self.quest_to_sortie_maps[quest_name] = quest_data[quest_name].get('recommended_map','')
 
-        print(self.quest_library)
-        print(self.quest_id_to_name)
-        print(self.quest_to_sortie_maps)
-
     def _load_quest_priority(self):
         self.quest_priority_library = []
 
@@ -71,8 +67,6 @@ class QuestCore(CoreBase):
         Log.log_msg("Loading Quest to Sortie map data.")
         quests = JsonData.load_json('data|quests|quest_to_sortie_map.json')
 
-        print(quests)
-        
         for quest_name in quests:
             self.quest_to_sortie_maps.append = quests[quest_name]
 
@@ -222,11 +216,16 @@ class QuestCore(CoreBase):
     def _find_next_sorties_quests(self):
         """Method that finds the next sorties quest to work on
         """
-        self.relevant_quests = self._get_combat_quest()
+        self.relevant_quests = self._get_combat_quest() #quest from config
 
         for quest in self.quest_priority_library:
             if quest in self.relevant_quests:
-                return quest
+                for visable_quest in self.visible_quests:
+                    if visable_quest['api_state'] == 3: # This quest is done
+                        continue
+                    quest_id = self.quest_library[quest].quest_id
+                    if quest_id == visable_quest['api_no']:
+                        return quest
         return None
         
 
@@ -268,7 +267,7 @@ class QuestCore(CoreBase):
                         continue
 
                     quest_i = self.quest_library[quest['api_no']]
-                    Log.log_msg(f"Checking quset {quest_i.name}.")
+                    Log.log_debug(f"Checking quset {quest_i.name}.")
                     
                     if (    (self.cur_page+1)*5 - idx > 0 
                         and (self.cur_page+1)*5 - idx < 6):
@@ -295,8 +294,11 @@ class QuestCore(CoreBase):
     def _auto_sortie_map_select(self):
 
         """Auto select sortie map mode"""
+
+        api.api.update_from_api({KCSAPIEnum.QUEST_LIST}) #update visible_quests
+
         if cfg.config.combat.sortie_map == MapEnum.auto_map_selete:
-            if com.combat.get_sortie_queue() == [] :
+            if com.combat.get_sortie_queue() == []:
                 next_quest = self._find_next_sorties_quests()
 
                 if next_quest != None:
@@ -309,6 +311,10 @@ class QuestCore(CoreBase):
             else:
                 com.combat.__init__()
 
+        print("Debug:")
+        print(cfg.config.combat.sortie_map)
+        print(com.combat.get_sortie_queue())
+        print(self._find_next_sorties_quests())
 
     def _get_sortie_map_from_quest(self, quest):
         return self.quest_to_sortie_maps[quest]

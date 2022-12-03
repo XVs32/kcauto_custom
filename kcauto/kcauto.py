@@ -15,6 +15,7 @@ import stats.stats_core as sts
 import util.kca as kca_u
 from kca_enums.expeditions import ExpeditionEnum
 from util.logger import Log
+from kca_enums.maps import MapEnum
 
 
 class Kcauto(object):
@@ -135,6 +136,13 @@ class Kcauto(object):
         else:
             return False
 
+        if cfg.config.combat.sortie_map == MapEnum.auto_map_selete:
+            print("Debug: Call quest combat")
+            self.run_quest_logic('combat', fast_check=False, force= True)
+            if cfg.config.combat.sortie_map == MapEnum.auto_map_selete:    #If no combat map available, turn off combat module
+                print("Debug: Stop combat module because no combat quest available")
+                com.combat.enabled = False
+
         if com.combat.should_and_able_to_sortie:
             self.find_kancolle()
             self.fast_check_for_expedition()
@@ -145,6 +153,22 @@ class Kcauto(object):
             if com.combat.should_and_able_to_sortie:
                 com.combat.goto()
                 if com.combat.conduct_sortie():
+
+                    sortie_queue = com.combat.get_sortie_queue()
+                    print("Debug: sortie_queue")
+                    print(sortie_queue)
+                    if len(sortie_queue) > 1:
+                        sortie_queue = sortie_queue[1:]
+                        com.combat.set_sortie_queue(sortie_queue)
+                        com.combat.__init__(sortie_queue[0])
+                        cfg.config.combat.sortie_map = sortie_queue[0]
+                    else:
+                        sortie_queue = []
+                        com.combat.set_sortie_queue(sortie_queue)
+                        com.combat.__init__()
+                        cfg.config.combat.sortie_map = ""
+                    
+
                     sts.stats.set_print_loop_end_stats()
                     self.fast_check_for_expedition()
 

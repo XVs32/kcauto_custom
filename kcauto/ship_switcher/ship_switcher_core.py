@@ -39,9 +39,12 @@ class ShipSwitcherCore(object):
                 ship_local_id(int): The target ship production id
         """
         self._select_switch_button(slot)
+
         if ship_local_id == 99999:
             """Remove ship in this slot"""
             self._select_remove_button()
+        elif len(flt.fleets.fleets[1].ship_ids) >= slot and ship_local_id == flt.fleets.fleets[1].ship_ids[slot-1]:
+            return
         else:
             ship_idx = self._get_ship_idx_by_local_id(ship_local_id)
             kca_u.kca.sleep(1)
@@ -49,6 +52,9 @@ class ShipSwitcherCore(object):
             self._select_replacement_ship(ship_idx)
             kca_u.kca.sleep()
             self._switch_ship()
+            
+            print("Debug: ship id in fleet 1")
+            print(flt.fleets.fleets[1].ship_ids)
         return
 
     def switch_ships(self, switch_list):
@@ -131,6 +137,7 @@ class ShipSwitcherCore(object):
             if ship_list[i].local_id == local_id:
                 return i
 
+        print(local_id)
         raise ValueError("Can not find the specified ship")
 
     def _find_replacement_ship(self, rule, ship_list):
