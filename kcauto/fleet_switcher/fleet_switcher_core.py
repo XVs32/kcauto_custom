@@ -23,17 +23,11 @@ class FleetSwitcherCore(object):
         self._set_next_combat_preset()
         self._load_fleet_preset(self._load_fleet_list())
 
-    def api_init():
-        nav.navigate.to('refresh_home')
-        api.api.update_from_api({KCSAPIEnum.PORT})
-
     def _load_fleet_list(self):
         """
             method to load the setting in fleet_list.json
         """
         fleet_list = JsonData.load_json('configs|fleet_list.json')
-        print("fleet_list")
-        print(fleet_list) 
         return fleet_list
 
     def _load_fleet_preset(self, fleet_list_data):
@@ -50,7 +44,6 @@ class FleetSwitcherCore(object):
                 ship_order = fleet_preset_data[map_name][i]['id']
                 ship_id = fleet_list_data[ship_type][ship_order]
                 self.fleet_preset[map_name].append(ship_id)
-        print(self.fleet_preset)
 
     def update_fleetpreset_data(self, data):
         print("update_fleetpreset_data")
@@ -82,11 +75,6 @@ class FleetSwitcherCore(object):
                 Log.log_debug("Preset Fleet is already loaded.")
                 return False
 
-        print("debug start")
-        print(self.presets)
-        print(flt.fleets.fleets[1])
-        print(flt.fleets.fleets[1].ship_ids)
-
         Log.log_msg(f"Need to switch to Fleet Preset {preset_id}.")
         return True
 
@@ -98,10 +86,10 @@ class FleetSwitcherCore(object):
 
         if preset_id == 0:
             """Debug only, use current combat map when ready"""
-            curr
-            Log.log_msg(f"Switching to Fleet Preset for {current_map}.")
+            
+            Log.log_msg(f"Switching to Fleet Preset for {cfg.config.combat.sortie_map}.")
 
-            self.switch_to_costom_sleet("1-1")
+            self.switch_to_costom_fleet(cfg.config.combat.sortie_map)
             return
 
         Log.log_msg(f"Switching to Fleet Preset {preset_id}.")
@@ -142,23 +130,25 @@ class FleetSwitcherCore(object):
         if context == 'combat':
             self._set_next_combat_preset()
 
-    def switch_to_costom_sleet(self, map_name):
-
+    def switch_to_costom_fleet(self, map_name):
+        print("Debug: Call switch_to_costom_fleet")
         empty_slot_count = 0
 
         for i in range(0,6):
-            id = self.fleet_preset[map_name][i]
+            id = self.fleet_preset[map_name.value][i]
             ssw.ship_switcher.switch_slot_by_id(i+1-empty_slot_count,id)
+            api.api.update_from_api({KCSAPIEnum.PORT})
             if id == 99999:
                 empty_slot_count += 1
-        
+
+        if flt.fleets.fleets[1].ship_ids != self.fleet_preset[map_name.value]:
+            print("Debug: Costom fleet switch failed")
+            print(flt.fleets.fleets[1].ship_ids)
+            print(self.fleet_preset[map_name.value])
+
         """Check if next combat possible, since new ship is switched in"""
         """Refresh home to update ship list"""
         com.combat.set_next_sortie_time(override=True)
-        nav.navigate.to('refresh_home')
-        api.api.update_from_api({KCSAPIEnum.PORT})
-
-
 
     def _scroll_preset_list(self, target_clicks):
         Log.log_debug(f"Scrolling to target preset ({target_clicks} clicks).")
