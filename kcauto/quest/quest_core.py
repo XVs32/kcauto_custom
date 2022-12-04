@@ -99,7 +99,8 @@ class QuestCore(CoreBase):
         kca_u.kca.r['center'].click()
         kca_u.kca.sleep(1)
 
-        self._auto_sortie_map_select()
+        if context == "combat":
+            self._auto_sortie_map_select()
 
         if context and context != self.last_checked_context:
             fast_check = False
@@ -295,9 +296,9 @@ class QuestCore(CoreBase):
 
         """Auto select sortie map mode"""
 
-        api.api.update_from_api({KCSAPIEnum.QUEST_LIST}) #update visible_quests
-
         if cfg.config.combat.sortie_map == MapEnum.auto_map_selete:
+            print("Debug: update quest api")
+            api.api.update_from_api({KCSAPIEnum.QUEST_LIST}) #update visible_quests
             if com.combat.get_sortie_queue() == []:
                 next_quest = self._find_next_sorties_quests()
 
