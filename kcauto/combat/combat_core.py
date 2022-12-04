@@ -62,6 +62,7 @@ class CombatCore(CoreBase):
     boss_api = False
     map_cleared = False
     sortie_queue = []
+    first_init = True
    
     def __init__(self, sortie_map = ""):
         """
@@ -71,14 +72,19 @@ class CombatCore(CoreBase):
         """
 
         """If config did not specify sortie map, then it is auto select sortie map mode"""
+        super().update_from_config()
         if cfg.config.combat.sortie_map == MapEnum.auto_map_selete:
             self.update_from_combat_map(sortie_map)
         else:
+            if self.first_init == True:
+                sortie_queue = [cfg.config.combat.sortie_map.value] * 9999
+                self.set_sortie_queue(sortie_queue)
             self.update_from_config()
+        
+        self.first_init = False
 
  
     def update_from_config(self):
-        super().update_from_config()
         if self.enabled:
             self._load_map_data(cfg.config.combat.sortie_map)
             self.set_next_sortie_time()
@@ -132,8 +138,7 @@ class CombatCore(CoreBase):
                         map_data['api_eventmap']['api_selected_rank'])
                 }
 
-    @property
-    def should_and_able_to_sortie(self):
+    def should_and_able_to_sortie(self, ignore_supply = False):
         if not self.enabled or not self.time_to_sortie:
             return False
         if cfg.config.combat.port_check:
@@ -167,7 +172,7 @@ class CombatCore(CoreBase):
                     self.set_next_sortie_time(
                         rep.repair.soonest_complete_time)
                 return False
-            if fleet.needs_resupply:
+            if fleet.needs_resupply and ignore_supply == False:
                 Log.log_warn("Combat fleet needs resupply.")
                 return False
         return True
