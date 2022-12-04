@@ -225,6 +225,7 @@ class NavNode(object):
             Log.log_error(
                 f"Not possible to navigate to '{target}' from {self.name} "
                 "screen.")
+            return False
 
 
 nav_nodes = NavNodes()
