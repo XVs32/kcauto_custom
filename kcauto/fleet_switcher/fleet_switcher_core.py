@@ -89,7 +89,7 @@ class FleetSwitcherCore(object):
             
             Log.log_msg(f"Switching to Fleet Preset for {cfg.config.combat.sortie_map}.")
 
-            self.switch_to_costom_fleet(cfg.config.combat.sortie_map)
+            self.switch_to_costom_sleet(cfg.config.combat.sortie_map)
             return
 
         Log.log_msg(f"Switching to Fleet Preset {preset_id}.")
@@ -130,16 +130,18 @@ class FleetSwitcherCore(object):
         if context == 'combat':
             self._set_next_combat_preset()
 
-    def switch_to_costom_fleet(self, map_name):
-        print("Debug: Call switch_to_costom_fleet")
+    def switch_to_costom_sleet(self, map_name):
+        print("Debug: Call switch_to_costom_sleet")
         empty_slot_count = 0
 
-        for i in range(0,6):
-            id = self.fleet_preset[map_name.value][i]
-            ssw.ship_switcher.switch_slot_by_id(i+1-empty_slot_count,id)
-            api.api.update_from_api({KCSAPIEnum.PORT})
-            if id == 99999:
+        size = len(flt.fleets.fleets[1].ship_ids)
+        for i in range(0,size):
+            if i >= len(self.fleet_preset[map_name]):
+                id = -1 #remove this slot
                 empty_slot_count += 1
+            else:
+                id = self.fleet_preset[map_name.value][i]
+            ssw.ship_switcher.switch_slot_by_id(i+1-empty_slot_count,id)
 
         if flt.fleets.fleets[1].ship_ids != self.fleet_preset[map_name.value]:
             print("Debug: Costom fleet switch failed")
