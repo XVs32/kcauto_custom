@@ -40,9 +40,10 @@ class ShipSwitcherCore(object):
         """
         self._select_switch_button(slot)
 
-        if ship_local_id == 99999:
+        if ship_local_id == -1:
             """Remove ship in this slot"""
             self._select_remove_button()
+            flt.fleets.fleets[1].ship_ids.pop(slot-1)
         elif len(flt.fleets.fleets[1].ship_ids) >= slot and ship_local_id == flt.fleets.fleets[1].ship_ids[slot-1]:
             return
         else:
@@ -50,11 +51,14 @@ class ShipSwitcherCore(object):
             kca_u.kca.sleep(1)
             self._reset_shiplist()
             self._select_replacement_ship(ship_idx)
-            kca_u.kca.sleep()
+            kca_u.kca.sleep(1)
             self._switch_ship()
-            
-            print("Debug: ship id in fleet 1")
-            print(flt.fleets.fleets[1].ship_ids)
+
+            if ship_local_id in flt.fleets.fleets[1].ship_ids:
+                exchange_slot = flt.fleets.fleets[1].ship_ids.index(ship_local_id)
+                flt.fleets.fleets[1].ship_ids[slot-1], flt.fleets.fleets[1].ship_ids[exchange_slot] = \
+                    flt.fleets.fleets[1].ship_ids[exchange_slot], flt.fleets.fleets[1].ship_ids[slot-1]
+                    
         return
 
     def switch_ships(self, switch_list):
