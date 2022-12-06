@@ -120,7 +120,7 @@ class CombatCore(CoreBase):
             if api_id < 400:
                 map_enum = MapEnum(f"{str(api_id)[0]}-{str(api_id)[1]}")
 
-                self.available_maps[map_enum.value] = {
+                self.available_maps[map_enum.world_and_map] = {
                     'enum': map_enum,
                     'cleared': map_data['api_cleared'] == 1
                 }
@@ -130,7 +130,7 @@ class CombatCore(CoreBase):
                 event_map_delta = api_id - event_map_id_start + 1
                 map_enum = MapEnum(f"E-{event_map_delta}")
 
-                self.available_maps[map_enum.value] = {
+                self.available_maps[map_enum.world_and_map] = {
                     'enum': map_enum,
                     'cleared': map_data.get('api_cleared', 0) == 1,
                     'lbas_bases': map_data.get('api_air_base_decks', []),

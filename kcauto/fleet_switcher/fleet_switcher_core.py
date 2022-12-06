@@ -136,7 +136,7 @@ class FleetSwitcherCore(object):
 
         size = len(flt.fleets.fleets[1].ship_ids)
         for i in range(0,size):
-            if i >= len(self.fleet_preset[map_name]):
+            if i >= len(self.fleet_preset[map_name.value]):
                 id = -1 #remove this slot
                 empty_slot_count += 1
             else:
