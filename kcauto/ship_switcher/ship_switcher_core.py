@@ -37,6 +37,7 @@ class ShipSwitcherCore(object):
             Args:
                 slot(int): The slot to switch, index starts from one
                 ship_local_id(int): The target ship production id
+            @todo: track fleet ship_ids using API, not ship_local_id
         """
         self._select_switch_button(slot)
 
@@ -58,6 +59,8 @@ class ShipSwitcherCore(object):
                 exchange_slot = flt.fleets.fleets[1].ship_ids.index(ship_local_id)
                 flt.fleets.fleets[1].ship_ids[slot-1], flt.fleets.fleets[1].ship_ids[exchange_slot] = \
                     flt.fleets.fleets[1].ship_ids[exchange_slot], flt.fleets.fleets[1].ship_ids[slot-1]
+            else:
+                flt.fleets.fleets[1].ship_ids[slot-1] = ship_local_id
                     
         return
 
@@ -79,7 +82,7 @@ class ShipSwitcherCore(object):
             kca_u.kca.sleep(1)
             self._reset_shiplist()
             self._select_replacement_ship(switch_info["idx"], switch_info["ship"])
-            kca_u.kca.sleep()
+            kca_u.kca.sleep(1)
             if self._switch_ship():
                 sts.stats.ship_switcher.ships_switched += 1
         
