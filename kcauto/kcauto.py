@@ -181,6 +181,9 @@ class Kcauto(object):
         if com.combat.time_to_sortie == False:
             print("Debug: com.combat.time_to_sortie = False")
             return False
+        else :
+            #update port api, for should_and_able_to_sortie
+            nav.navigate.to('refresh_home')
 
         if cfg.config.combat.sortie_map == MapEnum.auto_map_selete:
             print("Debug: Call quest combat")
@@ -191,13 +194,16 @@ class Kcauto(object):
                 com.combat.enabled = False
                 return False
 
+        if self._run_fleetswitch_logic('combat'):
+            #update port api, for should_and_able_to_sortie
+            nav.navigate.to('refresh_home')
+
         print("Debug: before should_and_able_to_sortie")
         if com.combat.should_and_able_to_sortie(ignore_supply=True):
             print("Debug: in should_and_able_to_sortie")
             if quest_selected == False:
                 self.run_quest_logic('combat', fast_check=True)
 
-            self._run_fleetswitch_logic('combat')
             self.run_resupply_logic()
 
             if com.combat.should_and_able_to_sortie():
@@ -245,6 +251,8 @@ class Kcauto(object):
             fsw.fleet_switcher.goto()
             fsw.fleet_switcher.switch_fleet(context)
             self.handle_back_to_home(True)
+            return True
+        return False
 
     
 
