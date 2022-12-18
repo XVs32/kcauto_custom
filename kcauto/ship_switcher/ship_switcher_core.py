@@ -39,14 +39,17 @@ class ShipSwitcherCore(object):
                 ship_local_id(int): The target ship production id
             @todo: track fleet ship_ids using API, not ship_local_id
         """
+
+        # The slot has the specified ship already
+        if len(flt.fleets.fleets[1].ship_ids) >= slot and ship_local_id == flt.fleets.fleets[1].ship_ids[slot-1]:
+            return
+
         self._select_switch_button(slot)
 
         if ship_local_id == -1:
             """Remove ship in this slot"""
             self._select_remove_button()
             flt.fleets.fleets[1].ship_ids.pop(slot-1)
-        elif len(flt.fleets.fleets[1].ship_ids) >= slot and ship_local_id == flt.fleets.fleets[1].ship_ids[slot-1]:
-            return
         else:
             ship_idx = self._get_ship_idx_by_local_id(ship_local_id)
             kca_u.kca.sleep(1)
@@ -57,10 +60,15 @@ class ShipSwitcherCore(object):
 
             if ship_local_id in flt.fleets.fleets[1].ship_ids:
                 exchange_slot = flt.fleets.fleets[1].ship_ids.index(ship_local_id)
-                flt.fleets.fleets[1].ship_ids[slot-1], flt.fleets.fleets[1].ship_ids[exchange_slot] = \
-                    flt.fleets.fleets[1].ship_ids[exchange_slot], flt.fleets.fleets[1].ship_ids[slot-1]
+
+                temp = flt.fleets.fleets[1].ship_ids[slot-1]
+                flt.fleets.fleets[1].ship_ids[slot-1] = flt.fleets.fleets[1].ship_ids[exchange_slot]
+                flt.fleets.fleets[1].ship_ids[exchange_slot] = temp
             else:
-                flt.fleets.fleets[1].ship_ids[slot-1] = ship_local_id
+                if len(flt.fleets.fleets[1].ship_ids) > slot:
+                    flt.fleets.fleets[1].ship_ids[slot-1] = ship_local_id
+                else:
+                    flt.fleets.fleets[1].ship_ids.append(ship_local_id)
                     
         return
 
@@ -79,10 +87,10 @@ class ShipSwitcherCore(object):
                 break
                 
             self._select_switch_button(switch_info["slot_id"])
-            kca_u.kca.sleep(1)
+            kca_u.kca.sleep(2)
             self._reset_shiplist()
             self._select_replacement_ship(switch_info["idx"], switch_info["ship"])
-            kca_u.kca.sleep(1)
+            kca_u.kca.sleep(2)
             if self._switch_ship():
                 sts.stats.ship_switcher.ships_switched += 1
         
@@ -206,7 +214,8 @@ class ShipSwitcherCore(object):
         """target_page = (ship_idx // 10) + 1 if ship_idx > 9 else 1"""
         target_page = (ship_idx // 10) + 1
         if ship == None:
-            Log.log_msg(f"Selecting {ship_idx}")
+            Log.log_msg(f"Selecting {ship_idx}"
+                        f"(From pg{self.current_shipcomp_page} to pg{target_page}).")
         else:
             Log.log_msg(
                 f"Selecting lvl{ship.level} {ship.name} "
