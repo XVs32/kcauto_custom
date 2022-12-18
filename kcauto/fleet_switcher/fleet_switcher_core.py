@@ -75,6 +75,11 @@ class FleetSwitcherCore(object):
                 Log.log_debug("Preset Fleet is already loaded.")
                 return False
 
+        if preset_id == 0:
+            if flt.fleets.fleets[1].ship_ids == self.fleet_preset[cfg.config.combat.sortie_map.value]:
+                Log.log_debug("Custom preset Fleet is already loaded.")
+                return False
+
         Log.log_msg(f"Need to switch to Fleet Preset {preset_id}.")
         return True
 
@@ -133,15 +138,17 @@ class FleetSwitcherCore(object):
     def switch_to_costom_sleet(self, map_name):
         print("Debug: Call switch_to_costom_sleet")
         empty_slot_count = 0
+        ssw.ship_switcher.current_shipcomp_page = 1
 
-        size = len(flt.fleets.fleets[1].ship_ids)
-        for i in range(0,size):
-            if i >= len(self.fleet_preset[map_name.value]):
+        size = max(len(flt.fleets.fleets[1].ship_ids), len(self.fleet_preset[map_name.value]))
+        for i in range(1,size + 1):
+            if i > len(self.fleet_preset[map_name.value]):
                 id = -1 #remove this slot
+                ssw.ship_switcher.switch_slot_by_id(i-empty_slot_count,id)
                 empty_slot_count += 1
             else:
-                id = self.fleet_preset[map_name.value][i]
-            ssw.ship_switcher.switch_slot_by_id(i+1-empty_slot_count,id)
+                id = self.fleet_preset[map_name.value][i - 1]
+                ssw.ship_switcher.switch_slot_by_id(i-empty_slot_count,id)
 
         if flt.fleets.fleets[1].ship_ids != self.fleet_preset[map_name.value]:
             print("Debug: Costom fleet switch failed")
