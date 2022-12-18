@@ -139,6 +139,9 @@ class CombatCore(CoreBase):
                 }
 
     def should_and_able_to_sortie(self, ignore_supply = False):
+        """
+            @note Port api needs to be updated before using this function
+        """
         if not self.enabled or not self.time_to_sortie:
             return False
         if cfg.config.combat.port_check:
@@ -154,6 +157,7 @@ class CombatCore(CoreBase):
                 self.set_next_sortie_time(15)
                 return False
         if cfg.config.combat.check_fatigue:
+            #fleet update
             for fleet in flt.fleets.combat_fleets:
                 if fleet.highest_fatigue > FatigueStateEnum.NO_FATIGUE:
                     Log.log_warn("Combat fleet is fatigued.")
