@@ -96,7 +96,7 @@ class Navigate(object):
         if current_location.navigate_to(destination) == False:
             Log.log_msg('Nav to home and retry.')
             current_location = current_location.navigate_to(
-                'home', False)
+                'home', True)
             current_location.navigate_to(destination)
 
         return True
