@@ -29,14 +29,14 @@
     "type": "daily",
     "intervals": [2, 0, 0],
     "enemy_context": ["transports"],
-    "recommended_map": ["2-2-C"]
+    "recommended_map": ["2-2-A"]
   },
   "Bd6": {
     "id": 212,
-    "type": "daily",
+    "type": "other",
     "intervals": [2, 0, 0],
     "enemy_context": ["transports"],
-    "recommended_map": ["2-2-C"]
+    "recommended_map": ["2-2-A"]
   },
   "Bd7": {
     "id": 226,
@@ -70,14 +70,14 @@
     "type": "weekly",
     "intervals": [5, 0, 0],
     "enemy_context": ["transports"],
-    "recommended_map": ["2-2-C"]
+    "recommended_map": ["2-2-A"]
   },
   "Bw4": {
     "id": 221,
     "type": "weekly",
     "intervals": [10, 0, 0],
     "enemy_context": ["transports"],
-    "recommended_map": ["2-2-C"]
+    "recommended_map": ["2-2-A"]
   },
   "Bw5": {
     "id": 228,
@@ -124,8 +124,8 @@
   "Bm1": {
     "id": 249,
     "type": "monthly",
-    "map_context": ["2-5"],
-    "recommended_map": ["2-5"]
+    "map_context": ["2-5-Bm1"],
+    "recommended_map": ["2-5-Bm1"]
   },
   "Bm2": {
     "id": 256,
@@ -137,14 +137,14 @@
   "Bm3": {
     "id": 257,
     "type": "monthly",
-    "map_context": ["1-4"],
-    "recommended_map": ["1-4"]
+    "map_context": ["1-4-Bm3"],
+    "recommended_map": ["1-4-Bm3"]
   },
   "Bm4": {
     "id": 259,
     "type": "monthly",
-    "map_context": ["5-1"],
-    "recommended_map": ["5-1"]
+    "map_context": ["5-1-Bm4"],
+    "recommended_map": ["5-1-Bm4"]
   },
   "Bm5": {
     "id": 265,
@@ -156,20 +156,20 @@
   "Bm6": {
     "id": 264,
     "type": "monthly",
-    "map_context": ["4-2"],
-    "recommended_map": ["4-2"]
+    "map_context": ["4-2-Bm6"],
+    "recommended_map": ["4-2-Bm6"]
   },
   "Bm7": {
     "id": 266,
     "type": "monthly",
-    "map_context": ["2-5"],
-    "recommended_map": ["2-5"]
+    "map_context": ["2-5-Bm7"],
+    "recommended_map": ["2-5-Bm7"]
   },
   "Bm8": {
     "id": 280,
     "type": "monthly",
-    "map_context": ["1-2", "1-3", "1-4", "2-1"],
-    "recommended_map": ["1-2", "1-3", "1-4", "2-1"]
+    "map_context": ["1-2-Bm8", "1-3-Bm8", "1-4-Bm8", "2-1-Bm8"],
+    "recommended_map": ["1-2-Bm8", "1-3-Bm8", "1-4-Bm8", "2-1-Bm8"]
   },
   "Bq1": {
     "id": 822,
@@ -186,32 +186,32 @@
   "Bq3": {
     "id": 861,
     "type": "other",
-    "map_context": ["1-6"],
-    "recommended_map": ["1-6"]
+    "map_context": ["1-6-Bq3"],
+    "recommended_map": ["1-6-Bq3"]
   },
   "Bq4": {
     "id": 862,
     "type": "other",
-    "map_context": ["6-3"],
-    "recommended_map": ["6-3"]
+    "map_context": ["6-3-Bq4"],
+    "recommended_map": ["6-3-Bq4"]
   },
   "Bq5": {
     "id": 873,
     "type": "other",
-    "map_context": ["3-1", "3-2", "3-3"],
-    "recommended_map": ["3-1", "3-2", "3-3"]
+    "map_context": ["3-1-Bq5", "3-2-Bq5", "3-3-Bq5"],
+    "recommended_map": ["3-1-Bq5", "3-2-Bq5", "3-3-Bq5"]
   },
   "Bq6": {
     "id": 875,
     "type": "other",
-    "map_context": ["5-4"],
-    "recommended_map": ["5-4"]
+    "map_context": ["5-4-Bq6"],
+    "recommended_map": ["5-4-Bq6"]
   },
   "Bq7": {
     "id": 888,
     "type": "other",
-    "map_context": ["5-1", "5-3", "5-4"],
-    "recommended_map": ["5-1", "5-3", "5-4"]
+    "map_context": ["5-1-Bq7", "5-3-Bq7", "5-4-Bq7"],
+    "recommended_map": ["5-1-Bq7", "5-3-Bq7", "5-4-Bq7"]
   },
   "Bq8": {
     "id": 893,
@@ -222,8 +222,8 @@
   "Bq9": {
     "id": 894,
     "type": "other",
-    "map_context": ["1-3", "1-4", "2-1", "2-2", "2-3"],
-    "recommended_map": ["1-3", "1-4", "2-1", "2-2", "2-3"]
+    "map_context": ["1-3-Bq9", "1-4-Bq9", "2-1-Bq9", "2-2-Bq9", "2-3-Bq9"],
+    "recommended_map": ["1-3-Bq9", "1-4-Bq9", "2-1-Bq9", "2-2-Bq9", "2-3-Bq9"]
   },
   "Bq10": {
     "id": 872,
@@ -234,8 +234,8 @@
   "Bq11": {
     "id": 284,
     "type": "other",
-    "map_context": ["1-4", "2-1", "2-2", "2-3"],
-    "recommended_map": ["1-4", "2-1", "2-2", "2-3"]
+    "map_context": ["1-4-Bq11", "2-1-Bq11", "2-2-Bq11", "2-3-Bq11"],
+    "recommended_map": ["1-4-Bq11", "2-1-Bq11", "2-2-Bq11", "2-3-Bq11"]
   },
   "Bq12": {
     "id": 845,
