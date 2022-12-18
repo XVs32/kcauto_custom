@@ -1,4 +1,7 @@
 # use "sudo apt-get install python3.7-dev" first if needed
+# use "sudo apt install python3.7-distutils" first if needed
+# use "sudo apt-get install python3.7-tk" first if needed
+# use "sudo apt-get install scrot" first if needed
 
 flake8==3.7.8
 matplotlib==3.1.2
@@ -8,3 +11,4 @@ PySimpleGUI==4.14.0
 pyvisauto==1.0.3
 requests==2.22.0
 Pynput==1.7.6
+tk
