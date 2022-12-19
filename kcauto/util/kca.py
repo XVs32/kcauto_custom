@@ -671,14 +671,9 @@ class Kca(object):
             r (Region, Match): Region/Match region to click
             pad (tuple): padding parameter used to modify click coordinate
         """
-        layout_width = (
-            self.visual_hook.Page.getLayoutMetrics()[
-                'result']['layoutViewport']['clientWidth'])
-        # 692,557 is the offset for the game start button
-        # game_x = self.game_x if self.game_x else r.x - 692
-        # game_y = self.game_y if self.game_y else r.y - 557
-        # x_pad = game_x - ((layout_width - GAME_W) // 2)
-        # y_pad = game_y
+
+        sleep(0.3) #Prevent kcauto form clicking too fast
+
         offset_x = randint(-pad[3], r.w + pad[1])
         offset_y = randint(-pad[0], r.h + pad[2])
         x = r.x - self.css_x
