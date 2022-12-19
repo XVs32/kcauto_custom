@@ -19,9 +19,9 @@ def kcauto_main():
     while active_loop:
         try:
             # startup methods
+            _.kcauto.find_dmm()
             _.kcauto.start_kancolle()
             _.kcauto.find_kancolle()
-            _.kcauto.find_dmm()
 
             while kca_loop:
                 # primary logic
