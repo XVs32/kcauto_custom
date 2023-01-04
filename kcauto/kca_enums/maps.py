@@ -18,6 +18,9 @@ class MapEnum(EnumBase):
     WE_1, WE_2, WE_3, WE_4, WE_5 = 'E-1', 'E-2', 'E-3', 'E-4', 'E-5'
     WE_6, WE_7, WE_8 = 'E-6', 'E-7', 'E-8'
 
+    W1_5_Bw1 = '1-5-Bw1'
+    W5_2_C_Bw1 = '5-2-C-Bw1'
+
     W2_5_Bm1 = '2-5-Bm1'
     W1_4_Bm3 = '1-4-Bm3'
     W5_1_Bm4 = '5-1-Bm4'
@@ -57,7 +60,7 @@ class MapEnum(EnumBase):
     W2_3_Bq11 = "2-3-Bq11"
     
 
-    auto_map_selete = ''
+    auto_map_selete = 'auto'
 
     @property
     def world(self):
