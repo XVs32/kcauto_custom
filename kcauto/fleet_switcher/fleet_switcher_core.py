@@ -12,8 +12,10 @@ from util.logger import Log
 import ship_switcher.ship_switcher_core as ssw
 from util.json_data import JsonData
 from kca_enums.kcsapi_paths import KCSAPIEnum
+from constants import AUTO_PRESET
 
 class FleetSwitcherCore(object):
+    AUTO = 0
     max_presets = 0
     presets = {}
     next_combat_preset = None
@@ -45,6 +47,7 @@ class FleetSwitcherCore(object):
                 ship_id = fleet_list_data[ship_type][ship_order]
                 self.fleet_preset[map_name].append(ship_id)
 
+
     def update_fleetpreset_data(self, data):
         print("update_fleetpreset_data")
         self.presets = {}
@@ -75,8 +78,8 @@ class FleetSwitcherCore(object):
                 Log.log_debug("Preset Fleet is already loaded.")
                 return False
 
-        if preset_id == 0:
-            if flt.fleets.fleets[1].ship_ids == self.fleet_preset[cfg.config.combat.sortie_map.value]:
+        if preset_id == AUTO_PRESET:
+            if flt.fleets.fleets[1].ship_ids == self._get_fleet_preset(cfg.config.combat.sortie_map.value):
                 Log.log_debug("Custom preset Fleet is already loaded.")
                 return False
 
@@ -89,8 +92,7 @@ class FleetSwitcherCore(object):
     def switch_fleet(self, context):
         preset_id = self._get_next_preset_id(context)
 
-        if preset_id == 0:
-            """Debug only, use current combat map when ready"""
+        if preset_id == AUTO_PRESET:
             
             Log.log_msg(f"Switching to Fleet Preset for {cfg.config.combat.sortie_map}.")
 
@@ -140,20 +142,20 @@ class FleetSwitcherCore(object):
         empty_slot_count = 0
         ssw.ship_switcher.current_shipcomp_page = 1
 
-        size = max(len(flt.fleets.fleets[1].ship_ids), len(self.fleet_preset[map_name.value]))
+        size = max(len(flt.fleets.fleets[1].ship_ids), len(self._get_fleet_preset(map_name.value)))
         for i in range(1,size + 1):
-            if i > len(self.fleet_preset[map_name.value]):
+            if i > len(self._get_fleet_preset(map_name.value)):
                 id = -1 #remove this slot
                 ssw.ship_switcher.switch_slot_by_id(i-empty_slot_count,id)
                 empty_slot_count += 1
             else:
-                id = self.fleet_preset[map_name.value][i - 1]
+                id = self._get_fleet_preset(map_name.value)[i - 1]
                 ssw.ship_switcher.switch_slot_by_id(i-empty_slot_count,id)
 
-        if flt.fleets.fleets[1].ship_ids != self.fleet_preset[map_name.value]:
+        if flt.fleets.fleets[1].ship_ids != self._get_fleet_preset(map_name.value):
             print("Debug: Costom fleet switch failed")
             print(flt.fleets.fleets[1].ship_ids)
-            print(self.fleet_preset[map_name.value])
+            print(self._get_fleet_preset(map_name.value))
 
         """Check if next combat possible, since new ship is switched in"""
         """Refresh home to update ship list"""
@@ -166,6 +168,17 @@ class FleetSwitcherCore(object):
             kca_u.kca.click_existing('lower_left', 'global|scroll_next.png')
             kca_u.kca.sleep(0.1)
             clicks += 1
+    
+    def _get_fleet_preset(self, key):
+        if key in self.fleet_preset:
+            return self.fleet_preset[key]
+        else:
+            """If the key contain a quest name"""
+            quest_name_len = len(key.split("-")[-1]) 
+            if quest_name_len > 1:
+                return self.fleet_preset[key[:-quest_name_len - 1]]
+        raise ValueError("Unexpected preset id:" + str(key))
+
 
 
 fleet_switcher = FleetSwitcherCore()
