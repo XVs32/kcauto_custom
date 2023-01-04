@@ -1,5 +1,6 @@
 from config.config_base import ConfigBase
 from constants import MAX_FLEET_PRESETS
+from constants import AUTO_PRESET
 from kca_enums.damage_states import DamageStateEnum
 from kca_enums.fleet_modes import FleetModeEnum, CombinedFleetModeEnum
 from kca_enums.formations import FormationEnum
@@ -75,8 +76,11 @@ class ConfigCombat(ConfigBase):
 
     @fleet_presets.setter
     def fleet_presets(self, value):
-        for preset_id in value:
-            if not 0 <= preset_id <= MAX_FLEET_PRESETS:
+        for i  in range(0,len(value)):
+            if value[i] == "auto":
+                value[i] = AUTO_PRESET
+                continue
+            if not 0 < value[i] <= MAX_FLEET_PRESETS:
                 raise ValueError("Invalid value specified for fleet preset")
         self._fleet_presets = value
 
