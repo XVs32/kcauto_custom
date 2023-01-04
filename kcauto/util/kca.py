@@ -1,4 +1,6 @@
 import os
+import requests
+from pyquery import PyQuery
 from sys import path_hooks
 import PyChromeDevTools
 from datetime import datetime, timedelta
@@ -12,7 +14,7 @@ import config.config_core as cfg
 import ships.ships_core as shp
 import util.click_tracker as clt
 from constants import (
-    GAME_W, GAME_H, VISUAL_URL, API_URL, EXACT, DEFAULT, SLEEP_MODIFIER)
+    GAME_W, GAME_H, VISUAL_URL, STRATEGY_ROOM_URL, API_URL, EXACT, DEFAULT, SLEEP_MODIFIER)
 from kca_enums.interaction_modes import InteractionModeEnum
 from kca_enums.kcsapi_paths import KCSAPIEnum
 from util.exceptions import ChromeCrashException
@@ -23,8 +25,10 @@ class Kca(object):
     """Primary kcauto utility class.
     """
     ASSETS_FOLDER = 'assets'
+    visual_tab_id = None
     visual_hook = None
     api_hook = None
+    kc3_hook = None
     css_x = None
     css_y = None
     game_x = None
@@ -44,18 +48,13 @@ class Kca(object):
         while the latter is used for reading all API interactions.
 
         Args:
-            host (str, optional): Chrome dev protocol server address. Defaults
-                to "localhost".
-            port (int, optional): Chrome dev protocol server port. Defaults to
-                9222.
 
         Raises:
             Exception: could not find Kancolle tabs in Chrome.
         """
         Log.log_msg("Hooking into Chrome.")
-        self.visual_hook = PyChromeDevTools.ChromeInterface(
-            host=host, port=port)
-        self.api_hook = PyChromeDevTools.ChromeInterface(host=host, port=port)
+        self.cdt_init(target="api")
+        self.cdt_init(target="visual")
 
         visual_tab = None
         visual_tab_id = None
@@ -65,6 +64,7 @@ class Kca(object):
             if tab['url'] == VISUAL_URL:
                 visual_tab = n
                 visual_tab_id = tab['id']
+                self.visual_tab_id = visual_tab_id
             if API_URL in tab['url']:
                 api_tab = n
                 api_tab_id = tab['id']
@@ -77,6 +77,7 @@ class Kca(object):
                 "No running Kantai Collection tab found in Chrome.")
 
         self.visual_hook.connect_targetID(visual_tab_id)
+
         Log.log_debug(
             f"Connected to visual tab ({visual_tab}:{visual_tab_id})")
         self.visual_hook.Page.enable()
@@ -85,6 +86,7 @@ class Kca(object):
         self.api_hook.Network.enable()
         Log.log_debug(f"Connected to API tab ({api_tab}:{api_tab_id})")
         Log.log_success("Connected to Chrome")
+
 
     def hook_health_check(self):
         """Method that runs through the different events reported to the api
@@ -142,9 +144,6 @@ class Kca(object):
         except FindFailed:
             Log.log_error("Could not find dmm reference point.")
             raise FindFailed()
-
-        print(dmm_logo.x)
-        print(dmm_logo.y)
 
         self.css_x = dmm_logo.x
         self.css_y = dmm_logo.y
@@ -681,5 +680,130 @@ class Kca(object):
 
         self.visual_hook.Input.synthesizeTapGesture(x= x + offset_x , y=y + offset_y)
 
+    def cdt_init(self, host="localhost", port=9222, target = "visual"):
+        """method to hook this python program to chrome browser, cdt stands for ChromeDevTools
+
+        Args:
+            host (str, optional): Chrome dev protocol server address. Defaults
+                to "localhost".
+            port (int, optional): Chrome dev protocol server port. Defaults to
+                9222.
+            api (bool): api hook or not(default True)
+        """
+        if target == "api":
+            self.api_hook = PyChromeDevTools.ChromeInterface(
+                host=host, port=port)
+        elif target == "visual":
+            self.visual_hook = PyChromeDevTools.ChromeInterface(
+                host=host, port=port)
+        elif target == "kc3":
+            self.kc3_hook = PyChromeDevTools.ChromeInterface(
+                host=host, port=port)
+        else:
+            raise ValueError(
+                "Hook target must be either api, visual or kc3.")
+
+        return
+
+    def reload_kc3_strategy_page(self, subpage = ""):
+        """method to open/refresh the kc3 strategy page in chrome
+
+        Args:
+            subpage (string): The name of sub page to open. (ex. flowchart)
+        """
+
+        self.cdt_init(target="kc3")
+
+        strategy_tab_id = None
+        for n, tab in enumerate(self.kc3_hook.tabs):
+            if tab['url'] == STRATEGY_ROOM_URL + subpage:
+                strategy_tab_id = tab['id']
+
+        if strategy_tab_id != None :
+            """There is currenty a kc3 strategy page opened"""
+            self.kc3_hook.Target.closeTarget(targetId=strategy_tab_id)
+            self.cdt_init(target="kc3")
+
+
+        strategy_tab_id = self.kc3_hook.Target.createTarget(
+            url=STRATEGY_ROOM_URL + subpage,
+            newWindow=False,
+            background=True,
+            forTab=True)["result"]["targetId"]
+        
+        self.kc3_hook.connect_targetID(strategy_tab_id)
+        self.kc3_hook.wait_event("Page.loadEventFired", timeout=60)
+
+        return
+
+    def get_quest_count(self, target_quest_name):
+        """ method to get the remaining action needed for the specified quest.
+            For example, the remaining sorties needed for quest Bm3 could be {1-4:1, 3-5:0}
+
+        Note:
+            Expect reload_kc3_strategy_page() is excuted
+
+        Args:
+            target_quest_name (string): The quest to check. (ex. "Bm3")
+        
+        Return:
+            dict with key of quest name, and value of remaining actions needed.
+            return None if quest is not combat type.
+        """
+
+        self.kc3_hook.DOM.getDocument()
+        html_code=self.kc3_hook.DOM.getOuterHTML(nodeId=5)
+
+        dom = PyQuery(html_code["result"]["outerHTML"], parser='html')
+
+        quest_tree_dom = dom("ul#questBox_rootFlow.questTree")
+
+        i = 0
+        while True:
+
+            quest_name = quest_tree_dom("div.questInfo").eq(i)(".questIcon").text()
+            if quest_name == target_quest_name:
+                
+                action_raw = quest_tree_dom("div.questInfo").eq(i)(".questCount").attr('title')
+                if action_raw == None:
+                    return None
+                action_raw_line = action_raw.split('\n')
+                action = {}
+
+                if quest_name[0] != "B":
+                    return None
+                elif quest_name == "Bw1":
+                    action_raw_line[3] = action_raw_line[3].replace(' ', '/')
+                    s_count =           int(action_raw_line[3].split("/")[1]) - int(action_raw_line[3].split("/")[0])
+                    action_raw_line[2] = action_raw_line[2].replace(' ', '/')
+                    boss_win_count =    int(action_raw_line[2].split("/")[1]) - int(action_raw_line[2].split("/")[0])
+                    action_raw_line[1] = action_raw_line[1].replace(' ', '/')
+                    boss_count =        int(action_raw_line[1].split("/")[1]) - int(action_raw_line[1].split("/")[0])
+                    action_raw_line[0] = action_raw_line[0].replace(' ', '/')
+                    sortie_count =      int(action_raw_line[0].split("/")[1]) - int(action_raw_line[0].split("/")[0])
+
+                    if s_count > 0:
+                        action["1-1"] = s_count
+                    elif boss_win_count > 0:
+                        action["1-5"] = boss_win_count 
+                    elif boss_count > 0:
+                        action["1-5"] = boss_count 
+                    elif sortie_count > 0:
+                        action["5-2-C"] = sortie_count 
+
+
+                else:
+
+                    for line in action_raw_line:
+                        line = line.replace(' ', '/')
+                        count = int(line.split("/")[1]) - int(line.split("/")[0])
+                        line = line.replace(']', '[')
+                        map_name = line.split("[")[1][1:]
+                        action[map_name] = count
+
+                return action
+            elif quest_name == "":
+                return None
+            i = i + 1
 
 kca = Kca()
