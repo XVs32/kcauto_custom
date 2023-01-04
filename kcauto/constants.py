@@ -7,6 +7,8 @@ MIN_PORT = 0
 MAX_PORT = 65535
 MAX_FLEET_PRESETS = 15
 
+AUTO_PRESET = 0
+
 # game window dimensions
 GAME_W = 1200
 GAME_H = 720
@@ -14,6 +16,7 @@ GAME_H = 720
 # chrome hook url targets
 DEFAULT_CHROME_DEV_PORT = 9222
 VISUAL_URL = 'http://www.dmm.com/netgame/social/-/gadgets/=/app_id=854854/'
+STRATEGY_ROOM_URL = 'chrome-extension://hkgmldnainaglpjngpajnnjfhpdjkohh/pages/strategy/strategy.html'
 API_URL = 'kcs2/index.php'
 
 # similarity presets
