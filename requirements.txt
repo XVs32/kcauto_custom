@@ -3,6 +3,8 @@
 # use "sudo apt-get install python3.7-tk" first if needed
 # use "sudo apt-get install scrot" first if needed
 
+pyquery
+lxml==4.2.5
 flake8==3.7.8
 matplotlib==3.1.2
 numpy==1.17.4
