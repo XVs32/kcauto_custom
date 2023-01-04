@@ -104,6 +104,11 @@ class CombatCore(CoreBase):
         super().update_from_config()
 
         if self.enabled:
+            
+            quest_name_len = len(value.split("-")[-1]) 
+            if quest_name_len > 1:
+                value = value[:-quest_name_len - 1]
+
             self._load_map_data(MapEnum(value))
             self.set_next_sortie_time()
         else:
@@ -509,7 +514,7 @@ class CombatCore(CoreBase):
                 if flt.fleets.combined_fleet
                 else FormationEnum.DIAMOND)
         elif self.current_node.boss_node:
-            Log.log_debug("Node is air node")
+            Log.log_debug("Node is boss node")
             formation = (
                 FormationEnum.COMBINED_FLEET_4
                 if flt.fleets.combined_fleet
