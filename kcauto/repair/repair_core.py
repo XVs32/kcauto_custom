@@ -53,7 +53,7 @@ class RepairCore(object):
     def soonest_complete_time(self):
         self._clean_timers()
         sorted_timers = sorted(self.complete_times)
-        if len(sorted_timers):
+        if len(sorted_timers) == 0:
             Log.log_warn("kc_auto thinks there are ships in repair, but there is not.")
             return 0
         else:
