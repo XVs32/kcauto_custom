@@ -80,6 +80,21 @@ class Kcauto(object):
         if not exp.expedition.enabled:
             return False
 
+        if ExpeditionEnum.AUTO in cfg.config.expedition.all_expeditions:
+            if ExpeditionEnum.AUTO in cfg.config.expedition.fleet_2:
+                cfg.config.expedition.set_auto_expedition(2)
+            if ExpeditionEnum.AUTO in cfg.config.expedition.fleet_3:
+                cfg.config.expedition.set_auto_expedition(3)
+            if ExpeditionEnum.AUTO in cfg.config.expedition.fleet_4:
+                cfg.config.expedition.set_auto_expedition(4)
+            
+        if not com.combat.enabled:
+            #combat module disable, enter low ​activeness mode
+            if exp.expedition.time_up():
+                exp.expedition.set_timer()
+            else:
+                return False
+
         if exp.expedition.expect_returned_fleets():
             self.find_kancolle()
             nav.navigate.to('home')
@@ -103,7 +118,7 @@ class Kcauto(object):
 
     def run_factory_logic(self):
 
-        if not fty.factory.enabled:
+        if not fty.factory.enabled or not fty.factory.disable_time_up():
             return False
 
         self.run_quest_logic('factory', fast_check=False)
@@ -124,6 +139,9 @@ class Kcauto(object):
             if fty.factory.build_logic(1) == True:
                 self.run_quest_logic('factory', fast_check=True, back_to_home=True, force=True)
                 nav.navigate.to('home')
+            else:
+                # disable module for 15 mins
+                fty.factory.set_timer()
 
         if "F7" in qst.quest.next_check_intervals.keys():
             anything_is_done = True
@@ -140,6 +158,8 @@ class Kcauto(object):
             fty.factory.build_logic(3)
             self.run_quest_logic('factory', fast_check=True, back_to_home=True, force=True)
             nav.navigate.to('home')
+            #always disable module for 15 mins
+            fty.factory.set_timer()
 
         if anything_is_done == False:
             """Daily factory process done, disable from now"""
@@ -198,9 +218,7 @@ class Kcauto(object):
             #update port api, for should_and_able_to_sortie
             nav.navigate.to('refresh_home')
 
-        print("Debug: before should_and_able_to_sortie")
         if com.combat.should_and_able_to_sortie(ignore_supply=True):
-            print("Debug: in should_and_able_to_sortie")
             if quest_selected == False:
                 self.run_quest_logic('combat', fast_check=True)
 
@@ -219,7 +237,7 @@ class Kcauto(object):
                         sortie_queue = []
                         com.combat.set_sortie_queue(sortie_queue)
                         com.combat.__init__()
-                        cfg.config.combat.sortie_map = ""
+                        cfg.config.combat.sortie_map = "auto"
                     
                     sts.stats.set_print_loop_end_stats()
                     self.fast_check_for_expedition()
