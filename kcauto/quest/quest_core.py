@@ -216,6 +216,9 @@ class QuestCore(CoreBase):
     
     def _find_next_sorties_quests(self):
         """Method that finds the next sorties quest to work on
+
+            Return:
+                quest(str): The name of quest(ex. "Bd1")
         """
         self.relevant_quests = self._get_combat_quest() #quest from config
 
@@ -301,7 +304,20 @@ class QuestCore(CoreBase):
                 next_quest = self._find_next_sorties_quests()
 
                 if next_quest != None:
-                    com.combat.set_sortie_queue(self._get_sortie_map_from_quest(next_quest))
+
+                    """Read quest progress""" 
+                    kca_u.kca.reload_kc3_strategy_page(subpage = "#flowchart")
+                    sortie_dict = kca_u.kca.get_quest_count(next_quest)
+
+                    if sortie_dict == None:
+                        """Cannot get quest progress from kc3, use default in config file"""
+                        com.combat.set_sortie_queue(self._get_sortie_map_from_quest(next_quest))
+                    else:
+                        sortie_list = []
+                        for key in sortie_dict:
+                            for i in range(0, sortie_dict[key]):
+                                sortie_list.append(key+"-"+next_quest)
+                        com.combat.set_sortie_queue(sortie_list)
 
             #restart combat module with the new sortie map
             if len(com.combat.get_sortie_queue()) > 0:
@@ -358,8 +374,6 @@ class QuestCore(CoreBase):
                         & set(q.enemy_context)):
                     continue
             if q.map_context:
-                print(cfg.config.combat.sortie_map)
-                print(q.map_context)
                 #if cfg.config.combat.sortie_map is WX-X_withQuestName Then append a WX-X sortie_map to see if any other quest could be done together 
                 if cfg.config.combat.sortie_map not in q.map_context:
                     continue
