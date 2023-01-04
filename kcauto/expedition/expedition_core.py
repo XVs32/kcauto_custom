@@ -1,5 +1,6 @@
 from pyvisauto import Region
 from random import choice
+import time
 
 import api.api_core as api
 import combat.combat_core as com
@@ -20,9 +21,16 @@ class ExpeditionCore(CoreBase):
         ExpeditionEnum.E5_33, ExpeditionEnum.E5_34, ExpeditionEnum.EE_S1,
         ExpeditionEnum.EE_S2]
     _available_expeditions = []
+    disable_timer = 0
     module_name = 'expedition'
     module_display_name = 'Expedition'
     available_expeditions_per_world = {}
+
+    def set_timer(self):
+        self.disable_timer = time.time()
+
+    def time_up(self):
+        return time.time() > self.disable_timer + (3 * 60 * 60)
 
     @property
     def available_expeditions(self):
