@@ -3,6 +3,7 @@ from kca_enums.enum_base import EnumBase
 
 
 class ExpeditionEnum(EnumBase):
+    AUTO = "auto"
     E1_1, E1_2, E1_3, E1_4, E1_5, E1_6, E1_7 = 1, 2, 3, 4, 5, 6, 7
     E1_8, E1_A1, E1_A2, E1_A3, E1_A4 = 8, 100, 101, 102, 103
     E2_9, E2_10, E2_11, E2_12, E2_13, E2_14, E2_15 = 9, 10, 11, 12, 13, 14, 15
