@@ -374,8 +374,9 @@ class QuestCore(CoreBase):
                         & set(q.enemy_context)):
                     continue
             if q.map_context:
-                #if cfg.config.combat.sortie_map is WX-X_withQuestName Then append a WX-X sortie_map to see if any other quest could be done together 
-                if cfg.config.combat.sortie_map not in q.map_context:
+                #The current combat map(ex. 3-5) without quest suffix(ex. 3-5-Bw4)
+                current_combat_map = MapEnum(cfg.config.combat.sortie_map.world_and_map)
+                if cfg.config.combat.sortie_map not in q.map_context and current_combat_map not in q.map_context:
                     continue
             if q.expedition_context:
                 if not (
