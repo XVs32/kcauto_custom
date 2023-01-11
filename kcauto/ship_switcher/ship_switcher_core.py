@@ -152,7 +152,6 @@ class ShipSwitcherCore(object):
             if ship_list[i].local_id == local_id:
                 return i
 
-        print(local_id)
         raise ValueError("Can not find the specified ship")
 
     def _find_replacement_ship(self, rule, ship_list):
