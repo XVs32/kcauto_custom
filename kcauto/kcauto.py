@@ -192,21 +192,17 @@ class Kcauto(object):
         return True
 
     def run_combat_logic(self):
-        print("Debug: run combat logic")
         quest_selected = False
         if not com.combat.enabled:
-            print("Debug: combat disabled")
             return False
 
         if com.combat.time_to_sortie == False:
-            print("Debug: com.combat.time_to_sortie = False")
             return False
         else :
             #update port api, for should_and_able_to_sortie
             nav.navigate.to('refresh_home')
 
         if cfg.config.combat.sortie_map == MapEnum.auto_map_selete:
-            print("Debug: Call quest combat")
             self.run_quest_logic('combat', fast_check=False, force= True)
             quest_selected = True
             if cfg.config.combat.sortie_map == MapEnum.auto_map_selete:    #If no combat map available, turn off combat module
