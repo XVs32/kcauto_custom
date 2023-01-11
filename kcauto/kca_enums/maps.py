@@ -59,6 +59,11 @@ class MapEnum(EnumBase):
     W2_2_Bq11 = "2-2-Bq11"
     W2_3_Bq11 = "2-3-Bq11"
     
+    W4_1_Bq12 = "4-1-Bq12"
+    W4_2_Bq12 = "4-2-Bq12"
+    W4_3_Bq12 = "4-3-Bq12"
+    W4_4_Bq12 = "4-4-Bq12"
+    W4_5_Bq12 = "4-5-Bq12"
 
     auto_map_selete = 'auto'
 
