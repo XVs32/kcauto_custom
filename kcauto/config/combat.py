@@ -97,7 +97,7 @@ class ConfigCombat(ConfigBase):
                 value (str): The Id of a map, ex 1-1, 3-5, 6-4 
         """
         if not MapEnum.contains_value(value):
-            raise ValueError("Invalid map specified")
+            raise ValueError("Invalid map specified:" + str(value))
         self._sortie_map = MapEnum(value)
 
     @property
