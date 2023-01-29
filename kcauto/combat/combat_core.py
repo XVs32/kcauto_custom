@@ -101,8 +101,6 @@ class CombatCore(CoreBase):
         if value == "":
             return 
 
-        super().update_from_config()
-
         if self.enabled:
             
             quest_name_len = len(value.split("-")[-1]) 
@@ -211,7 +209,9 @@ class CombatCore(CoreBase):
         return False
 
     def _load_map_data(self, sortie_map):
+        print("Debug:_load_map_data called")
         if self.map_data is None or self.map_data.name != sortie_map.world_and_map:
+            print("Debug:load_map excute with " + str(sortie_map.world_and_map))
             data = JsonData.load_json(f'data|combat|{sortie_map.world_and_map}.json')
             self.map_data = MapData(sortie_map, data)
 
@@ -733,6 +733,7 @@ class CombatCore(CoreBase):
         self.nodes_run.append(next_node)
 
     def _get_next_node_from_edge(self, edge):
+        print("Debug:"+ str( self.map_data.name))
         return self.map_data.edges[edge][1]
 
     def set_sortie_queue(self, sortie_queue):
