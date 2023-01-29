@@ -19,6 +19,7 @@ class MapEnum(EnumBase):
     WE_6, WE_7, WE_8 = 'E-6', 'E-7', 'E-8'
 
     W1_5_Bw1 = '1-5-Bw1'
+    W5_2_C = '5-2-C'
     W5_2_C_Bw1 = '5-2-C-Bw1'
 
     W2_5_Bm1 = '2-5-Bm1'
@@ -80,4 +81,7 @@ class MapEnum(EnumBase):
 
     @property
     def world_and_map(self):
-        return self.value.split('-')[0] + "-" + self.value.split('-')[1] 
+        if self.value != "auto":
+            return self.value.split('-')[0] + "-" + self.value.split('-')[1] 
+        else:
+            return "auto"
