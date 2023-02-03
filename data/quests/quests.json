@@ -3,19 +3,19 @@
     "id": 201,
     "type": "daily",
     "intervals": [1, 0, 0],
-    "recommended_map": ["5-2-C"]
+    "recommended_map": ["1-1"]
   },
   "Bd2": {
     "id": 216,
     "type": "daily",
     "intervals": [1, 0, 0],
-    "recommended_map": ["5-2-C"]
+    "recommended_map": ["1-1"]
   },
   "Bd3": {
     "id": 210,
     "type": "daily",
     "intervals": [5, 0, 0],
-    "recommended_map": ["5-2-C"]
+    "recommended_map": ["1-1"]
   },
   "Bd4": {
     "id": 211,
@@ -199,7 +199,7 @@
     "id": 873,
     "type": "other",
     "map_context": ["3-1-Bq5", "3-2-Bq5", "3-3-Bq5"],
-    "recommended_map": ["3-1-Bq5", "3-2-Bq5", "3-3-Bq5"]
+    "recommended_map": ["3-3-Bq5", "3-1-Bq5", "3-2-Bq5"]
   },
   "Bq6": {
     "id": 875,
@@ -216,8 +216,8 @@
   "Bq8": {
     "id": 893,
     "type": "other",
-    "map_context": ["1-5", "7-1", "7-2"],
-    "recommended_map": ["1-5", "7-1", "7-2-1", "7-2-2"]
+    "map_context": ["1-5", "7-1", "7-2-1", "7-2-2"],
+    "recommended_map": ["7-2-1", "7-2-1", "7-2-1", "7-2-2", "7-2-2", "7-2-2", "7-1", "7-1", "7-1", "1-5", "1-5", "1-5"]
   },
   "Bq9": {
     "id": 894,
@@ -228,7 +228,7 @@
   "Bq10": {
     "id": 872,
     "type": "other",
-    "map_context": ["5-5", "6-2", "6-5", "7-2"],
+    "map_context": ["5-5", "6-2", "6-5", "7-2-2"],
     "recommended_map": ["5-5", "6-2", "6-5", "7-2-2"]
   },
   "Bq11": {
@@ -312,7 +312,7 @@
   "By11": {
     "id": 973,
     "type": "other",
-    "map_context": ["3-1", "3-3", "4-3", "7-3-2"],
+    "map_context": ["3-1", "3-3", "4-3", "7-3", "7-3-2"],
     "recommended_map": ["3-1", "3-3", "4-3", "7-3-2"]
   },
   "By12": {
