@@ -4,6 +4,6 @@
   "monthly":    ["Bm1","Bm2","Bm3","Bm4","Bm5","Bm6","Bm7","Bm8"],
   "quarterly":  ["Bq1","Bq2","Bq3","Bq4","Bq5","Bq6","Bq7","Bq8","Bq9","Bq10","Bq11","Bq12","Bq13"],
   "yearly":     ["By1","By2","By3","By4","By5","By6","By7","By8","By9","By10","By11","By12","By13"],
-  "low_priority":    ["Bw1","Bw3"]
+  "low_priority":    ["Bw1","Bw3","Bd1","Bd2","Bd3"]
 
 }
