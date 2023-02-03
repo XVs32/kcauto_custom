@@ -3,14 +3,16 @@
 # use "sudo apt-get install python3.7-tk" first if needed
 # use "sudo apt-get install scrot" first if needed
 
-pyquery
-lxml==4.2.5
-flake8==3.7.8
+tk
+click==6.7
 matplotlib==3.1.2
 numpy==1.17.4
-PyChromeDevTools==0.1
-PySimpleGUI==4.14.0
+PyAutoGUI==0.9.53
+PyChromeDevTools==0.4
+pynput==1.7.6
+pyquery==2.0.0
+PySimpleGUI==4.60.4
 pyvisauto==1.0.3
-requests==2.22.0
-Pynput==1.7.6
-tk
+requests==2.18.4
+lxml==4.2.5
+flake8==3.7.8
