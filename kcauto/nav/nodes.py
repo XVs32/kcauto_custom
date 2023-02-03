@@ -2,6 +2,7 @@ import api.api_core as api
 import util.kca as kca_u
 from constants import NEAR_EXACT
 from kca_enums.kcsapi_paths import KCSAPIEnum
+import expedition.expedition_core as exp
 from util.logger import Log
 
 
@@ -213,6 +214,9 @@ class NavNode(object):
             else:
                 kca_u.kca.wait_and_click(
                     kca_u.kca.r[c['click_target_region']], c['click_target'])
+                if target == 'home':
+                    exp.expedition.receive_expedition()
+
             if api_update:
                 api.api.update_from_api({c['api_target']})
             kca_u.kca.hover('top')
@@ -225,6 +229,7 @@ class NavNode(object):
             Log.log_error(
                 f"Not possible to navigate to '{target}' from {self.name} "
                 "screen.")
+            return False
 
 
 nav_nodes = NavNodes()

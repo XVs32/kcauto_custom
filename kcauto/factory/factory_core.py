@@ -1,4 +1,5 @@
 import resource
+import time
 from pyvisauto import Region
 import api.api_core as api
 import fleet.fleet_core as flt
@@ -12,6 +13,7 @@ from util.logger import Log
 
 class FactoryCore(object):
     enabled = False
+    disable_timer = 0
     order_oil_region        = {1    : "order_oil_region_1",
                                10   : "order_oil_region_10",
                                100  : "order_oil_region_100"}
@@ -32,6 +34,12 @@ class FactoryCore(object):
     def __init__(self):
         self.enabled = cfg.config.factory.enabled
         pass
+
+    def set_timer(self):
+        self.disable_timer = time.time()
+
+    def disable_time_up(self):
+        return time.time() > self.disable_timer + (15 * 60)
 
     def develop_logic(self, count):
         self.goto()

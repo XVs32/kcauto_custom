@@ -1,4 +1,5 @@
 from config.config_base import ConfigBase
+import combat.combat_core as com
 from kca_enums.expeditions import ExpeditionEnum
 from kca_enums.fleet_modes import FleetModeEnum, CombinedFleetModeEnum
 
@@ -15,7 +16,7 @@ class ConfigExpedition(ConfigBase):
         all_expeditions = (
             config['expedition.fleet_2'] + config['expedition.fleet_3']
             + config['expedition.fleet_4'])
-        if len(all_expeditions) != len(set(all_expeditions)):
+        if not "auto" in all_expeditions and len(all_expeditions) != len(set(all_expeditions)):
             raise ValueError("Conflicting expeditions assigned")
         self.fleet_2 = config['expedition.fleet_2']
         self.fleet_3 = config['expedition.fleet_3']
@@ -107,3 +108,21 @@ class ConfigExpedition(ConfigBase):
         if len(self.fleet_4) > 0:
             expedition_fleets.append(4)
         return expedition_fleets
+    
+    def set_auto_expedition(self, fleet_id):
+        if com.combat.enabled:
+            if fleet_id == 2:
+                self.fleet_2 = [2]
+            elif fleet_id == 3:
+                self.fleet_3 = [3]
+            elif fleet_id == 4:
+                self.fleet_4 = [6]
+        else:
+            if fleet_id == 2:
+                self.fleet_2 = [5]
+            elif fleet_id == 3:
+                self.fleet_3 = [37]
+            elif fleet_id == 4:
+                self.fleet_4 = [38]
+
+            
