@@ -55,6 +55,9 @@ class ExpeditionCore(CoreBase):
                 self.available_expeditions_per_world[world].append(expedition)
 
     def receive_expedition(self):
+
+        Log.log_debug("Start receive expedetion")
+        
         received_expeditions = False
         while kca_u.kca.exists(
                 'expedition_flag', 'expedition|expedition_flag.png'):
