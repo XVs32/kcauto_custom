@@ -99,19 +99,17 @@ class QuestCore(CoreBase):
         kca_u.kca.r['center'].click()
         kca_u.kca.sleep(1)
 
-        if context == "combat":
-            self._auto_sortie_map_select()
-
         if context and context != self.last_checked_context:
             fast_check = False
             self.last_checked_context = context
         if not context and self.last_checked_context:
             context = self.last_checked_context
-        if fast_check:
-            if self._turn_in_quests(context):
-                self._toggle_quests(context)
-        else:
-            self._turn_in_quests(context)
+
+        is_any_quest_turned_in = self._turn_in_quests(context)
+
+        if fast_check == False or is_any_quest_turned_in == True:
+            if context == "combat":
+                self._auto_sortie_map_select()
             self._toggle_quests(context)
         Log.log_msg(
             f"Tracked quests: {list(self.next_check_intervals.keys())}")
@@ -130,7 +128,7 @@ class QuestCore(CoreBase):
             f"Checking for quests to turn in and deactivate with {context} "
             "context.")
         quest_turned_in = False
-        relevant_quests = self._get_quest_by_context(context)
+        relevant_quests = self._get_quest_in_config(["combat", "pvp", "factory", "expedition"])
         interval_check_quests = self._get_quests_to_check_by_interval()
         Log.log_msg(f"Relevant quests: {relevant_quests}")
         Log.log_msg(f"Quests to check: {interval_check_quests}")
@@ -220,7 +218,7 @@ class QuestCore(CoreBase):
             Return:
                 quest(str): The name of quest(ex. "Bd1")
         """
-        self.relevant_quests = self._get_combat_quest() #quest from config
+        self.relevant_quests = self._get_quest_in_config(["combat"]) #quest from config
 
         for quest in self.quest_priority_library:
             if quest in self.relevant_quests:
@@ -299,6 +297,11 @@ class QuestCore(CoreBase):
 
         """Auto select sortie map mode"""
 
+
+        kca_u.kca.click_existing(
+            'left', f'quest|filter_tab_all.png')
+        api.api.update_from_api({KCSAPIEnum.QUEST_LIST}) #update visible_quests
+
         if cfg.config.combat.sortie_map == MapEnum.auto_map_selete:
             if com.combat.get_sortie_queue() == []:
                 next_quest = self._find_next_sorties_quests()
@@ -335,10 +338,23 @@ class QuestCore(CoreBase):
         return self.quest_to_sortie_maps[quest]
 
 
-    def _get_combat_quest(self):
-        """Method that get all COMBAT quests name which is available in game and enabled in config"""
+    def _get_quest_in_config(self,type_list):
+        """Method that get all quests name which is available in game and enabled in config"""
+        """type_list(str) : The type of quest to find(combat,pvp,factory,expedition)"""
         """Attention: Return quest name ONLY, no quest id is returned"""
-        quest_groups = ['B']
+
+        quest_groups = []
+        for type in type_list:
+            if type == "combat":
+                quest_groups.append('B')
+            elif type == "pvp":
+                quest_groups.append('C')
+            elif type == "factory":
+                quest_groups.append('F')
+            elif type == "expedition":
+                quest_groups.append('E')
+            else: 
+                raise ValueError("Invalid quest type specified:" + type)
 
         combat_quests = []
         for quest_name in cfg.config.quest.quests:
@@ -347,7 +363,6 @@ class QuestCore(CoreBase):
             combat_quests.append(quest_name)
         
         return combat_quests
-
 
     def _get_quest_by_context(self, context):
         relevant_quests = []
