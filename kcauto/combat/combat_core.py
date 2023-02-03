@@ -61,15 +61,58 @@ class CombatCore(CoreBase):
     rescued_ships = []
     boss_api = False
     map_cleared = False
+    sortie_queue = []
+    first_init = True
+   
+    def __init__(self, sortie_map = ""):
+        """
+            Method to init combat module
+            Args:
+                sortie_map (str): The current sortie map, ex: "3-5"
+        """
 
-    def __init__(self):
-        self.update_from_config()
-
-    def update_from_config(self):
+        """If config did not specify sortie map, then it is auto select sortie map mode"""
         super().update_from_config()
+        if cfg.config.combat.sortie_map == MapEnum.auto_map_selete:
+            self.update_from_combat_map(sortie_map)
+        else:
+            if self.first_init == True:
+                sortie_queue = [cfg.config.combat.sortie_map.value] * 9999
+                self.set_sortie_queue(sortie_queue)
+            self.update_from_config()
+        
+        self.first_init = False
+
+ 
+    def update_from_config(self):
         if self.enabled:
             self._load_map_data(cfg.config.combat.sortie_map)
             self.set_next_sortie_time()
+
+    def update_from_combat_map(self, value):
+        """
+            Method to update the utility data for combat module
+            only runs in auto select sortie map mode
+            
+            Args:
+                value (str): The current sortie map, ex: "3-5"
+        """
+        """No map has been selected yet, it will be selected by auto map select in quest module"""
+        if value == "":
+            return 
+
+        if self.enabled:
+            
+            quest_name_len = len(value.split("-")[-1]) 
+            if quest_name_len > 1:
+                value = value[:-quest_name_len - 1]
+
+            self._load_map_data(MapEnum(value))
+            self.set_next_sortie_time()
+        else:
+            raise ValueError("Using auto select sortie map mode but combat module disabled")
+
+
 
     def update_combat_map_list(self, data):
         Log.log_debug("Updating Combat map data from API.")
@@ -80,7 +123,7 @@ class CombatCore(CoreBase):
             if api_id < 400:
                 map_enum = MapEnum(f"{str(api_id)[0]}-{str(api_id)[1]}")
 
-                self.available_maps[map_enum.value] = {
+                self.available_maps[map_enum.world_and_map] = {
                     'enum': map_enum,
                     'cleared': map_data['api_cleared'] == 1
                 }
@@ -90,7 +133,7 @@ class CombatCore(CoreBase):
                 event_map_delta = api_id - event_map_id_start + 1
                 map_enum = MapEnum(f"E-{event_map_delta}")
 
-                self.available_maps[map_enum.value] = {
+                self.available_maps[map_enum.world_and_map] = {
                     'enum': map_enum,
                     'cleared': map_data.get('api_cleared', 0) == 1,
                     'lbas_bases': map_data.get('api_air_base_decks', []),
@@ -98,8 +141,10 @@ class CombatCore(CoreBase):
                         map_data['api_eventmap']['api_selected_rank'])
                 }
 
-    @property
-    def should_and_able_to_sortie(self):
+    def should_and_able_to_sortie(self, ignore_supply = False):
+        """
+            @note Port api needs to be updated before using this function
+        """
         if not self.enabled or not self.time_to_sortie:
             return False
         if cfg.config.combat.port_check:
@@ -107,12 +152,15 @@ class CombatCore(CoreBase):
                 Log.log_msg("Port is full.")
                 self.set_next_sortie_time(15)
                 return False
+        if cfg.config.combat.sortie_map == MapEnum.auto_map_selete: #No map available in auto sortie map select mode
+                return False
         if cfg.config.combat.sortie_map.world == 'E':
             if shp.ships.current_ship_count >= shp.ships.max_ship_count - 5:
                 Log.log_warn("Port is too full for event map.")
                 self.set_next_sortie_time(15)
                 return False
         if cfg.config.combat.check_fatigue:
+            #fleet update
             for fleet in flt.fleets.combat_fleets:
                 if fleet.highest_fatigue > FatigueStateEnum.NO_FATIGUE:
                     Log.log_warn("Combat fleet is fatigued.")
@@ -131,7 +179,7 @@ class CombatCore(CoreBase):
                     self.set_next_sortie_time(
                         rep.repair.soonest_complete_time)
                 return False
-            if fleet.needs_resupply:
+            if fleet.needs_resupply and ignore_supply == False:
                 Log.log_warn("Combat fleet needs resupply.")
                 return False
         return True
@@ -150,19 +198,21 @@ class CombatCore(CoreBase):
                 f"{KCTime.datetime_to_str(self.next_sortie_time)}")
 
     def _validate_sortie_map(self, sortie_map):
-        if sortie_map.value in self.available_maps:
+        if sortie_map.world_and_map in self.available_maps:
             return True
         return False
 
     @property
     def _sortie_map_is_cleared(self):
-        if self.available_maps[cfg.config.combat.sortie_map.value]['cleared']:
+        if self.available_maps[cfg.config.combat.sortie_map.world_and_map]['cleared']:
             return True
         return False
 
     def _load_map_data(self, sortie_map):
-        if self.map_data is None or self.map_data.name != sortie_map.value:
-            data = JsonData.load_json(f'data|combat|{sortie_map.value}.json')
+        print("Debug:_load_map_data called")
+        if self.map_data is None or self.map_data.name != sortie_map.world_and_map:
+            print("Debug:load_map excute with " + str(sortie_map.world_and_map))
+            data = JsonData.load_json(f'data|combat|{sortie_map.world_and_map}.json')
             self.map_data = MapData(sortie_map, data)
 
     @property
@@ -176,10 +226,10 @@ class CombatCore(CoreBase):
 
     def _conduct_sortie(self, sortie_map):
         if not self._validate_sortie_map(sortie_map):
-            Log.log_warn(f"Map {sortie_map.value} is not available.")
+            Log.log_warn(f"Map {sortie_map.world_and_map} is not available.")
             return False
         if cfg.config.combat.clear_stop and self._sortie_map_is_cleared:
-            Log.log_msg(f"Map {sortie_map.value} has been cleared.")
+            Log.log_msg(f"Map {sortie_map.world_and_map} has been cleared.")
             self.enabled = False
             return False
         self._select_world(sortie_map)
@@ -219,7 +269,7 @@ class CombatCore(CoreBase):
             kca_u.kca.click_existing('right', 'combat|c_world_eo_arrow.png')
         kca_u.kca.r['top'].hover()
         kca_u.kca.click_existing(
-            'kc', f'combat|c_world_{sortie_map.value}.png')
+            'kc', f'combat|c_world_{sortie_map.world_and_map}.png')
         kca_u.kca.r['top'].hover()
 
     def _select_event_map(self, sortie_map):
@@ -233,7 +283,7 @@ class CombatCore(CoreBase):
                 cur_page += 1
         kca_u.kca.r['top'].hover()
         kca_u.kca.click_existing(
-            'kc', f'combat|_event_world_{sortie_map.value}.png')
+            'kc', f'combat|_event_world_{sortie_map.world_and_map}.png')
         if erst.reset.need_to_reset:
             erst.reset.reset_event_difficulty()
         else:
@@ -464,7 +514,7 @@ class CombatCore(CoreBase):
                 if flt.fleets.combined_fleet
                 else FormationEnum.DIAMOND)
         elif self.current_node.boss_node:
-            Log.log_debug("Node is air node")
+            Log.log_debug("Node is boss node")
             formation = (
                 FormationEnum.COMBINED_FLEET_4
                 if flt.fleets.combined_fleet
@@ -683,7 +733,22 @@ class CombatCore(CoreBase):
         self.nodes_run.append(next_node)
 
     def _get_next_node_from_edge(self, edge):
+        print("Debug:"+ str( self.map_data.name))
         return self.map_data.edges[edge][1]
+
+    def set_sortie_queue(self, sortie_queue):
+        """
+            method for other modules to set the sortie_queue in combat module
+            Args:
+                sortie_queue (str list): A list of sortie_map, ex: ["1-1", "2-3"]
+        """
+        self.sortie_queue = sortie_queue
+
+    def get_sortie_queue(self):
+        """
+            method for other modules to read the sortie_queue in combat module
+        """
+        return self.sortie_queue
 
 
 combat = CombatCore()

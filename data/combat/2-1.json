@@ -1,7 +1,7 @@
 {
 	"world": 2,
 	"subworld": 1,
-	"enemy_context": ["carriers", "transports"],
+	"enemy_context": ["carriers"],
 	"nodes": {
 		"A": {
 			"coords": [147, 362]

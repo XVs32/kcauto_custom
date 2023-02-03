@@ -1,0 +1,13 @@
+## A little to-do list 
+1. Auto select a combat course base on the quest available at the moment. (almost done)
+2. Separate fleet preset module from ship switching module
+3. Update start_up script and fleet preset module to support maps that has two/three stages (ex. 7-2,7-3)
+4. Setup a config tempelate
+5. Setup a interrupt button
+
+6. pick expedition base on quest available
+7. 
+
+
+
+["Bd5",]

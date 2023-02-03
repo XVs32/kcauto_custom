@@ -15,6 +15,7 @@ import stats.stats_core as sts
 import util.kca as kca_u
 from kca_enums.expeditions import ExpeditionEnum
 from util.logger import Log
+from kca_enums.maps import MapEnum
 
 
 class Kcauto(object):
@@ -59,7 +60,6 @@ class Kcauto(object):
         if not exp.expedition.receive_expedition():
             if exp.expedition.expect_returned_fleets():
                 nav.navigate.to('refresh_home')
-                exp.expedition.receive_expedition()
                 sts.stats.set_print_loop_end_stats()
 
     def run_print_fleet_logic(self):
@@ -79,10 +79,28 @@ class Kcauto(object):
         if not exp.expedition.enabled:
             return False
 
+        if ExpeditionEnum.AUTO in cfg.config.expedition.all_expeditions:
+            if ExpeditionEnum.AUTO in cfg.config.expedition.fleet_2:
+                cfg.config.expedition.set_auto_expedition(2)
+            if ExpeditionEnum.AUTO in cfg.config.expedition.fleet_3:
+                cfg.config.expedition.set_auto_expedition(3)
+            if ExpeditionEnum.AUTO in cfg.config.expedition.fleet_4:
+                cfg.config.expedition.set_auto_expedition(4)
+            
+        if not com.combat.enabled:
+            #combat module disable, enter low ​activeness mode
+            if exp.expedition.time_up():
+                exp.expedition.set_timer()
+            else:
+                return False
+
         if exp.expedition.expect_returned_fleets():
             self.find_kancolle()
             nav.navigate.to('home')
             self.fast_check_for_expedition()
+
+        
+        self.run_quest_logic()
 
         if set([ExpeditionEnum.E5_33, ExpeditionEnum.E5_34,
                 ExpeditionEnum.EE_S1, ExpeditionEnum.EE_S2]) & set(
@@ -97,6 +115,55 @@ class Kcauto(object):
             exp.expedition.send_expeditions()
             sts.stats.set_print_loop_end_stats()
 
+    def run_factory_logic(self):
+
+        if not fty.factory.enabled or not fty.factory.disable_time_up():
+            return False
+
+        self.run_quest_logic('factory', fast_check=False)
+        nav.navigate.to('home')
+
+        anything_is_done = False
+
+        if "F5" in qst.quest.next_check_intervals.keys():
+            anything_is_done = True
+            fty.factory.goto()
+            if fty.factory.develop_logic(1) == True:
+                self.run_quest_logic('factory', fast_check=True, back_to_home=True, force=True)
+                nav.navigate.to('home')
+
+        if "F6" in qst.quest.next_check_intervals.keys():
+            anything_is_done = True
+            fty.factory.goto()
+            if fty.factory.build_logic(1) == True:
+                self.run_quest_logic('factory', fast_check=True, back_to_home=True, force=True)
+                nav.navigate.to('home')
+            else:
+                # disable module for 15 mins
+                fty.factory.set_timer()
+
+        if "F7" in qst.quest.next_check_intervals.keys():
+            anything_is_done = True
+            fty.factory.goto()
+            if fty.factory.develop_logic(3) == True:
+                self.run_quest_logic('factory', fast_check=True, back_to_home=True, force=True)
+                nav.navigate.to('home')
+        
+        if "F8" in qst.quest.next_check_intervals.keys():
+            anything_is_done = True
+            fty.factory.goto()
+            """If F8 is already 80% done, one more build could finish the quest"""
+            """Therefore, no if == True here"""
+            fty.factory.build_logic(3)
+            self.run_quest_logic('factory', fast_check=True, back_to_home=True, force=True)
+            nav.navigate.to('home')
+            #always disable module for 15 mins
+            fty.factory.set_timer()
+
+        if anything_is_done == False:
+            """Daily factory process done, disable from now"""
+            fty.factory.enabled = False
+
     def run_pvp_logic(self):
         if not pvp.pvp.enabled:
             return False
@@ -108,7 +175,7 @@ class Kcauto(object):
             nav.navigate.to('home')
             self.fast_check_for_expedition()
             self._run_fleetswitch_logic('pvp')
-            self.run_resupply_logic(home_after=True)
+            self.run_resupply_logic(back_to_home=True)
             sts.stats.set_print_loop_end_stats()
         else:
             return False
@@ -116,57 +183,79 @@ class Kcauto(object):
         pvp.pvp.goto()
         while pvp.pvp.pvp_available():
             pvp.pvp.conduct_pvp()
-            self.run_resupply_logic(home_after=True)
-            self.run_quest_logic('pvp', fast_check=True, home_after=True)
+            self.run_resupply_logic(back_to_home=True)
+            self.run_quest_logic('pvp', fast_check=True, back_to_home=True)
             if pvp.pvp.pvp_available():
                 pvp.pvp.goto()
         sts.stats.set_print_loop_end_stats()
         return True
 
     def run_combat_logic(self):
+        quest_selected = False
         if not com.combat.enabled:
             return False
 
-        if com.combat.time_to_sortie:
-            self.find_kancolle()
-            self.fast_check_for_expedition()
-            nav.navigate.to('refresh_home')
-            self.fast_check_for_expedition()
-        else:
+        if com.combat.time_to_sortie == False:
             return False
+        else :
+            #update port api, for should_and_able_to_sortie
+            nav.navigate.to('refresh_home')
 
-        if com.combat.should_and_able_to_sortie:
-            self.find_kancolle()
-            self.fast_check_for_expedition()
-            self.run_quest_logic('combat', fast_check=True)
-            nav.navigate.to('home')
-            self.fast_check_for_expedition()
-            self._run_fleetswitch_logic('combat')
-            if com.combat.should_and_able_to_sortie:
+        if cfg.config.combat.sortie_map == MapEnum.auto_map_selete:
+            self.run_quest_logic('combat', fast_check=False, force= True)
+            quest_selected = True
+            if cfg.config.combat.sortie_map == MapEnum.auto_map_selete:    #If no combat map available, turn off combat module
+                print("Debug: Stop combat module because no combat quest available")
+                com.combat.enabled = False
+                return False
+
+        if self._run_fleetswitch_logic('combat'):
+            #update port api, for should_and_able_to_sortie
+            nav.navigate.to('refresh_home')
+
+        if com.combat.should_and_able_to_sortie(ignore_supply=True):
+            if quest_selected == False:
+                self.run_quest_logic('combat', fast_check=True)
+
+            self.run_resupply_logic()
+
+            if com.combat.should_and_able_to_sortie():
                 com.combat.goto()
                 if com.combat.conduct_sortie():
+                    sortie_queue = com.combat.get_sortie_queue()
+                    if len(sortie_queue) > 1:
+                        sortie_queue = sortie_queue[1:]
+                        com.combat.set_sortie_queue(sortie_queue)
+                        com.combat.__init__(sortie_queue[0])
+                        cfg.config.combat.sortie_map = sortie_queue[0]
+                    else:
+                        sortie_queue = []
+                        com.combat.set_sortie_queue(sortie_queue)
+                        com.combat.__init__()
+                        cfg.config.combat.sortie_map = "auto"
+                    
                     sts.stats.set_print_loop_end_stats()
                     self.fast_check_for_expedition()
 
-    def run_resupply_logic(self, home_after=False):
+    def run_resupply_logic(self, back_to_home=False):
         if res.resupply.need_to_resupply:
             self.find_kancolle()
             self.fast_check_for_expedition()
             res.resupply.goto()
             res.resupply.resupply_fleets()
-            self.handle_home_after(home_after)
-            if not home_after:
+            self.handle_back_to_home(back_to_home)
+            if not back_to_home:
                 self.end_loop_at_port = True
             sts.stats.set_print_loop_end_stats()
 
-    def run_repair_logic(self, home_after=False):
+    def run_repair_logic(self, back_to_home=False):
         if rep.repair.can_conduct_repairs:
             self.find_kancolle()
             self.fast_check_for_expedition()
             rep.repair.goto()
             rep.repair.repair_ships()
-            self.handle_home_after(home_after)
-            if not home_after:
+            self.handle_back_to_home(back_to_home)
+            if not back_to_home:
                 self.end_loop_at_port = True
             sts.stats.set_print_loop_end_stats()
 
@@ -174,11 +263,13 @@ class Kcauto(object):
         if fsw.fleet_switcher.require_fleetswitch(context):
             fsw.fleet_switcher.goto()
             fsw.fleet_switcher.switch_fleet(context)
-            self.handle_home_after(True)
+            self.handle_back_to_home(True)
+            return True
+        return False
 
     
 
-    def run_shipswitch_logic(self, home_after=False):
+    def run_shipswitch_logic(self, back_to_home=False):
         
         switch_list = ssw.ship_switcher.get_ship_switch_list()
         
@@ -187,12 +278,12 @@ class Kcauto(object):
             self.fast_check_for_expedition()
             ssw.ship_switcher.goto()
             ssw.ship_switcher.switch_ships(switch_list)
-            self.handle_home_after(home_after)
-            if not home_after:
+            self.handle_back_to_home(back_to_home)
+            if not back_to_home:
                 self.end_loop_at_port = True
 
     def run_quest_logic(
-            self, context=None, fast_check=False, home_after=False, force=False):
+            self, context=None, fast_check=False, back_to_home=False, force=False):
         if not qst.quest.enabled:
             return False
 
@@ -202,57 +293,11 @@ class Kcauto(object):
             qst.quest.goto()
             qst.quest.manage_quests(context, fast_check)
             sts.stats.quest.times_checked += 1
-            self.handle_home_after(home_after)
+            self.handle_back_to_home(back_to_home)
             sts.stats.set_print_loop_end_stats()
 
-    def run_factory_logic(self):
-
-        if not fty.factory.enabled:
-            return False
-
-        self.find_kancolle()
-        self.fast_check_for_expedition()
-        self.run_quest_logic('factory', fast_check=False)
-        nav.navigate.to('home')
-
-        anything_is_done = False
-
-        if "F5" in qst.quest.next_check_intervals.keys():
-            anything_is_done = True
-            fty.factory.goto()
-            if fty.factory.develop_logic(1) == True:
-                self.run_quest_logic('factory', fast_check=True, home_after=True, force=True)
-                nav.navigate.to('home')
-
-        if "F6" in qst.quest.next_check_intervals.keys():
-            anything_is_done = True
-            fty.factory.goto()
-            if fty.factory.build_logic(1) == True:
-                self.run_quest_logic('factory', fast_check=True, home_after=True, force=True)
-                nav.navigate.to('home')
-
-        if "F7" in qst.quest.next_check_intervals.keys():
-            anything_is_done = True
-            fty.factory.goto()
-            if fty.factory.develop_logic(3) == True:
-                self.run_quest_logic('factory', fast_check=True, home_after=True, force=True)
-                nav.navigate.to('home')
-        
-        if "F8" in qst.quest.next_check_intervals.keys():
-            anything_is_done = True
-            fty.factory.goto()
-            """If F8 is already 80% done, one more build could finish the quest"""
-            """Therefore, no if == True here"""
-            fty.factory.build_logic(3)
-            self.run_quest_logic('factory', fast_check=True, home_after=True, force=True)
-            nav.navigate.to('home')
-
-        if anything_is_done == False:
-            """Daily factory process done, disable from now"""
-            fty.factory.enabled = False
-
-    def handle_home_after(self, home_after):
-        if home_after:
+    def handle_back_to_home(self, back_to_home):
+        if back_to_home:
             nav.navigate.to('home')
             self.fast_check_for_expedition()
 
@@ -262,7 +307,7 @@ class Kcauto(object):
     def check_end_loop_at_port(self):
         if self.end_loop_at_port:
             self.end_loop_at_port = False
-            self.handle_home_after(True)
+            self.handle_back_to_home(True)
 
     @property
     def scheduler_kca_active(self):

@@ -1,5 +1,6 @@
 from pyvisauto import Region
 from random import choice
+import time
 
 import api.api_core as api
 import combat.combat_core as com
@@ -20,9 +21,16 @@ class ExpeditionCore(CoreBase):
         ExpeditionEnum.E5_33, ExpeditionEnum.E5_34, ExpeditionEnum.EE_S1,
         ExpeditionEnum.EE_S2]
     _available_expeditions = []
+    disable_timer = 0
     module_name = 'expedition'
     module_display_name = 'Expedition'
     available_expeditions_per_world = {}
+
+    def set_timer(self):
+        self.disable_timer = time.time()
+
+    def time_up(self):
+        return time.time() > self.disable_timer + (3 * 60 * 60)
 
     @property
     def available_expeditions(self):
@@ -47,6 +55,9 @@ class ExpeditionCore(CoreBase):
                 self.available_expeditions_per_world[world].append(expedition)
 
     def receive_expedition(self):
+
+        Log.log_debug("Start receive expedetion")
+        
         received_expeditions = False
         while kca_u.kca.exists(
                 'expedition_flag', 'expedition|expedition_flag.png'):
@@ -107,7 +118,7 @@ class ExpeditionCore(CoreBase):
             fleet_expeditions = cfg.config.expedition.expeditions_for_fleet(
                 fleet.fleet_id)
             if set(self.SUPPORT_EXPEDITIONS) & set(fleet_expeditions):
-                if com.combat.should_and_able_to_sortie:
+                if com.combat.should_and_able_to_sortie():
                     fleets_to_send.append(fleet)
             else:
                 fleets_to_send.append(fleet)

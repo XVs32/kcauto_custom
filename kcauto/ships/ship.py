@@ -12,10 +12,10 @@ class Ship(object):
     _name = None
     _name_jp = None
     api_id = None
-    sortno = None
+    sortno = None       #Id used in ship switcher
     sort_id = None
     ship_type = None
-    local_id = None
+    local_id = None     #The production code of a ship
     level = None
     hp = None
     hp_max = None

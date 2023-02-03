@@ -12,7 +12,7 @@ class MapData(object):
     edges = {}
 
     def __init__(self, enum, data):
-        self.name = enum.value
+        self.name = enum.world_and_map
         self.world = data['world']
         self.subworld = data['subworld']
         self.panel = data.get('panel', data['subworld'])
