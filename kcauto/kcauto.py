@@ -60,7 +60,6 @@ class Kcauto(object):
         if not exp.expedition.receive_expedition():
             if exp.expedition.expect_returned_fleets():
                 nav.navigate.to('refresh_home')
-                exp.expedition.receive_expedition()
                 sts.stats.set_print_loop_end_stats()
 
     def run_print_fleet_logic(self):
