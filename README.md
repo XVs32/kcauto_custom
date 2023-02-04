@@ -1,6 +1,8 @@
 # kcauto_custom
 
-**kcauto_custom** is a linux command line Kantai Collection automation tool. This is fock from an archived project [kcauto](https://github.com/perryhuynh/kcauto). In comparison with **kcauto**, **kcauto_custom** is less flexible while being more automatic for easy daily use.　Same as **kcauto**, **kcauto_custom** is based on vision-based automation and **kcauto_custom** provide bug fix and addition functions like auto factory and scirpting tool for higher level of automation.
+**kcauto_custom** is a command line Kantai Collection automation tool. This is fock from an archived project [kcauto](https://github.com/perryhuynh/kcauto).  
+In comparison with **kcauto**, **kcauto_custom** is less flexible while being more automatic for easy daily use.  
+Same as **kcauto**, **kcauto_custom** is based on vision-based automation and **kcauto_custom** provide bug fix and addition functions like auto factory and more fleet preset for higher level of automation.
 
 ---
 
@@ -30,16 +32,14 @@
 
 ### Features form kcauto_custom
 
-* Fleet preset for automate ship switch for every combat sorties
+* More fleet presets that you could define in a config file
 * Auto akashi repair 
-* Auto starter script which picks an suitble expedition combination and full combat course each day
 * Auto factory which runs the daily develop and ship building
-* Easy-to-use script which user can setup a config in a few clicks
-* Bug fix for Ship Switcher and Quest Module etc. in kcauto
+* Auto selection of sortie map based on currently available quest
 
 ## Installation
 
-***Warnning*** : In Windows, only the core functions from **kc_auto** might work, this project is not made for Windows afterall.
+***Warnning*** : This thing is not made for Windows, althought it could theoretically run on Windows, I might or might not fix any compatibility problems.
 
 * Install Python 3.7.3
   * Warning for Windows users: This thing is not tested on Windows, the script are made for linux at the first place. WSL might be able to do the magic, but there is not promise.
@@ -54,7 +54,7 @@
 
 * Run Chrome or Chromium equivalent with the `--remote-debugging-port` option:
   * ex: `chrome --remote-debugging-port=9222`
-  * Note: This remote-debugging-enabled instance of Chrome must be the *first* instance of Chrome run. If you have other Chrome windows open, close all of them before re-starting it with remote-debugging enabled.
+  * Note: ***Use task manager to kill all chrome process first if needed.*** This remote-debugging-enabled instance of Chrome must be the *first* instance of Chrome run. If you have other Chrome windows open, close all of them before re-starting it with remote-debugging enabled. 
 * Load Kancolle
   * First run: leave it in the 'Start' screen, where you press the button to enter homeport. You will not have to start kcauto from this screen in subsequent runs, although it is recommended you do this after each game maintenance to allow kcauto to load the latest game data.
   * Ensure that the game is scaled to 100% size/1x scaling &mdash; the entire game should be 1200 pixels wide and 720 pixels tall if you take a screenshot of it
