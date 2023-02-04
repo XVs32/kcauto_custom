@@ -35,7 +35,7 @@ Same as **kcauto**, **kcauto_custom** is based on vision-based automation and **
 * More fleet presets that you could define in a config file
 * Auto akashi repair 
 * Auto factory which runs the daily develop and ship building
-* Auto selection of sortie map based on currently available quest
+* Auto selection of sortie map based on currently available quest (KC3 is needed in this mode)
 
 ## Installation
 
