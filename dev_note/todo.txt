@@ -8,6 +8,18 @@
 6. pick expedition base on quest available
 7. 
 
+## known bug 
+1. 船列表在船隻升級後沒有更新，導致換錯船
+2. 誤判補給狀況、在不需要補給的時候嘗試補給
+3. 換任務後沒有強制換船、而是等現有船的疲勞恢復
+4. kcauto/combat/combat_core.py self.map_data 在換圖後沒有更新
+
 
 
 ["Bd5",]
+
+
+37,38,05
+
+02,06,03
+
