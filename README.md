@@ -72,22 +72,23 @@ The following assumes the `python` alias points to Python 3.7. If your alias for
 # Tutorial
 Since I am not going to update the GUI from the original kcauto, you will have to learn how to edit your config.json.
 But hey, I have put together a few template configs that you can start with, so let's go~
+
 ## Basic
-There are 5 basic configs in the template folder:
+There are 5 basic configs in the ```configs/template``` folder:
 1. basic-1-1.json: Sortie to 1-1 with your current #1 fleet
 ```
 	"combat.enabled":	true,             #Enable the combat module
-	"combat.sortie_map":	"1-1",         #The map you want to go
-	"combat.fleet_mode":	"standard",    #The fleet mode, could be "stf", "strike", "tcf" or "ctf" in event
+	"combat.sortie_map":	"1-1",            #The map you want to go
+	"combat.fleet_mode":	"standard",       #The fleet mode, could be "stf", "strike", "tcf" or "ctf" in event
 ...
 ...
-	"combat.retreat_limit":	4,          #Retreat if any ship is heavily damaged (3: medium damage, 2:Minor damage, 1:scratch damage)
-	"combat.repair_limit":	2,           #Repair a ship if it is Minor damaged 
+	"combat.retreat_limit":	4,                 #Retreat if any ship is heavily damaged (3: medium damage, 2:Minor damage, 1:scratch damage)
+	"combat.repair_limit":	2,                 #Repair a ship if it is Minor damaged 
 	"combat.repair_timelimit_hours":	2, #Use a bucket if a repair takes more than 2 hrs
 	"combat.repair_timelimit_minutes":	0,
 ...
 ...
-	"combat.fleet_presets":	[],         #The fleet preset you want to use in combat(ex. 1 or 2 or 3 etc.)
+	"combat.fleet_presets":	[],           #The fleet preset you want to use in combat(ex. 1 or 2 or 3 etc.)
 ```
 2. basic-exp.json: Expedition to #1, #2 and #3
 ```
@@ -99,22 +100,22 @@ There are 5 basic configs in the template folder:
 3. basic-factory.json: Finish the daily develop and ship building quest for you  
 ***This thing is gonna break if your port is full***, I will fix it but in the meantime, just be careful if you turn this on.
 ```
-	"factory.enabled":	true,                        #Enable the factory module
+	"factory.enabled":	true,                         #Enable the factory module
 	"factory.develop_recipe":	[10, 10, 10, 10],     #The develop recipe
-	"factory.build_recipe":	[30, 30, 30, 30],       #The ship build recipe
+	"factory.build_recipe":	[30, 30, 30, 30],             #The ship build recipe
 ```
 4. basic-pvp.json: Finish the daily pvp for you
 ```
-	"pvp.enabled":	true,            #Enable the pvp module
+	"pvp.enabled":	true,               #Enable the pvp module
 	"pvp.fleet_preset":	1,          #The fleet preset you want to use in pvp(ex. 1 or 2 or 3 etc.)
 ```
 5. basic-akashi.json: Call akashi to fix your ships  
 ***You will need a akashi kai to use this module***, or you could change the "187" => "182" if you only have a **akashi**.
 ```
-	"ship_switcher.enabled":	true,  #Enable the ship_switcher module (auto akashi repair is base on this module)
+	"ship_switcher.enabled":	true,                     #Enable the ship_switcher module (auto akashi repair is base on this module)
 	"ship_switcher.slots":	{
 		"1":	"morale:!=:0|ship:187:>=:1:>=:0:!=:0::",  #Put akashi kai to the #1 slot
-                                                 #"2"~"6": Put a ship under Minor damage to the slot
+                                                                  #"2"~"6": Put a ship under Minor damage to the slot
 		"2":	"damage:==:0,damage:>=:3|class:1:!=:1:==:1:!=:0::,class:1:!=:1:==:2:!=:0::,class:2:!=:1:==:1:!=:0::,class:2:!=:1:==:2:!=:0::,class:3:!=:1:==:1:!=:0::,class:3:!=:1:==:2:!=:0::,class:4:!=:1:==:1:!=:0::,class:4:!=:1:==:2:!=:0::,class:5:!=:1:==:1:!=:0::,class:5:!=:1:==:2:!=:0::,class:6:!=:1:==:1:!=:0::,class:6:!=:1:==:2:!=:0::,class:7:!=:1:==:1:!=:0::,class:7:!=:1:==:2:!=:0::,class:8:!=:1:==:1:!=:0::,class:8:!=:1:==:2:!=:0::,class:9:!=:1:==:1:!=:0::,class:9:!=:1:==:2:!=:0::,class:10:!=:1:==:1:!=:0::,class:10:!=:1:==:2:!=:0::,class:11:!=:1:==:1:!=:0::,class:11:!=:1:==:2:!=:0::,class:13:!=:1:==:1:!=:0::,class:13:!=:1:==:2:!=:0::,class:14:!=:1:==:1:!=:0::,class:14:!=:1:==:2:!=:0::,class:16:!=:1:==:1:!=:0::,class:16:!=:1:==:2:!=:0::,class:17:!=:1:==:1:!=:0::,class:17:!=:1:==:2:!=:0::,class:18:!=:1:==:1:!=:0::,class:18:!=:1:==:2:!=:0::,class:19:!=:1:==:1:!=:0::,class:19:!=:1:==:2:!=:0::,class:20:!=:1:==:1:!=:0::,class:20:!=:1:==:2:!=:0::,class:21:!=:1:==:1:!=:0::,class:21:!=:1:==:2:!=:0::,class:22:!=:1:==:1:!=:0::,class:22:!=:1:==:2:!=:0::",
 		"3":	"damage:==:0,damage:>=:3|class:1:!=:1:==:1:!=:0::,class:1:!=:1:==:2:!=:0::,class:2:!=:1:==:1:!=:0::,class:2:!=:1:==:2:!=:0::,class:3:!=:1:==:1:!=:0::,class:3:!=:1:==:2:!=:0::,class:4:!=:1:==:1:!=:0::,class:4:!=:1:==:2:!=:0::,class:5:!=:1:==:1:!=:0::,class:5:!=:1:==:2:!=:0::,class:6:!=:1:==:1:!=:0::,class:6:!=:1:==:2:!=:0::,class:7:!=:1:==:1:!=:0::,class:7:!=:1:==:2:!=:0::,class:8:!=:1:==:1:!=:0::,class:8:!=:1:==:2:!=:0::,class:9:!=:1:==:1:!=:0::,class:9:!=:1:==:2:!=:0::,class:10:!=:1:==:1:!=:0::,class:10:!=:1:==:2:!=:0::,class:11:!=:1:==:1:!=:0::,class:11:!=:1:==:2:!=:0::,class:13:!=:1:==:1:!=:0::,class:13:!=:1:==:2:!=:0::,class:14:!=:1:==:1:!=:0::,class:14:!=:1:==:2:!=:0::,class:16:!=:1:==:1:!=:0::,class:16:!=:1:==:2:!=:0::,class:17:!=:1:==:1:!=:0::,class:17:!=:1:==:2:!=:0::,class:18:!=:1:==:1:!=:0::,class:18:!=:1:==:2:!=:0::,class:19:!=:1:==:1:!=:0::,class:19:!=:1:==:2:!=:0::,class:20:!=:1:==:1:!=:0::,class:20:!=:1:==:2:!=:0::,class:21:!=:1:==:1:!=:0::,class:21:!=:1:==:2:!=:0::,class:22:!=:1:==:1:!=:0::,class:22:!=:1:==:2:!=:0::",
 		"4":	"damage:==:0,damage:>=:3|class:1:!=:1:==:1:!=:0::,class:1:!=:1:==:2:!=:0::,class:2:!=:1:==:1:!=:0::,class:2:!=:1:==:2:!=:0::,class:3:!=:1:==:1:!=:0::,class:3:!=:1:==:2:!=:0::,class:4:!=:1:==:1:!=:0::,class:4:!=:1:==:2:!=:0::,class:5:!=:1:==:1:!=:0::,class:5:!=:1:==:2:!=:0::,class:6:!=:1:==:1:!=:0::,class:6:!=:1:==:2:!=:0::,class:7:!=:1:==:1:!=:0::,class:7:!=:1:==:2:!=:0::,class:8:!=:1:==:1:!=:0::,class:8:!=:1:==:2:!=:0::,class:9:!=:1:==:1:!=:0::,class:9:!=:1:==:2:!=:0::,class:10:!=:1:==:1:!=:0::,class:10:!=:1:==:2:!=:0::,class:11:!=:1:==:1:!=:0::,class:11:!=:1:==:2:!=:0::,class:13:!=:1:==:1:!=:0::,class:13:!=:1:==:2:!=:0::,class:14:!=:1:==:1:!=:0::,class:14:!=:1:==:2:!=:0::,class:16:!=:1:==:1:!=:0::,class:16:!=:1:==:2:!=:0::,class:17:!=:1:==:1:!=:0::,class:17:!=:1:==:2:!=:0::,class:18:!=:1:==:1:!=:0::,class:18:!=:1:==:2:!=:0::,class:19:!=:1:==:1:!=:0::,class:19:!=:1:==:2:!=:0::,class:20:!=:1:==:1:!=:0::,class:20:!=:1:==:2:!=:0::,class:21:!=:1:==:1:!=:0::,class:21:!=:1:==:2:!=:0::,class:22:!=:1:==:1:!=:0::,class:22:!=:1:==:2:!=:0::",
