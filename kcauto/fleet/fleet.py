@@ -234,25 +234,25 @@ class Fleet(object):
         return self.visual_health
 
     def get_fleet_id_and_name(self):
-        print("Fleet data:")
+        # print("Fleet data:")
 
         ship_type = self.ship_data[0].ship_type.name
         for ship in self.ship_data:
             if ship.ship_type.name != ship_type:
                 ship_type = ""
                 break
-        print("\t\"" + ship_type + "\":" , end ="\t")
+        # print("\t\"" + ship_type + "\":" , end ="\t")
 
-        print("[" , end ="")
+        # print("[" , end ="")
         for ship in self.ship_data:
-            print(str(ship.sortno) + ",", end ="")
-        print("\b],")
+            # print(str(ship.sortno) + ",", end ="")
+        # print("\b],")
 
-        print("\t\"" + ship_type + "_NAME\":" , end ="")
-        print("[" , end ="")
+        # # print("\t\"" + ship_type + "_NAME\":" , end ="")
+        # print("[" , end ="")
         for ship in self.ship_data:
-            print("\"" + ship.name_jp + "\",", end ="")
-        print("\b],")
+            # print("\"" + ship.name_jp + "\",", end ="")
+        # print("\b],")
 
         return
 

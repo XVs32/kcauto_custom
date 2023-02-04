@@ -329,10 +329,10 @@ class QuestCore(CoreBase):
             else:
                 com.combat.__init__()
 
-        print("Debug:")
-        print(cfg.config.combat.sortie_map)
-        print(com.combat.get_sortie_queue())
-        print(self._find_next_sorties_quests())
+        # print("Debug:")
+        # print(cfg.config.combat.sortie_map)
+        # print(com.combat.get_sortie_queue())
+        # print(self._find_next_sorties_quests())
 
     def _get_sortie_map_from_quest(self, quest):
         return self.quest_to_sortie_maps[quest]

@@ -49,7 +49,7 @@ class FleetSwitcherCore(object):
 
 
     def update_fleetpreset_data(self, data):
-        print("update_fleetpreset_data")
+        # print("update_fleetpreset_data")
         self.presets = {}
         self.max_presets = data['api_max_num']
         for preset_id in data['api_deck']:
@@ -138,7 +138,7 @@ class FleetSwitcherCore(object):
             self._set_next_combat_preset()
 
     def switch_to_costom_sleet(self, map_name):
-        print("Debug: Call switch_to_costom_sleet")
+        # print("Debug: Call switch_to_costom_sleet")
         empty_slot_count = 0
         ssw.ship_switcher.current_shipcomp_page = 1
 
@@ -153,9 +153,9 @@ class FleetSwitcherCore(object):
                 ssw.ship_switcher.switch_slot_by_id(i-empty_slot_count,id)
 
         if flt.fleets.fleets[1].ship_ids != self._get_fleet_preset(map_name.value):
-            print("Debug: Costom fleet switch failed")
-            print(flt.fleets.fleets[1].ship_ids)
-            print(self._get_fleet_preset(map_name.value))
+            # print("Debug: Costom fleet switch failed")
+            # print(flt.fleets.fleets[1].ship_ids)
+            # print(self._get_fleet_preset(map_name.value))
 
         """Check if next combat possible, since new ship is switched in"""
         """Refresh home to update ship list"""
