@@ -152,7 +152,7 @@ class FleetSwitcherCore(object):
                 id = self._get_fleet_preset(map_name.value)[i - 1]
                 ssw.ship_switcher.switch_slot_by_id(i-empty_slot_count,id)
 
-        if flt.fleets.fleets[1].ship_ids != self._get_fleet_preset(map_name.value):
+        # if flt.fleets.fleets[1].ship_ids != self._get_fleet_preset(map_name.value):
             # print("Debug: Costom fleet switch failed")
             # print(flt.fleets.fleets[1].ship_ids)
             # print(self._get_fleet_preset(map_name.value))
