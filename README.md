@@ -4,7 +4,7 @@
 In comparison with **kcauto**, **kcauto_custom** is less flexible while being more automatic for easy daily use.  
 Same as **kcauto**, **kcauto_custom** is based on vision-based automation and **kcauto_custom** provide bug fix and addition functions like auto factory and more fleet preset for higher level of automation.
 
-***Warnning*** : This thing is not made for Windows, althought it could theoretically run on Windows, ***feel free to send me a bug report*** but I might or might not fix any compatibility problems.
+***Warnning*** : This thing is not made for Windows(althought it could theoretically run on Windows), ***feel free to send me a bug report*** but I might or might not fix any compatibility problems.
 
 ---
 
