@@ -244,13 +244,13 @@ class Fleet(object):
         # print("\t\"" + ship_type + "\":" , end ="\t")
 
         # print("[" , end ="")
-        for ship in self.ship_data:
+        # for ship in self.ship_data:
             # print(str(ship.sortno) + ",", end ="")
         # print("\b],")
 
-        # # print("\t\"" + ship_type + "_NAME\":" , end ="")
+        # print("\t\"" + ship_type + "_NAME\":" , end ="")
         # print("[" , end ="")
-        for ship in self.ship_data:
+        # for ship in self.ship_data:
             # print("\"" + ship.name_jp + "\",", end ="")
         # print("\b],")
 
