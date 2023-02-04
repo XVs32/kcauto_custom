@@ -205,7 +205,7 @@ class Kcauto(object):
             self.run_quest_logic('combat', fast_check=False, force= True)
             quest_selected = True
             if cfg.config.combat.sortie_map == MapEnum.auto_map_selete:    #If no combat map available, turn off combat module
-                print("Debug: Stop combat module because no combat quest available")
+                # print("Debug: Stop combat module because no combat quest available")
                 com.combat.enabled = False
                 return False
 
