@@ -1,5 +1,7 @@
 import json
 import sys
+from sys import platform
+
 from datetime import datetime, timedelta
 
 import combat.combat_core as com
@@ -80,7 +82,15 @@ class ApiWrapper(object):
                             kca_u.kca.sleep(0.5)
                             response_body_attempt += 1
                         try:
-                            raw_svdata = response_body['result']['body'][7:]
+                            if platform == "linux" or platform == "linux2":
+                                raw_svdata = response_body['result']['body'][7:]
+                            elif platform == "darwin":
+                                raw_svdata = response_body['result']['body'][7:]
+                            elif platform == "win32":
+                                raw_svdata = response_body[0]['result']['body'][7:]
+
+
+                            
                         except Exception:
                             raise ApiException(
                                 "Empty or invalid API response.")
