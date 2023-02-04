@@ -1,4 +1,3 @@
-import resource
 import time
 from pyvisauto import Region
 import api.api_core as api
