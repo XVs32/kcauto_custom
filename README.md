@@ -123,3 +123,84 @@ There are 5 basic configs in the ```configs/template``` folder:
 		"6":	"damage:==:0,damage:>=:3|class:1:!=:1:==:1:!=:0::,class:1:!=:1:==:2:!=:0::,class:2:!=:1:==:1:!=:0::,class:2:!=:1:==:2:!=:0::,class:3:!=:1:==:1:!=:0::,class:3:!=:1:==:2:!=:0::,class:4:!=:1:==:1:!=:0::,class:4:!=:1:==:2:!=:0::,class:5:!=:1:==:1:!=:0::,class:5:!=:1:==:2:!=:0::,class:6:!=:1:==:1:!=:0::,class:6:!=:1:==:2:!=:0::,class:7:!=:1:==:1:!=:0::,class:7:!=:1:==:2:!=:0::,class:8:!=:1:==:1:!=:0::,class:8:!=:1:==:2:!=:0::,class:9:!=:1:==:1:!=:0::,class:9:!=:1:==:2:!=:0::,class:10:!=:1:==:1:!=:0::,class:10:!=:1:==:2:!=:0::,class:11:!=:1:==:1:!=:0::,class:11:!=:1:==:2:!=:0::,class:13:!=:1:==:1:!=:0::,class:13:!=:1:==:2:!=:0::,class:14:!=:1:==:1:!=:0::,class:14:!=:1:==:2:!=:0::,class:16:!=:1:==:1:!=:0::,class:16:!=:1:==:2:!=:0::,class:17:!=:1:==:1:!=:0::,class:17:!=:1:==:2:!=:0::,class:18:!=:1:==:1:!=:0::,class:18:!=:1:==:2:!=:0::,class:19:!=:1:==:1:!=:0::,class:19:!=:1:==:2:!=:0::,class:20:!=:1:==:1:!=:0::,class:20:!=:1:==:2:!=:0::,class:21:!=:1:==:1:!=:0::,class:21:!=:1:==:2:!=:0::,class:22:!=:1:==:1:!=:0::,class:22:!=:1:==:2:!=:0::"
 	},
 ```
+## Advance
+In short, advance function could finish daily, weekly and monthly quest fully automated
+
+It brings you a highly automated experience:
+1. Kcauto-custom pick a available quest for you
+2. It load the preset you defined in the config file
+3. It sortie to the map which requested from the quest
+
+
+On the other hand, the setup is a bit more complicated, you will have to tell kcauto-custom a few things
+1. What ship combo you want to use in a map? (ex. In 2-1, I would want 2 CVLs, 1 CLT, and 3 DDs)
+2. What ship want to use (ex. You need 3 DDs, so which DDs in your port?)
+3. What quest you want to do?
+
+With that said, let's begin the tutorial~
+
+### Dependece
+Since kcauto-custom has to track the progress of a quest, [KC3](https://chrome.google.com/webstore/detail/kancolle-command-center-%E6%94%B9/hkgmldnainaglpjngpajnnjfhpdjkohh) is needed for advance to work.
+
+KC3 is an awesome plug-in, highly recommended installing if you haven't done so.
+
+### Config setup
+There are three files you will need to setup in this tutorial, they are all locate in ```configs/template``` folder:
+1. fleet_preset_first_try.json
+2. fleet_list_first_try.json
+3. advance-2-1.json
+
+Let's start with ```fleet_preset_first_try.json```  
+Well it's kinda simple
+```
+                         The #1 ship          The SECOND CVL in your config, we will talk about it later 
+                              |                            |
+                              V                            V
+	"2-1":	[{"type":"CVL","id":0}, {"type":"CVL","id":1}, {"type":"CLT","id":0}, {"type":"DD","id":0}, {"type":"DD","id":1}, {"type":"DD","id":2}],
+	  ^                                       ^
+	  |                                       |
+The map for this preset              It is a small aircraft carriers
+	
+```
+That's it, not difficult but it is tedious when you have to set this up for every map.  
+Let's focus on map 2-1 for now.
+
+
+Next one is ```fleet_list_first_try.json```  
+You will need to tell kcauto which ship you want to send,  
+the id is unique for every single ship so you will have to find it out yourself.  
+Remember KC3? The plug-in could show you the id like this:  
+![](https://i.imgur.com/JgeJnOA.png)  
+So the id of this inazuma is ```4```  
+Now we could fill in the ```fleet_list_first_try.json```  
+```
+{	
+          The id of your ship, This ship will be the {"type":"DD","id":0} in fleet_preset_first_try.json
+                  |
+		  V
+	"DD":   [ 4, 1111, 1111],
+	"DD_NAME":["inazuma","時雨 改二","夕立"],
+                       ^
+		       |
+              The name of your ship
+	      It does NOT affect kcauto so whatever name you like
+}
+```
+
+There you go, fill in the rest in ```fleet_list_first_try.json``` then take a look in ```advance-2-1.json```  
+There is nothing you will need to change in this file:  
+```
+	"combat.enabled":	true,
+	"combat.sortie_map":	"2-1",        #The map we are going to
+	"combat.fleet_mode":	"standard",
+	...
+	...
+	"combat.fleet_presets":	["auto"],     #The fleet preset we use
+```
+
+Now, rename ```fleet_preset_first_try.json``` => ```fleet_preset.json```  
+and ```fleet_list_first_try.json``` =>  ```fleet_preset.json```.  
+Replace the ```fleet_list.json``` and ```fleet_preset.json``` in ```configs``` (DO NOT forget to backup)  
+then run ```python kcauto --cli --cfg template/advance-2-1```
+
+kcauto-custom should now load the ships you defined and go for 2-1!
