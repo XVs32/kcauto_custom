@@ -127,9 +127,9 @@ There are 5 basic configs in the ```configs/template``` folder:
 In short, advance function could finish daily, weekly and monthly quest fully automated
 
 It brings you a highly automated experience:
-1. Kcauto-custom pick a available quest for you
-2. It load the preset you defined in the config file
-3. It sortie to the map which requested from the quest
+1. kcauto-custom picks a available quest for you
+2. It loads the preset you defined in the config file
+3. It sorties to the map which requested from the quest
 
 
 On the other hand, the setup is a bit more complicated, you will have to tell kcauto-custom a few things
@@ -204,3 +204,16 @@ Replace the ```fleet_list.json``` and ```fleet_preset.json``` in ```configs``` (
 then run ```python kcauto --cli --cfg template/advance-2-1```
 
 kcauto-custom should now load the ships you defined and go for 2-1!
+
+---
+
+All right the tutorial ends here for now, but how to run those daily, weekly quests automatically?
+
+After you finish filling in ```fleet_list.json``` and ```fleet_preset.json```,  
+you could set ```combat.sortie_map``` to auto: 
+```
+"combat.sortie_map":	"auto",        # kcauto-custom pick the map for you 
+```
+
+Note that the setting of ```quest.quests``` WILL affect the behaviour of map picking,  
+but I ran out of time so the tutorial about ```quest``` setting will be the job for another day...
