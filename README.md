@@ -56,7 +56,7 @@ Same as **kcauto**, **kcauto_custom** is based on vision-based automation and **
 ## Kancolle setup
 
 * Run Chrome or Chromium equivalent with the `--remote-debugging-port` option:
-  * ex: `chrome --remote-debugging-port=9222`
+  * ex: `chrome --remote-debugging-port=9222`(For Windows user: If you don't know how to start chrome with options, read [this](https://stackoverflow.com/a/56457835))
   * Note: ***Use task manager to kill all chrome process first if needed.*** This remote-debugging-enabled instance of Chrome must be the *first* instance of Chrome run. If you have other Chrome windows open, close all of them before re-starting it with remote-debugging enabled. 
 * Load Kancolle
   * First run: leave it in the 'Start' screen, where you press the button to enter homeport. You will not have to start kcauto from this screen in subsequent runs, although it is recommended you do this after each game maintenance to allow kcauto to load the latest game data.
