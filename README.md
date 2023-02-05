@@ -38,6 +38,7 @@ Same as **kcauto**, **kcauto_custom** is based on vision-based automation and **
 * Auto akashi repair 
 * Auto factory which runs the daily develop and ship building
 * Auto selection of sortie map based on currently available quest (KC3 is needed in this mode)
+* Support for 7-4
 * Bug fix(Fleet Switcher Module, interaction_mode, quest handling etc.)
 
 ## Installation
@@ -212,7 +213,7 @@ All right the tutorial ends here for now, but how to run those daily, weekly que
 After you finish filling in ```fleet_list.json``` and ```fleet_preset.json```,  
 you could set ```combat.sortie_map``` to auto: 
 ```
-"combat.sortie_map":	"auto",        # kcauto-custom pick the map for you 
+"combat.sortie_map":	"auto",        # kcauto-custom picks the map for you 
 ```
 
 Note that the setting of ```quest.quests``` WILL affect the behaviour of map picking,  
