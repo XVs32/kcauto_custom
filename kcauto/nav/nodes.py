@@ -214,8 +214,6 @@ class NavNode(object):
             else:
                 kca_u.kca.wait_and_click(
                     kca_u.kca.r[c['click_target_region']], c['click_target'])
-                if target == 'home':
-                    exp.expedition.receive_expedition()
 
             if api_update:
                 api.api.update_from_api({c['api_target']})
@@ -224,6 +222,8 @@ class NavNode(object):
             kca_u.kca.wait(
                 kca_u.kca.r[c['wait_target_region']], c['wait_target'], 20,
                 NEAR_EXACT)
+            if target == 'home':
+                exp.expedition.receive_expedition()
             return c['target']
         else:
             Log.log_error(
