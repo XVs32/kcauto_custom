@@ -128,7 +128,7 @@ class QuestCore(CoreBase):
             f"Checking for quests to turn in and deactivate with {context} "
             "context.")
         quest_turned_in = False
-        relevant_quests = self._get_quest_in_config(["combat", "pvp", "factory", "expedition"])
+        relevant_quests = self._get_quest_in_config([context, "expedition"])
         interval_check_quests = self._get_quests_to_check_by_interval()
         Log.log_msg(f"Relevant quests: {relevant_quests}")
         Log.log_msg(f"Quests to check: {interval_check_quests}")
@@ -161,7 +161,7 @@ class QuestCore(CoreBase):
                         continue
 
                 quest_i = self.quest_library[quest['api_no']]
-                if quest['api_state'] == 2 and quest_i in relevant_quests:
+                if quest['api_state'] == 2 and quest_i.name in relevant_quests:
                     Log.log_msg(f"Quest {quest_i.name} already active.")
                     if quest_i.name not in self.next_check_intervals:
                         # relevant quest active but not tracked; add to
@@ -187,7 +187,7 @@ class QuestCore(CoreBase):
 
                 """Edited by XVs32"""
                 if (quest['api_state'] == 2
-                    and quest_i not in relevant_quests
+                    and quest_i.name not in relevant_quests
                     and context is not None
                     and (self.cur_page+1)*5>quest_pos
                     and quest_i.name in cfg.config.quest.quests):
@@ -353,8 +353,9 @@ class QuestCore(CoreBase):
                 quest_groups.append('F')
             elif type == "expedition":
                 quest_groups.append('E')
-            else: 
+            elif type != "reset":
                 raise ValueError("Invalid quest type specified:" + type)
+                
 
         combat_quests = []
         for quest_name in cfg.config.quest.quests:
