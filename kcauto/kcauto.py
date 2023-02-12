@@ -25,7 +25,7 @@ class Kcauto(object):
     is_first_print_fleet = True
 
     def __init__(self):
-        kca_u.kca.hook_chrome(port=cfg.config.general.chrome_dev_port)
+        kca_u.kca.hook_chrome()
 
     def start_kancolle(self):
         kca_u.kca.start_kancolle()

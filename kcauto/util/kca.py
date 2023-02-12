@@ -40,7 +40,7 @@ class Kca(object):
     def __init__(self):
         Log.log_debug("Kca module initialized.")
 
-    def hook_chrome(self, host="localhost", port=9222):
+    def hook_chrome(self):
         """Method that initializes the necessary hooks to Chrome using
         PyChromeDevTools. The visual hook connects to the tab that actually
         contains the Kancolle HTML5 canvas, while the api hook connects to the
@@ -102,13 +102,13 @@ class Kca(object):
         for event in api_events:
             if event['method'] == 'Inspector.detached':
                 Log.log_warn("Chrome API hook is stale. Reconnecting.")
-                self.hook_chrome(port=cfg.config.general.chrome_dev_port)
+                self.hook_chrome()
                 return
         visual_events = self.visual_hook.pop_messages()
         for event in visual_events:
             if event['method'] == 'Page.frameDetached':
                 Log.log_warn("Chrome visual hook is stale. Reconnecting.")
-                self.hook_chrome(port=cfg.config.general.chrome_dev_port)
+                self.hook_chrome()
                 return
             if event['method'] == 'Inspector.targetCrashed':
                 Log.log_warn("Chrome crash detected.")
@@ -681,7 +681,7 @@ class Kca(object):
 
         self.visual_hook.Input.synthesizeTapGesture(x= x + offset_x , y=y + offset_y)
 
-    def cdt_init(self, host="localhost", port=9222, target = "visual"):
+    def cdt_init(self, host="localhost", target = "visual"):
         """method to hook this python program to chrome browser, cdt stands for ChromeDevTools
 
         Args:
@@ -691,6 +691,7 @@ class Kca(object):
                 9222.
             api (bool): api hook or not(default True)
         """
+        port = cfg.config.general.chrome_dev_port
         if target == "api":
             self.api_hook = PyChromeDevTools.ChromeInterface(
                 host=host, port=port)

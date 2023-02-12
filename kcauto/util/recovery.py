@@ -145,7 +145,7 @@ class Recovery(object):
             cls._refresh_screen(screen)
             if kca_u.kca.start_kancolle():
                 Log.log_success("Catbomb Recovery successful.")
-                kca_u.kca.hook_chrome(port=cfg.config.general.chrome_dev_port)
+                kca_u.kca.hook_chrome()
                 sts.stats.recovery.recoveries_done += 1
                 if catbomb_201:
                     sts.stats.recovery.catbomb_201_encountered += 1
