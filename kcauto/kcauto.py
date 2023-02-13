@@ -87,7 +87,7 @@ class Kcauto(object):
             if ExpeditionEnum.AUTO in cfg.config.expedition.fleet_4:
                 cfg.config.expedition.set_auto_expedition(4)
             
-        if not com.combat.enabled:
+        if not com.combat.enabled and ExpeditionEnum.AUTO in cfg.config.expedition.all_expeditions:
             #combat module disable, enter low ​activeness mode
             if exp.expedition.time_up():
                 exp.expedition.set_timer()
@@ -96,7 +96,7 @@ class Kcauto(object):
 
         if exp.expedition.expect_returned_fleets():
             self.find_kancolle()
-            nav.navigate.to('home')
+            nav.navigate.to('refresh_home')
             self.fast_check_for_expedition()
 
         
