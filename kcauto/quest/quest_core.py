@@ -155,10 +155,7 @@ class QuestCore(CoreBase):
                         self._turn_in_quest_idx(quest_pos - self.cur_page*5)
                         quest_offset += 1
                         quest_turned_in = True
-                        
-                        
-                    else:
-                        continue
+                    continue
 
                 quest_i = self.quest_library[quest['api_no']]
                 if quest['api_state'] == 2 and quest_i.name in relevant_quests:
@@ -347,10 +344,13 @@ class QuestCore(CoreBase):
         for type in type_list:
             if type == "combat":
                 quest_groups.append('B')
+                quest_groups.append('E')
             elif type == "pvp":
                 quest_groups.append('C')
+                quest_groups.append('E')
             elif type == "factory":
                 quest_groups.append('F')
+                quest_groups.append('E')
             elif type == "expedition":
                 quest_groups.append('E')
             elif type != "reset":
