@@ -3,6 +3,7 @@ from pyvisauto import Region
 import api.api_core as api
 import fleet.fleet_core as flt
 import config.config_core as cfg
+import ships.ships_core as shp
 import nav.nav as nav
 import stats.stats_core as sts
 import util.kca as kca_u
@@ -47,6 +48,12 @@ class FactoryCore(object):
         
 
     def build_logic(self, count):
+
+        if shp.ships.current_ship_count == shp.ships.max_ship_count:
+            Log.log_msg(f"The port is full, disable factory module.")
+            self.enabled = False
+            return False
+
         self.goto()
         oil, ammo, steel, bauxite = self.read_config_build()
         return self.build(oil, ammo, steel, bauxite, count)
