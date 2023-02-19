@@ -83,7 +83,7 @@ class ApiWrapper(object):
                             response_body_attempt += 1
                         try:
                             if platform == "linux" or platform == "linux2":
-                                raw_svdata = response_body['result']['body'][7:]
+                                raw_svdata = response_body[0]['result']['body'][7:]
                             elif platform == "darwin":
                                 raw_svdata = response_body['result']['body'][7:]
                             elif platform == "win32":
