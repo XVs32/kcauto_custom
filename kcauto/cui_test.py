@@ -1,17 +1,17 @@
 import sys,os
 import curses
 import json
+import threading
+import subprocess
 
 def draw_menu(stdscr):
 
     # open the file for reading
-    with open('config.json') as f:
+    with open('configs/config.json') as f:
         # parse the JSON data using json.load()
         data = json.load(f)
 
     k = 0
-    cursor_x = 0
-    cursor_y = 0
     curses.curs_set(0)
 
     # Clear and refresh the screen for a blank canvas
@@ -61,6 +61,9 @@ def draw_menu(stdscr):
     next_top  = curses.LINES
     next_left = curses.COLS // 5
     log_panel = curses.newwin(curses.LINES, 4 * curses.COLS // 5, 0, curses.COLS // 5)
+
+    log_panel.scrollok(True)
+
     
 
     # Define the panels list
@@ -70,6 +73,15 @@ def draw_menu(stdscr):
     active_panel = 0
     stdscr.clear()
     stdscr.refresh()
+
+    # create a new thread
+    kc_auto = threading.Thread(target=run_external_program,args=[log_panel])
+
+    # start the thread
+    kc_auto.start()
+
+
+
 
     # Loop where k is the last character pressed
     while (k != ord('q')):
@@ -140,8 +152,23 @@ def print_string(window, offset_x, offset_y, string):
     x, y = get_center_str_location(window, string)
     window.addstr(y + offset_y, x + offset_x, string)
 
+def print_log(string):
+    global log_panel
+    log_panel.addstr(0,0, string)
+
+def run_external_program(panel):
+    # Start the external program and redirect its output
+    process = subprocess.Popen(['python3.7', 'kcauto', '--cli', '--cfg', 'auto_sortie_test'], stdout=subprocess.PIPE)
+
+    # Turn on scrolling for the log window
+    # Read and write the output to the desired panel
+    while True:
+        output = process.stdout.readline().decode()
+        panel.addstr(output)
+        panel.refresh()
+
 def main():
     curses.wrapper(draw_menu)
 
 if __name__ == "__main__":
-    main()
+    main()    
