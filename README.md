@@ -111,7 +111,7 @@ There are 5 basic configs in the ```configs/template``` folder:
 	"pvp.fleet_preset":	1,          #The fleet preset you want to use in pvp(ex. 1 or 2 or 3 etc.)
 ```
 5. basic-akashi.json: Call akashi to fix your ships  
-***You will need a akashi kai to use this module***, or you could change the "187" => "182" if you only have a **akashi**.
+***You will need an akashi kai to use this module***, or you could change the "187" => "182" if you only have an **akashi**.
 ```
 	"ship_switcher.enabled":	true,                     #Enable the ship_switcher module (auto akashi repair is base on this module)
 	"ship_switcher.slots":	{
@@ -141,9 +141,12 @@ On the other hand, the setup is a bit more complicated, you will have to tell kc
 With that said, let's begin the tutorial~
 
 ### Dependece
-Since kcauto-custom has to track the progress of a quest, [KC3](https://chrome.google.com/webstore/detail/kancolle-command-center-%E6%94%B9/hkgmldnainaglpjngpajnnjfhpdjkohh) is needed for advance to work.
+Since kcauto-custom has to track the progress of a quest, [KC3](https://chrome.google.com/webstore/detail/kancolle-command-center-%E6%94%B9/hkgmldnainaglpjngpajnnjfhpdjkohh) is needed for advance functions to work.
 
-KC3 is an awesome plug-in, highly recommended installing if you haven't done so.
+After installing KC3, go to KC3 setting => DMM Options => Apply Customizations => uncheck
+![](https://i.imgur.com/fqjx8dM.png)
+
+By the way, KC3 is an awesome plug-in, highly recommended installing it if you haven't done so.
 
 ### Config setup
 There are three files you will need to setup in this tutorial, they are all locate in ```configs/template``` folder:
@@ -160,10 +163,10 @@ Well it's kinda simple
 	"2-1":	[{"type":"CVL","id":0}, {"type":"CVL","id":1}, {"type":"CLT","id":0}, {"type":"DD","id":0}, {"type":"DD","id":1}, {"type":"DD","id":2}],
 	  ^                                       ^
 	  |                                       |
-The map for this preset              It is a small aircraft carriers
+The map for this preset              It is a small aircraft carrier
 	
 ```
-That's it, not difficult but it is tedious when you have to set this up for every map.  
+That's it, not difficult but it is tedious when you have to set this up for every map, the good news is you could put it right once and for all.  
 Let's focus on map 2-1 for now.
 
 
@@ -208,13 +211,67 @@ kcauto-custom should now load the ships you defined and go for 2-1!
 
 ---
 
-All right the tutorial ends here for now, but how to run those daily, weekly quests automatically?
+### Advance -- quest handling
 
-After you finish filling in ```fleet_list.json``` and ```fleet_preset.json```,  
-you could set ```combat.sortie_map``` to auto: 
+Now we have tell kcauto-custom what ship to use, but how do kcauto-custom run those daily, weekly quests automatically?
+
+**Long story in short**: Use ```"combat.sortie_map":    "auto"``` in your config file, that's it!
+
+**Long story in long**:  
+There are 3 files that would affect the behaviour of quest & map picking (usually you don't have to edit them):
+1. Your config file
+2. ```data/quest/quest.json```
+3. ```data/quest/quest_priority.json```
+
+Let's take a look into the config file first:
+```json!
+	"quest.enabled":	true,       #Enable the quest module
+	"quest.quests":	["Bd1", "Bd2", "Bd3", "Bd4", "Bd5", "Bd6", "Bd7", "Bd8", "Bw1", "Bw2", "Bw3", "Bw4", "Bw5", "Bw7", "Bw8", "Bw9", "Bw10", "Bm2", "Bm3", "Bm4", "Bm5", "Bm6", "Bm8", "Bq1", "Bq3", "Bq4", "Bq8", "Bq9", "Bq10", "Bq11", "Bq12", "C2", "C3", "C4", "C8", "C16", "C29", "D2", "D3", "D4", "D9", "D11", "D22", "D24", "E3", "E4", "F5", "F6", "F7", "F8"]
+	# The quest that kcauto-custom will attemp to finish
 ```
-"combat.sortie_map":	"auto",        # kcauto-custom picks the map for you 
+kcauto-custom will only handle the quests mentioned in `quest.quests`, you could remove those you don't want to finish, though it is not recommanded to add any quest into it.  
+(Since there are quest that `advance` cannot handle at the moment)
+
+
+Next one is ```data/quest/quest.json```, this file contains the details of a quest. Again, usually you wouldn't want to edit it.
+```json!
+
+  "Bd1": {                         #The quest name
+    "id": 201,                     #The quest ID
+    "type": "daily",               #The quest type
+    "intervals": [1, 0, 0],        #Intervals between kcauto-custom checking if the quest is finished, with the order as [sortie, pvp, expedition]
+    "recommended_map": ["1-1"]     #The map which kcauto-custom will sortie to is no info could gather from KC3
+  }
+
 ```
 
-Note that the setting of ```quest.quests``` WILL affect the behaviour of map picking,  
-but I ran out of time so the tutorial about ```quest``` setting will be the job for another day...
+
+The last one is ```data/quest/quest_priority.json```, it defines what quest kcauto-costom will prioritizes when user is in auto sortie_map mode (```"combat.sortie_map":	"auto"```)
+```json!
+{
+  "daily":      ["Bd5","Bd4","Bd6","Bd8"],
+  "weekly":     ["Bw2","Bw5",...,"Bw10"],
+  "monthly":    ["Bm1","Bm2",...,"Bm7","Bm8"],
+  "quarterly":  ["Bq1","Bq2",...,"Bq12","Bq13"],
+  "yearly":     ["By1","By2",...,"By12","By13"],
+  "low_priority":    ["Bw1","Bw3",...,"Bd2","Bd3"]
+}
+```
+
+The priority here is `daily` > `weekly` > `monthly` > `quarterly` > `yearly` > `low_priority`
+
+
+Finally, let's take a look into `configs/template/fleet_preset_idea.json`, this file shows you some ideas of fleet presets in different maps.
+```json!
+	"2-5-Bm1":	[{"type":"BBV","id":0}, {"type":"Myoko","id":0}, {"type":"Nachi","id":0}, {"type":"Haguro","id":0}, {"type":"CAV","id":0}, {"type":"CAV","id":1}],
+	
+	"1-4-Bm3":	[{"type":"CL","id":0}, {"type":"CL","id":1}, {"type":"DD","id":0}, {"type":"DD","id":1}, {"type":"DD","id":2}, {"type":"DD","id":3}],
+```
+
+The `Bm1` and `Bm3` here means the preset is specially made for the quest, that way when kcauto go for `Bm1`, it would pick the preset in `2-5-Bm1` first, instead of the normal `2-5` preset.
+
+---
+
+
+Ok, that's all for this week.
+Next time I will update how to use those special made preset manually, and a FAQ section if possible. 
