@@ -5,12 +5,23 @@ import json
 import threading
 import subprocess
 
+EXP = 0
+SORTIE = 1
+SCHEDULER = 2
+PVP = 3
+LOG = 4
+
+KEY_ENTER = 10
+
+pop_up_lock = False
+
 def draw_menu(stdscr):
 
     # open the file for reading
     with open('configs/config.json') as f:
         # parse the JSON data using json.load()
         data = json.load(f)
+    f.close()
 
     k = 0
     curses.curs_set(0)
@@ -91,15 +102,11 @@ def draw_menu(stdscr):
     # Loop where k is the last character pressed
     while (k != ord('q')):
 
-        if k == curses.KEY_DOWN or k == ord('j'):
-            active_panel += 1
-        elif k == curses.KEY_UP or k == ord('k'):
-            active_panel += 1
-        elif k == curses.KEY_RIGHT or k == ord('l'):
-            active_panel += 1
-        elif k == curses.KEY_LEFT or k == ord('h'):
-            active_panel -= 1
+        active_panel = get_next_active_panel(active_panel, k)
 
+        if k == KEY_ENTER:
+            open_pop_up(stdscr, active_panel, data)
+        
         # Draw the sub-panels
         for i, panel in enumerate(panels):
             if i == active_panel:
@@ -109,7 +116,6 @@ def draw_menu(stdscr):
 
             if panel == expedition_panel:
                 exp = [data["expedition.fleet_2"], data["expedition.fleet_3"], data["expedition.fleet_4"]]
-
 
                 string = ','.join(map(str, exp[0]))
                 print_string(panel, 0, -1, string)
@@ -147,6 +153,91 @@ def draw_menu(stdscr):
             panel.clear()
             panel.refresh()
 
+def open_pop_up(stdscr, active_panel, data):
+
+    global pop_up_lock
+    if active_panel == EXP :
+        pop_up_lock = True
+        # open the file for reading
+        with open('data/expedition/expedition_preset.json') as f:
+            # parse the JSON data using json.load()
+            expedition_preset = json.load(f)
+        f.close()
+
+        # Create the pop-up window
+        height =  3 * curses.LINES // 5 
+        width = 3 * curses.COLS // 7
+        top =  1 * curses.LINES // 5 
+        left =  2 * curses.COLS // 7
+        popup_win = curses.newwin(height, width, top, left)
+        popup_win.border()
+        active_preset_id=0
+        while 1:
+            for i, preset in enumerate(expedition_preset):
+                if i == active_preset_id:
+                    active_preset = preset
+                    popup_win.addstr(i + 1, 1, preset, curses.color_pair(12))
+                else:
+                    popup_win.addstr(i + 1, 1, preset, curses.color_pair(5))
+
+            popup_win.refresh()
+
+            # Wait for next input
+            key = stdscr.getch()
+
+            if key == curses.KEY_DOWN or key == ord('j'):
+                if active_preset_id < len(expedition_preset) - 1:
+                    active_preset_id += 1
+            elif key == curses.KEY_UP or key == ord('k'):
+                if active_preset_id > 0:
+                    active_preset_id -= 1
+            elif key == KEY_ENTER:
+                data["expedition.fleet_2"] = expedition_preset[active_preset][0]
+                data["expedition.fleet_3"] = expedition_preset[active_preset][1]
+                data["expedition.fleet_4"] = expedition_preset[active_preset][2]
+
+                # open the file for writing
+                with open('configs/config.json', 'w') as output:
+                    # parse the JSON data using json.load()
+                    json.dump(data, output, indent=4, sort_keys=True)
+                output.close()
+                break
+
+        pop_up_lock = False
+    return
+
+def get_next_active_panel(active_panel, key):
+
+    if key == curses.KEY_DOWN or key == ord('j'):
+        if active_panel == EXP:
+            active_panel = SORTIE
+        elif active_panel == SORTIE:
+            active_panel = SCHEDULER
+        elif active_panel == SCHEDULER:
+            active_panel = PVP 
+    elif key == curses.KEY_UP or key == ord('k'):
+        if active_panel == SORTIE:
+            active_panel = EXP 
+        elif active_panel == SCHEDULER:
+            active_panel = SORTIE
+        elif active_panel == PVP:
+            active_panel = SCHEDULER
+    elif key == curses.KEY_RIGHT or key == ord('l'):
+        if active_panel == EXP:
+            active_panel = LOG
+        elif active_panel == SORTIE:
+            active_panel = LOG 
+        elif active_panel == SCHEDULER:
+            active_panel = LOG
+        elif active_panel == PVP:
+            active_panel = LOG
+    elif key == curses.KEY_LEFT or key == ord('h'):
+        if active_panel == LOG:
+            active_panel = EXP 
+        
+    return active_panel
+
+
 def get_center_str_location(window, string):
 
     height, width = window.getmaxyx()
@@ -177,11 +268,13 @@ def run_external_program(panel):
     #process = subprocess.Popen(['python3.7', 'kcauto', '--cli', '--cfg', 'auto_sortie_test', '--debug-output'], stdout=subprocess.PIPE)
     process = subprocess.Popen(['python3.7', 'kcauto', '--cli', '--cfg', 'auto_sortie_test'], stdout=subprocess.PIPE)
 
+    global pop_up_lock
     # Turn on scrolling for the log window
     # Read and write the output to the desired panel
-    while True:
-        output = process.stdout.readline().decode()
-        print_log(panel, output)
+    while process.poll() is None:
+        if pop_up_lock == False:
+            output = process.stdout.readline().decode()
+            print_log(panel, output)
 
 def main():
     signal.signal(signal.SIGINT, signal_handler)
