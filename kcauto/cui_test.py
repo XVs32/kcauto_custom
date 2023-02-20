@@ -1,4 +1,5 @@
 import sys,os
+import signal
 import curses
 import json
 import threading
@@ -76,12 +77,11 @@ def draw_menu(stdscr):
 
     # create a new thread
     kc_auto = threading.Thread(target=run_external_program,args=[log_panel])
+    # Kill the child thread if parent is dead
+    kc_auto.daemon = True 
 
     # start the thread
     kc_auto.start()
-
-
-
 
     # Loop where k is the last character pressed
     while (k != ord('q')):
@@ -168,7 +168,14 @@ def run_external_program(panel):
         panel.refresh()
 
 def main():
+    signal.signal(signal.SIGINT, signal_handler)
     curses.wrapper(draw_menu)
+
+def signal_handler(signal_num, frame):
+    #print("CTRL+C detected. Exiting gracefully...")
+    curses.endwin()
+    exit(0)
+
 
 if __name__ == "__main__":
     main()    
