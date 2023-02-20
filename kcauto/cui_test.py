@@ -34,6 +34,11 @@ def draw_menu(stdscr):
     curses.init_pair(9, curses.COLOR_WHITE, curses.COLOR_GREEN)
     curses.init_pair(10, curses.COLOR_BLACK, curses.COLOR_WHITE)
 
+    curses.init_pair(11, curses.COLOR_RED, curses.COLOR_BLACK)
+    curses.init_pair(12, curses.COLOR_GREEN, curses.COLOR_BLACK)
+    curses.init_pair(13, curses.COLOR_YELLOW, curses.COLOR_BLACK)
+    curses.init_pair(14, curses.COLOR_CYAN, curses.COLOR_BLACK)
+
     
     # Define the sub-panels
     top = 0
@@ -136,6 +141,8 @@ def draw_menu(stdscr):
         k = stdscr.getch()
 
         for panel in panels:
+            if panel == log_panel:
+                continue
             # Refresh the sub-panels
             panel.clear()
             panel.refresh()
@@ -152,20 +159,29 @@ def print_string(window, offset_x, offset_y, string):
     x, y = get_center_str_location(window, string)
     window.addstr(y + offset_y, x + offset_x, string)
 
-def print_log(string):
-    global log_panel
-    log_panel.addstr(0,0, string)
+def print_log(panel, string):
+    if string[2:4] == "91": #Error
+        panel.addstr(string[5:-5] + "\n", curses.color_pair(11))
+    elif string[2:4] == "92": #Status
+        panel.addstr(string[5:-5] + "\n", curses.color_pair(12))
+    elif string[2:4] == "93": #Warnning
+        panel.addstr(string[5:-5] + "\n", curses.color_pair(13))
+    elif string[2:4] == "94": #Log
+        panel.addstr(string[5:-5] + "\n", curses.color_pair(14))
+    else: #debug
+        panel.addstr(string, curses.color_pair(5))
+    panel.refresh()
 
 def run_external_program(panel):
     # Start the external program and redirect its output
+    #process = subprocess.Popen(['python3.7', 'kcauto', '--cli', '--cfg', 'auto_sortie_test', '--debug-output'], stdout=subprocess.PIPE)
     process = subprocess.Popen(['python3.7', 'kcauto', '--cli', '--cfg', 'auto_sortie_test'], stdout=subprocess.PIPE)
 
     # Turn on scrolling for the log window
     # Read and write the output to the desired panel
     while True:
         output = process.stdout.readline().decode()
-        panel.addstr(output)
-        panel.refresh()
+        print_log(panel, output)
 
 def main():
     signal.signal(signal.SIGINT, signal_handler)
