@@ -15,7 +15,6 @@ def kcauto_main():
     """
     active_loop = True
     kca_loop = True
-    first_loop = True
     while active_loop:
         try:
             # startup methods

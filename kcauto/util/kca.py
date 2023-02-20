@@ -735,7 +735,7 @@ class Kca(object):
                 url=STRATEGY_ROOM_URL + subpage,
                 newWindow=False,
                 background=True,
-                forTab=True)["result"]["targetId"]
+                forTab=True)[0]["result"]["targetId"]
         elif platform == "darwin":
             strategy_tab_id = self.kc3_hook.Target.createTarget(
                 url=STRATEGY_ROOM_URL + subpage,
@@ -774,7 +774,7 @@ class Kca(object):
         html_code=self.kc3_hook.DOM.getOuterHTML(nodeId=5)
 
         if platform == "linux" or platform == "linux2":
-            dom = PyQuery(html_code["result"]["outerHTML"], parser='html')
+            dom = PyQuery(html_code[0]["result"]["outerHTML"], parser='html')
         elif platform == "darwin":
             dom = PyQuery(html_code["result"]["outerHTML"], parser='html')
         elif platform == "win32":
