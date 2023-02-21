@@ -100,9 +100,6 @@ def draw_menu(stdscr):
 
         active_panel = get_next_active_panel(active_panel, k)
 
-        if k == KEY_ENTER:
-            kc_auto, data = open_pop_up(kc_auto, stdscr, log_panel, active_panel, data)
-        
         # Draw the sub-panels
         for i, panel in enumerate(panels):
             if i == active_panel:
@@ -139,8 +136,13 @@ def draw_menu(stdscr):
             # Refresh the sub-panels
             panel.refresh()
         
-        # Wait for next input
-        k = stdscr.getch()
+        if k == KEY_ENTER:
+            kc_auto, data = open_pop_up(kc_auto, stdscr, panels, active_panel, data)
+            log_panel.redrawwin()
+            k = 0
+        else:
+            # Wait for next input
+            k = stdscr.getch()
 
         for panel in panels:
             if panel == log_panel:
@@ -149,7 +151,7 @@ def draw_menu(stdscr):
             panel.clear()
             panel.refresh()
 
-def open_pop_up(thread, stdscr, log_panel, active_panel, data):
+def open_pop_up(thread, stdscr, panels, active_panel, data):
 
     global pop_up_lock
     pop_up_lock = True
@@ -205,13 +207,16 @@ def open_pop_up(thread, stdscr, log_panel, active_panel, data):
                 x, y = get_center_str_location(popup_win, "Yes")
                 popup_win.addstr(y, x, "Yes", curses.color_pair(12))
                 x, y = get_center_str_location(popup_win, "No")
-                popup_win.addstr(y, x, "No", curses.color_pair(5))
+                popup_win.addstr(y + 1, x, "No", curses.color_pair(5))
             else:
                 x, y = get_center_str_location(popup_win, "Yes")
                 popup_win.addstr(y, x, "Yes", curses.color_pair(5))
                 x, y = get_center_str_location(popup_win, "No")
-                popup_win.addstr(y, x, "No", curses.color_pair(12))
+                popup_win.addstr(y + 1, x, "No", curses.color_pair(12))
             popup_win.refresh()
+            for panel in panels:
+                # Refresh the sub-panels
+                panel.refresh()
 
             # Wait for next input
             key = stdscr.getch()
@@ -232,8 +237,8 @@ def open_pop_up(thread, stdscr, log_panel, active_panel, data):
                     process.send_signal(subprocess.signal.SIGTERM)
                     thread.join()
 
-                    thread = kc_auto_kick_start(log_panel)
-                    break
+                    thread = kc_auto_kick_start(panels[4])
+                break
 
     pop_up_lock = False
     return thread, data
