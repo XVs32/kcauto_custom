@@ -15,6 +15,8 @@ KEY_ENTER = 10
 
 pop_up_lock = False
 
+process = None
+
 def draw_menu(stdscr):
 
     # open the file for reading
@@ -91,13 +93,7 @@ def draw_menu(stdscr):
     stdscr.clear()
     stdscr.refresh()
 
-    # create a new thread
-    kc_auto = threading.Thread(target=run_external_program,args=[log_panel])
-    # Kill the child thread if parent is dead
-    kc_auto.daemon = True 
-
-    # start the thread
-    kc_auto.start()
+    kc_auto = kc_auto_kick_start(log_panel)
 
     # Loop where k is the last character pressed
     while (k != ord('q')):
@@ -105,7 +101,7 @@ def draw_menu(stdscr):
         active_panel = get_next_active_panel(active_panel, k)
 
         if k == KEY_ENTER:
-            open_pop_up(stdscr, active_panel, data)
+            kc_auto, data = open_pop_up(kc_auto, stdscr, log_panel, active_panel, data)
         
         # Draw the sub-panels
         for i, panel in enumerate(panels):
@@ -153,24 +149,26 @@ def draw_menu(stdscr):
             panel.clear()
             panel.refresh()
 
-def open_pop_up(stdscr, active_panel, data):
+def open_pop_up(thread, stdscr, log_panel, active_panel, data):
 
     global pop_up_lock
+    pop_up_lock = True
+
+    # Create the pop-up window
+    height =  3 * curses.LINES // 5 
+    width = 3 * curses.COLS // 7
+    top =  1 * curses.LINES // 5
+    left =  2 * curses.COLS // 7
+    popup_win = curses.newwin(height, width, top, left)
+    popup_win.border()
+
     if active_panel == EXP :
-        pop_up_lock = True
         # open the file for reading
         with open('data/expedition/expedition_preset.json') as f:
             # parse the JSON data using json.load()
             expedition_preset = json.load(f)
         f.close()
 
-        # Create the pop-up window
-        height =  3 * curses.LINES // 5 
-        width = 3 * curses.COLS // 7
-        top =  1 * curses.LINES // 5 
-        left =  2 * curses.COLS // 7
-        popup_win = curses.newwin(height, width, top, left)
-        popup_win.border()
         active_preset_id=0
         while 1:
             for i, preset in enumerate(expedition_preset):
@@ -195,16 +193,50 @@ def open_pop_up(stdscr, active_panel, data):
                 data["expedition.fleet_2"] = expedition_preset[active_preset][0]
                 data["expedition.fleet_3"] = expedition_preset[active_preset][1]
                 data["expedition.fleet_4"] = expedition_preset[active_preset][2]
-
-                # open the file for writing
-                with open('configs/config.json', 'w') as output:
-                    # parse the JSON data using json.load()
-                    json.dump(data, output, indent=4, sort_keys=True)
-                output.close()
                 break
 
-        pop_up_lock = False
-    return
+    elif active_panel == LOG :
+
+        isYes=False
+        while 1:
+            x, y = get_center_str_location(popup_win, "Reload config?")
+            popup_win.addstr(y-1, x, "Reload config?", curses.color_pair(5))
+            if isYes:
+                x, y = get_center_str_location(popup_win, "Yes")
+                popup_win.addstr(y, x, "Yes", curses.color_pair(12))
+                x, y = get_center_str_location(popup_win, "No")
+                popup_win.addstr(y, x, "No", curses.color_pair(5))
+            else:
+                x, y = get_center_str_location(popup_win, "Yes")
+                popup_win.addstr(y, x, "Yes", curses.color_pair(5))
+                x, y = get_center_str_location(popup_win, "No")
+                popup_win.addstr(y, x, "No", curses.color_pair(12))
+            popup_win.refresh()
+
+            # Wait for next input
+            key = stdscr.getch()
+
+            if key == curses.KEY_DOWN or key == ord('j'):
+                isYes = False
+            elif key == curses.KEY_UP or key == ord('k'):
+                isYes = True
+            elif key == KEY_ENTER:
+                if isYes == True:
+                    # open the file for writing
+                    with open('configs/config.json', 'w') as output:
+                        # parse the JSON data using json.load()
+                        json.dump(data, output, indent=4, sort_keys=True)
+                    output.close()
+                    
+                    # send a SIGTERM signal to terminate the subprocess
+                    process.send_signal(subprocess.signal.SIGTERM)
+                    thread.join()
+
+                    thread = kc_auto_kick_start(log_panel)
+                    break
+
+    pop_up_lock = False
+    return thread, data
 
 def get_next_active_panel(active_panel, key):
 
@@ -263,18 +295,61 @@ def print_log(panel, string):
         panel.addstr(string, curses.color_pair(5))
     panel.refresh()
 
+def kc_auto_kick_start(log_panel):
+    # create a new thread
+    kc_auto = threading.Thread(target=run_external_program,args=[log_panel])
+    # Kill the child thread if parent is dead
+    kc_auto.daemon = True 
+
+    # start the thread
+    kc_auto.start()
+    return kc_auto
+
+
 def run_external_program(panel):
     # Start the external program and redirect its output
-    #process = subprocess.Popen(['python3.7', 'kcauto', '--cli', '--cfg', 'auto_sortie_test', '--debug-output'], stdout=subprocess.PIPE)
-    process = subprocess.Popen(['python3.7', 'kcauto', '--cli', '--cfg', 'auto_sortie_test'], stdout=subprocess.PIPE)
+    global process
+    process = subprocess.Popen(['python3.7', 'kcauto', '--cli', '--cfg', 'config'], stdout=subprocess.PIPE)
 
     global pop_up_lock
     # Turn on scrolling for the log window
     # Read and write the output to the desired panel
+    output = '' 
     while process.poll() is None:
+        output = process.stdout.readline().decode()
         if pop_up_lock == False:
-            output = process.stdout.readline().decode()
             print_log(panel, output)
+
+    print_log(panel, "kcauto ended")
+
+def save_screen():
+    # Initialize the screen
+    screen = curses.initscr()
+
+    # Create a new window that covers the entire screen
+    win = curses.newwin(curses.LINES, curses.COLS, 0, 0)
+
+    # Copy the entire screen to the new window
+    
+    curses.copywin(screen, win, 0, 0, 0, 0, curses.LINES - 1, curses.COLS - 1, True)
+
+    # Clean up and restore the terminal
+    curses.endwin()
+
+    return win
+
+def restore_screen(win):
+    # Create a new window that covers the entire screen
+    new_win = curses.newwin(curses.LINES, curses.COLS, 0, 0)
+
+    # Copy the contents of the saved window to the new window
+    curses.copywin(win, new_win, 0, 0, 0, 0, curses.LINES - 1, curses.COLS - 1, True)
+
+    # Refresh the screen
+    curses.refresh()
+
+    return new_win
+
 
 def main():
     signal.signal(signal.SIGINT, signal_handler)
