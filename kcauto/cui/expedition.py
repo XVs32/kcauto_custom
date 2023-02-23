@@ -13,7 +13,7 @@ def init():
         expedition_preset = json.load(f)
     f.close()
 
-def expedition_menu(stdscr, panel, active_preset):
+def pop_up_menu(stdscr, panel, active_preset):
 
     global expedition_preset
     active_id = 0 
