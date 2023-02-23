@@ -5,68 +5,42 @@ import json
 import threading
 import subprocess
 
-EXP = 0
-SORTIE = 1
-SCHEDULER = 2
-PVP = 3
-LOG = 4
-
-KEY_ENTER = 10
+from cui.macro import *
+import cui.expedition as exp
 
 pop_up_lock = False
-
 process = None
+panels = None
 
-def draw_menu(stdscr):
+config = None
+active_exp_preset = 'active'
 
+def init():
+    global config
     # open the file for reading
     with open('configs/config.json') as f:
         # parse the JSON data using json.load()
-        data = json.load(f)
+        config = json.load(f)
     f.close()
 
-    k = 0
+    exp.init()
+
     curses.curs_set(0)
 
-    # Clear and refresh the screen for a blank canvas
-    stdscr.clear()
-    stdscr.refresh()
-
-
-    # Start colors in curses
-    curses.start_color()
-    curses.init_pair(1, curses.COLOR_BLACK, curses.COLOR_CYAN)
-    curses.init_pair(2, curses.COLOR_BLACK, curses.COLOR_RED)
-    curses.init_pair(3, curses.COLOR_BLACK, curses.COLOR_RED)
-    curses.init_pair(4, curses.COLOR_BLACK, curses.COLOR_GREEN)
-    curses.init_pair(5, curses.COLOR_WHITE, curses.COLOR_BLACK)
-
-    curses.init_pair(6, curses.COLOR_WHITE, curses.COLOR_CYAN)
-    curses.init_pair(7, curses.COLOR_WHITE, curses.COLOR_RED)
-    curses.init_pair(8, curses.COLOR_WHITE, curses.COLOR_RED)
-    curses.init_pair(9, curses.COLOR_WHITE, curses.COLOR_GREEN)
-    curses.init_pair(10, curses.COLOR_BLACK, curses.COLOR_WHITE)
-
-    curses.init_pair(11, curses.COLOR_RED, curses.COLOR_BLACK)
-    curses.init_pair(12, curses.COLOR_GREEN, curses.COLOR_BLACK)
-    curses.init_pair(13, curses.COLOR_YELLOW, curses.COLOR_BLACK)
-    curses.init_pair(14, curses.COLOR_CYAN, curses.COLOR_BLACK)
-
-    
     # Define the sub-panels
     top = 0
     left = 0
-    next_top = 3 * curses.LINES // 7
+    next_top = 1 * curses.LINES // 5 
     next_left = curses.COLS // 5
     expedition_panel = curses.newwin(next_top - top, next_left - left, top, left)
     top = next_top 
     left = 0
-    next_top = 5 * curses.LINES // 7
+    next_top = 3 * curses.LINES // 5
     next_left = curses.COLS // 5
     sortie_panel = curses.newwin(next_top - top, next_left - left, top, left)
     top = next_top 
     left = 0 
-    next_top = 6 * curses.LINES // 7
+    next_top = 4 * curses.LINES // 5
     next_left = curses.COLS // 5
     scheduler_panel = curses.newwin(next_top - top, next_left - left, top, left)
     top = next_top 
@@ -83,75 +57,103 @@ def draw_menu(stdscr):
 
     log_panel.scrollok(True)
 
-    
-
+    global panels
     # Define the panels list
-    panels = [expedition_panel, sortie_panel, scheduler_panel, pvp_panel, log_panel]
+    panels = {EXP:expedition_panel, SORTIE: sortie_panel, SCHEDULER: scheduler_panel, PVP: pvp_panel, LOG: log_panel}
 
-    # Define the initial active panel
-    active_panel = 0
+    # Start colors in curses
+    curses.start_color()
+    curses.init_pair(SORTIE,    curses.COLOR_BLACK, curses.COLOR_RED)
+    curses.init_pair(SCHEDULER, curses.COLOR_BLACK, curses.COLOR_MAGENTA)
+    curses.init_pair(PVP,       curses.COLOR_BLACK, curses.COLOR_GREEN)
+    curses.init_pair(EXP,       curses.COLOR_BLACK, curses.COLOR_CYAN)
+    curses.init_pair(LOG,       curses.COLOR_WHITE, curses.COLOR_BLACK)
+
+    curses.init_pair(SORTIE + len(panels),    curses.COLOR_WHITE, curses.COLOR_RED)
+    curses.init_pair(SCHEDULER + len(panels), curses.COLOR_WHITE, curses.COLOR_MAGENTA)
+    curses.init_pair(PVP + len(panels),       curses.COLOR_WHITE, curses.COLOR_GREEN)
+    curses.init_pair(EXP + len(panels),       curses.COLOR_WHITE, curses.COLOR_CYAN)
+    curses.init_pair(LOG + len(panels),       curses.COLOR_BLACK, curses.COLOR_WHITE)
+
+    curses.init_pair(LOG_RED,       curses.COLOR_RED,   curses.COLOR_BLACK)
+    curses.init_pair(LOG_GREEN,     curses.COLOR_GREEN, curses.COLOR_BLACK)
+    curses.init_pair(LOG_YELLOW,    curses.COLOR_YELLOW,curses.COLOR_BLACK)
+    curses.init_pair(LOG_CYAN,      curses.COLOR_CYAN,  curses.COLOR_BLACK)
+
+
+def draw_menu(stdscr):
+
+    init()
+
+    k = 0
+
+    # Clear and refresh the screen for a blank canvas
     stdscr.clear()
     stdscr.refresh()
+    
+    # Define the initial active panel
+    active_panel = EXP
 
-    kc_auto = kc_auto_kick_start(log_panel)
+    kc_auto = kc_auto_kick_start(panels[LOG])
 
     # Loop where k is the last character pressed
     while (k != ord('q')):
 
         active_panel = get_next_active_panel(active_panel, k)
 
-        # Draw the sub-panels
-        for i, panel in enumerate(panels):
-            if i == active_panel:
-                panel.bkgd(curses.color_pair(i + 1 + 5))
-            else:
-                panel.bkgd(curses.color_pair(i + 1))
+        # Set the background color for the active panel
+        update_active_panel(active_panel)
 
-            if panel == expedition_panel:
-                exp = [data["expedition.fleet_2"], data["expedition.fleet_3"], data["expedition.fleet_4"]]
-
-                string = ','.join(map(str, exp[0]))
-                print_string(panel, 0, -1, string)
-
-                string = ','.join(map(str, exp[1]))
-                print_string(panel, 0, 0, string)
-
-                string = ','.join(map(str, exp[2]))
-                print_string(panel, 0, 1, string)
-
-            elif panel == sortie_panel:
-                sortie_map = data["combat.sortie_map"]
-                sortie_fleet = data["combat.fleet_presets"]
-
-                print_string(panel, 0, 0, str(sortie_map))
-
-                string = ','.join(map(str, sortie_fleet))
-                print_string(panel, 0, 1, string)
-
-            elif panel == pvp_panel:
-                pvp_fleet = data["pvp.fleet_preset"]
-                print_string(panel, 0, 0, str(pvp_fleet))
-
-        for panel in panels:
-            # Refresh the sub-panels
-            panel.refresh()
+        refresh_panel()
         
         if k == KEY_ENTER:
-            kc_auto, data = open_pop_up(kc_auto, stdscr, panels, active_panel, data)
-            log_panel.redrawwin()
+            kc_auto = open_pop_up(kc_auto, stdscr, active_panel)
+            panels[LOG].redrawwin()
             k = 0
         else:
             # Wait for next input
             k = stdscr.getch()
 
-        for panel in panels:
-            if panel == log_panel:
-                continue
-            # Refresh the sub-panels
-            panel.clear()
-            panel.refresh()
+def refresh_panel():
 
-def open_pop_up(thread, stdscr, panels, active_panel, data):
+    global panels
+    for panel in panels:
+        if panel == LOG:
+            continue
+        # Refresh the sub-panels
+        panels[panel].clear()
+        panels[panel].refresh()
+
+    for panel in panels:
+        if panel == EXP:
+            preset = exp.get_current_preset(config)
+            print_string(panels[panel], 0, 0, preset)
+
+        elif panel == SORTIE:
+        #elif panel == sortie_panel:
+            sortie_map = config["combat.sortie_map"]
+            sortie_fleet = config["combat.fleet_presets"]
+
+            print_string(panels[panel], 0, 0, str(sortie_map))
+
+            string = ','.join(map(str, sortie_fleet))
+            print_string(panels[panel], 0, 1, string)
+
+        elif panel == PVP:
+            pvp_fleet = config["pvp.fleet_preset"]
+            print_string(panels[panel], 0, 0, str(pvp_fleet))
+
+        panels[panel].refresh()
+
+def update_active_panel(active_panel):
+
+    for panel in panels:
+        if panel == active_panel:
+            panels[panel].bkgd(curses.color_pair(panel + 5))
+        else:
+            panels[panel].bkgd(curses.color_pair(panel))
+
+def open_pop_up(thread, stdscr, active_panel):
 
     global pop_up_lock
     pop_up_lock = True
@@ -165,37 +167,10 @@ def open_pop_up(thread, stdscr, panels, active_panel, data):
     popup_win.border()
 
     if active_panel == EXP :
-        # open the file for reading
-        with open('data/expedition/expedition_preset.json') as f:
-            # parse the JSON data using json.load()
-            expedition_preset = json.load(f)
-        f.close()
-
-        active_preset_id=0
-        while 1:
-            for i, preset in enumerate(expedition_preset):
-                if i == active_preset_id:
-                    active_preset = preset
-                    popup_win.addstr(i + 1, 1, preset, curses.color_pair(12))
-                else:
-                    popup_win.addstr(i + 1, 1, preset, curses.color_pair(5))
-
-            popup_win.refresh()
-
-            # Wait for next input
-            key = stdscr.getch()
-
-            if key == curses.KEY_DOWN or key == ord('j'):
-                if active_preset_id < len(expedition_preset) - 1:
-                    active_preset_id += 1
-            elif key == curses.KEY_UP or key == ord('k'):
-                if active_preset_id > 0:
-                    active_preset_id -= 1
-            elif key == KEY_ENTER:
-                data["expedition.fleet_2"] = expedition_preset[active_preset][0]
-                data["expedition.fleet_3"] = expedition_preset[active_preset][1]
-                data["expedition.fleet_4"] = expedition_preset[active_preset][2]
-                break
+        global config
+        preset = exp.get_current_preset(config)
+        preset = exp.expedition_menu(stdscr, popup_win, preset)
+        config = exp.set_config(config, preset)
 
     elif active_panel == LOG :
 
@@ -216,7 +191,7 @@ def open_pop_up(thread, stdscr, panels, active_panel, data):
             popup_win.refresh()
             for panel in panels:
                 # Refresh the sub-panels
-                panel.refresh()
+                panels[panel].refresh()
 
             # Wait for next input
             key = stdscr.getch()
@@ -230,18 +205,18 @@ def open_pop_up(thread, stdscr, panels, active_panel, data):
                     # open the file for writing
                     with open('configs/config.json', 'w') as output:
                         # parse the JSON data using json.load()
-                        json.dump(data, output, indent=4, sort_keys=True)
+                        json.dump(config, output, indent=4, sort_keys=True)
                     output.close()
                     
                     # send a SIGTERM signal to terminate the subprocess
                     process.send_signal(subprocess.signal.SIGTERM)
                     thread.join()
 
-                    thread = kc_auto_kick_start(panels[4])
+                    thread = kc_auto_kick_start(panels[LOG])
                 break
 
     pop_up_lock = False
-    return thread, data
+    return thread
 
 def get_next_active_panel(active_panel, key):
 
@@ -289,15 +264,15 @@ def print_string(window, offset_x, offset_y, string):
 
 def print_log(panel, string):
     if string[2:4] == "91": #Error
-        panel.addstr(string[5:-5] + "\n", curses.color_pair(11))
+        panel.addstr(string[5:-5] + "\n", curses.color_pair(LOG_RED))
     elif string[2:4] == "92": #Status
-        panel.addstr(string[5:-5] + "\n", curses.color_pair(12))
+        panel.addstr(string[5:-5] + "\n", curses.color_pair(LOG_GREEN))
     elif string[2:4] == "93": #Warnning
-        panel.addstr(string[5:-5] + "\n", curses.color_pair(13))
+        panel.addstr(string[5:-5] + "\n", curses.color_pair(LOG_YELLOW))
     elif string[2:4] == "94": #Log
-        panel.addstr(string[5:-5] + "\n", curses.color_pair(14))
+        panel.addstr(string[5:-5] + "\n", curses.color_pair(LOG_CYAN))
     else: #debug
-        panel.addstr(string, curses.color_pair(5))
+        panel.addstr(string, curses.color_pair(LOG))
     panel.refresh()
 
 def kc_auto_kick_start(log_panel):
