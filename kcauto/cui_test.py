@@ -7,6 +7,7 @@ import subprocess
 
 from cui.macro import *
 import cui.expedition as exp
+import cui.pvp as pvp
 
 pop_up_lock = False
 process = None
@@ -140,8 +141,11 @@ def refresh_panel():
             print_string(panels[panel], 0, 1, string)
 
         elif panel == PVP:
-            pvp_fleet = config["pvp.fleet_preset"]
-            print_string(panels[panel], 0, 0, str(pvp_fleet))
+            if config["pvp.enabled"] == False:
+                pvp_fleet = "Disable"
+            else:
+                pvp_fleet = str(config["pvp.fleet_preset"])
+            print_string(panels[panel], 0, 0, pvp_fleet)
 
         panels[panel].refresh()
 
@@ -155,6 +159,7 @@ def update_active_panel(active_panel):
 
 def open_pop_up(thread, stdscr, active_panel):
 
+    global config
     global pop_up_lock
     pop_up_lock = True
 
@@ -167,10 +172,14 @@ def open_pop_up(thread, stdscr, active_panel):
     popup_win.border()
 
     if active_panel == EXP :
-        global config
         preset = exp.get_current_preset(config)
-        preset = exp.expedition_menu(stdscr, popup_win, preset)
+        preset = exp.pop_up_menu(stdscr, popup_win, preset)
         config = exp.set_config(config, preset)
+    
+    elif active_panel == PVP :
+        preset = pvp.get_current_preset(config)
+        preset = pvp.pop_up_menu(stdscr, popup_win, preset)
+        config = pvp.set_config(config, preset)
 
     elif active_panel == LOG :
 
