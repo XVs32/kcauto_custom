@@ -95,7 +95,9 @@ def draw_menu(stdscr):
     # Define the initial active panel
     active_panel = EXP
 
-    kc_auto = kc_auto_kick_start(panels[LOG])
+    
+    kc_auto = threading.Thread()
+    #kc_auto = kc_auto_kick_start(panels[LOG])
 
     # Loop where k is the last character pressed
     while (k != ord('q')):
@@ -218,8 +220,9 @@ def open_pop_up(thread, stdscr, active_panel):
                     output.close()
                     
                     # send a SIGTERM signal to terminate the subprocess
-                    process.send_signal(subprocess.signal.SIGTERM)
-                    thread.join()
+                    if thread.is_alive() == True:
+                        process.send_signal(subprocess.signal.SIGTERM)
+                        thread.join()
 
                     thread = kc_auto_kick_start(panels[LOG])
                 break
