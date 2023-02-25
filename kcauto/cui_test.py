@@ -8,8 +8,11 @@ import subprocess
 from cui.macro import *
 import cui.expedition as exp
 import cui.pvp as pvp
+import cui.sortie as sortie
+import cui.ship_switch as ship_switch
+import cui.passive_repair as passive_repair
+import cui.util as util
 
-pop_up_lock = False
 process = None
 panels = None
 
@@ -80,6 +83,7 @@ def init():
     curses.init_pair(LOG_GREEN,     curses.COLOR_GREEN, curses.COLOR_BLACK)
     curses.init_pair(LOG_YELLOW,    curses.COLOR_YELLOW,curses.COLOR_BLACK)
     curses.init_pair(LOG_CYAN,      curses.COLOR_CYAN,  curses.COLOR_BLACK)
+    curses.init_pair(LOG_GREEN_ACTIVE,curses.COLOR_GREEN,  curses.COLOR_WHITE)
 
 
 def draw_menu(stdscr):
@@ -130,24 +134,35 @@ def refresh_panel():
     for panel in panels:
         if panel == EXP:
             preset = exp.get_current_preset(config)
-            print_string(panels[panel], 0, 0, preset)
+            util.print_string(panels[panel], 0, 0, preset)
 
         elif panel == SORTIE:
-        #elif panel == sortie_panel:
-            sortie_map = config["combat.sortie_map"]
-            sortie_fleet = config["combat.fleet_presets"]
+            
+            if config["combat.fleet_presets"] == []:
+                sortie_fleet = ["disable"]
+            else:
+                sortie_fleet = config["combat.fleet_presets"]
 
-            print_string(panels[panel], 0, 0, str(sortie_map))
+            if config["combat.enabled"] == False:
+                sortie_map = "disable"
+
+                if  config["ship_switcher.enabled"] == True and \
+                    config["ship_switcher.slots"] == ship_switch.AKASHI_SHIP_SWITCHER_SLOTS:
+                    sortie_fleet = ["akashi"]
+            else:
+                sortie_map = config["combat.sortie_map"]
+
+            util.print_string(panels[panel], 0, -1, str(sortie_map))
 
             string = ','.join(map(str, sortie_fleet))
-            print_string(panels[panel], 0, 1, string)
+            util.print_string(panels[panel], 0, 0, string)
 
         elif panel == PVP:
             if config["pvp.enabled"] == False:
                 pvp_fleet = "Disable"
             else:
                 pvp_fleet = str(config["pvp.fleet_preset"])
-            print_string(panels[panel], 0, 0, pvp_fleet)
+            util.print_string(panels[panel], 0, 0, pvp_fleet)
 
         panels[panel].refresh()
 
@@ -176,28 +191,41 @@ def open_pop_up(thread, stdscr, active_panel):
     if active_panel == EXP :
         preset = exp.get_current_preset(config)
         preset = exp.pop_up_menu(stdscr, popup_win, preset)
-        config = exp.set_config(config, preset)
+        exp.set_config(config, preset)
     
     elif active_panel == PVP :
         preset = pvp.get_current_preset(config)
         preset = pvp.pop_up_menu(stdscr, popup_win, preset)
-        config = pvp.set_config(config, preset)
+        pvp.set_config(config, preset)
+
+    elif active_panel == SORTIE :
+        cur_sortie_mode = sortie.get_current_sortie_mode(config)
+        sortie_map = sortie.get_current_sortie_map(config)
+        sortie_map, preset, akashi_mode = sortie.pop_up_menu(stdscr, popup_win, cur_sortie_mode, sortie_map)
+        sortie.set_config(config, sortie_map, preset)
+
+        if akashi_mode == True:
+            ship_switch.set_config(config, ship_switch.AKASHI_SHIP_SWITCHER_SLOTS)
+            passive_repair.set_config(config, 0)
+        else:
+            ship_switch.set_config(config, {})
+            passive_repair.set_config(config, 2)
 
     elif active_panel == LOG :
 
         isYes=False
         while 1:
-            x, y = get_center_str_location(popup_win, "Reload config?")
+            x, y = util.get_center_str_location(popup_win, "Reload config?")
             popup_win.addstr(y-1, x, "Reload config?", curses.color_pair(5))
             if isYes:
-                x, y = get_center_str_location(popup_win, "Yes")
+                x, y = util.get_center_str_location(popup_win, "Yes")
                 popup_win.addstr(y, x, "Yes", curses.color_pair(12))
-                x, y = get_center_str_location(popup_win, "No")
+                x, y = util.get_center_str_location(popup_win, "No")
                 popup_win.addstr(y + 1, x, "No", curses.color_pair(5))
             else:
-                x, y = get_center_str_location(popup_win, "Yes")
+                x, y = util.get_center_str_location(popup_win, "Yes")
                 popup_win.addstr(y, x, "Yes", curses.color_pair(5))
-                x, y = get_center_str_location(popup_win, "No")
+                x, y = util.get_center_str_location(popup_win, "No")
                 popup_win.addstr(y + 1, x, "No", curses.color_pair(12))
             popup_win.refresh()
             for panel in panels:
@@ -261,87 +289,15 @@ def get_next_active_panel(active_panel, key):
         
     return active_panel
 
-
-def get_center_str_location(window, string):
-
-    height, width = window.getmaxyx()
-
-    x_center = int((width // 2) - (len(string) // 2) - len(string) % 2)
-    y_center = int( height// 2 )
-    return x_center, y_center
-
-def print_string(window, offset_x, offset_y, string):
-    x, y = get_center_str_location(window, string)
-    window.addstr(y + offset_y, x + offset_x, string)
-
-def print_log(panel, string):
-    if string[2:4] == "91": #Error
-        panel.addstr(string[5:-5] + "\n", curses.color_pair(LOG_RED))
-    elif string[2:4] == "92": #Status
-        panel.addstr(string[5:-5] + "\n", curses.color_pair(LOG_GREEN))
-    elif string[2:4] == "93": #Warnning
-        panel.addstr(string[5:-5] + "\n", curses.color_pair(LOG_YELLOW))
-    elif string[2:4] == "94": #Log
-        panel.addstr(string[5:-5] + "\n", curses.color_pair(LOG_CYAN))
-    else: #debug
-        panel.addstr(string, curses.color_pair(LOG))
-    panel.refresh()
-
 def kc_auto_kick_start(log_panel):
     # create a new thread
-    kc_auto = threading.Thread(target=run_external_program,args=[log_panel])
+    kc_auto = threading.Thread(target=util.run_external_program,args=[log_panel])
     # Kill the child thread if parent is dead
     kc_auto.daemon = True 
 
     # start the thread
     kc_auto.start()
     return kc_auto
-
-
-def run_external_program(panel):
-    # Start the external program and redirect its output
-    global process
-    process = subprocess.Popen(['python3.7', 'kcauto', '--cli', '--cfg', 'config'], stdout=subprocess.PIPE)
-
-    global pop_up_lock
-    # Turn on scrolling for the log window
-    # Read and write the output to the desired panel
-    output = '' 
-    while process.poll() is None:
-        output = process.stdout.readline().decode()
-        if pop_up_lock == False:
-            print_log(panel, output)
-
-    print_log(panel, "kcauto ended")
-
-def save_screen():
-    # Initialize the screen
-    screen = curses.initscr()
-
-    # Create a new window that covers the entire screen
-    win = curses.newwin(curses.LINES, curses.COLS, 0, 0)
-
-    # Copy the entire screen to the new window
-    
-    curses.copywin(screen, win, 0, 0, 0, 0, curses.LINES - 1, curses.COLS - 1, True)
-
-    # Clean up and restore the terminal
-    curses.endwin()
-
-    return win
-
-def restore_screen(win):
-    # Create a new window that covers the entire screen
-    new_win = curses.newwin(curses.LINES, curses.COLS, 0, 0)
-
-    # Copy the contents of the saved window to the new window
-    curses.copywin(win, new_win, 0, 0, 0, 0, curses.LINES - 1, curses.COLS - 1, True)
-
-    # Refresh the screen
-    curses.refresh()
-
-    return new_win
-
 
 def main():
     signal.signal(signal.SIGINT, signal_handler)
