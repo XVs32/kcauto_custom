@@ -40,6 +40,7 @@ def get_current_preset(config):
 def set_config(config, preset):
     if preset == 0:
         config["pvp.enabled"] = False 
+        config["pvp.fleet_preset"] = 0
     else:
         config["pvp.enabled"] = True 
         config["pvp.fleet_preset"] = preset
