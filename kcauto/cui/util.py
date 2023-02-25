@@ -34,7 +34,7 @@ def print_log(panel, string):
 def run_external_program(panel):
     # Start the external program and redirect its output
     global process
-    process = subprocess.Popen(['python3.7', 'kcauto', '--cli', '--cfg', 'config'], stdout=subprocess.PIPE)
+    process = subprocess.Popen(['python3.7', 'kcauto', '--cli', '--cfg', 'config_cui'], stdout=subprocess.PIPE)
 
     global pop_up_lock
     # Turn on scrolling for the log window
