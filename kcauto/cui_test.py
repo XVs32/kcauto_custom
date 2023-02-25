@@ -22,14 +22,25 @@ active_exp_preset = 'active'
 def init():
     global config
     # open the file for reading
-    with open('configs/config.json') as f:
-        # parse the JSON data using json.load()
-        config = json.load(f)
-    f.close()
+    try:
+        with open('configs/config_cui.json') as f:
+            # Load configuration file values
+            config = json.load(f)
+        f.close()
+    except FileNotFoundError:
+        with open('data/config/config_cui_template.json') as f:
+            # Load configuration file values
+            config = json.load(f)
+        f.close()
 
     exp.init()
 
     curses.curs_set(0)
+
+    if curses.LINES < 8:
+        raise ValueError("Error: Window too small(make it taller)")
+    if curses.COLS < 50:
+        raise ValueError("Error: Window too small(make it wider)")
 
     # Define the sub-panels
     top = 0
@@ -159,7 +170,7 @@ def refresh_panel():
 
         elif panel == PVP:
             if config["pvp.enabled"] == False:
-                pvp_fleet = "Disable"
+                pvp_fleet = "disable"
             else:
                 pvp_fleet = str(config["pvp.fleet_preset"])
             util.print_string(panels[panel], 0, 0, pvp_fleet)
@@ -181,24 +192,33 @@ def open_pop_up(thread, stdscr, active_panel):
     pop_up_lock = True
 
     # Create the pop-up window
-    height =  3 * curses.LINES // 5 
-    width = 3 * curses.COLS // 7
-    top =  1 * curses.LINES // 5
-    left =  2 * curses.COLS // 7
+    height =  max(3 * curses.LINES // 5, 7)
+    width = max(3 * curses.COLS // 7, 25)
+    top = curses.LINES // 2 - height // 2 
+    left = curses.COLS // 2 - width // 2
     popup_win = curses.newwin(height, width, top, left)
     popup_win.border()
 
     if active_panel == EXP :
+        x_center, y_center = util.get_center_str_location(popup_win, "EXP SET")
+        popup_win.addstr(0, x_center, "EXP SET", curses.color_pair(LOG))
+
         preset = exp.get_current_preset(config)
         preset = exp.pop_up_menu(stdscr, popup_win, preset)
         exp.set_config(config, preset)
     
     elif active_panel == PVP :
+        x_center, y_center = util.get_center_str_location(popup_win, "PVP PRESET")
+        popup_win.addstr(0, x_center, "PVP PRESET", curses.color_pair(LOG))
+
         preset = pvp.get_current_preset(config)
         preset = pvp.pop_up_menu(stdscr, popup_win, preset)
         pvp.set_config(config, preset)
 
     elif active_panel == SORTIE :
+        x_center, y_center = util.get_center_str_location(popup_win, "SORTIE MODE")
+        popup_win.addstr(0, x_center, "SORTIE MODE", curses.color_pair(LOG))
+
         cur_sortie_mode = sortie.get_current_sortie_mode(config)
         sortie_map = sortie.get_current_sortie_map(config)
         sortie_map, preset, akashi_mode = sortie.pop_up_menu(stdscr, popup_win, cur_sortie_mode, sortie_map)
@@ -242,7 +262,7 @@ def open_pop_up(thread, stdscr, active_panel):
             elif key == KEY_ENTER:
                 if isYes == True:
                     # open the file for writing
-                    with open('configs/config.json', 'w') as output:
+                    with open('configs/config_cui.json', 'w') as output:
                         # parse the JSON data using json.load()
                         json.dump(config, output, indent=4, sort_keys=True)
                     output.close()
