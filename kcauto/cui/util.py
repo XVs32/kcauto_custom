@@ -9,7 +9,7 @@ def get_center_str_location(window, string):
 
     height, width = window.getmaxyx()
 
-    x_center = int((width // 2) - (len(string) // 2) - len(string) % 2)
+    x_center = int((width // 2) - (len(string) // 2))
     y_center = int( height// 2 )
     return x_center, y_center
 
