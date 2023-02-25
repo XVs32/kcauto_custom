@@ -39,36 +39,36 @@ def init():
 
     if curses.LINES < 8:
         raise ValueError("Error: Window too small(make it taller)")
-    if curses.COLS < 50:
+    if curses.COLS < 45:
         raise ValueError("Error: Window too small(make it wider)")
 
     # Define the sub-panels
     top = 0
     left = 0
     next_top = 1 * curses.LINES // 5 
-    next_left = curses.COLS // 5
+    next_left = curses.COLS // 4
     expedition_panel = curses.newwin(next_top - top, next_left - left, top, left)
     top = next_top 
     left = 0
     next_top = 3 * curses.LINES // 5
-    next_left = curses.COLS // 5
+    next_left = curses.COLS // 4
     sortie_panel = curses.newwin(next_top - top, next_left - left, top, left)
     top = next_top 
     left = 0 
     next_top = 4 * curses.LINES // 5
-    next_left = curses.COLS // 5
+    next_left = curses.COLS // 4
     scheduler_panel = curses.newwin(next_top - top, next_left - left, top, left)
     top = next_top 
     left = 0
     next_top =  curses.LINES
-    next_left = curses.COLS // 5
+    next_left = curses.COLS // 4
     pvp_panel = curses.newwin(next_top - top, next_left - left, top, left)
 
     top  = 0 
     left = next_left 
     next_top  = curses.LINES
-    next_left = curses.COLS // 5
-    log_panel = curses.newwin(curses.LINES, 4 * curses.COLS // 5, 0, curses.COLS // 5)
+    next_left = curses.COLS // 4
+    log_panel = curses.newwin(curses.LINES, 3 * curses.COLS // 4, 0, curses.COLS // 4)
 
     log_panel.scrollok(True)
 
