@@ -62,4 +62,4 @@ def set_config(config, preset):
     config["expedition.fleet_2"] = expedition_preset[preset][0]
     config["expedition.fleet_3"] = expedition_preset[preset][1]
     config["expedition.fleet_4"] = expedition_preset[preset][2]
-    return config
+    return
