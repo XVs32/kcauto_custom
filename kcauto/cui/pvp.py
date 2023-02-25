@@ -2,8 +2,6 @@ import curses
 
 from cui.macro import *
 
-expedition_preset = None
-
 def pop_up_menu(stdscr, panel, preset_id):
 
     while 1:
@@ -45,4 +43,4 @@ def set_config(config, preset):
     else:
         config["pvp.enabled"] = True 
         config["pvp.fleet_preset"] = preset
-    return config
+    return
