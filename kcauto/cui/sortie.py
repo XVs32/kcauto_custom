@@ -54,6 +54,8 @@ def pop_up_menu(stdscr, panel, cur_mode, sortie_map):
     cur_preset = 0
     akashi_mode = False
     if cur_mode == DISABLE:
+        x_center, y_center = util.get_center_str_location(panel, "AKASHI ON?")
+        panel.addstr(0, x_center, "AKASHI ON?", curses.color_pair(LOG))
         while 1:
             for i, preset in enumerate(preset_list[DISABLE]):
                 if  cur_preset == i:
@@ -85,6 +87,8 @@ def pop_up_menu(stdscr, panel, cur_mode, sortie_map):
         cur_preset = ["auto"]
         sortie_map = "auto"
     elif cur_mode == NORMAL:
+        x_center, y_center = util.get_center_str_location(panel, "SORTIE MAP")
+        panel.addstr(0, x_center, "SORTIE MAP", curses.color_pair(LOG))
 
         if len(sortie_map.split('-')) < 2:
             sortie_map = "1-1"
@@ -146,6 +150,9 @@ def pop_up_menu(stdscr, panel, cur_mode, sortie_map):
 
         panel.clear()
         panel.border()
+
+        x_center, y_center = util.get_center_str_location(panel, "SORTIE FLEET")
+        panel.addstr(0, x_center, "SORTIE FLEET", curses.color_pair(LOG))
  
         cur_preset = 0
         if cur_mode == NORMAL:
