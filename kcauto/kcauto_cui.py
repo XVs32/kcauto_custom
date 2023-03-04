@@ -194,8 +194,7 @@ def update_active_panel(active_panel):
 def open_pop_up(thread, stdscr, active_panel):
 
     global config
-    global pop_up_lock
-    pop_up_lock = True
+    util.pop_up_lock = True
 
     # Create the pop-up window
     height =  max(3 * curses.LINES // 5, 7)
@@ -274,13 +273,13 @@ def open_pop_up(thread, stdscr, active_panel):
                     
                     # send a SIGTERM signal to terminate the subprocess
                     if thread.is_alive() == True:
-                        process.send_signal(subprocess.signal.SIGTERM)
+                        util.process.send_signal(subprocess.signal.SIGTERM)
                         thread.join()
 
                     thread = kc_auto_kick_start(panels[LOG])
                 break
 
-    pop_up_lock = False
+    util.pop_up_lock = False
     return thread
 
 def get_next_active_panel(active_panel, key):
