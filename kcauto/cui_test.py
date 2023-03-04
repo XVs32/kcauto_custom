@@ -11,6 +11,7 @@ import cui.pvp as pvp
 import cui.sortie as sortie
 import cui.ship_switch as ship_switch
 import cui.passive_repair as passive_repair
+import cui.scheduler as scheduler
 import cui.util as util
 
 process = None
@@ -45,17 +46,17 @@ def init():
     # Define the sub-panels
     top = 0
     left = 0
-    next_top = 1 * curses.LINES // 5 
+    next_top = 1 * curses.LINES // 6 
     next_left = curses.COLS // 4
     expedition_panel = curses.newwin(next_top - top, next_left - left, top, left)
     top = next_top 
     left = 0
-    next_top = 3 * curses.LINES // 5
+    next_top = (1 + 2) * curses.LINES // 6
     next_left = curses.COLS // 4
     sortie_panel = curses.newwin(next_top - top, next_left - left, top, left)
     top = next_top 
     left = 0 
-    next_top = 4 * curses.LINES // 5
+    next_top = (1 + 2 + 2) * curses.LINES // 6
     next_left = curses.COLS // 4
     scheduler_panel = curses.newwin(next_top - top, next_left - left, top, left)
     top = next_top 
@@ -168,6 +169,11 @@ def refresh_panel():
             string = ','.join(map(str, sortie_fleet))
             util.print_string(panels[panel], 0, 0, string)
 
+        elif panel == SCHEDULER :
+            end_time = scheduler.get_end_time(config)
+            sortie_count = scheduler.get_sortie_count(config)
+            util.print_string(panels[panel], 0, -1, end_time[0:2] + ":" + end_time[2:4])
+            util.print_string(panels[panel], 0, 0, str(sortie_count))
         elif panel == PVP:
             if config["pvp.enabled"] == False:
                 pvp_fleet = "disable"
@@ -200,24 +206,18 @@ def open_pop_up(thread, stdscr, active_panel):
     popup_win.border()
 
     if active_panel == EXP :
-        x_center, y_center = util.get_center_str_location(popup_win, "EXP SET")
-        popup_win.addstr(0, x_center, "EXP SET", curses.color_pair(LOG))
 
         preset = exp.get_current_preset(config)
         preset = exp.pop_up_menu(stdscr, popup_win, preset)
         exp.set_config(config, preset)
     
     elif active_panel == PVP :
-        x_center, y_center = util.get_center_str_location(popup_win, "PVP PRESET")
-        popup_win.addstr(0, x_center, "PVP PRESET", curses.color_pair(LOG))
 
         preset = pvp.get_current_preset(config)
         preset = pvp.pop_up_menu(stdscr, popup_win, preset)
         pvp.set_config(config, preset)
 
     elif active_panel == SORTIE :
-        x_center, y_center = util.get_center_str_location(popup_win, "SORTIE MODE")
-        popup_win.addstr(0, x_center, "SORTIE MODE", curses.color_pair(LOG))
 
         cur_sortie_mode = sortie.get_current_sortie_mode(config)
         sortie_map = sortie.get_current_sortie_map(config)
@@ -231,6 +231,11 @@ def open_pop_up(thread, stdscr, active_panel):
             ship_switch.set_config(config, {})
             passive_repair.set_config(config, 2)
 
+    elif active_panel == SCHEDULER :
+        end_time = scheduler.get_end_time(config)
+        sortie_count = scheduler.get_sortie_count(config)
+        end_time, sortie_count = scheduler.pop_up_menu(stdscr, popup_win, end_time, sortie_count)
+        scheduler.set_config(config, end_time, sortie_count)
     elif active_panel == LOG :
 
         isYes=False
