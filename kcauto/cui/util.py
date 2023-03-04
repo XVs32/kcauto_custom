@@ -4,6 +4,7 @@ import subprocess
 from cui.macro import *
 
 pop_up_lock = False
+process = None
 
 def get_center_str_location(window, string):
 
@@ -39,11 +40,13 @@ def run_external_program(panel):
     global pop_up_lock
     # Turn on scrolling for the log window
     # Read and write the output to the desired panel
-    output = '' 
+    output = []
     while process.poll() is None:
-        output = process.stdout.readline().decode()
+        output.append(process.stdout.readline().decode())
         if pop_up_lock == False:
-            print_log(panel, output)
+            for line in output:
+                print_log(panel, line)
+            output = []
 
     print_log(panel, "kcauto ended")
 
