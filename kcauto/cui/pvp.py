@@ -1,8 +1,13 @@
 import curses
 
+import cui.util as util
+
 from cui.macro import *
 
 def pop_up_menu(stdscr, panel, preset_id):
+
+    x_center, y_center = util.get_center_str_location(panel, "PVP PRESET")
+    panel.addstr(0, x_center, "PVP PRESET", curses.color_pair(LOG))
 
     while 1:
         

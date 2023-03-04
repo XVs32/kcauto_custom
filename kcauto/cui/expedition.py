@@ -1,6 +1,8 @@
 import curses
 import json
 
+import cui.util as util
+
 from cui.macro import *
 
 expedition_preset = None
@@ -14,6 +16,9 @@ def init():
     f.close()
 
 def pop_up_menu(stdscr, panel, active_preset):
+
+    x_center, y_center = util.get_center_str_location(panel, "EXP SET")
+    panel.addstr(0, x_center, "EXP SET", curses.color_pair(LOG))
 
     global expedition_preset
     active_id = 0 
