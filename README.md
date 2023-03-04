@@ -45,7 +45,6 @@ Same as **kcauto**, **kcauto_custom** is based on vision-based automation and **
 
 
 * Install Python 3.7.3
-  * Warning for Windows users: This thing is not tested on Windows, the script are made for linux at the first place. WSL might be able to do the magic, but there is not promise.
 * (Unix only) Install additional pacakges `python3-tk scrot`
 * Install pip if not already installed
 * (Optional, but recommended) Install `pipenv` using `pip install pipenv`
