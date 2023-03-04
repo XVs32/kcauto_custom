@@ -17,7 +17,10 @@ preset_list = {DISABLE:["disable", "akashi mode"], NORMAL:["disable", "auto", "1
 
 def pop_up_menu(stdscr, panel, cur_mode, sortie_map):
 
-    global world_list 
+    global world_list
+
+    x_center, y_center = util.get_center_str_location(panel, "SORTIE MODE")
+    panel.addstr(0, x_center, "SORTIE MODE", curses.color_pair(LOG))
 
     if cur_mode == NORMAL:
         mode_list[2] = sortie_map
