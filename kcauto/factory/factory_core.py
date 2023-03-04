@@ -61,10 +61,18 @@ class FactoryCore(object):
         while count > 0:
 
             """click develop"""
+            retry = 0
             while not kca_u.kca.exists(
-                'lower', "factory|develop_menu.png"):
+                'lower', "factory|develop_menu.png") and retry < 5:
                 kca_u.kca.r["develop_region"].click()
                 kca_u.kca.sleep(1)
+                retry += 1
+
+            if retry == 5:
+                Log.log_error("Cannot open develop menu, probably because the port is full")
+                Log.log_error("Disable factory module")
+                self.enabled = False
+                return False
 
             resource_list = [oil, ammo, steel, bauxite]
 
@@ -141,10 +149,18 @@ class FactoryCore(object):
                 if kca_u.kca.exists(build_slot_stat[j],
                                     "factory|build_ready.png"):
                     """click build slot"""
+                    retry = 0
                     while not kca_u.kca.exists(
-                        'lower', "factory|develop_menu.png"):
+                        'lower', "factory|develop_menu.png") and retry < 5:
                         kca_u.kca.r[build_slot[j]].click()
                         kca_u.kca.sleep(1)
+                        retry += 1
+
+                    if retry == 5:
+                        Log.log_error("Cannot open develop menu, probably because the port is full")
+                        Log.log_error("Disable factory module")
+                        self.enabled = False
+                        return False
 
                     resource_list = [oil, ammo, steel, bauxite]
 
