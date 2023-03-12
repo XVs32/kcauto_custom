@@ -8,10 +8,11 @@ class NodeEnum(EnumBase):
     NQ, NR, NS, NT, NU, NV, NW, NX = 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X'
     NY, NZ = 'Y', 'Z'
     NB1, NB2 = 'B1', 'B2'
-    NC1, NC2 = 'C1', 'C2'
+    NC1, NC2, NC3= 'C1', 'C2', 'C3'
     ND1, ND2 = 'D1', 'D2'
     NF1, NF2 = 'F1', 'F2'
     NG1, NG2 = 'G1', 'G2'
+    NH1, NH2 = 'H1', 'H2'
     NJ1, NJ2 = 'J1', 'J2'
     NK1, NK2 = 'K1', 'K2'
     NL1, NL2 = 'L1', 'L2'
@@ -42,15 +43,17 @@ class NodeCountEnum(EnumBase):
 
 
 class NamedNodeEnum(EnumBase):
+    N1, N2, N3, N4, N5, N6, N7, N8, N9, N10 = 1, 2, 3, 4, 5, 6, 7, 8, 9, 10
     NA, NB, NC, ND, NE, NF, NG, NH = 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'
     NI, NJ, NK, NL, NM, NN, NO, NP = 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P'
     NQ, NR, NS, NT, NU, NV, NW, NX = 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X'
     NY, NZ = 'Y', 'Z'
     NB1, NB2 = 'B1', 'B2'
-    NC1, NC2 = 'C1', 'C2'
+    NC1, NC2, NC3= 'C1', 'C2', 'C3'
     ND1, ND2 = 'D1', 'D2'
     NF1, NF2 = 'F1', 'F2'
     NG1, NG2 = 'G1', 'G2'
+    NH1, NH2 = 'H1', 'H2'
     NJ1, NJ2 = 'J1', 'J2'
     NK1, NK2 = 'K1', 'K2'
     NL1, NL2 = 'L1', 'L2'
@@ -66,3 +69,4 @@ class NamedNodeEnum(EnumBase):
     NZ11 = "Z11",
     NZ7, NZ8, NZ9, NZZ, NZZ1, NZZ2 = 'Z7', 'Z8', 'Z9', 'ZZ', 'ZZ1', 'ZZ2'
     NZZ3 = 'ZZ3'
+
