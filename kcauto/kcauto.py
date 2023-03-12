@@ -98,9 +98,8 @@ class Kcauto(object):
             self.find_kancolle()
             nav.navigate.to('refresh_home')
             self.fast_check_for_expedition()
-
         
-        self.run_quest_logic()
+        self.run_quest_logic('expedition')
 
         if set([ExpeditionEnum.E5_33, ExpeditionEnum.E5_34,
                 ExpeditionEnum.EE_S1, ExpeditionEnum.EE_S2]) & set(
@@ -205,7 +204,8 @@ class Kcauto(object):
             self.run_quest_logic('combat', fast_check=False, force= True)
             quest_selected = True
             if cfg.config.combat.sortie_map == MapEnum.auto_map_selete:    #If no combat map available, turn off combat module
-                # print("Debug: Stop combat module because no combat quest available")
+                
+                Log.log_debug(f"Debug: Stop combat module because no combat quest available")
                 com.combat.enabled = False
                 return False
 
