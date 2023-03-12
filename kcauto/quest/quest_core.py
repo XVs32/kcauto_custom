@@ -92,12 +92,15 @@ class QuestCore(CoreBase):
         """Added by XVs32"""
         self.tot_page = math.ceil(len(self.visible_quests)/5)-1
         
-        Log.log_msg(self.visible_quests_str)
+        Log.log_debug(self.visible_quests_str)
 
     def manage_quests(self, context=None, fast_check=True):
         # dismiss Ooyodo
         kca_u.kca.r['center'].click()
         kca_u.kca.sleep(1)
+
+        Log.log_msg(
+            f"Manage {context} quests: ")
 
         if context and context != self.last_checked_context:
             fast_check = False
@@ -131,14 +134,13 @@ class QuestCore(CoreBase):
         relevant_quests = self._get_quest_in_config([context, "expedition"])
         interval_check_quests = self._get_quests_to_check_by_interval()
         Log.log_msg(f"Relevant quests: {relevant_quests}")
-        Log.log_msg(f"Quests to check: {interval_check_quests}")
+        Log.log_debug(f"Quests to check: {interval_check_quests}")
         Log.log_msg("Navigating to active quests tab.")
         
-        kca_u.kca.click_existing('left', 'quest|filter_tab_active.png')
-        api.api.update_from_api({KCSAPIEnum.QUEST_LIST}) #update visible_quests
-        kca_u.kca.wait(
-            'left', 'quest|filter_tab_active_active.png', NEAR_EXACT)
-
+        if kca_u.kca.click_existing('left', 'quest|filter_tab_active.png') == True:
+            kca_u.kca.wait(
+                'left', 'quest|filter_tab_active_active.png', NEAR_EXACT)
+            api.api.update_from_api({KCSAPIEnum.QUEST_LIST}) #update visible_quests
         
         quest_offset = 0
         
@@ -146,6 +148,10 @@ class QuestCore(CoreBase):
             for idx, quest in enumerate(self.visible_quests):
                 
                 quest_pos = idx - quest_offset
+
+                if quest_pos < 0:
+                    Log.log_error(f"Quest_pos is below 0, probably a bug around quest handling, send a bug report to dev if possible.")
+                    break
                 
                 if quest == -1:
                     break
@@ -247,16 +253,15 @@ class QuestCore(CoreBase):
 
         for quest_type in quest_types:
             Log.log_msg(f"Navigating to {quest_type} quests tab.")
-            kca_u.kca.click_existing(
-                'left', f'quest|filter_tab_{quest_type}.png')
-            api.api.update_from_api({KCSAPIEnum.QUEST_LIST}) #update visible_quests
-            kca_u.kca.wait(
-                'left', f'quest|filter_tab_{quest_type}_active.png',
-                NEAR_EXACT)
+            if kca_u.kca.click_existing(
+                'left', f'quest|filter_tab_{quest_type}.png') == True:
+                kca_u.kca.wait(
+                    'left', f'quest|filter_tab_{quest_type}_active.png',
+                    NEAR_EXACT)
+                api.api.update_from_api({KCSAPIEnum.QUEST_LIST}) #update visible_quests
             
             self.cur_page = 0
 
-            page_processed = False
             while 1:
                 for idx, quest in enumerate(self.visible_quests):
                     if quest == -1:
@@ -294,10 +299,13 @@ class QuestCore(CoreBase):
 
         """Auto select sortie map mode"""
 
-
-        kca_u.kca.click_existing(
-            'left', f'quest|filter_tab_all.png')
-        api.api.update_from_api({KCSAPIEnum.QUEST_LIST}) #update visible_quests
+        if kca_u.kca.click_existing(
+            'left', f'quest|filter_tab_all.png') == True:
+            kca_u.kca.wait(
+                    'left', f'quest|filter_tab_all_active.png',
+                    NEAR_EXACT)
+            api.api.update_from_api({KCSAPIEnum.QUEST_LIST}) #update visible_quests
+            Log.log_msg(f"api update done in auto map select.")
 
         if cfg.config.combat.sortie_map == MapEnum.auto_map_selete:
             if com.combat.get_sortie_queue() == []:
@@ -326,10 +334,9 @@ class QuestCore(CoreBase):
             else:
                 com.combat.__init__()
 
-        # print("Debug:")
-        # print(cfg.config.combat.sortie_map)
-        # print(com.combat.get_sortie_queue())
-        # print(self._find_next_sorties_quests())
+        Log.log_debug(f"sortie_map {cfg.config.combat.sortie_map}.")
+        Log.log_debug(f"get_sortie_queue {com.combat.get_sortie_queue()}.")
+        Log.log_debug(f"_find_next_sorties_quests {self._find_next_sorties_quests()}.")
 
     def _get_sortie_map_from_quest(self, quest):
         return self.quest_to_sortie_maps[quest]
@@ -340,30 +347,27 @@ class QuestCore(CoreBase):
         """type_list(str) : The type of quest to find(combat,pvp,factory,expedition)"""
         """Attention: Return quest name ONLY, no quest id is returned"""
 
-        quest_groups = []
+        quest_groups = ['E']
         for type in type_list:
             if type == "combat":
                 quest_groups.append('B')
-                quest_groups.append('E')
             elif type == "pvp":
                 quest_groups.append('C')
-                quest_groups.append('E')
             elif type == "factory":
                 quest_groups.append('F')
-                quest_groups.append('E')
             elif type == "expedition":
-                quest_groups.append('E')
+                quest_groups.append('D')
             elif type != "reset":
                 raise ValueError("Invalid quest type specified:" + type)
                 
 
-        combat_quests = []
+        quests_list = []
         for quest_name in cfg.config.quest.quests:
             if quest_name[0] not in quest_groups:
                 continue
-            combat_quests.append(quest_name)
+            quests_list.append(quest_name)
         
-        return combat_quests
+        return quests_list
 
     def _get_quest_by_context(self, context):
         relevant_quests = []

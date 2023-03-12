@@ -31,73 +31,83 @@ class Navigate(object):
             bool: True if navigation was successful, False if no actions were
                 taken
         """
-        if (kca_u.kca.exists('home_menu', 'nav|home_menu_sortie.png')
-                and destination == 'home'):
-            # if visibly at home menu and destination is home, not refresh
-            # home, short circuit
-            return False
 
-        sidestep = bool(randint(0, max_sidestep))
-        kca_u.kca.hover('top')
-        kca_u.kca.sleep()
-        # Figure out where we are
-        current_location = None
-        if kca_u.kca.exists('home_menu', 'nav|home_menu_sortie.png'):
-            Log.log_msg("At home")
-            current_location = nodes.nav_nodes.home
-        elif kca_u.kca.exists('side_menu', 'nav|side_menu_home.png'):
-            Log.log_msg("At side menu")
-            current_location = nodes.nav_nodes.side_menu
-        elif kca_u.kca.exists('lower_left', 'nav|top_menu_home.png'):
-            Log.log_msg("At top menu")
-            current_location = nodes.nav_nodes.top_menu
+        retry = True
+        while True:
 
-        if not current_location:
-            Log.log_error("Nav module could not figure out current location.")
-            raise FindFailed()
-
-        if current_location.name == 'home':
-            # Starting from home screen
-            if destination == 'home':
-                # Already at home
-                # Util.log_msg('Already at home.')
+            if (kca_u.kca.exists('home_menu', 'nav|home_menu_sortie.png')
+                    and destination == 'home'):
+                # if visibly at home menu and destination is home, not refresh
+                # home, short circuit
                 return False
-            elif destination == 'refresh_home':
-                # Refresh home
-                Log.log_msg("Refreshing home.")
-                destination = 'home'
-                current_location = current_location.navigate_to(
-                    cls._choose_sidestep(destination), False)
-            else:
-                # Go to and side menu sub screen
-                Log.log_msg(
-                    "Navigating to {} screen.".format(destination))
-                if destination in ('combat', 'pvp', 'expedition'):
-                    current_location = current_location.navigate_to(
-                        'sortie', False)
-                    kca_u.kca.sleep(1)
-                else:
-                    if sidestep:
-                        current_location = current_location.navigate_to(
-                            cls._choose_sidestep(destination), False)
-        elif current_location.name == 'side_menu':
-            # Starting from a main menu item screen
-            if destination in ('home', 'refresh_home'):
-                # Go or refresh home
-                Log.log_msg('Going home.')
-                destination = 'home'
-        elif current_location.name == 'top_menu':
-            # Starting from top menu item. Theoretically, the script should
-            # never attempt to go anywhere but home from here
-            if destination in ('home', 'refresh_home'):
-                Log.log_msg('Going home.')
-                destination = 'home'
 
-        if current_location.navigate_to(destination) == False:
-            Log.log_msg('Nav to home and retry.')
-            current_location = current_location.navigate_to(
-                'home', True)
-            current_location.navigate_to(destination)
+            sidestep = bool(randint(0, max_sidestep))
+            kca_u.kca.hover('top')
+            kca_u.kca.sleep()
+            # Figure out where we are
+            current_location = None
+            if kca_u.kca.exists('home_menu', 'nav|home_menu_sortie.png'):
+                Log.log_msg("At home")
+                current_location = nodes.nav_nodes.home
+            elif kca_u.kca.exists('side_menu', 'nav|side_menu_home.png'):
+                Log.log_msg("At side menu")
+                current_location = nodes.nav_nodes.side_menu
+            elif kca_u.kca.exists('lower_left', 'nav|top_menu_home.png'):
+                Log.log_msg("At top menu")
+                current_location = nodes.nav_nodes.top_menu
+
+            if not current_location:
+                Log.log_error("Nav module could not figure out current location.")
+                raise FindFailed()
+
+            if current_location.name == 'home':
+                # Starting from home screen
+                if destination == 'home':
+                    # Already at home
+                    # Util.log_msg('Already at home.')
+                    return False
+                elif destination == 'refresh_home':
+                    # Refresh home
+                    Log.log_msg("Refreshing home.")
+                    destination = 'home'
+                    current_location = current_location.navigate_to(
+                        cls._choose_sidestep(destination), False)
+                else:
+                    # Go to and side menu sub screen
+                    Log.log_msg(
+                        "Navigating to {} screen.".format(destination))
+                    if destination in ('combat', 'pvp', 'expedition'):
+                        current_location = current_location.navigate_to(
+                            'sortie', False)
+                        kca_u.kca.sleep(1)
+                    else:
+                        if sidestep:
+                            current_location = current_location.navigate_to(
+                                cls._choose_sidestep(destination), False)
+            elif current_location.name == 'side_menu':
+                # Starting from a main menu item screen
+                if destination in ('home', 'refresh_home'):
+                    # Go or refresh home
+                    Log.log_msg('Going home.')
+                    destination = 'home'
+            elif current_location.name == 'top_menu':
+                # Starting from top menu item. Theoretically, the script should
+                # never attempt to go anywhere but home from here
+                if destination in ('home', 'refresh_home'):
+                    Log.log_msg('Going home.')
+                    destination = 'home'
+
+            if current_location.navigate_to(destination) == False and retry == True:
+                Log.log_msg('Nav to home and retry.')
+                current_location = current_location.navigate_to(
+                    'home', True)
+                retry = False
+                continue
+            else:
+                retry = False
+
+            if retry == False:
+                break
 
         return True
 
