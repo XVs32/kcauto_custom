@@ -1,5 +1,7 @@
 # kcauto_custom
 
+***2023 Spring event E1~E3 support [here](https://github.com/XVs32/kcauto_custom/releases/tag/v1.0.0-beta-2023-spring-e3)***
+
 **kcauto_custom** is a linux command line Kantai Collection automation tool. This is fock from an archived project [kcauto](https://github.com/perryhuynh/kcauto).  
 In comparison with **kcauto**, **kcauto_custom** is less flexible while being more automatic for easy daily use.  
 Same as **kcauto**, **kcauto_custom** is based on vision-based automation and **kcauto_custom** provide bug fix and addition functions like auto factory and more fleet preset for higher level of automation.
