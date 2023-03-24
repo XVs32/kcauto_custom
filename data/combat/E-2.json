@@ -3,7 +3,8 @@
     "subworld": 2,
     "enemy_context": [
         "subs",
-        "carriers"
+        "carriers",
+        "transports"
     ],
     "nodes": {
         "A": {
