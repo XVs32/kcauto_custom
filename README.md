@@ -69,7 +69,7 @@ Same as **kcauto**, **kcauto_custom** is based on vision-based automation and **
 The following assumes the `python` alias points to Python 3.7. If your alias for Python 3.7 is different (e.g. `python3`, `py -3`), modify the commands as needed. Run these commands on the command line/shell.
 
 * (Windows only) First run `set PYTHONIOENCODING=utf-8`
-* Run kcauto in CLI mode with a custom config file `custom.json` in the `configs` folder: `python kcauto -cli -cfg custom` (note that you do not add `.json` here)
+* Run kcauto in CLI mode with a custom config file `custom.json` in the `configs` folder: `python kcauto --cli --cfg custom` (note that you do not add `.json` here)
 * Or, run kcauto in CLI mode with a custom config file in a custom path: `python kcauto -cli -cfg-path <full-path-to-cfg>`
 
 # Tutorial
