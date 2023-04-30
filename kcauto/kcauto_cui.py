@@ -129,6 +129,8 @@ def draw_menu(stdscr):
             kc_auto = open_pop_up(kc_auto, stdscr, active_panel)
             panels[LOG].redrawwin()
             k = 0
+        elif k == KEY_ESC:
+            util.signal_handler()
         else:
             # Wait for next input
             k = stdscr.getch()
@@ -324,14 +326,8 @@ def kc_auto_kick_start(log_panel):
     return kc_auto
 
 def main():
-    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGINT, util.signal_handler)
     curses.wrapper(draw_menu)
-
-def signal_handler(signal_num, frame):
-    #print("CTRL+C detected. Exiting gracefully...")
-    curses.endwin()
-    exit(0)
-
 
 if __name__ == "__main__":
     main()    
