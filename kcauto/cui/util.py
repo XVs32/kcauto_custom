@@ -1,7 +1,7 @@
 import os
 import curses
 import subprocess
-from sys import platform
+from sys import platform, exit
 
 from cui.macro import *
 
@@ -60,10 +60,10 @@ def run_external_program(panel):
     global process
     
     if platform == "linux" or platform == "linux2":
-        filename = "kcauto"
+        filename = "kcauto.bin"
         decode = "unicode_escape"
         if os.path.isfile(filename):
-            process = subprocess.Popen(['kcauto', '--cli', '--cfg', 'config_cui'], stdout=subprocess.PIPE)
+            process = subprocess.Popen(['kcauto.bin', '--cli', '--cfg', 'config_cui'], stdout=subprocess.PIPE)
             print_log(panel, "Starting from " + filename + "\n")
         else:
             process = subprocess.Popen(['python3.7', 'kcauto', '--cli', '--cfg', 'config_cui'], stdout=subprocess.PIPE)
@@ -95,7 +95,7 @@ def run_external_program(panel):
 
     print_log(panel, "kcauto ended\n")
 
-def signal_handler():
+def signal_handler(signal = None, frame = None):
     print("Exiting gracefully...")
     curses.endwin()
     exit(0)
