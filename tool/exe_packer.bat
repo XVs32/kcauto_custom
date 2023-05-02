@@ -8,12 +8,17 @@ for /f "delims=" %%i in ('python -c "from distutils.sysconfig import get_python_
 echo The Python site-packages directory is: %python_site_package%
 
 pyinstaller -F %src% -p ..\kcauto\ -p %python_site_package%
-
 move /y ".\dist\__main__.exe" "%target_path%"
-
 rmdir /s /q ".\dist"
 rmdir /s /q ".\build"
-
 del .\__main__.spec
+
+set "src=..\kcauto\kcauto_cui.py"
+set "target_path=..\kcauto_cui.exe"
+pyinstaller -F %src% -p ..\kcauto\ -p %python_site_package%
+move /y ".\dist\kcauto_cui.exe" "%target_path%"
+rmdir /s /q ".\dist"
+rmdir /s /q ".\build"
+del .\kcauto_cui.spec
 
 pause
