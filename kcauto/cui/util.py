@@ -1,3 +1,4 @@
+import os
 import curses
 import subprocess
 from sys import platform
@@ -57,19 +58,32 @@ def print_log(panel, string):
 def run_external_program(panel):
     # Start the external program and redirect its output
     global process
-
+    
     if platform == "linux" or platform == "linux2":
-        process = subprocess.Popen(['python3.7', 'kcauto', '--cli', '--cfg', 'config_cui'], stdout=subprocess.PIPE)
+        filename = "kcauto"
         decode = "unicode_escape"
-    elif platform == "darwin":
-        process = subprocess.Popen(['python', 'kcauto', '--cli', '--cfg', 'config_cui'], stdout=subprocess.PIPE)
+        if os.path.isfile(filename):
+            process = subprocess.Popen(['kcauto', '--cli', '--cfg', 'config_cui'], stdout=subprocess.PIPE)
+            print_log(panel, "Starting from " + filename + "\n")
+        else:
+            process = subprocess.Popen(['python3.7', 'kcauto', '--cli', '--cfg', 'config_cui'], stdout=subprocess.PIPE)
+            print_log(panel, filename + " does not exist\n")
+            print_log(panel, "Start kcauto in python instead\n")
+            
+    elif platform == "darwin" or platform == "win32": 
+        filename = "kcauto.exe"
         decode = "windows-1252"
-    elif platform == "win32":
-        process = subprocess.Popen(['python', 'kcauto', '--cli', '--cfg', 'config_cui'], stdout=subprocess.PIPE)
-        decode = "windows-1252"
-
+        if os.path.isfile(filename):
+            process = subprocess.Popen(['kcauto.exe', '--cli', '--cfg', 'config_cui'], stdout=subprocess.PIPE)
+            print_log(panel, "Starting from " + filename + "\n")
+        else:
+            process = subprocess.Popen(['python', 'kcauto', '--cli', '--cfg', 'config_cui'], stdout=subprocess.PIPE)
+            print_log(panel, filename + " does not exist\n")
+            print_log(panel, "Start kcauto in python instead\n")
+    else:
+        TypeError("Non support OS.")
+    
     global pop_up_lock
-    # Turn on scrolling for the log window
     # Read and write the output to the desired panel
     output = []
     while process.poll() is None:
