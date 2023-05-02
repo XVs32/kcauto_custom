@@ -69,8 +69,9 @@ def init():
     left = next_left 
     next_top  = curses.LINES
     next_left = curses.COLS // 4
-    log_panel = curses.newwin(curses.LINES, 3 * curses.COLS // 4, 0, curses.COLS // 4)
+    log_panel = curses.newwin(curses.LINES, curses.COLS - (curses.COLS // 4), 0, curses.COLS // 4)
 
+    # Turn on scrolling for the log window
     log_panel.scrollok(True)
 
     global panels
