@@ -2,7 +2,7 @@ import traceback
 from pyvisauto import FindFailed
 from time import sleep
 
-import kcauto as _
+import startup.kcauto as _
 from constants import LOOP_BREAK_SECONDS
 from util.exceptions import (
     ApiException, Catbomb201Exception, ChromeCrashException)

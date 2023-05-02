@@ -11,7 +11,7 @@ if __name__ == '__main__':
     args = arg.args.parse_args()
 
     if args.cli:
-        from kcauto_wrapper import kcauto_main
+        from startup.kcauto_wrapper import kcauto_main
         cfg = args.cfg_path if args.cfg_path else args.cfg
         Log.log_success(
             f"Initializing kcauto v{__version__} in command-line mode with "
