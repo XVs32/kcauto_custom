@@ -1,5 +1,5 @@
 import os
-from sys import platform
+from sys import platform, exit
 import requests
 from pyquery import PyQuery
 from sys import path_hooks
@@ -750,10 +750,6 @@ class Kca(object):
             self.kc3_hook.Target.closeTarget(targetId=strategy_tab_id)
             self.cdt_init(target="kc3")
 
-
-
-
-
         if platform == "linux" or platform == "linux2":
             strategy_tab_id = self.kc3_hook.Target.createTarget(
                 url=STRATEGY_ROOM_URL + subpage,
@@ -774,8 +770,8 @@ class Kca(object):
                 forTab=True)[0]["result"]["targetId"]
 
 
-        self.kc3_hook.connect_targetID(strategy_tab_id)
-        self.kc3_hook.wait_event("Page.loadEventFired", timeout=60)
+        #self.kc3_hook.connect_targetID(strategy_tab_id)
+        self.kc3_hook.wait_event("Page.loadEventFired", timeout=5)
 
         return
 
@@ -793,9 +789,21 @@ class Kca(object):
             dict with key of quest name, and value of remaining actions needed.
             return None if quest is not combat type.
         """
+        retry = 0
+        while retry < 5:
 
-        self.kc3_hook.DOM.getDocument()
-        html_code=self.kc3_hook.DOM.getOuterHTML(nodeId=5)
+            self.reload_kc3_strategy_page(subpage = "#flowchart")
+            self.kc3_hook.DOM.getDocument()
+            html_code=self.kc3_hook.DOM.getOuterHTML(nodeId=5)
+
+            if html_code[0] == None:
+                retry += 1
+            else:
+                break
+        
+        if html_code[0] == None:
+            Log.log_error("Cannot prase quest data from KC3. Shutdown kcauto.")
+            exit(1)
 
         if platform == "linux" or platform == "linux2":
             dom = PyQuery(html_code[0]["result"]["outerHTML"], parser='html')
