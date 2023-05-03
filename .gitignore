@@ -51,10 +51,6 @@ data/temp/*.json
 !data/combat/*/*.json
 !data/quests/*.json
 !configs/template/*.json
-!configs/fleet_preset.json
-!configs/fleet_list.json
 !data/config/*.json
 !data/expedition/*.json
 reference/
-configs/fleet_preset.json
-configs/fleet_list.json
