@@ -98,8 +98,6 @@ class Kcauto(object):
             self.find_kancolle()
             nav.navigate.to('refresh_home')
             self.fast_check_for_expedition()
-        
-        self.run_quest_logic('expedition')
 
         if set([ExpeditionEnum.E5_33, ExpeditionEnum.E5_34,
                 ExpeditionEnum.EE_S1, ExpeditionEnum.EE_S2]) & set(
@@ -108,6 +106,7 @@ class Kcauto(object):
                 nav.navigate.to('refresh_home')
 
         if exp.expedition.fleets_are_ready:
+            self.run_quest_logic('expedition')
             nav.navigate.to('home')
             self.fast_check_for_expedition()
             exp.expedition.goto()
@@ -218,6 +217,8 @@ class Kcauto(object):
                 self.run_quest_logic('combat', fast_check=True)
 
             self.run_resupply_logic()
+            #update port api, for should_and_able_to_sortie
+            nav.navigate.to('refresh_home')
 
             if com.combat.should_and_able_to_sortie():
                 com.combat.goto()
