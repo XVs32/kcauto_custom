@@ -314,7 +314,6 @@ class QuestCore(CoreBase):
                 if next_quest != None:
 
                     """Read quest progress""" 
-                    kca_u.kca.reload_kc3_strategy_page(subpage = "#flowchart")
                     sortie_dict = kca_u.kca.get_quest_count(next_quest)
 
                     if sortie_dict == None:
