@@ -56,3 +56,5 @@ data/temp/*.json
 !data/config/*.json
 !data/expedition/*.json
 reference/
+configs/fleet_preset.json
+configs/fleet_list.json
