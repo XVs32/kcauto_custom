@@ -1,4 +1,5 @@
 import os
+import time
 import curses
 import subprocess
 from sys import platform, exit
@@ -63,10 +64,12 @@ def run_external_program(panel):
         filename = "kcauto.bin"
         decode = "unicode_escape"
         if os.path.isfile(filename):
-            process = subprocess.Popen(['kcauto.bin', '--cli', '--cfg', 'config_cui'], stdout=subprocess.PIPE)
+            process = subprocess.Popen(['./kcauto.bin', '--cli', '--cfg', 'config_cui'], stdout=subprocess.PIPE)
+            time.sleep(1)
             print_log(panel, "Starting from " + filename + "\n")
         else:
             process = subprocess.Popen(['python3.7', 'kcauto', '--cli', '--cfg', 'config_cui'], stdout=subprocess.PIPE)
+            time.sleep(1)
             print_log(panel, filename + " does not exist\n")
             print_log(panel, "Start kcauto in python instead\n")
             
@@ -75,9 +78,11 @@ def run_external_program(panel):
         decode = "windows-1252"
         if os.path.isfile(filename):
             process = subprocess.Popen(['kcauto.exe', '--cli', '--cfg', 'config_cui'], stdout=subprocess.PIPE)
+            time.sleep(1)
             print_log(panel, "Starting from " + filename + "\n")
         else:
             process = subprocess.Popen(['python', 'kcauto', '--cli', '--cfg', 'config_cui'], stdout=subprocess.PIPE)
+            time.sleep(1)
             print_log(panel, filename + " does not exist\n")
             print_log(panel, "Start kcauto in python instead\n")
     else:
