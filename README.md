@@ -1,5 +1,7 @@
 # kcauto_custom
 
+### ***Lastest download link: [Windows](https://github.com/XVs32/kcauto_custom/releases/tag/Windows_v1.0.0_pre-release), [Linux](https://github.com/XVs32/kcauto_custom/releases/tag/Linux_v1.0.0_pre-release)***
+
 **kcauto_custom** is a linux command line Kantai Collection automation tool. This is fock from an archived project [kcauto](https://github.com/perryhuynh/kcauto).  
 In comparison with **kcauto**, **kcauto_custom** is less flexible while being more automatic for easy daily use.  
 Same as **kcauto**, **kcauto_custom** is based on vision-based automation and **kcauto_custom** provide bug fix and addition functions like auto factory and more fleet preset for higher level of automation.
@@ -34,6 +36,7 @@ Same as **kcauto**, **kcauto_custom** is based on vision-based automation and **
 
 ### Features form kcauto_custom
 
+* CUI(Character User Interface) for daily use cases
 * More fleet presets that you could define in a config file
 * Auto akashi repair 
 * Auto factory which runs the daily develop and ship building
@@ -43,7 +46,16 @@ Same as **kcauto**, **kcauto_custom** is based on vision-based automation and **
 
 ## Installation
 
+For non-developer:
+* Windows
+    * Double click `kcauto_cui.exe` 
+        * Or, run `.\kcauto_cui.exe` in Powershell for better user experience
+* Linux
+    * Run `./kcauto_cui`
+    
+---
 
+For developer(Those who know what they are doing):
 * Install Python 3.7.3
 * (Unix only) Install additional pacakges `python3-tk scrot`
 * Install pip if not already installed
@@ -54,9 +66,15 @@ Same as **kcauto**, **kcauto_custom** is based on vision-based automation and **
 
 ## Kancolle setup
 
-* Run Chrome or Chromium equivalent with the `--remote-debugging-port` option:
+* Run Chrome or Chromium equivalent with the `--remote-debugging-port` option (and `--remote-allow-origins=*` too at the moment (2023/05/04)[ref](https://github.com/XVs32/kcauto_custom/issues/19)):
   * ex: `chrome --remote-debugging-port=9222`(For Windows user: If you don't know how to start chrome with options, read [this](https://stackoverflow.com/a/56457835))
   * Note: ***Use task manager to kill all chrome process first if needed.*** This remote-debugging-enabled instance of Chrome must be the *first* instance of Chrome run. If you have other Chrome windows open, close all of them before re-starting it with remote-debugging enabled. 
+  * How do I know if the `debugging` mode is on?
+    * Access `127.0.0.1:9222`, you should see a blank screen as follow:
+![Screenshot from 2023-05-04 22-34-30](https://user-images.githubusercontent.com/16824564/236221380-f2b52443-b2f7-4510-899f-c8582f431d12.png)  
+      Kill ALL chrome process and retry if you see this:  
+![Screenshot from 2023-05-04 22-28-56](https://user-images.githubusercontent.com/16824564/236221730-c5445cc8-b270-4cb9-b7d2-0ed4f892be56.png)  
+      
 * Load Kancolle
   * First run: leave it in the 'Start' screen, where you press the button to enter homeport. You will not have to start kcauto from this screen in subsequent runs, although it is recommended you do this after each game maintenance to allow kcauto to load the latest game data.
   * Ensure that the game is scaled to 100% size/1x scaling &mdash; the entire game should be 1200 pixels wide and 720 pixels tall if you take a screenshot of it
@@ -66,7 +84,7 @@ Same as **kcauto**, **kcauto_custom** is based on vision-based automation and **
 The following assumes the `python` alias points to Python 3.7. If your alias for Python 3.7 is different (e.g. `python3`, `py -3`), modify the commands as needed. Run these commands on the command line/shell.
 
 * (Windows only) First run `set PYTHONIOENCODING=utf-8`
-* Run kcauto in CLI mode with a custom config file `custom.json` in the `configs` folder: `python kcauto -cli -cfg custom` (note that you do not add `.json` here)
+* Run kcauto in CLI mode with a custom config file `custom.json` in the `configs` folder: `python kcauto --cli --cfg custom` (note that you do not add `.json` here)
 * Or, run kcauto in CLI mode with a custom config file in a custom path: `python kcauto -cli -cfg-path <full-path-to-cfg>`
 
 # Tutorial
