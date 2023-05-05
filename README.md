@@ -8,8 +8,7 @@ This tool is designed to help users automate repetitive tasks such as Expedition
 
 ***Warnning*** : kcauto_custom is not made for Windows(althought it could theoretically run on Windows), I might or might not fix any compatibility problems.
 
-![image](https://user-images.githubusercontent.com/16824564/236409480-df6d6c27-9d64-417a-b515-12df1fa5e5d8.png)
-
+![Screenshot from 2023-05-05 23-42-59](https://user-images.githubusercontent.com/16824564/236490338-2930fada-2a0b-47da-958c-7d150b421c48.png)
 
 ---
 
