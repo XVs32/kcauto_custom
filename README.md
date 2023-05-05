@@ -40,11 +40,11 @@ This tool is designed to help users automate repetitive tasks such as Expedition
 ### Features form kcauto_custom
 
 * CUI(Character User Interface) for daily use cases
-* More fleet presets that you could define in a config file
-* Auto akashi repair 
-* Auto factory which runs the daily develop and ship building
-* Auto selection of sortie map based on currently available quest (KC3 is needed in this mode)
-* Support for 7-4
+* Akashi repair Module &mdash; Repair ships with akashi
+* Factory Module &mdash; Runs daily develop and ship building 
+* More fleet presets &mdash; Unlimited fleet presets that you can define in a config file
+* Sortie mdoe: Auto &mdash; Auto finish daily/weekly/monthly quest (KC3 is needed)
+* Support for 7-4, events
 * Bug fix(Fleet Switcher Module, interaction_mode, quest handling etc.)
 
 ## Installation
@@ -61,7 +61,6 @@ For non-developer:
 
 For developer(Those who know what they are doing):
 * Install Python 3.7.3
-  * Warning for Windows users: This thing is not tested on Windows, the script are made for linux at the first place. WSL might be able to do the magic, but there is not promise.
 * (Unix only) Install additional pacakges `python3-tk scrot`
 * Install pip if not already installed
 * (Optional, but recommended) Install `pipenv` using `pip install pipenv`
