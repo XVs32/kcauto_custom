@@ -8,8 +8,7 @@ This tool is designed to help users automate repetitive tasks such as Expedition
 
 ***Warnning*** : kcauto_custom is not made for Windows(althought it could theoretically run on Windows), I might or might not fix any compatibility problems.
 
-![image](https://user-images.githubusercontent.com/16824564/236409480-df6d6c27-9d64-417a-b515-12df1fa5e5d8.png)
-
+![Screenshot from 2023-05-05 23-42-59](https://user-images.githubusercontent.com/16824564/236490338-2930fada-2a0b-47da-958c-7d150b421c48.png)
 
 ---
 
@@ -72,6 +71,8 @@ For developer(Those who know what they are doing):
 ### [Setup guide](https://github.com/XVs32/kcauto_custom/wiki/Ch1:-Setup-guide)  
 ### [Beginner user guide](https://github.com/XVs32/kcauto_custom/wiki/Ch2.1:-Beginner-user-guide)  
 ### [Gamer user guide](https://github.com/XVs32/kcauto_custom/wiki/Ch2.2:-Gamer-user-guide)  
+---
+*You need a github account for the following*
 ### [Wishing pool](https://github.com/XVs32/kcauto_custom/issues/new?assignees=&labels=&template=feature_request.md): Wish/Idea for new functions
 ### [Bug report](https://github.com/XVs32/kcauto_custom/issues/new?assignees=&labels=&template=bug-report.md): Bro, something goes wrong
 ### [Q&A](https://github.com/XVs32/kcauto_custom/discussions/new?category=q-a): How to use this/that?
