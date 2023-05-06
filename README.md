@@ -2,7 +2,7 @@
 
 ### ***Lastest download link: [Windows](https://github.com/XVs32/kcauto_custom/releases/tag/Windows_v1.0.0_pre-release), [Linux](https://github.com/XVs32/kcauto_custom/releases/tag/Linux_v1.0.0_pre-release)***
 
-**kcauto_custom** is a linux customized version of an archived project [kcauto](https://github.com/perryhuynh/kcauto) that includes additional features and functionality.  
+**[kcauto_custom](https://github.com/XVs32/kcauto_custom)** is a linux customized version of an archived project [kcauto](https://github.com/perryhuynh/kcauto) that includes additional features and functionality.  
 In comparison with **kcauto**, **kcauto_custom** is less flexible while being more automatic for easy daily use.  
 This tool is designed to help users automate repetitive tasks such as Expedition, Combat, PvP, Repair & Resupply, ultimately saving time and improving efficiency. 
 
@@ -73,6 +73,6 @@ For developer(Those who know what they are doing):
 ### [Gamer user guide](https://github.com/XVs32/kcauto_custom/wiki/Ch2.2:-Gamer-user-guide)  
 ---
 *You need a github account for the following*
-### [Wishing pool](https://github.com/XVs32/kcauto_custom/issues/new?assignees=&labels=&template=feature_request.md): Wish/Idea for new functions
-### [Bug report](https://github.com/XVs32/kcauto_custom/issues/new?assignees=&labels=&template=bug-report.md): Bro, something goes wrong
-### [Q&A](https://github.com/XVs32/kcauto_custom/discussions/new?category=q-a): How to use this/that?
+### [Wishing pool](https://github.com/XVs32/kcauto_custom/discussions/categories/ideas): Wish/Idea for new functions
+### [Bug report](https://github.com/XVs32/kcauto_custom/issues): Bro, something goes wrong
+### [Q&A](https://github.com/XVs32/kcauto_custom/discussions/categories/q-a): How to use this/that?
