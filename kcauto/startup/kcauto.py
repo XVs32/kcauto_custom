@@ -33,8 +33,8 @@ class Kcauto(object):
     def find_kancolle(self):
         kca_u.kca.find_kancolle()
     
-    def find_dmm(self):
-        kca_u.kca.find_dmm()
+    def find_browser(self):
+        kca_u.kca.find_browser()
 
     def hook_health_check(self):
         kca_u.kca.hook_health_check()

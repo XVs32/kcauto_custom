@@ -134,20 +134,34 @@ class Kca(object):
 
         return True
 
-    def find_dmm(self):
+    def find_browser(self):
         """Method that finds the dmm logo on-screen and provide the offset for chrome driver"""
-        Log.log_msg("Finding DMM.")
+        Log.log_msg("Finding browser.")
         screen = Region()
 
         try:
-            dmm_logo = self.find(
-                screen, f'global|dmm_logo.png')
+            top_left = {"x": 0, "y": 0, "width": 100, "height": 100, "scale": 1}
+            
+            import base64
+            # Capture a screenshot of the page
+            #screenshot = self.visual_hook.Page.captureScreenshot(format="png", fromSurface = False, clip = top_left)
+            screenshot = self.visual_hook.Page.captureScreenshot(format="png")
+
+            data = base64.b64decode(str(screenshot[0]["result"]["data"]))
+            with open("assets/global/browser_top_left.png", "wb") as f:
+                f.write(data)
+
+            top_left = self.find(
+                screen, f'global|browser_top_left.png')
         except FindFailed:
             Log.log_error("Could not find dmm reference point.")
             raise FindFailed()
 
-        self.css_x = dmm_logo.x
-        self.css_y = dmm_logo.y
+        Log.log_debug(top_left.x)
+        Log.log_debug(top_left.y)
+
+        self.css_x = top_left.x
+        self.css_y = top_left.y
 
         return True
 
