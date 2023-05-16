@@ -317,7 +317,7 @@ class QuestCore(CoreBase):
                     sortie_dict = kca_u.kca.get_quest_count(next_quest)
 
                     if sortie_dict == None:
-                        """Cannot get quest progress from kc3, use default in config file"""
+                        Log.log_debug(f"Cannot get quest progress from kc3, use default in config file.")
                         com.combat.set_sortie_queue(self._get_sortie_map_from_quest(next_quest))
                     else:
                         sortie_list = []
