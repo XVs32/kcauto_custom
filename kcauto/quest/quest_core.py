@@ -259,6 +259,9 @@ class QuestCore(CoreBase):
                     'left', f'quest|filter_tab_{quest_type}_active.png',
                     NEAR_EXACT)
                 api.api.update_from_api({KCSAPIEnum.QUEST_LIST}) #update visible_quests
+            else:
+                Log.log_error(f"Cannot find {quest_type} quests tab.")
+                exit(1)
             
             self.cur_page = 0
 

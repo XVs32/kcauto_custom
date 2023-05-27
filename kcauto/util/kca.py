@@ -18,9 +18,12 @@ from constants import (
     GAME_W, GAME_H, VISUAL_URL, STRATEGY_ROOM_URL, API_URL, EXACT, DEFAULT, SLEEP_MODIFIER)
 from kca_enums.interaction_modes import InteractionModeEnum
 from kca_enums.kcsapi_paths import KCSAPIEnum
+
 from util.exceptions import ChromeCrashException
 from util.logger import Log
 
+import asyncio
+from pyppeteer import connect
 
 class Kca(object):
     """Primary kcauto utility class.
@@ -36,6 +39,7 @@ class Kca(object):
     game_y = None
     last_ui = None
     r = {}
+    html = None
 
     def __init__(self):
         Log.log_debug("Kca module initialized.")
@@ -745,6 +749,27 @@ class Kca(object):
 
         return
 
+
+    async def get_html(self, url):
+        # Connect to the Chrome browser
+        browser = await connect(browserURL='http://localhost:9222')
+
+        # Create a new background tab
+        page = await browser.newPage()
+
+        # Navigate the background tab to a desired URL
+        await page.goto(url)
+
+        # Retrieve the HTML content
+        self.html = await page.content()
+
+        # Close the background tab
+        await page.close()
+
+        # Close the connection to the browser
+        await browser.disconnect()
+
+
     def reload_kc3_strategy_page(self, subpage = ""):
         """method to open/refresh the kc3 strategy page in chrome
 
@@ -752,40 +777,10 @@ class Kca(object):
             subpage (string): The name of sub page to open. (ex. flowchart)
         """
 
-        self.cdt_init(target="kc3")
+        asyncio.get_event_loop().run_until_complete(self.get_html("chrome-extension://hkgmldnainaglpjngpajnnjfhpdjkohh/pages/strategy/strategy.html"+subpage))
 
-        strategy_tab_id = None
-        for n, tab in enumerate(self.kc3_hook.tabs):
-            if tab['url'] == STRATEGY_ROOM_URL + subpage:
-                strategy_tab_id = tab['id']
-
-        if strategy_tab_id != None :
-            """There is currenty a kc3 strategy page opened"""
-            self.kc3_hook.Target.closeTarget(targetId=strategy_tab_id)
-            self.cdt_init(target="kc3")
-
-        if platform == "linux" or platform == "linux2":
-            strategy_tab_id = self.kc3_hook.Target.createTarget(
-                url=STRATEGY_ROOM_URL + subpage,
-                newWindow=False,
-                background=True,
-                forTab=True)[0]["result"]["targetId"]
-        elif platform == "darwin":
-            strategy_tab_id = self.kc3_hook.Target.createTarget(
-                url=STRATEGY_ROOM_URL + subpage,
-                newWindow=False,
-                background=True,
-                forTab=True)["result"]["targetId"]
-        elif platform == "win32":
-            strategy_tab_id = self.kc3_hook.Target.createTarget(
-                url=STRATEGY_ROOM_URL + subpage,
-                newWindow=False,
-                background=True,
-                forTab=True)[0]["result"]["targetId"]
-
-
-        #self.kc3_hook.connect_targetID(strategy_tab_id)
-        self.kc3_hook.wait_event("Page.loadEventFired", timeout=5)
+        #Wait for quest panel finish closing
+        self.find_kancolle()
 
         return
 
@@ -803,28 +798,10 @@ class Kca(object):
             dict with key of quest name, and value of remaining actions needed.
             return None if quest is not combat type.
         """
-        retry = 0
-        while retry < 5:
 
-            self.reload_kc3_strategy_page(subpage = "#flowchart")
-            self.kc3_hook.DOM.getDocument()
-            html_code=self.kc3_hook.DOM.getOuterHTML(nodeId=5)
+        self.reload_kc3_strategy_page(subpage = "#flowchart")
 
-            if html_code[0] == None:
-                retry += 1
-            else:
-                break
-        
-        if html_code[0] == None:
-            Log.log_error("Cannot prase quest data from KC3. Shutdown kcauto.")
-            exit(1)
-
-        if platform == "linux" or platform == "linux2":
-            dom = PyQuery(html_code[0]["result"]["outerHTML"], parser='html')
-        elif platform == "darwin":
-            dom = PyQuery(html_code["result"]["outerHTML"], parser='html')
-        elif platform == "win32":
-            dom = PyQuery(html_code[0]["result"]["outerHTML"], parser='html')
+        dom = PyQuery(self.html, parser='html')
 
         quest_tree_dom = dom("ul#questBox_rootFlow.questTree")
 
