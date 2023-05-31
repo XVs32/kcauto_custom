@@ -136,7 +136,20 @@ class FactoryCore(object):
                 if kca_u.kca.exists(build_slot_stat[i],
                                     "factory|build_finish.png"):
                     kca_u.kca.r[build_slot[i]].click()
-                    kca_u.kca.wait('lower_right_corner', 'global|next_alt.png', 20)
+
+                    retry = 0
+                    while not kca_u.kca.exists(
+                        'lower_right_corner', "global|next_alt.png") and retry < 5:
+                        kca_u.kca.r[build_slot[i]].click()
+                        kca_u.kca.sleep(1)
+                        retry += 1
+
+                    if retry == 5:
+                        Log.log_error("Cannot receive ship, probably because the port is full")
+                        Log.log_error("Disable factory module")
+                        self.enabled = False
+                        return False
+                    
                     while kca_u.kca.exists('lower_right_corner', 'global|next_alt.png'):
                         kca_u.kca.sleep()
                         kca_u.kca.r['shipgirl'].click()
