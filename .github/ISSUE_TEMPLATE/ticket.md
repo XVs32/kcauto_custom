@@ -1,6 +1,6 @@
 ---
-name: ticket
-about: Ticket template
+name: Ticket
+about: Ticket template for developer
 
 ---
 
