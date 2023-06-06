@@ -137,11 +137,12 @@ class FactoryCore(object):
                                     "factory|build_finish.png"):
                     kca_u.kca.r[build_slot[i]].click()
 
+                    kca_u.kca.sleep(1)
                     retry = 0
                     while not kca_u.kca.exists(
                         'lower_right_corner', "global|next_alt.png") and retry < 5:
                         kca_u.kca.r[build_slot[i]].click()
-                        kca_u.kca.sleep(1)
+                        kca_u.kca.sleep(3)
                         retry += 1
 
                     if retry == 5:
