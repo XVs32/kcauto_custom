@@ -107,12 +107,9 @@ class Recovery(object):
         while (
                 kca_u.kca.exists(screen, 'global|next.png')
                 or kca_u.kca.exists(screen, 'global|next_alt.png')):
-            if kca_u.kca.exists(screen, 'global|next.png', cached=True):
-                region = kca_u.kca.find(screen, 'global|next.png', cached=True)
-            elif kca_u.kca.exists(screen, 'global|next_alt.png', cached=True):
-                region = kca_u.kca.find(
-                    screen, 'global|next_alt.png', cached=True)
-            region.click()
+            kca_u.kca.r['shipgirl'].click()
+            kca_u.kca.sleep()
+
         if kca_u.kca.exists(screen, 'nav|home_menu_sortie.png'):
             return True
         return False
