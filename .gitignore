@@ -52,5 +52,4 @@ data/temp/*.json
 !data/quests/*.json
 !configs/template/*.json
 !data/config/*.json
-!data/expedition/*.json
 reference/
