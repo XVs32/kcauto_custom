@@ -111,9 +111,10 @@ class QuestCore(CoreBase):
         is_any_quest_turned_in = self._turn_in_quests(context)
 
         if fast_check == False or is_any_quest_turned_in == True:
-            if context == "combat":
+            if context == "auto_sortie":
                 self._auto_sortie_map_select()
-            self._toggle_quests(context)
+            else:
+                self._toggle_quests(context)
         Log.log_msg(
             f"Tracked quests: {list(self.next_check_intervals.keys())}")
 
@@ -310,39 +311,33 @@ class QuestCore(CoreBase):
             api.api.update_from_api({KCSAPIEnum.QUEST_LIST}) #update visible_quests
             Log.log_msg(f"api update done in auto map select.")
 
-        if cfg.config.combat.sortie_map == MapEnum.auto_map_selete:
-            if com.combat.get_sortie_queue() == []:
-                next_quest = self._find_next_sorties_quests()
+        if cfg.config.combat.sortie_map_read_only == MapEnum.auto_map_selete:
+            next_quest = self._find_next_sorties_quests()
 
-                if next_quest != None:
+            if next_quest != None:
 
-                    """Read quest progress""" 
-                    sortie_dict = kca_u.kca.get_quest_count(next_quest)
+                """Read quest progress""" 
+                sortie_dict = kca_u.kca.get_quest_count(next_quest)
 
-                    if sortie_dict == None:
-                        Log.log_debug(f"Cannot get quest progress from kc3, use default in config file.")
-                        com.combat.set_sortie_queue(self._get_sortie_map_from_quest(next_quest))
-                    else:
-                        sortie_list = []
-                        for key in sortie_dict:
-                            for i in range(0, sortie_dict[key]):
-                                sortie_list.append(key+"-"+next_quest)
-                        com.combat.set_sortie_queue(sortie_list)
+                sortie_list = []
+                if sortie_dict == None:
+                    Log.log_debug(f"Cannot get quest progress from kc3, use default in config file.")
+                    sortie_list = self._get_sortie_map_from_quest(next_quest)
+                else:
+                    for key in sortie_dict:
+                        for i in range(0, sortie_dict[key]):
+                            sortie_list.append(key+"-"+next_quest)
 
-            #restart combat module with the new sortie map
-            if len(com.combat.get_sortie_queue()) > 0:
-                com.combat.__init__(com.combat.get_sortie_queue()[0])
-                cfg.config.combat.sortie_map = com.combat.get_sortie_queue()[0]
-            else:
-                com.combat.__init__()
+                    #bypass, debug only
+                    sortie_list = ["1-1", "1-2", "1-3", "1-4"]
 
-        Log.log_debug(f"sortie_map {cfg.config.combat.sortie_map}.")
-        Log.log_debug(f"get_sortie_queue {com.combat.get_sortie_queue()}.")
+                com.combat.set_sortie_queue(sortie_list)
+
         Log.log_debug(f"_find_next_sorties_quests {self._find_next_sorties_quests()}.")
+        Log.log_debug(f"get_sortie_queue {com.combat.get_sortie_queue()}.")
 
     def _get_sortie_map_from_quest(self, quest):
         return self.quest_to_sortie_maps[quest]
-
 
     def _get_quest_in_config(self,type_list):
         """Method that get all quests name which is available in game and enabled in config"""
@@ -351,7 +346,7 @@ class QuestCore(CoreBase):
 
         quest_groups = ['E']
         for type in type_list:
-            if type == "combat":
+            if type == "combat" or type == "auto_sortie":
                 quest_groups.append('B')
             elif type == "pvp":
                 quest_groups.append('C')
@@ -373,7 +368,7 @@ class QuestCore(CoreBase):
 
     def _get_quest_by_context(self, context):
         relevant_quests = []
-        if context == 'combat':
+        if context == "combat" or type == "auto_sortie":
             quest_groups = ['B', 'E']
         elif context == 'pvp':
             quest_groups = ['C', 'E']

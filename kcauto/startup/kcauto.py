@@ -190,53 +190,51 @@ class Kcauto(object):
 
     def run_combat_logic(self):
         quest_selected = False
-        if not com.combat.enabled:
-            return False
-
-        if com.combat.time_to_sortie == False:
+        if not com.combat.enabled or com.combat.time_to_sortie == False:
             return False
         else :
-            #update port api, for should_and_able_to_sortie
+            #update port api, for _run_fleetswitch_logic
             nav.navigate.to('refresh_home')
 
-        if cfg.config.combat.sortie_map == MapEnum.auto_map_selete:
-            self.run_quest_logic('combat', fast_check=False, force= True)
-            quest_selected = True
-            if cfg.config.combat.sortie_map == MapEnum.auto_map_selete:    #If no combat map available, turn off combat module
-                
-                Log.log_debug(f"Debug: Stop combat module because no combat quest available")
-                com.combat.enabled = False
-                return False
+        #set sortie_queue if it is empty
+        if len(com.combat.get_sortie_queue()) == 0:
+            if cfg.config.combat.sortie_map_read_only == MapEnum.auto_map_selete:
+                self.run_quest_logic('auto_sortie', fast_check=False, back_to_home=False, force= True) #quest module will call set_sortie_queue
+            else:
+                sortie_queue = [cfg.config.combat.sortie_map.value]
+                com.combat.set_sortie_queue(sortie_queue)
+
+        if len(com.combat.get_sortie_queue()) == 0: #If no combat map available, turn off combat module
+            Log.log_debug(f"Debug: Stop combat module cause no combat quest available")
+            com.combat.enabled = False
+            return False
+        else:
+            #update current sortie_map
+            cfg.config.combat.sortie_map = com.combat.get_sortie_queue()[0]
+
+        #update map_data for combat module
+        com.combat.load_map_data(cfg.config.combat.sortie_map)
+
+        #apply for combat queue, assume map_data is up-to-date
+        self.run_quest_logic('combat', fast_check=True)
 
         if self._run_fleetswitch_logic('combat'):
             #update port api, for should_and_able_to_sortie
             nav.navigate.to('refresh_home')
 
         if com.combat.should_and_able_to_sortie(ignore_supply=True):
-            if quest_selected == False:
-                self.run_quest_logic('combat', fast_check=True)
 
             self.run_resupply_logic()
-            #update port api, for should_and_able_to_sortie
-            nav.navigate.to('refresh_home')
 
-            if com.combat.should_and_able_to_sortie():
-                com.combat.goto()
-                if com.combat.conduct_sortie():
-                    sortie_queue = com.combat.get_sortie_queue()
-                    if len(sortie_queue) > 1:
-                        sortie_queue = sortie_queue[1:]
-                        com.combat.set_sortie_queue(sortie_queue)
-                        com.combat.__init__(sortie_queue[0])
-                        cfg.config.combat.sortie_map = sortie_queue[0]
-                    else:
-                        sortie_queue = []
-                        com.combat.set_sortie_queue(sortie_queue)
-                        com.combat.__init__()
-                        cfg.config.combat.sortie_map = "auto"
-                    
-                    sts.stats.set_print_loop_end_stats()
-                    self.fast_check_for_expedition()
+            com.combat.goto()
+
+            if com.combat.conduct_sortie():
+
+                #sortie success, pop the head of sortie_queue
+                com.combat.pop_sortie_queue()
+                
+                sts.stats.set_print_loop_end_stats()
+                self.fast_check_for_expedition()
 
     def run_resupply_logic(self, back_to_home=False):
         if res.resupply.need_to_resupply:
