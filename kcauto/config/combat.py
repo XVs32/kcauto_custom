@@ -13,6 +13,7 @@ class ConfigCombat(ConfigBase):
     _enabled = False
     _fleet_presets = []
     _sortie_map = None
+    _sortie_map_read_only = None
     _fleet_mode = None
     _retreat_points = []
     _node_selects = {}
@@ -38,6 +39,7 @@ class ConfigCombat(ConfigBase):
         self.enabled = config['combat.enabled']
         self.fleet_presets = config['combat.fleet_presets']
         self.sortie_map = config['combat.sortie_map']
+        self.sortie_map_read_only = config['combat.sortie_map']
         self.fleet_mode = config['combat.fleet_mode']
         self.retreat_points = config['combat.retreat_points']
         self.node_selects = config['combat.node_selects']
@@ -99,6 +101,22 @@ class ConfigCombat(ConfigBase):
         if not MapEnum.contains_value(value):
             raise ValueError("Invalid map specified:" + str(value))
         self._sortie_map = MapEnum(value)
+
+    @property
+    def sortie_map_read_only(self):
+        return self._sortie_map_read_only
+
+    @sortie_map.setter
+    def sortie_map_read_only(self, value):
+        """ 
+            Method that set the value of _sortie_map_read_only
+        
+            args: 
+                value (str): The Id of a map, ex 1-1, 3-5, 6-4 
+        """
+        if not MapEnum.contains_value(value):
+            raise ValueError("Invalid map specified:" + str(value))
+        self._sortie_map_read_only = MapEnum(value)
 
     @property
     def fleet_mode(self):
