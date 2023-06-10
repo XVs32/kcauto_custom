@@ -125,6 +125,9 @@ class Kcauto(object):
 
         if "F5" in qst.quest.next_check_intervals.keys():
             anything_is_done = True
+
+            self._run_fleetswitch_logic('factory_develop')
+
             fty.factory.goto()
             if fty.factory.develop_logic(1) == True:
                 self.run_quest_logic('factory', fast_check=True, back_to_home=True, force=True)
@@ -132,6 +135,9 @@ class Kcauto(object):
 
         if "F6" in qst.quest.next_check_intervals.keys():
             anything_is_done = True
+
+            self._run_fleetswitch_logic('factory_build')
+
             fty.factory.goto()
             if fty.factory.build_logic(1) == True:
                 self.run_quest_logic('factory', fast_check=True, back_to_home=True, force=True)
@@ -142,6 +148,9 @@ class Kcauto(object):
 
         if "F7" in qst.quest.next_check_intervals.keys():
             anything_is_done = True
+
+            self._run_fleetswitch_logic('factory_develop')
+
             fty.factory.goto()
             if fty.factory.develop_logic(3) == True:
                 self.run_quest_logic('factory', fast_check=True, back_to_home=True, force=True)
@@ -149,6 +158,9 @@ class Kcauto(object):
         
         if "F8" in qst.quest.next_check_intervals.keys():
             anything_is_done = True
+
+            self._run_fleetswitch_logic('factory_build')
+
             fty.factory.goto()
             """If F8 is already 80% done, one more build could finish the quest"""
             """Therefore, no if == True here"""
