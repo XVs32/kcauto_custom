@@ -328,8 +328,6 @@ class QuestCore(CoreBase):
                         for i in range(0, sortie_dict[key]):
                             sortie_list.append(key+"-"+next_quest)
 
-                    #bypass, debug only
-                    sortie_list = ["1-1", "1-2", "1-3", "1-4"]
 
                 com.combat.set_sortie_queue(sortie_list)
 
