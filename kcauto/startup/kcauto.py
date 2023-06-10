@@ -196,8 +196,10 @@ class Kcauto(object):
             #update port api, for _run_fleetswitch_logic
             nav.navigate.to('refresh_home')
 
+        was_sortie_queue_empty = False
         #set sortie_queue if it is empty
         if len(com.combat.get_sortie_queue()) == 0:
+            was_sortie_queue_empty = True
             if cfg.config.combat.sortie_map_read_only == MapEnum.auto_map_selete:
                 self.run_quest_logic('auto_sortie', fast_check=False, back_to_home=False, force= True) #quest module will call set_sortie_queue
             else:
@@ -216,7 +218,7 @@ class Kcauto(object):
         com.combat.load_map_data(cfg.config.combat.sortie_map)
 
         #apply for combat queue, assume map_data is up-to-date
-        self.run_quest_logic('combat', fast_check=True)
+        self.run_quest_logic('combat', fast_check = not was_sortie_queue_empty, force= was_sortie_queue_empty)
 
         if self._run_fleetswitch_logic('combat'):
             #update port api, for should_and_able_to_sortie
