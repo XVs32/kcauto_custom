@@ -64,29 +64,17 @@ class CombatCore(CoreBase):
     sortie_queue = []
     first_init = True
    
-    def __init__(self, sortie_map = ""):
+    def __init__(self):
         """
             Method to init combat module
             Args:
-                sortie_map (str): The current sortie map, ex: "3-5"
+                sortie_map (str): The current sortie map, ex: "3-5", if input is empty, reload setting in config only
         """
+        self.update_from_config()
 
-        """If config did not specify sortie map, then it is auto select sortie map mode"""
-        super().update_from_config()
-        if cfg.config.combat.sortie_map == MapEnum.auto_map_selete:
-            self.update_from_combat_map(sortie_map)
-        else:
-            if self.first_init == True:
-                sortie_queue = [cfg.config.combat.sortie_map.value] * 9999
-                self.set_sortie_queue(sortie_queue)
-            self.update_from_config()
-        
-        self.first_init = False
-
- 
     def update_from_config(self):
+        super().update_from_config()
         if self.enabled:
-            self._load_map_data(cfg.config.combat.sortie_map)
             self.set_next_sortie_time()
 
     def update_from_combat_map(self, value):
@@ -107,7 +95,7 @@ class CombatCore(CoreBase):
             if quest_name_len > 1:
                 value = value[:-quest_name_len - 1]
 
-            self._load_map_data(MapEnum(value))
+            self.load_map_data(MapEnum(value))
             self.set_next_sortie_time()
         else:
             raise ValueError("Using auto select sortie map mode but combat module disabled")
@@ -208,10 +196,10 @@ class CombatCore(CoreBase):
             return True
         return False
 
-    def _load_map_data(self, sortie_map):
-        # print("Debug:_load_map_data called")
+    def load_map_data(self, sortie_map):
+        Log.log_debug("Debug:load_map_data called")
         if self.map_data is None or self.map_data.name != sortie_map.world_and_map:
-            # print("Debug:load_map excute with " + str(sortie_map.world_and_map))
+            Log.log_debug("Debug:load_map excute with " + str(sortie_map.world_and_map))
             data = JsonData.load_json(f'data|combat|{sortie_map.world_and_map}.json')
             self.map_data = MapData(sortie_map, data)
 
@@ -733,6 +721,7 @@ class CombatCore(CoreBase):
         self.nodes_run.append(next_node)
 
     def _get_next_node_from_edge(self, edge):
+        Log.log_msg(f"self.map_data.name {self.map_data.name}")
         # print("Debug:"+ str( self.map_data.name))
         return self.map_data.edges[edge][1]
 
@@ -743,12 +732,29 @@ class CombatCore(CoreBase):
                 sortie_queue (str list): A list of sortie_map, ex: ["1-1", "2-3"]
         """
         self.sortie_queue = sortie_queue
+        Log.log_msg(f"Set sortie queue {self.sortie_queue}")
+
 
     def get_sortie_queue(self):
         """
             method for other modules to read the sortie_queue in combat module
         """
         return self.sortie_queue
+    
+    def pop_sortie_queue(self):
+        """
+            method to pop the head of sortie_queue
+        """
+        if len(self.sortie_queue):
+            self.sortie_queue = self.sortie_queue[1:]
+        else:
+            Log.log_error(f"cannot pop an empty queue(sortie_queue)")
+
+        return self.sortie_queue
+    
+    
+        
+        pop_sortie_queue
 
 
 combat = CombatCore()
