@@ -32,6 +32,7 @@ class ConfigCombat(ConfigBase):
     _reserve_repair_dock = False
     _port_check = False
     _clear_stop = False
+    _override = False
 
     def __init__(self, config):
         super().__init__(config)
@@ -58,6 +59,7 @@ class ConfigCombat(ConfigBase):
         self.reserve_repair_dock = config['combat.reserve_repair_dock']
         self.port_check = config['combat.port_check']
         self.clear_stop = config['combat.clear_stop']
+        self._override = config['combat.override']
 
     @property
     def enabled(self):
@@ -67,8 +69,19 @@ class ConfigCombat(ConfigBase):
     def enabled(self, value):
         if type(value) is not bool:
             raise ValueError(
-                "Specified value for pvp enabled is not a boolean.")
+                "Specified value for combat enabled is not a boolean.")
         self._enabled = value
+
+    @property
+    def override(self):
+        return self._override
+
+    @override.setter
+    def override(self, value):
+        if type(value) is not bool:
+            raise ValueError(
+                "Specified value for combat override is not a boolean.")
+        self._override = value
 
     @property
     def fleet_presets(self):
