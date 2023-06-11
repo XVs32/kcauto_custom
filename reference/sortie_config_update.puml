@@ -1,0 +1,32 @@
+@startuml
+
+
+ -> combat: run_combat_logic
+activate combat
+combat -> combat: init 
+
+opt user config "combat.override" == true
+combat -> config: load user config 
+activate config
+config -> combat: user config 
+deactivate config
+
+else 
+combat -> config: load default combat config 
+activate config
+config -> combat: default combat config 
+deactivate config
+combat -> config: load and override with map specified combat config 
+activate config
+config -> combat: map specified combat config 
+deactivate config
+
+combat -> combat: override default combat config with map specified combat config
+
+end
+
+combat -> combat:  go sortie
+
+ <- combat:  
+deactivate combat
+@enduml
