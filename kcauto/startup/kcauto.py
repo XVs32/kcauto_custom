@@ -17,6 +17,7 @@ from kca_enums.expeditions import ExpeditionEnum
 from util.logger import Log
 from kca_enums.maps import MapEnum
 
+from constants import COMBAT_CONFIG
 
 class Kcauto(object):
     """Primary kcauto class.
@@ -207,6 +208,21 @@ class Kcauto(object):
                 Log.log_debug(f"Debug: Stop combat module because no combat quest available")
                 com.combat.enabled = False
                 return False
+            
+        if cfg.config.combat.override == False:
+            #load user config
+            config_json = cfg.config.load_json(cfg.config.cfg_path)
+            cfg.config.combat.setting_override(config_json)
+
+            #load default config
+            default_json = cfg.config.load_json(COMBAT_CONFIG + "default.json")
+            cfg.config.combat.setting_override(default_json)
+
+            #load default config
+            sortie_queue = com.combat.get_sortie_queue()
+
+            default_json = cfg.config.load_json(COMBAT_CONFIG + sortie_queue[0] + ".json")
+            cfg.config.combat.setting_override(default_json)
 
         if self._run_fleetswitch_logic('combat'):
             #update port api, for should_and_able_to_sortie
