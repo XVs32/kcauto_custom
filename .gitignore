@@ -46,11 +46,11 @@ venv.bak/
 *.log
 *.npz
 *.json
-data/temp/*.json
+#configs/fleet_list.json
+#configs/fleet_preset.json
 !data/combat/*.json
 !data/combat/*/*.json
 !data/quests/*.json
 !configs/template/*.json
 !data/config/*.json
-!data/expedition/*.json
 reference/
