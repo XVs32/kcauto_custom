@@ -16,7 +16,7 @@ combat -> config: load default combat config
 activate config
 config -> combat: default combat config 
 deactivate config
-combat -> config: load and override with map specified combat config 
+combat -> config: load map specified combat config 
 activate config
 config -> combat: map specified combat config 
 deactivate config
