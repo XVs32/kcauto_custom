@@ -5,13 +5,12 @@
 activate combat
 combat -> combat: init 
 
-opt user config "combat.override" == true
 combat -> config: load user config 
 activate config
 config -> combat: user config 
 deactivate config
 
-else 
+opt user config "combat.override" == false
 combat -> config: load default combat config 
 activate config
 config -> combat: default combat config 
