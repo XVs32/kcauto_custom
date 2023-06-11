@@ -43,12 +43,12 @@ class Config(object):
             Log.log_error("Error loading config.")
             exit(1)
 
-    def load_cfg_json(self):
-        return JsonData.load_json(self.cfg_path)
+    def load_json(self, path):
+        return JsonData.load_json(path)
 
     def initialize_config(self):
         update = False
-        config_json = self.load_cfg_json()
+        config_json = self.load_json(self.cfg_path)
         initial_load = True
         new_update_time = os.path.getmtime(self.cfg_path)
 
