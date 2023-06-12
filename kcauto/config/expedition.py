@@ -109,7 +109,7 @@ class ConfigExpedition(ConfigBase):
             expedition_fleets.append(4)
         return expedition_fleets
     
-    def set_auto_expedition(self, fleet_id):
+    def set_expedition(self, fleet_id):
         if com.combat.enabled:
             if fleet_id == 2:
                 self.fleet_2 = [2]
