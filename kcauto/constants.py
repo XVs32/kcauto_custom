@@ -9,6 +9,8 @@ MAX_FLEET_PRESETS = 15
 
 AUTO_PRESET = 0
 
+MAX_RESOURCE = 300000
+
 # game window dimensions
 GAME_W = 1200
 GAME_H = 720
