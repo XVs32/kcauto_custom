@@ -1,10 +1,10 @@
 {
 	"DE":   [1111,1111],
-	"DE_NAME":	["Tsushima Kai","Shimusyu Kai"],
+	"DE_NAME":	["Tsushima","Shimusyu"],
 	"DD":   [1111,1111],
-	"DD_NAME":	["綾波 改二","時雨 改二"],
+	"DD_NAME":	["綾波","時雨"],
 	"CL":   [1111,1111],
-	"CL_NAME":	["Sheffield 改","夕張 改二特"],
+	"CL_NAME":	["Sheffield","夕張"],
 	"CLT":	[1111,1111,1111],
 	"CLT_NAME":	["北上改二","大井改二","木曾改二"],
 	"CA":   [1111,1111,1111],
@@ -43,5 +43,3 @@
 	"Myoko":	[99999],
 	"Nachi":	[99999]
 }
-	
-	
