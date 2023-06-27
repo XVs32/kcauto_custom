@@ -725,13 +725,13 @@ class CombatCore(CoreBase):
         # print("Debug:"+ str( self.map_data.name))
         return self.map_data.edges[edge][1]
 
-    def set_sortie_queue(self, sortie_queue):
+    def set_sortie_queue(self, sortie_queue = []):
         """
             method for other modules to set the sortie_queue in combat module
             Args:
                 sortie_queue (str list): A list of sortie_map, ex: ["1-1", "2-3"]
         """
-        self.sortie_queue = sortie_queue
+        self.sortie_queue = sortie_queue.copy()
         Log.log_msg(f"Set sortie queue {self.sortie_queue}")
 
 
@@ -745,16 +745,12 @@ class CombatCore(CoreBase):
         """
             method to pop the head of sortie_queue
         """
-        if len(self.sortie_queue):
-            self.sortie_queue = self.sortie_queue[1:]
+        if len(self.sortie_queue) > 0:
+            self.sortie_queue.pop(0)
+            Log.log_msg(f"Sortie queue updated:{self.sortie_queue}")
         else:
             Log.log_error(f"cannot pop an empty queue(sortie_queue)")
 
         return self.sortie_queue
-    
-    
-        
-        pop_sortie_queue
-
 
 combat = CombatCore()
