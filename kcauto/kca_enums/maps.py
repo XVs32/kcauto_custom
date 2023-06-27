@@ -18,6 +18,7 @@ class MapEnum(EnumBase):
     WE_1, WE_2, WE_3, WE_4, WE_5 = 'E-1', 'E-2', 'E-3', 'E-4', 'E-5'
     WE_6, WE_7, WE_8 = 'E-6', 'E-7', 'E-8'
 
+    W1_1_Bw1 = '1-1-Bw1'
     W1_5_Bw1 = '1-5-Bw1'
     W5_2_C = '5-2-C'
     W5_2_C_Bw1 = '5-2-C-Bw1'
