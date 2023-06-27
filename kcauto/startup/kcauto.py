@@ -212,14 +212,20 @@ class Kcauto(object):
         #set sortie_queue if it is empty
         if len(com.combat.get_sortie_queue()) == 0:
             was_sortie_queue_empty = True
+            Log.log_debug(f"cfg.config.combat.sortie_map_read_only:{cfg.config.combat.sortie_map_read_only}")
             if cfg.config.combat.sortie_map_read_only == MapEnum.auto_map_selete:
                 self.run_quest_logic('auto_sortie', fast_check=False, back_to_home=False, force= True) #quest module will call set_sortie_queue
             else:
+                Log.log_debug(f"Manual sortie mode:{cfg.config.combat.sortie_map.value}")
+
                 sortie_queue = [cfg.config.combat.sortie_map.value]
                 com.combat.set_sortie_queue(sortie_queue)
+        else:
+            Log.log_msg(f"Sortie queue:{com.combat.get_sortie_queue()}")
+
 
         if len(com.combat.get_sortie_queue()) == 0: #If no combat map available, turn off combat module
-            Log.log_debug(f"Debug: Stop combat module cause no combat quest available")
+            Log.log_debug(f"Stop combat module cause no combat quest available")
             com.combat.enabled = False
             return False
         else:
@@ -249,6 +255,8 @@ class Kcauto(object):
                 
                 sts.stats.set_print_loop_end_stats()
                 self.fast_check_for_expedition()
+            else:
+                Log.log_error(f"Sortie failed.")
 
     def run_resupply_logic(self, back_to_home=False):
         if res.resupply.need_to_resupply:
