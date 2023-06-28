@@ -62,10 +62,13 @@ class FleetSwitcherCore(object):
             self.next_combat_preset = choice(cfg.config.combat.fleet_presets)
 
     def _get_next_preset_id(self, context):
+        preset_id = None
         if context == 'combat':
             preset_id = self.next_combat_preset
         elif context == 'pvp':
             preset_id = cfg.config.pvp.fleet_preset
+        elif context == 'factory_develop' or context == 'factory_build':
+            preset_id = AUTO_PRESET
         return preset_id
 
     def require_fleetswitch(self, context):
@@ -79,11 +82,34 @@ class FleetSwitcherCore(object):
                 return False
 
         if preset_id == AUTO_PRESET:
-            if flt.fleets.fleets[1].ship_ids == self._get_fleet_preset(cfg.config.combat.sortie_map.value):
-                Log.log_debug("Custom preset Fleet is already loaded.")
-                return False
+            if context == 'combat':
+                if flt.fleets.fleets[1].ship_ids == self._get_fleet_preset(cfg.config.combat.sortie_map.value):
+                    Log.log_debug("Custom preset Fleet is already loaded.")
+                    return False
+                else:
+                    Log.log_msg("Need to switch to 'auto' preset.")
 
-        Log.log_msg(f"Need to switch to Fleet Preset {preset_id}.")
+            elif context == 'factory_develop':
+                if cfg.config.factory.develop_secretary == 0:
+                    Log.log_warn("Develop secretary is not specified.")
+                    return False
+                if flt.fleets.fleets[1].ship_ids[0] == cfg.config.factory.develop_secretary:
+                    Log.log_debug("Develop secretary is already loaded.")
+                    return False
+                else:
+                    Log.log_msg("Need to switch to develop secretary.")
+            elif context == 'factory_build':
+                if cfg.config.factory.build_secretary == 0:
+                    Log.log_warn("Build secretary is not specified.")
+                    return False
+                if flt.fleets.fleets[1].ship_ids[0] == cfg.config.factory.build_secretary:
+                    Log.log_debug("Build secretary is already loaded.")
+                    return False
+                else:
+                    Log.log_msg("Need to switch to build secretary.")
+        else:
+            Log.log_msg(f"Need to switch to Fleet Preset {preset_id}.")
+
         return True
 
     def goto(self):
@@ -94,9 +120,20 @@ class FleetSwitcherCore(object):
 
         if preset_id == AUTO_PRESET:
             
-            Log.log_msg(f"Switching to Fleet Preset for {cfg.config.combat.sortie_map}.")
+            if context == 'combat':
+                Log.log_msg(f"Switching to Fleet Preset for {cfg.config.combat.sortie_map}.")
+                self.switch_to_costom_sleet(cfg.config.combat.sortie_map)
+            elif context == 'factory_develop':
+                Log.log_msg(f"Switching to {cfg.config.factory.develop_secretary} for develop.")
 
-            self.switch_to_costom_sleet(cfg.config.combat.sortie_map)
+                ssw.ship_switcher.current_shipcomp_page = 1
+                ssw.ship_switcher.switch_slot_by_id(1,cfg.config.factory.develop_secretary)
+            elif context == 'factory_build':
+                Log.log_msg(f"Switching to {cfg.config.factory.build_secretary} for construction.")
+
+                ssw.ship_switcher.current_shipcomp_page = 1
+                ssw.ship_switcher.switch_slot_by_id(1,cfg.config.factory.build_secretary)
+
             return
 
         Log.log_msg(f"Switching to Fleet Preset {preset_id}.")
