@@ -2,6 +2,7 @@ from pyvisauto import Region
 from random import choice
 import time
 
+from constants import MAX_RESOURCE, PASSIVE_TIME_INTERVAL
 import api.api_core as api
 import combat.combat_core as com
 import config.config_core as cfg
@@ -13,7 +14,7 @@ from kca_enums.expeditions import ExpeditionEnum
 from kca_enums.kcsapi_paths import KCSAPIEnum
 from util.core_base import CoreBase
 from util.logger import Log
-
+from util.json_data import JsonData
 
 class ExpeditionCore(CoreBase):
     NUM_VISIBLE_EXPEDITONS = 8
@@ -25,6 +26,80 @@ class ExpeditionCore(CoreBase):
     module_name = 'expedition'
     module_display_name = 'Expedition'
     available_expeditions_per_world = {}
+    exp_data = None
+    exp_rank = []
+    exp_fleet = []
+    TYPE_PRIORITY = [""]
+
+    def __init__(self):
+        """
+            Method to init expedition module
+        """
+        super().__init__()
+        self.exp_data = JsonData.load_json('data|expedition|expedition.json')
+
+   # With a normal function
+    def cmp(self, item):
+        return item["score"]
+
+    def get_expedition_ranking(self):
+
+        min_time = 0x7fffffff
+        max_time = 0x00000000
+
+        if com.combat.enabled == False:
+            #Passive mode
+            min_time = 0
+            max_time = PASSIVE_TIME_INTERVAL
+        else:
+            #Active mode
+            min_time = 0
+            max_time = 0x7fffffff
+
+        fuel_weight = max(MAX_RESOURCE - sts.stats.rsc.fuel, 0)
+        ammo_weight = max(MAX_RESOURCE - sts.stats.rsc.ammo, 0)
+        steel_weight = max(MAX_RESOURCE - sts.stats.rsc.steel, 0)
+        bauxite_weight = max(MAX_RESOURCE - sts.stats.rsc.bauxite, 0)
+
+        print(fuel_weight)
+        print(ammo_weight)
+        print(steel_weight)
+        print(bauxite_weight)
+
+        self.exp_rank = []
+
+        for exp in self.exp_data:
+
+            if exp["time"] > max_time or exp["time"] < min_time:
+                continue
+
+            id = exp["id"]
+
+            score =(exp["fuel"]  * fuel_weight +\
+                    exp["ammo"]  * ammo_weight +\
+                    exp["steel"] * steel_weight +\
+                    exp["baux"]  * bauxite_weight)
+            
+            if com.combat.enabled == True:
+                #Active mode
+                score /= exp["time"]
+            #else:
+                #Passive mode
+                #score /= PASSIVE_TIME_INTERVAL #Does not affect ranking
+            
+            self.exp_rank.append({"id":id, "score":score})
+
+        self.exp_rank.sort(key=self.cmp, reverse=True)
+        print(self.exp_rank)
+
+
+            
+
+
+        
+
+
+
 
     def set_timer(self):
         self.disable_timer = time.time()
@@ -75,6 +150,14 @@ class ExpeditionCore(CoreBase):
         return received_expeditions
 
     def expect_returned_fleets(self):
+        if not com.combat.enabled and ExpeditionEnum.AUTO in cfg.config.expedition.all_expeditions:
+            #combat module disable, enter low ​activeness mode
+            if self.time_up():
+                self.set_timer()
+                return True
+            else:
+                return False
+
         returned_fleets = []
         for fleet in flt.fleets.expedition_fleets:
             if fleet.has_returned:
@@ -88,6 +171,7 @@ class ExpeditionCore(CoreBase):
             Log.log_success(f"Fleets {display_text} have returned!")
             return True
         return False
+
 
     @property
     def fleets_are_ready(self):
