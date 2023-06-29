@@ -71,46 +71,26 @@ class Kcauto(object):
         else:
             return False
 
-
-    def fast_check_for_expedition(self):
-        exp.expedition.receive_expedition()
-
     def run_expedition_logic(self):
         if not exp.expedition.enabled:
             return False
-
-        if ExpeditionEnum.AUTO in cfg.config.expedition.all_expeditions:
-            if ExpeditionEnum.AUTO in cfg.config.expedition.fleet_2:
-                cfg.config.expedition.set_auto_expedition(2)
-            if ExpeditionEnum.AUTO in cfg.config.expedition.fleet_3:
-                cfg.config.expedition.set_auto_expedition(3)
-            if ExpeditionEnum.AUTO in cfg.config.expedition.fleet_4:
-                cfg.config.expedition.set_auto_expedition(4)
-            
-        if not com.combat.enabled and ExpeditionEnum.AUTO in cfg.config.expedition.all_expeditions:
-            #combat module disable, enter low ​activeness mode
-            if exp.expedition.time_up():
-                exp.expedition.set_timer()
-            else:
-                return False
-
-        if exp.expedition.expect_returned_fleets():
+           
+        if exp.expedition.expect_returned_fleets() or \
+          (set([ExpeditionEnum.E5_33, ExpeditionEnum.E5_34,
+                ExpeditionEnum.EE_S1, ExpeditionEnum.EE_S2]) & set(
+                    cfg.config.expedition.all_expeditions) and com.combat.time_to_sortie == True):
             self.find_kancolle()
             nav.navigate.to('refresh_home')
-            self.fast_check_for_expedition()
-
-        if set([ExpeditionEnum.E5_33, ExpeditionEnum.E5_34,
-                ExpeditionEnum.EE_S1, ExpeditionEnum.EE_S2]) & set(
-                    cfg.config.expedition.all_expeditions):
-            if com.combat.time_to_sortie:
-                nav.navigate.to('refresh_home')
 
         if exp.expedition.fleets_are_ready:
-            self.run_quest_logic('expedition')
-            nav.navigate.to('home')
-            self.fast_check_for_expedition()
+
+            if ExpeditionEnum.AUTO in cfg.config.expedition.all_expeditions:
+                exp.expedition.get_expedition_ranking()
+                self._run_fleetswitch_logic('expedition')
+
             exp.expedition.goto()
             exp.expedition.send_expeditions()
+            self.run_quest_logic('expedition')
             sts.stats.set_print_loop_end_stats()
 
     def run_factory_logic(self):
@@ -180,10 +160,8 @@ class Kcauto(object):
 
         if pvp.pvp.time_to_pvp():
             self.find_kancolle()
-            self.fast_check_for_expedition()
             self.run_quest_logic('pvp')
             nav.navigate.to('home')
-            self.fast_check_for_expedition()
             self._run_fleetswitch_logic('pvp')
             self.run_resupply_logic(back_to_home=True)
             sts.stats.set_print_loop_end_stats()
@@ -261,7 +239,6 @@ class Kcauto(object):
     def run_resupply_logic(self, back_to_home=False):
         if res.resupply.need_to_resupply:
             self.find_kancolle()
-            self.fast_check_for_expedition()
             res.resupply.goto()
             res.resupply.resupply_fleets()
             self.handle_back_to_home(back_to_home)
@@ -272,7 +249,6 @@ class Kcauto(object):
     def run_repair_logic(self, back_to_home=False):
         if rep.repair.can_conduct_repairs:
             self.find_kancolle()
-            self.fast_check_for_expedition()
             rep.repair.goto()
             rep.repair.repair_ships()
             self.handle_back_to_home(back_to_home)
@@ -296,7 +272,6 @@ class Kcauto(object):
         
         if switch_list:
             nav.navigate.to('home')
-            self.fast_check_for_expedition()
             ssw.ship_switcher.goto()
             ssw.ship_switcher.switch_ships(switch_list)
             self.handle_back_to_home(back_to_home)
@@ -310,7 +285,6 @@ class Kcauto(object):
 
         if qst.quest.need_to_check(context) or force == True:
             self.find_kancolle()
-            self.fast_check_for_expedition()
             qst.quest.goto()
             qst.quest.manage_quests(context, fast_check)
             sts.stats.quest.times_checked += 1
@@ -320,7 +294,6 @@ class Kcauto(object):
     def handle_back_to_home(self, back_to_home):
         if back_to_home:
             nav.navigate.to('home')
-            self.fast_check_for_expedition()
 
     def run_scheduler(self):
         sch.scheduler.check_and_process_rules()
