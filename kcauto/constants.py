@@ -11,6 +11,8 @@ AUTO_PRESET = 0
 
 MAX_RESOURCE = 300000
 
+PASSIVE_TIME_INTERVAL = 180
+
 # game window dimensions
 GAME_W = 1200
 GAME_H = 720
