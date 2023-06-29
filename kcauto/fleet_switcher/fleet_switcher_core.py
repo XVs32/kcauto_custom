@@ -1,10 +1,12 @@
 from pyvisauto import Region
 from random import choice
 from sys import exit
+import re
 
 import api.api_core as api
 import config.config_core as cfg
 import combat.combat_core as com
+import expedition.expedition_core as exp
 import fleet.fleet_core as flt
 import nav.nav as nav
 import util.kca as kca_u
@@ -12,6 +14,7 @@ from util.logger import Log
 import ship_switcher.ship_switcher_core as ssw
 from util.json_data import JsonData
 from kca_enums.kcsapi_paths import KCSAPIEnum
+from kca_enums.expeditions import ExpeditionEnum
 from constants import AUTO_PRESET
 
 class FleetSwitcherCore(object):
@@ -19,33 +22,80 @@ class FleetSwitcherCore(object):
     max_presets = 0
     presets = {}
     next_combat_preset = None
-    fleet_preset = {}
+    fleet_ship_id = {"combat":{}, "exp":{}}
+    exp_fleet_ship_id = {}
+    exp_ship_pool = {}
+    exp_fleet_ship_type = {}
 
     def __init__(self):
         self._set_next_combat_preset()
-        self._load_fleet_preset(self._load_fleet_list())
+        
+        self._load_fleet_preset(self._load_ship_pool())
 
-    def _load_fleet_list(self):
+    def _load_ship_pool(self):
         """
-            method to load the setting in fleet_list.json
+            method to load the setting in ship_pool.json
         """
-        fleet_list = JsonData.load_json('configs|fleet_list.json')
-        return fleet_list
+        ship_pool = JsonData.load_json('configs|ship_pool.json')
+        return ship_pool
 
-    def _load_fleet_preset(self, fleet_list_data):
+    def _load_fleet_preset(self, ship_pool):
         """
             method to load the setting in fleet_preset.json
             and output the fleet preset of each map
         """
+        #combat_fleet has the id of a ship
         fleet_preset_data = JsonData.load_json('configs|fleet_preset.json')
-        self.fleet_preset = {}
+        self.fleet_ship_id["combat"] = {}
         for map_name in fleet_preset_data:
-            self.fleet_preset[map_name] = []
-            for i in range(0,len(fleet_preset_data[map_name])):
-                ship_type = fleet_preset_data[map_name][i]['type']
-                ship_order = fleet_preset_data[map_name][i]['id']
-                ship_id = fleet_list_data[ship_type][ship_order]
-                self.fleet_preset[map_name].append(ship_id)
+
+            self.fleet_ship_id["combat"][map_name] = \
+                self._get_fleet_ship_id(fleet_preset_data[map_name], ship_pool)
+
+        #exp_fleet has the type and id, like what's in fleet_preset.json
+        #it needs to access ship_pool.json to get the actual id of the ship
+        self.exp_fleet_ship_type = {}
+        for exp_info in exp.expedition.exp_data:
+            fleet = self._get_fleet_ship_type_from_composition(exp_info["reqComposition"])
+            self.exp_fleet_ship_type[exp_info["id"]] = fleet
+
+        print("exp_fleet_ship_type")
+        print("exp_fleet_ship_type")
+        print("exp_fleet_ship_type")
+        print(self.exp_fleet_ship_type)
+        print("exp_fleet_ship_type")
+        print("exp_fleet_ship_type")
+        print("exp_fleet_ship_type")
+
+
+    def _get_fleet_ship_id(self, fleet_ship_type, ship_pool):
+        """
+            Method to get the ship id list from ship type and ship pool
+
+            input: 
+                fleet_ship_type: The fleet list
+                    ex: [{'type': 'DD', 'id': 0}, 
+                            {'type': 'DD', 'id': 1}, 
+                            {'type': 'DD', 'id': 2}, 
+                            {'type': 'DD', 'id': 3}, 
+                            {'type': 'DD', 'id': 4}, 
+                            {'type': 'DD', 'id': 5}]
+                ship_pool(dict): The pool of ship to use
+                    ex. {"DD":[10,20,30], "CL":[41,42,43]}
+            
+            output:
+                ship_list[]: The ship id list converted from ship type and ship pool
+                    ex: [15, 27, 2, 93, 3, 7]
+        """
+        ship_list = []
+        for i in range(0,len(fleet_ship_type)):
+            ship_type = fleet_ship_type[i]['type']
+            ship_order = fleet_ship_type[i]['id']
+            ship_id = ship_pool[ship_type][ship_order]
+            ship_list.append(ship_id)
+
+        return ship_list
+
 
 
     def update_fleetpreset_data(self, data):
@@ -57,6 +107,89 @@ class FleetSwitcherCore(object):
                 ship_id for ship_id in data['api_deck'][preset_id]['api_ship']
                 if ship_id > -1]
 
+    def _assign_ship(self, fleet_list, ship_pool):
+        """
+            Method to assign the ship with the given fleet_list and ship_pool
+
+            input: 
+                fleet_list: The ship type 
+                    ex. 3
+                ship_pool(dict): The pool of ship to use
+                    ex. {"DD":[10,20,30], "CL":[41,42,43]}
+            
+            output:
+                -1: failed to assign a valid fleet
+                ship_id(dict): the ship to use for the specified exp
+                    (ex: [14,15,62,2,1,73]
+            Note:
+                This function should handle the wildcard("XX") type,
+                so that the output here should not contain any "XX"
+        """
+        ship_id = []
+        for ship in fleet_list:
+            if ship['type'] == 'XX':
+                #@todo: apply the wildcard handling
+                ship['type'] = 'DD'
+
+            wildcard = ".*"
+            suffix = ship['type']
+            pattern = rf"EXP_{wildcard}_{suffix}"
+            matching_keys = [key for key in ship_pool.keys() if re.match(pattern, key) and "NAME" not in key]
+
+            success = False
+            for ship_types in matching_keys:
+                print("ship_types")
+                print(ship_types)
+
+                if len(ship_pool[ship_types]) > 0:
+                    ship_id.append(ship_pool[ship_types].pop(0))
+                    success = True
+                    break
+            
+            if success == False: 
+                #Cannot find a valid ship
+                raise ValueError("DEBUG -1")
+                return -1, ship_pool
+
+        return ship_id, ship_pool
+
+    def _get_next_auto_fleet_id(self, fleet_id):
+        while 1:
+            fleet_id+=1
+            if fleet_id == 2:
+                cur_fleet = cfg.config.expedition.fleet_2
+            elif fleet_id == 3:
+                cur_fleet = cfg.config.expedition.fleet_3
+            elif fleet_id == 4:
+                cur_fleet = cfg.config.expedition.fleet_4
+            else:
+                break
+
+            if ExpeditionEnum.AUTO in cur_fleet:
+                break
+        return fleet_id
+
+    def _get_fleet_ship_type_from_composition(self, composition):
+        """
+            Convert the string composition (ex. "5DD, 1XX") to 
+            fleetShipType (ex. [{'type': 'DD', 'id': None}, 
+                            {'type': 'DD', 'id': None}, 
+                            {'type': 'DD', 'id': None}, 
+                            {'type': 'DD', 'id': None}, 
+                            {'type': 'DD', 'id': None}, 
+                            {'type': 'XX', 'id': None}])
+        """
+        fleetShipType = []
+
+        for type in composition.split(","):
+            count = int(type[:1])  # Extract the count from the substring
+            item_type = type[1:]  # Extract the type from the substring
+
+            for _ in range(count):
+                fleetShipType.append({"type": item_type, "id": None})
+
+        return fleetShipType
+ 
     def _set_next_combat_preset(self):
         if len(cfg.config.combat.fleet_presets) > 0:
             self.next_combat_preset = choice(cfg.config.combat.fleet_presets)
@@ -68,6 +201,8 @@ class FleetSwitcherCore(object):
         elif context == 'pvp':
             preset_id = cfg.config.pvp.fleet_preset
         elif context == 'factory_develop' or context == 'factory_build':
+            preset_id = AUTO_PRESET
+        elif context == "expedition":
             preset_id = AUTO_PRESET
         return preset_id
 
@@ -86,8 +221,56 @@ class FleetSwitcherCore(object):
                 if flt.fleets.fleets[1].ship_ids == self._get_fleet_preset(cfg.config.combat.sortie_map.value):
                     Log.log_debug("Custom preset Fleet is already loaded.")
                     return False
+            elif context == "expedition":
+
+                FLEET_ID_OFFSET = 2
+                switch_flag = False
+
+                ship_pool = self._load_ship_pool()
+
+                fleet_id = 1
+                fleet_id = self._get_next_auto_fleet_id(fleet_id)
+                for exp_id in exp.expedition.exp_rank:
+
+                    ship_pool_bak = ship_pool.copy()
+
+                    print("exp_id")
+                    print(exp_id)
+                    print("exp_id")
+
+                    fleetShipId, ship_pool = self._assign_ship(self.exp_fleet_ship_type[exp_id["id"]], ship_pool)
+                    if fleetShipId == -1:
+                        #failed to assign ships for this exp, restore the ship pool
+                        ship_pool = ship_pool_bak 
+                    else:
+                        
+                        print("fleetShipId")
+                        print("fleetShipId")
+                        print(fleetShipId)
+                        print("fleetShipId")
+                        print("fleetShipId")
+
+                        if flt.fleets.fleets[fleet_id].ship_ids == fleetShipId:
+                            Log.log_msg(f"preset for fleet {fleet_id} is already loaded.")
+                        else:
+                            Log.log_msg(f"attempt to load fleet {fleet_id}'s preset.")
+                            switch_flag = True
+                            #Maybe I should save the fleetShipId first?
+                            #Yeah, definitely should
+
+                        fleet_id = self._get_next_auto_fleet_id(fleet_id)
+
+                    if fleet_id > 4:
+                        #assign for all fleets success
+                        break
+                    
+                if fleet_id > 4:
+                    #assign for all fleets successed
+                    Log.log_msg(f"attempt to load fleet {fleet_id}'s preset.")
+                    return switch_flag 
                 else:
-                    Log.log_msg("Need to switch to 'auto' preset.")
+                    #some assign failed
+                    return False
 
             elif context == 'factory_develop':
                 if cfg.config.factory.develop_secretary == 0:
@@ -118,11 +301,62 @@ class FleetSwitcherCore(object):
     def switch_fleet(self, context):
         preset_id = self._get_next_preset_id(context)
 
+        #self._get_fleet_preset(exp.expedition.exp_rank[next_exp]):
+
         if preset_id == AUTO_PRESET:
             
-            if context == 'combat':
+            if context == "combat":
                 Log.log_msg(f"Switching to Fleet Preset for {cfg.config.combat.sortie_map}.")
-                self.switch_to_costom_sleet(cfg.config.combat.sortie_map)
+
+                fleet_list = self._get_fleet_preset(cfg.config.combat.sortie_map.value)
+                self.switch_to_costom_fleet(1, fleet_list)
+
+                """Check if next combat possible, since new ship is switched in"""
+                """Refresh home to update ship list"""
+                com.combat.set_next_sortie_time(override=True)
+            elif context == "expedition":
+                Log.log_msg(f"Switching to Exp Preset.")
+
+                next_exp = 0
+                exp_list = []
+                
+                for i in range(2,5):
+                    if i == 2:
+                        cur_fleet = cfg.config.expedition.fleet_2
+                    elif i == 3:
+                        cur_fleet = cfg.config.expedition.fleet_3
+                    elif i == 4:
+                        cur_fleet = cfg.config.expedition.fleet_4
+
+                    if ExpeditionEnum.AUTO in cur_fleet:
+                        while exp.expedition.exp_rank[next_exp] in cfg.config.expedition.all_expeditions:
+                            next_exp += 1
+                        
+                        exp_list.append(exp.expedition.exp_rank[next_exp]["id"])
+                        next_exp += 1
+
+                self._assign_ship(exp_list)
+                next_exp = 0
+
+                for i in range(2,5):
+                    if i == 2:
+                        cur_fleet = cfg.config.expedition.fleet_2
+                    elif i == 3:
+                        cur_fleet = cfg.config.expedition.fleet_3
+                    elif i == 4:
+                        cur_fleet = cfg.config.expedition.fleet_4
+
+                    if ExpeditionEnum.AUTO in cur_fleet:
+                        
+
+                        fleet_list = self._get_fleet_preset(exp_list[next_exp])
+
+                        print("fleet_list")
+                        print(fleet_list)
+
+                        self.switch_to_costom_fleet(i, fleet_list)
+                        next_exp += 1
+
             elif context == 'factory_develop':
                 Log.log_msg(f"Switching to {cfg.config.factory.develop_secretary} for develop.")
 
@@ -134,69 +368,68 @@ class FleetSwitcherCore(object):
                 ssw.ship_switcher.current_shipcomp_page = 1
                 ssw.ship_switcher.switch_slot_by_id(1,cfg.config.factory.build_secretary)
 
-            return
+        else:
+            Log.log_msg(f"Switching to Fleet Preset {preset_id}.")
+            if preset_id not in self.presets:
+                Log.log_error(
+                    f"Fleet Preset {preset_id} is not specified in-game. Please "
+                    f"check your config.")
+                exit(1)
 
-        Log.log_msg(f"Switching to Fleet Preset {preset_id}.")
-        if preset_id not in self.presets:
-            Log.log_error(
-                f"Fleet Preset {preset_id} is not specified in-game. Please "
-                f"check your config.")
-            exit(1)
+            """open preset menu"""
+            kca_u.kca.click_existing(
+                'lower_left', 'fleetswitcher|fleetswitch_submenu.png')
+            kca_u.kca.wait(
+                'lower_left', 'fleetswitcher|fleetswitch_submenu_exit.png')
 
-        """open preset menu"""
-        kca_u.kca.click_existing(
-            'lower_left', 'fleetswitcher|fleetswitch_submenu.png')
-        kca_u.kca.wait(
-            'lower_left', 'fleetswitcher|fleetswitch_submenu_exit.png')
+            list_idx = (preset_id if preset_id < 5 else 5) - 1
+            idx_offset = preset_id - 5
+            if idx_offset > 0:
+                kca_u.kca.sleep()
+                self._scroll_preset_list(idx_offset)
 
-        list_idx = (preset_id if preset_id < 5 else 5) - 1
-        idx_offset = preset_id - 5
-        if idx_offset > 0:
+            kca_u.kca.r['top'].hover()
             kca_u.kca.sleep()
-            self._scroll_preset_list(idx_offset)
+            preset_idx_region = Region(
+                kca_u.kca.game_x + 410,
+                kca_u.kca.game_y + 275 + (list_idx * 76),
+                70, 45)
+            kca_u.kca.click_existing(
+                preset_idx_region, 'fleetswitcher|fleetswitch_button.png')
+            if kca_u.kca.exists(
+                    'left', 'fleetswitcher|fleetswitch_fail_check.png'):
+                Log.log_error(
+                    f"Could not switch in fleet preset {preset_id}. Please check "
+                    f"your config and fleet presets.")
+                exit(1)
+            Log.log_msg(f"Fleet Preset {preset_id} loaded.")
 
-        kca_u.kca.r['top'].hover()
-        kca_u.kca.sleep()
-        preset_idx_region = Region(
-            kca_u.kca.game_x + 410,
-            kca_u.kca.game_y + 275 + (list_idx * 76),
-            70, 45)
-        kca_u.kca.click_existing(
-            preset_idx_region, 'fleetswitcher|fleetswitch_button.png')
-        if kca_u.kca.exists(
-                'left', 'fleetswitcher|fleetswitch_fail_check.png'):
-            Log.log_error(
-                f"Could not switch in fleet preset {preset_id}. Please check "
-                f"your config and fleet presets.")
-            exit(1)
-        Log.log_msg(f"Fleet Preset {preset_id} loaded.")
+            if context == 'combat':
+                self._set_next_combat_preset()
 
-        if context == 'combat':
-            self._set_next_combat_preset()
+    def switch_to_costom_fleet(self, fleet_id, ship_list):
+        """
+            method to switch the ship in {fleet_id} to ships defined in {ship_list}
 
-    def switch_to_costom_sleet(self, map_name):
+            fleet_id(int): fleet to switch, index starts from 1
+            ship_list(int list): ships to use
+        """
+
+        flt.fleets.fleets[fleet_id].select()
+        
         # print("Debug: Call switch_to_costom_sleet")
         empty_slot_count = 0
-        ssw.ship_switcher.current_shipcomp_page = 1
 
-        size = max(len(flt.fleets.fleets[1].ship_ids), len(self._get_fleet_preset(map_name.value)))
+        size = max(len(flt.fleets.fleets[fleet_id].ship_ids), len(ship_list))
         for i in range(1,size + 1):
-            if i > len(self._get_fleet_preset(map_name.value)):
+            if i > len(ship_list):
                 id = -1 #remove this slot
-                ssw.ship_switcher.switch_slot_by_id(i-empty_slot_count,id)
                 empty_slot_count += 1
             else:
-                id = self._get_fleet_preset(map_name.value)[i - 1]
-                ssw.ship_switcher.switch_slot_by_id(i-empty_slot_count,id)
+                id = ship_list[i - 1]
 
-        # if flt.fleets.fleets[1].ship_ids != self._get_fleet_preset(map_name.value):
-            # print("Debug: Costom fleet switch failed")
-            # print(flt.fleets.fleets[1].ship_ids)
-            # print(self._get_fleet_preset(map_name.value))
+            ssw.ship_switcher.switch_slot_by_id(i-empty_slot_count,id)
 
-        """Check if next combat possible, since new ship is switched in"""
-        """Refresh home to update ship list"""
-        com.combat.set_next_sortie_time(override=True)
 
     def _scroll_preset_list(self, target_clicks):
         Log.log_debug(f"Scrolling to target preset ({target_clicks} clicks).")
@@ -207,13 +440,19 @@ class FleetSwitcherCore(object):
             clicks += 1
     
     def _get_fleet_preset(self, key):
-        if key in self.fleet_preset:
-            return self.fleet_preset[key]
+        """
+            method to get the preset for combat or expedition
+            input: 
+                key(string): the name of combat map(ex. 1-1-Bm2)
+        """
+        if key in self.fleet_ship_id["combat"]:
+            return self.fleet_ship_id["combat"][key]
         else:
-            """If the key contain a quest name"""
-            quest_name_len = len(key.split("-")[-1]) 
+            key = key.split("-")
+            """The key contain a quest name"""
+            quest_name_len = len(key[-1]) 
             if quest_name_len > 1:
-                return self.fleet_preset[key[:-quest_name_len - 1]]
+                return self.fleet_ship_id["combat"][key[:-quest_name_len - 1]]
         raise ValueError("Unexpected preset id:" + str(key))
 
 
