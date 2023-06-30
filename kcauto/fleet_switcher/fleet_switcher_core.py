@@ -107,7 +107,7 @@ class FleetSwitcherCore(object):
                 ship_id for ship_id in data['api_deck'][preset_id]['api_ship']
                 if ship_id > -1]
 
-    def _assign_ship(self, fleet_list, ship_pool):
+    def _assign_ship(self, fleet_list, ship_pool, req_dc=0, req_dc_carrier=0, req_lc=4):
         """
             Method to assign the ship with the given fleet_list and ship_pool
 
@@ -133,16 +133,97 @@ class FleetSwitcherCore(object):
 
             wildcard = ".*"
             suffix = ship['type']
-            pattern = rf"EXP_{wildcard}_{suffix}"
+            pattern = rf"EXP_{wildcard}{suffix}"
             matching_keys = [key for key in ship_pool.keys() if re.match(pattern, key) and "NAME" not in key]
 
-            success = False
-            for ship_types in matching_keys:
-                print("ship_types")
-                print(ship_types)
+            pattern = r'\d+LC'  # Matches one or more digits followed by "LC"
 
-                if len(ship_pool[ship_types]) > 0:
-                    ship_id.append(ship_pool[ship_types].pop(0))
+            lc_temp_list = [[],[],[],[],[]]
+            offset = 0
+            for i in range(len(matching_keys)):
+
+                match = re.search(pattern, matching_keys[i - offset])
+                if match:
+                    number = int(match.group()[:-2])
+
+                    temp = matching_keys.pop(i - offset)
+
+                    lc_temp_list[number].append(temp)
+                    offset += 1
+            
+            if req_lc > 0:
+                for i in range(1, req_lc):
+                    for ship_type in lc_temp_list[i]:
+                        matching_keys.insert(0, ship_type)
+
+                for i in range(4, req_lc-1, -1):
+                    for ship_type in lc_temp_list[i]:
+                        matching_keys.insert(0, ship_type)
+
+            pattern = r'\d+DC'  # Matches one or more digits followed by "DC"
+
+            dc_temp_list = [[],[],[],[],[]]
+            offset = 0
+            for i in range(len(matching_keys)):
+                match = re.search(pattern, matching_keys[i - offset])
+                if match:
+                    number = int(match.group()[:-2])
+
+                    temp = matching_keys.pop(i - offset)
+
+                    dc_temp_list[number].append(temp)
+                    offset += 1
+            
+            if req_dc > 0 or req_dc_carrier > 0:
+                for i in range(1, req_dc, 1):
+                    for ship_type in dc_temp_list[i]:
+                        matching_keys.insert(0, ship_type)
+
+                for i in range(4, max(req_dc-1, 0), -1):
+                    for ship_type in dc_temp_list[i]:
+                        matching_keys.insert(0, ship_type)
+            else:
+                for i in range(1, 5):
+                    for ship_type in dc_temp_list[i]:
+                        matching_keys.append(ship_type)
+
+            if req_lc <= 0:
+                for i in range(1, 5):
+                    for ship_type in lc_temp_list[i]:
+                        matching_keys.append(ship_type)
+
+            print("matching_keys")
+            print("matching_keys")
+            print(matching_keys)
+            print("matching_keys")
+            print("matching_keys")
+
+            success = False
+            for ship_type in matching_keys:
+
+                if len(ship_pool[ship_type]) > 0:
+
+                    ship_id.append(ship_pool[ship_type].pop(0))
+
+                    pattern = r'\d+LC'  # Matches one or more digits followed by "LC"
+                    match = re.search(pattern, ship_type)
+                    if match:
+                        number = int(match.group()[:-2])
+                        req_lc -= number
+                        print("req_lc")
+                        print(req_lc)
+
+                    pattern = r'\d+DC'  # Matches one or more digits followed by "DC"
+                    match = re.search(pattern, ship_type)
+                    if match:
+                        number = int(match.group()[:-2])
+                        req_dc -= number
+                        req_dc_carrier -= 1
+                        print("req_dc")
+                        print(req_dc)
+                        print("req_dc_carrier")
+                        print(req_dc_carrier)
+
                     success = True
                     break
             
@@ -230,15 +311,21 @@ class FleetSwitcherCore(object):
 
                 fleet_id = 1
                 fleet_id = self._get_next_auto_fleet_id(fleet_id)
-                for exp_id in exp.expedition.exp_rank:
+                for exp_rank in exp.expedition.exp_rank:
 
                     ship_pool_bak = ship_pool.copy()
 
-                    print("exp_id")
-                    print(exp_id)
-                    print("exp_id")
+                    print("exp_rank")
+                    print(exp_rank)
+                    print("exp_rank")
 
-                    fleetShipId, ship_pool = self._assign_ship(self.exp_fleet_ship_type[exp_id["id"]], ship_pool)
+                    fleetShipId, ship_pool = self._assign_ship( \
+                        self.exp_fleet_ship_type[exp_rank["id"]], \
+                        ship_pool,
+                        exp.expedition.exp_data[exp_rank["id"] - 1]["reqDrum"],
+                        exp.expedition.exp_data[exp_rank["id"] - 1]["reqDrumCarriers"],
+                        4)
+
                     if fleetShipId == -1:
                         #failed to assign ships for this exp, restore the ship pool
                         ship_pool = ship_pool_bak 
