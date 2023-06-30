@@ -246,7 +246,7 @@ class FleetSwitcherCore(object):
             else:
                 break
 
-            if ExpeditionEnum.AUTO in cur_fleet:
+            if ExpeditionEnum.AUTO_0 in cur_fleet:
                 break
         return fleet_id
 
@@ -309,6 +309,7 @@ class FleetSwitcherCore(object):
 
                 ship_pool = self._load_ship_pool()
 
+                self.fleet_ship_id["exp"] = {}
                 fleet_id = 1
                 fleet_id = self._get_next_auto_fleet_id(fleet_id)
                 for exp_rank in exp.expedition.exp_rank:
@@ -318,6 +319,7 @@ class FleetSwitcherCore(object):
                     print("exp_rank")
                     print(exp_rank)
                     print("exp_rank")
+
 
                     fleetShipId, ship_pool = self._assign_ship( \
                         self.exp_fleet_ship_type[exp_rank["id"]], \
@@ -342,8 +344,8 @@ class FleetSwitcherCore(object):
                         else:
                             Log.log_msg(f"attempt to load fleet {fleet_id}'s preset.")
                             switch_flag = True
-                            #Maybe I should save the fleetShipId first?
-                            #Yeah, definitely should
+                            #Save the fleetShipId
+                            self.fleet_ship_id["exp"][fleet_id] = fleetShipId
 
                         fleet_id = self._get_next_auto_fleet_id(fleet_id)
 
@@ -404,45 +406,18 @@ class FleetSwitcherCore(object):
             elif context == "expedition":
                 Log.log_msg(f"Switching to Exp Preset.")
 
-                next_exp = 0
-                exp_list = []
-                
-                for i in range(2,5):
-                    if i == 2:
-                        cur_fleet = cfg.config.expedition.fleet_2
-                    elif i == 3:
-                        cur_fleet = cfg.config.expedition.fleet_3
-                    elif i == 4:
-                        cur_fleet = cfg.config.expedition.fleet_4
+                fleet_id = 1
 
-                    if ExpeditionEnum.AUTO in cur_fleet:
-                        while exp.expedition.exp_rank[next_exp] in cfg.config.expedition.all_expeditions:
-                            next_exp += 1
-                        
-                        exp_list.append(exp.expedition.exp_rank[next_exp]["id"])
-                        next_exp += 1
+                while 1: 
+                    fleet_id = self._get_next_auto_fleet_id(fleet_id)
 
-                self._assign_ship(exp_list)
-                next_exp = 0
+                    if fleet_id > 4:
+                        break
+                    
+                    if not fleet_id in self.fleet_ship_id["exp"]:
+                        continue
 
-                for i in range(2,5):
-                    if i == 2:
-                        cur_fleet = cfg.config.expedition.fleet_2
-                    elif i == 3:
-                        cur_fleet = cfg.config.expedition.fleet_3
-                    elif i == 4:
-                        cur_fleet = cfg.config.expedition.fleet_4
-
-                    if ExpeditionEnum.AUTO in cur_fleet:
-                        
-
-                        fleet_list = self._get_fleet_preset(exp_list[next_exp])
-
-                        print("fleet_list")
-                        print(fleet_list)
-
-                        self.switch_to_costom_fleet(i, fleet_list)
-                        next_exp += 1
+                    self.switch_to_costom_fleet(fleet_id, self.fleet_ship_id["exp"][fleet_id])
 
             elif context == 'factory_develop':
                 Log.log_msg(f"Switching to {cfg.config.factory.develop_secretary} for develop.")
@@ -504,7 +479,7 @@ class FleetSwitcherCore(object):
 
         flt.fleets.fleets[fleet_id].select()
         
-        # print("Debug: Call switch_to_costom_sleet")
+        # print("Debug: Call switch_to_costom_fleet")
         empty_slot_count = 0
 
         size = max(len(flt.fleets.fleets[fleet_id].ship_ids), len(ship_list))
@@ -514,6 +489,12 @@ class FleetSwitcherCore(object):
                 empty_slot_count += 1
             else:
                 id = ship_list[i - 1]
+            print("i")
+            print(i)
+
+            if i <= len(flt.fleets.fleets[fleet_id].ship_ids) and \
+                id == flt.fleets.fleets[fleet_id].ship_ids[i-1]:
+                continue
 
             ssw.ship_switcher.switch_slot_by_id(i-empty_slot_count,id)
 
