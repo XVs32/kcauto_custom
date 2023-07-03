@@ -1,6 +1,5 @@
 from pyvisauto import Region
 from random import choice
-import time
 
 from constants import MAX_RESOURCE, PASSIVE_TIME_INTERVAL
 import api.api_core as api
@@ -10,6 +9,7 @@ import fleet.fleet_core as flt
 import resupply.resupply_core as res
 import stats.stats_core as sts
 import util.kca as kca_u
+from util.timer import Timer
 from kca_enums.expeditions import ExpeditionEnum
 from kca_enums.kcsapi_paths import KCSAPIEnum
 from util.core_base import CoreBase
@@ -28,14 +28,16 @@ class ExpeditionCore(CoreBase):
     available_expeditions_per_world = {}
     exp_data = None
     exp_rank = []
-    exp_fleet = []
+    exp_for_fleet = []
     TYPE_PRIORITY = [""]
+    timer = None
 
     def __init__(self):
         """
             Method to init expedition module
         """
         super().__init__()
+        self.timer = Timer()
         self.exp_data = JsonData.load_json('data|expedition|expedition.json')
 
    # With a normal function
@@ -92,21 +94,6 @@ class ExpeditionCore(CoreBase):
         self.exp_rank.sort(key=self.cmp, reverse=True)
         print(self.exp_rank)
 
-
-            
-
-
-        
-
-
-
-
-    def set_timer(self):
-        self.disable_timer = time.time()
-
-    def time_up(self):
-        return time.time() > self.disable_timer + (3 * 60 * 60)
-
     @property
     def available_expeditions(self):
         return self._available_expeditions
@@ -150,10 +137,10 @@ class ExpeditionCore(CoreBase):
         return received_expeditions
 
     def expect_returned_fleets(self):
-        if not com.combat.enabled and ExpeditionEnum.AUTO in cfg.config.expedition.all_expeditions:
+        if not com.combat.enabled and ExpeditionEnum.AUTO_0 in cfg.config.expedition.all_expeditions:
             #combat module disable, enter low ​activeness mode
-            if self.time_up():
-                self.set_timer()
+            if self.timer.is_time_up():
+                self.timer.set(90*60)
                 return True
             else:
                 return False
@@ -209,12 +196,17 @@ class ExpeditionCore(CoreBase):
         return fleets_to_send
 
     def send_expeditions(self):
+        #@todo: support validate when in auto mode
         self._validate_expeditions()
 
         for fleet in self.fleets_to_send:
-            expedition = choice(
-                cfg.config.expedition.expeditions_for_fleet(
-                    fleet.fleet_id))
+            
+            if ExpeditionEnum.AUTO_0 in cfg.config.expedition.expeditions_for_fleet(fleet.fleet_id):
+                expedition = ExpeditionEnum(self.exp_for_fleet[fleet.fleet_id])
+            else:
+                expedition = choice(
+                    cfg.config.expedition.expeditions_for_fleet(
+                        fleet.fleet_id))
             Log.log_msg(
                 f"Sending fleet {fleet.fleet_id} to expedition "
                 f"{expedition.expedition}.")
@@ -232,7 +224,7 @@ class ExpeditionCore(CoreBase):
         if len(self.available_expeditions) == 0:
             raise ValueError("No list of available expeditions found.")
         for expedition in cfg.config.expedition.all_expeditions:
-            if expedition not in self.available_expeditions:
+            if expedition not in self.available_expeditions and expedition != ExpeditionEnum.AUTO_0:
                 raise ValueError(
                     f"Specified expedition {expedition.expedition} is not "
                     "unlocked.")
