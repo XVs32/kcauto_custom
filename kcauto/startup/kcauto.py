@@ -74,6 +74,9 @@ class Kcauto(object):
     def run_expedition_logic(self):
         if not exp.expedition.enabled:
             return False
+        
+        if not exp.expedition.timer.is_time_up():
+            return False
            
         if exp.expedition.expect_returned_fleets() or \
           (set([ExpeditionEnum.E5_33, ExpeditionEnum.E5_34,
@@ -84,9 +87,19 @@ class Kcauto(object):
 
         if exp.expedition.fleets_are_ready:
 
-            if ExpeditionEnum.AUTO in cfg.config.expedition.all_expeditions:
+            if ExpeditionEnum.AUTO_0 in cfg.config.expedition.all_expeditions\
+                and exp.expedition.exp_for_fleet == []:
                 exp.expedition.get_expedition_ranking()
-                self._run_fleetswitch_logic('expedition')
+
+                if not fsw.fleet_switcher.assign_exp_ship():
+                    exp.expedition.enabled = False
+                    Log.log_error(f"Failed to assign ships for self balance expedition, disable expedition module.")
+                    return False
+
+                if self._run_fleetswitch_logic('expedition') == -2:
+                    exp.expedition.timer.set(15*60)
+                    Log.log_warn(f"Failed to switch ships for self balance expedition, disable expedition module for 15 mins.")
+                    return False
 
             exp.expedition.goto()
             exp.expedition.send_expeditions()
@@ -216,7 +229,7 @@ class Kcauto(object):
         #apply for combat queue, assume map_data is up-to-date
         self.run_quest_logic('combat', fast_check = not was_sortie_queue_empty, force= was_sortie_queue_empty)
 
-        if self._run_fleetswitch_logic('combat'):
+        if self._run_fleetswitch_logic('combat') == 0:
             #update port api, for should_and_able_to_sortie
             nav.navigate.to('refresh_home')
 
@@ -232,7 +245,7 @@ class Kcauto(object):
                 com.combat.pop_sortie_queue()
                 
                 sts.stats.set_print_loop_end_stats()
-                self.fast_check_for_expedition()
+                exp.expedition.receive_expedition()
             else:
                 Log.log_error(f"Sortie failed.")
 
@@ -259,10 +272,11 @@ class Kcauto(object):
     def _run_fleetswitch_logic(self, context):
         if fsw.fleet_switcher.require_fleetswitch(context):
             fsw.fleet_switcher.goto()
-            fsw.fleet_switcher.switch_fleet(context)
+            if not fsw.fleet_switcher.switch_fleet(context):
+                return -2
             self.handle_back_to_home(True)
-            return True
-        return False
+            return 0
+        return -1
 
     
 
