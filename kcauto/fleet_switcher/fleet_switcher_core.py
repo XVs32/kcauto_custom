@@ -107,6 +107,49 @@ class FleetSwitcherCore(object):
                 ship_id for ship_id in data['api_deck'][preset_id]['api_ship']
                 if ship_id > -1]
 
+    def assign_exp_ship(self):
+
+        FLEET_ID_OFFSET = 2
+
+        ship_pool = self._load_ship_pool()
+
+        self.fleet_ship_id["exp"] = {}
+        exp.expedition.exp_for_fleet = [None, None, None, None, None]
+        fleet_id = 1
+        fleet_id = self._get_next_auto_fleet_id(fleet_id)
+        for exp_rank in exp.expedition.exp_rank:
+
+            ship_pool_bak = ship_pool.copy()
+
+            fleetShipId, ship_pool = self._assign_ship( \
+                self.exp_fleet_ship_type[exp_rank["id"]], \
+                ship_pool,
+                exp.expedition.exp_data[exp_rank["id"] - 1]["reqDrum"],
+                exp.expedition.exp_data[exp_rank["id"] - 1]["reqDrumCarriers"],
+                4)
+
+            if fleetShipId == -1:
+                #failed to assign ships for this exp, restore the ship pool
+                ship_pool = ship_pool_bak 
+            else:
+
+                #Save the fleetShipId
+                self.fleet_ship_id["exp"][fleet_id] = fleetShipId
+                exp.expedition.exp_for_fleet[fleet_id] = exp_rank["id"]
+
+                fleet_id = self._get_next_auto_fleet_id(fleet_id)
+
+            if fleet_id > 4:
+                #assign for all fleets success
+                break
+            
+        if fleet_id > 4:
+            #assign for all fleets successed
+            return True
+        else:
+            #some assign failed
+            return False
+
     def _assign_ship(self, fleet_list, ship_pool, req_dc=0, req_dc_carrier=0, req_lc=4):
         """
             Method to assign the ship with the given fleet_list and ship_pool
@@ -304,62 +347,20 @@ class FleetSwitcherCore(object):
                     return False
             elif context == "expedition":
 
-                FLEET_ID_OFFSET = 2
                 switch_flag = False
 
-                ship_pool = self._load_ship_pool()
-
-                self.fleet_ship_id["exp"] = {}
                 fleet_id = 1
                 fleet_id = self._get_next_auto_fleet_id(fleet_id)
-                for exp_rank in exp.expedition.exp_rank:
-
-                    ship_pool_bak = ship_pool.copy()
-
-                    print("exp_rank")
-                    print(exp_rank)
-                    print("exp_rank")
-
-
-                    fleetShipId, ship_pool = self._assign_ship( \
-                        self.exp_fleet_ship_type[exp_rank["id"]], \
-                        ship_pool,
-                        exp.expedition.exp_data[exp_rank["id"] - 1]["reqDrum"],
-                        exp.expedition.exp_data[exp_rank["id"] - 1]["reqDrumCarriers"],
-                        4)
-
-                    if fleetShipId == -1:
-                        #failed to assign ships for this exp, restore the ship pool
-                        ship_pool = ship_pool_bak 
+                while fleet_id < 5:
+                    if flt.fleets.fleets[fleet_id].ship_ids == \
+                        self.fleet_ship_id["exp"][fleet_id]:
+                        Log.log_msg(f"preset for fleet {fleet_id} is already loaded.")
                     else:
-                        
-                        print("fleetShipId")
-                        print("fleetShipId")
-                        print(fleetShipId)
-                        print("fleetShipId")
-                        print("fleetShipId")
-
-                        if flt.fleets.fleets[fleet_id].ship_ids == fleetShipId:
-                            Log.log_msg(f"preset for fleet {fleet_id} is already loaded.")
-                        else:
-                            Log.log_msg(f"attempt to load fleet {fleet_id}'s preset.")
-                            switch_flag = True
-                            #Save the fleetShipId
-                            self.fleet_ship_id["exp"][fleet_id] = fleetShipId
-
-                        fleet_id = self._get_next_auto_fleet_id(fleet_id)
-
-                    if fleet_id > 4:
-                        #assign for all fleets success
-                        break
-                    
-                if fleet_id > 4:
-                    #assign for all fleets successed
-                    Log.log_msg(f"attempt to load fleet {fleet_id}'s preset.")
-                    return switch_flag 
-                else:
-                    #some assign failed
-                    return False
+                        Log.log_msg(f"attempt to load fleet {fleet_id}'s preset.")
+                        switch_flag = True
+                    fleet_id = self._get_next_auto_fleet_id(fleet_id)
+                
+                return switch_flag
 
             elif context == 'factory_develop':
                 if cfg.config.factory.develop_secretary == 0:
@@ -398,7 +399,8 @@ class FleetSwitcherCore(object):
                 Log.log_msg(f"Switching to Fleet Preset for {cfg.config.combat.sortie_map}.")
 
                 fleet_list = self._get_fleet_preset(cfg.config.combat.sortie_map.value)
-                self.switch_to_costom_fleet(1, fleet_list)
+                if not self.switch_to_costom_fleet(1, fleet_list):
+                    return False
 
                 """Check if next combat possible, since new ship is switched in"""
                 """Refresh home to update ship list"""
@@ -417,7 +419,8 @@ class FleetSwitcherCore(object):
                     if not fleet_id in self.fleet_ship_id["exp"]:
                         continue
 
-                    self.switch_to_costom_fleet(fleet_id, self.fleet_ship_id["exp"][fleet_id])
+                    if not self.switch_to_costom_fleet(fleet_id, self.fleet_ship_id["exp"][fleet_id]):
+                        return False
 
             elif context == 'factory_develop':
                 Log.log_msg(f"Switching to {cfg.config.factory.develop_secretary} for develop.")
@@ -468,6 +471,7 @@ class FleetSwitcherCore(object):
 
             if context == 'combat':
                 self._set_next_combat_preset()
+        return True
 
     def switch_to_costom_fleet(self, fleet_id, ship_list):
         """
@@ -476,10 +480,8 @@ class FleetSwitcherCore(object):
             fleet_id(int): fleet to switch, index starts from 1
             ship_list(int list): ships to use
         """
-
         flt.fleets.fleets[fleet_id].select()
         
-        # print("Debug: Call switch_to_costom_fleet")
         empty_slot_count = 0
 
         size = max(len(flt.fleets.fleets[fleet_id].ship_ids), len(ship_list))
@@ -489,15 +491,15 @@ class FleetSwitcherCore(object):
                 empty_slot_count += 1
             else:
                 id = ship_list[i - 1]
-            print("i")
-            print(i)
 
             if i <= len(flt.fleets.fleets[fleet_id].ship_ids) and \
                 id == flt.fleets.fleets[fleet_id].ship_ids[i-1]:
                 continue
 
-            ssw.ship_switcher.switch_slot_by_id(i-empty_slot_count,id)
-
+            if not ssw.ship_switcher.switch_slot_by_id(i-empty_slot_count,id):
+                return False
+        
+        return True
 
     def _scroll_preset_list(self, target_clicks):
         Log.log_debug(f"Scrolling to target preset ({target_clicks} clicks).")
