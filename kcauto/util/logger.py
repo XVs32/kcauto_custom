@@ -18,7 +18,7 @@ class Log(ABC):
     def init(cls):
         # dd/mm/YY H:M:S
         dt_string = datetime.now().strftime("%d-%m-%Y-%H-%M-%S")
-        cls.log_file = open( dt_string + ".log", "w")
+        cls.log_file = open( "log/" + dt_string + ".log", "w")
 
     @staticmethod
     def _log_format(msg):
