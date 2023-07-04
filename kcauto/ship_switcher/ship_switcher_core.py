@@ -18,7 +18,7 @@ from util.logger import Log
 class ShipSwitcherCore(object):
     rules = {}
     current_shipcomp_page = 1
-    dummy_ship = -1
+    DUMMY = -1
 
     def __init__(self):
         Log.log_debug("Initializing Ship Switcher core.")
@@ -41,8 +41,9 @@ class ShipSwitcherCore(object):
         """
 
         # The slot has the specified ship already
-        if len(flt.fleets.fleets[1].ship_ids) >= slot and ship_local_id == flt.fleets.fleets[1].ship_ids[slot-1]:
-            return
+        #@todo upper function has to handle the switched already detection
+        #if len(flt.fleets.fleets[1].ship_ids) >= slot and ship_local_id == flt.fleets.fleets[1].ship_ids[slot-1]:
+            #return
 
         self._select_switch_button(slot)
 
@@ -56,7 +57,16 @@ class ShipSwitcherCore(object):
             self._reset_shiplist()
             self._select_replacement_ship(ship_idx)
             kca_u.kca.sleep(1)
-            self._switch_ship()
+            if not self._switch_ship():
+                not_fleet_region = Region(
+                    kca_u.kca.game_x + 185,
+                    kca_u.kca.game_y + 210,
+                    330, 450)
+                while not kca_u.kca.exists(
+                    'right', 'shipswitcher|shiplist_button.png'):
+                    kca_u.kca.click(not_fleet_region)
+                    kca_u.kca.sleep(1)
+                return False
 
             if ship_local_id in flt.fleets.fleets[1].ship_ids:
                 exchange_slot = flt.fleets.fleets[1].ship_ids.index(ship_local_id)
@@ -70,7 +80,7 @@ class ShipSwitcherCore(object):
                 else:
                     flt.fleets.fleets[1].ship_ids.append(ship_local_id)
                     
-        return
+        return True
 
     def switch_ships(self, switch_list):
         
@@ -85,15 +95,27 @@ class ShipSwitcherCore(object):
                     j = j-1
                 """End the switching process since the slots after this slot are empty"""
                 break
-                
-            self._select_switch_button(switch_info["slot_id"])
+
+            self.switch_slot_by_id(switch_info["slot_id"], switch_info["ship"].local_id)
+
+            """self._select_switch_button(switch_info["slot_id"])
             kca_u.kca.sleep(2)
             self._reset_shiplist()
             self._select_replacement_ship(switch_info["idx"], switch_info["ship"])
             kca_u.kca.sleep(2)
             if self._switch_ship():
                 sts.stats.ship_switcher.ships_switched += 1
-        
+            else:
+                not_fleet_region = Region(
+                    kca_u.kca.game_x + 185,
+                    kca_u.kca.game_y + 210,
+                    330, 450)
+                while not kca_u.kca.exists(
+                    'right', 'shipswitcher|shiplist_button.png'):
+                    kca_u.kca.click(not_fleet_region)
+                    kca_u.kca.sleep(1)
+                return False"""
+
         """Check if next combat possible, since new ship is switched in"""
         """Refresh home to update ship list"""
         if switch_list:
@@ -131,7 +153,7 @@ class ShipSwitcherCore(object):
                 if replacement_idx is not None:
                     
                     """Remove this ship from availble list"""
-                    ship_list[replacement_idx] = self.dummy_ship
+                    ship_list[replacement_idx] = self.DUMMY
                     
                     switch_list.append({
                         'slot_id': i,
@@ -158,7 +180,7 @@ class ShipSwitcherCore(object):
         
         for idx, ship in enumerate(ship_list):
             
-            if ship == self.dummy_ship:
+            if ship == self.DUMMY:
                 continue
             
             if rule.is_meet_criteria(ship):
@@ -253,7 +275,7 @@ class ShipSwitcherCore(object):
             kca_u.kca.wait('right', 'shipswitcher|shiplist_button.png')
             return True
         else:
-            Log.log_debug("Could not switch to selected ship.")
+            Log.log_warn("Could not switch to selected ship.")
         return False
 
     @property
