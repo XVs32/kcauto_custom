@@ -47,7 +47,7 @@
 	"7-5-3":[{"type":"BBV","id":0}, {"type":"CAV","id":0}, {"type":"CL","id":0}, {"type":"DD","id":0}, {"type":"DD","id":1}, {"type":"DD","id":2}],
 
 	
-	"2-2-A":	[{"type":"AV","id":0}, {"type":"CVL","id":0}, {"type":"CVL","id":1}, {"type":"CVL","id":0}, {"type":"SS","id":0}, {"type":"CLT","id":0}],
+	"2-2-A":	[{"type":"AV","id":0}, {"type":"BCVL","id":0}, {"type":"BCVL","id":1}, {"type":"CVL","id":0}, {"type":"SS","id":0}, {"type":"CLT","id":0}],
 	
 	"5-2-C":	[{"type":"TRAIN","id":0}, {"type":"AARL","id":0}, {"type":"AARL","id":1}, {"type":"AARL","id":2}, {"type":"AARL","id":3}],
 	
