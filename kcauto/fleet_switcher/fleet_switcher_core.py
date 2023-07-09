@@ -59,15 +59,6 @@ class FleetSwitcherCore(object):
             fleet = self._get_fleet_ship_type_from_composition(exp_info["reqComposition"])
             self.exp_fleet_ship_type[exp_info["id"]] = fleet
 
-        print("exp_fleet_ship_type")
-        print("exp_fleet_ship_type")
-        print("exp_fleet_ship_type")
-        print(self.exp_fleet_ship_type)
-        print("exp_fleet_ship_type")
-        print("exp_fleet_ship_type")
-        print("exp_fleet_ship_type")
-
-
     def _get_fleet_ship_id(self, fleet_ship_type, ship_pool):
         """
             Method to get the ship id list from ship type and ship pool
@@ -235,12 +226,6 @@ class FleetSwitcherCore(object):
                     for ship_type in lc_temp_list[i]:
                         matching_keys.append(ship_type)
 
-            print("matching_keys")
-            print("matching_keys")
-            print(matching_keys)
-            print("matching_keys")
-            print("matching_keys")
-
             success = False
             for ship_type in matching_keys:
 
@@ -253,8 +238,6 @@ class FleetSwitcherCore(object):
                     if match:
                         number = int(match.group()[:-2])
                         req_lc -= number
-                        print("req_lc")
-                        print(req_lc)
 
                     pattern = r'\d+DC'  # Matches one or more digits followed by "DC"
                     match = re.search(pattern, ship_type)
@@ -262,10 +245,6 @@ class FleetSwitcherCore(object):
                         number = int(match.group()[:-2])
                         req_dc -= number
                         req_dc_carrier -= 1
-                        print("req_dc")
-                        print(req_dc)
-                        print("req_dc_carrier")
-                        print(req_dc_carrier)
 
                     success = True
                     break
@@ -386,7 +365,7 @@ class FleetSwitcherCore(object):
         return True
 
     def goto(self):
-        nav.navigate.to('fleetcomp')
+        ssw.ship_switcher.goto()
 
     def switch_fleet(self, context):
         preset_id = self._get_next_preset_id(context)
@@ -480,6 +459,8 @@ class FleetSwitcherCore(object):
             fleet_id(int): fleet to switch, index starts from 1
             ship_list(int list): ships to use
         """
+        EMPTY = -1
+
         flt.fleets.fleets[fleet_id].select()
         
         empty_slot_count = 0
@@ -487,8 +468,7 @@ class FleetSwitcherCore(object):
         size = max(len(flt.fleets.fleets[fleet_id].ship_ids), len(ship_list))
         for i in range(1,size + 1):
             if i > len(ship_list):
-                id = -1 #remove this slot
-                empty_slot_count += 1
+                id = EMPTY #remove this slot
             else:
                 id = ship_list[i - 1]
 
@@ -497,7 +477,22 @@ class FleetSwitcherCore(object):
                 continue
 
             if not ssw.ship_switcher.switch_slot_by_id(i-empty_slot_count,id):
+                
+                for j in range(1, 5, 1):
+                    if id in flt.fleets.fleets[j].ship_ids:
+                        exchange_slot = flt.fleets.fleets[j].ship_ids.index(id)
+                        flt.fleets.fleets[j].ship_ids[exchange_slot] = flt.fleets.fleets[fleet_id].ship_ids[i-empty_slot_count]
+                        break
+
+                if len(flt.fleets.fleets[fleet_id].ship_ids) > i-empty_slot_count:
+                    flt.fleets.fleets[fleet_id].ship_ids[i-empty_slot_count-1] = id
+                else:
+                    flt.fleets.fleets[fleet_id].ship_ids.append()
+
                 return False
+            
+            if id == EMPTY:
+                empty_slot_count += 1
         
         return True
 
@@ -518,9 +513,9 @@ class FleetSwitcherCore(object):
         if key in self.fleet_ship_id["combat"]:
             return self.fleet_ship_id["combat"][key]
         else:
-            key = key.split("-")
+            quest_name = key.split("-")[-1]
             """The key contain a quest name"""
-            quest_name_len = len(key[-1]) 
+            quest_name_len = len(quest_name) 
             if quest_name_len > 1:
                 return self.fleet_ship_id["combat"][key[:-quest_name_len - 1]]
         raise ValueError("Unexpected preset id:" + str(key))
