@@ -63,11 +63,6 @@ class ExpeditionCore(CoreBase):
         steel_weight = max(MAX_RESOURCE - sts.stats.rsc.steel, 0)
         bauxite_weight = max(MAX_RESOURCE - sts.stats.rsc.bauxite, 0)
 
-        print(fuel_weight)
-        print(ammo_weight)
-        print(steel_weight)
-        print(bauxite_weight)
-
         self.exp_rank = []
 
         for exp in self.exp_data:
