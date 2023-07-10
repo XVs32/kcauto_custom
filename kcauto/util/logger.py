@@ -18,7 +18,7 @@ class Log(ABC):
     def init(cls):
         # dd/mm/YY H:M:S
         dt_string = datetime.now().strftime("%d-%m-%Y-%H-%M-%S")
-        cls.log_file = open( dt_string + ".log", "w")
+        cls.log_file = open( "log/" + dt_string + ".log", "w")
 
     @staticmethod
     def _log_format(msg):
@@ -43,6 +43,7 @@ class Log(ABC):
             f"{cls.CLR_MSG}{cls._log_format(msg)}{cls.CLR_END}",
             flush=True)
         cls.log_file.write(cls._log_format(msg) + "\n")
+        cls.log_file.flush()
         
 
     @classmethod
@@ -57,6 +58,7 @@ class Log(ABC):
             f"{cls.CLR_SUCCESS}{cls._log_format(msg)}{cls.CLR_END}",
             flush=True)
         cls.log_file.write(cls._log_format(msg) + "\n")
+        cls.log_file.flush()
 
     @classmethod
     def log_warn(cls, msg):
@@ -70,6 +72,7 @@ class Log(ABC):
             f"{cls.CLR_WARNING}{cls._log_format(msg)}{cls.CLR_END}",
             flush=True)
         cls.log_file.write(cls._log_format(msg) + "\n")
+        cls.log_file.flush()
 
     @classmethod
     def log_error(cls, msg):
@@ -83,6 +86,7 @@ class Log(ABC):
             f"{cls.CLR_ERROR}{cls._log_format(msg)}{cls.CLR_END}",
             flush=True)
         cls.log_file.write(cls._log_format(msg) + "\n")
+        cls.log_file.flush()
 
     @classmethod
     def log_debug(cls, msg):
@@ -95,3 +99,4 @@ class Log(ABC):
         if arg.args.parsed_args.debug_output:
             print(cls._log_format(msg), flush=True)
             cls.log_file.write(cls._log_format(msg) + "\n")
+            cls.log_file.flush()

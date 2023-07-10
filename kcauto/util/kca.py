@@ -750,6 +750,7 @@ class Kca(object):
 
         # Retrieve the HTML content
         self.html = await page.content()
+        #Log.log_debug(f"kca.html: {self.html}")
 
         # Close the background tab
         await page.close()
@@ -790,16 +791,21 @@ class Kca(object):
         self.reload_kc3_strategy_page(subpage = "#flowchart")
 
         dom = PyQuery(self.html, parser='html')
+        #Log.log_debug(f"kac.dom:{dom}")
 
         quest_tree_dom = dom("ul#questBox_rootFlow.questTree")
+        #Log.log_debug(f"kac.quest_tree_dom:{quest_tree_dom}")
 
         i = 0
         while True:
 
             quest_name = quest_tree_dom("div.questInfo").eq(i)(".questIcon").text()
+            #Log.log_debug(f"quest_name:{quest_name}")
+            
             if quest_name == target_quest_name:
                 
                 action_raw = quest_tree_dom("div.questInfo").eq(i)(".questCount").attr('title')
+                Log.log_debug(f"action_raw:{action_raw}")
                 if action_raw == None:
                     return None
                 action_raw_line = action_raw.split('\n')

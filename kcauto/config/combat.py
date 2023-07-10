@@ -7,6 +7,7 @@ from kca_enums.formations import FormationEnum
 from kca_enums.lbas_groups import LBASGroupEnum
 from kca_enums.maps import MapEnum
 from kca_enums.nodes import NodeEnum, NamedNodeEnum
+from util.logger import Log
 
 
 class ConfigCombat(ConfigBase):
@@ -36,6 +37,7 @@ class ConfigCombat(ConfigBase):
     _override = False
 
     def __init__(self, config):
+        Log.log_debug("Combat config init called")
         super().__init__(config)
         self.enabled = config['combat.enabled']
         self.fleet_presets = config['combat.fleet_presets']
@@ -159,7 +161,7 @@ class ConfigCombat(ConfigBase):
     def sortie_map_read_only(self):
         return self._sortie_map_read_only
 
-    @sortie_map.setter
+    @sortie_map_read_only.setter
     def sortie_map_read_only(self, value):
         """ 
             Method that set the value of _sortie_map_read_only
@@ -169,6 +171,7 @@ class ConfigCombat(ConfigBase):
         """
         if not MapEnum.contains_value(value):
             raise ValueError("Invalid map specified:" + str(value))
+        Log.log_debug("SET _sortie_map_read_only: {MapEnum(value)}")
         self._sortie_map_read_only = MapEnum(value)
 
     @property
