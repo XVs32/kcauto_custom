@@ -61,15 +61,6 @@ class QuestCore(CoreBase):
             for quest in quest_priority[quest_type]:
                 self.quest_priority_library.append(quest)
 
-    def _load_quest_required_sortie(self):
-        self.quest_to_sortie_maps = {} 
-        
-        Log.log_msg("Loading Quest to Sortie map data.")
-        quests = JsonData.load_json('data|quests|quest_to_sortie_map.json')
-
-        for quest_name in quests:
-            self.quest_to_sortie_maps.append = quests[quest_name]
-
     def need_to_check(self, context):
         if datetime.now() > self.quest_reset_time:
             Log.log_msg("Quest check triggered by time.")
@@ -313,6 +304,7 @@ class QuestCore(CoreBase):
 
         if cfg.config.combat.sortie_map_read_only == MapEnum.auto_map_selete:
             next_quest = self._find_next_sorties_quests()
+            Log.log_debug(f"next_quest = {next_quest}")
 
             if next_quest != None:
 
@@ -321,13 +313,13 @@ class QuestCore(CoreBase):
 
                 sortie_list = []
                 if sortie_dict == None:
-                    Log.log_debug(f"Cannot get quest progress from kc3, use default in config file.")
+                    Log.log_warn(f"Cannot get quest progress from kc3, use default in config file.")
                     sortie_list = self._get_sortie_map_from_quest(next_quest)
+                    Log.log_debug(f"sortie_list = {sortie_list}")
                 else:
                     for key in sortie_dict:
                         for i in range(0, sortie_dict[key]):
                             sortie_list.append(key+"-"+next_quest)
-
 
                 com.combat.set_sortie_queue(sortie_list)
 
@@ -335,6 +327,7 @@ class QuestCore(CoreBase):
         Log.log_debug(f"get_sortie_queue {com.combat.get_sortie_queue()}.")
 
     def _get_sortie_map_from_quest(self, quest):
+        Log.log_debug(f"self.quest_to_sortie_maps = {self.quest_to_sortie_maps}")
         return self.quest_to_sortie_maps[quest]
 
     def _get_quest_in_config(self,type_list):
