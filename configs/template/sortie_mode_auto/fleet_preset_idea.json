@@ -133,7 +133,7 @@
 
 	"2-2-By8":	[{"type":"CVL","id":0}, {"type":"CA","id":0}, {"type":"CA","id":1}, {"type":"AV","id":0}, {"type":"DE","id":0}, {"type":"DE","id":1}],
 	"2-3-By8":	[{"type":"CVL","id":0}, {"type":"CAV","id":0}, {"type":"DD","id":0}, {"type":"DD","id":1}, {"type":"CA","id":0}, {"type":"AV","id":0}],
-	"2-4-By8":	[{"type":"CAV","id":0}, {"type":"CL","id":0}, {"type":"DD","id":0}, {"type":"DD","id":1}, {"type":"CA","id":0}, {"type":"CA","id":0}],
+	"2-4-By8":	[{"type":"CVL","id":0}, {"type":"CL","id":0}, {"type":"DD","id":0}, {"type":"DD","id":1}, {"type":"CAL","id":0}, {"type":"CA","id":0}],
 
 	"3-1-By9":	[{"type":"CVL","id":0}, {"type":"CVL","id":1}, {"type":"DD","id":0}, {"type":"DD","id":1}, {"type":"CAV","id":0}, {"type":"CL","id":0}],
 	"3-3-By9":	[{"type":"CVL","id":0}, {"type":"CVL","id":1}, {"type":"CV","id":0}, {"type":"CAV","id":0}, {"type":"CL","id":0}, {"type":"CL","id":1}],
