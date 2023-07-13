@@ -57,14 +57,6 @@ class ShipSwitcherCore(object):
             self._select_replacement_ship(ship_idx)
             kca_u.kca.sleep(1)
             if not self._switch_ship():
-                not_fleet_region = Region(
-                    kca_u.kca.game_x + 185,
-                    kca_u.kca.game_y + 210,
-                    330, 450)
-                while not kca_u.kca.exists(
-                    'right', 'shipswitcher|shiplist_button.png'):
-                    kca_u.kca.click(not_fleet_region)
-                    kca_u.kca.sleep(1)
                 return False
         return True
 
@@ -112,8 +104,6 @@ class ShipSwitcherCore(object):
 
     def get_ship_switch_list(self):
 
-
-        
         """slot_id, idx, ship"""
         switch_list = []
         
@@ -251,18 +241,28 @@ class ShipSwitcherCore(object):
         kca_u.kca.click(shipcomp_list_region)
         kca_u.kca.r['top'].hover()
         kca_u.kca.wait(
-            'lower_right', 'shipswitcher|shiplist_shipswitch_button.png')
+            'lower_right', 'shipswitcher|shiplist_shipmenu.png')
 
     def _switch_ship(self):
+
+        flag = False 
+        retry = 0
+
         if kca_u.kca.click_existing(
-                'lower_right', 'shipswitcher|shiplist_shipswitch_button.png',
-                cached=True):
+                'lower_right', 'shipswitcher|shiplist_shipswitch_button.png', cached = True):
             kca_u.kca.r['top'].hover()
-            kca_u.kca.wait('right', 'shipswitcher|shiplist_button.png')
-            return True
-        else:
+            while retry < 5:
+                if kca_u.kca.exists('right', 'shipswitcher|shiplist_button.png'):
+                    flag = True
+                    break
+                else:
+                    retry += 1
+                    kca_u.kca.sleep(1)
+            
+        if not flag:
             Log.log_warn("Could not switch to selected ship.")
-        return False
+
+        return flag
 
     @property
     def _local_ships_sorted_by_levels(self):
