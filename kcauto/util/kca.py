@@ -237,6 +237,18 @@ class Kca(object):
 
         return True
 
+    def find_expedition_flag(self):
+        flag = True
+
+        # look for last-seen UI, if set
+        if self.last_ui:
+            if not self.exists('upper_right', f'expedition|expedition_flag_{self.last_ui}.png'):
+                flag = False 
+        else:
+            flag = False 
+
+        return flag
+
     def _update_regions(self):
         """Method that generates or updates all pre-defined regions
         accordingly based on the game's current x and y position.
