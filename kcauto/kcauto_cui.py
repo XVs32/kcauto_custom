@@ -148,8 +148,11 @@ def refresh_panel():
 
     for panel in panels:
         if panel == EXP:
-            preset = exp.get_current_preset(config)
-            util.print_string(panels[panel], 0, 0, preset)
+            preset = exp.get_current_exp_set(config)
+            util.print_string(panels[panel], 0, -1, preset)
+
+            exp_fleet = exp.get_current_fleet(config)
+            util.print_string(panels[panel], 0, 0, exp_fleet)
 
         elif panel == SORTIE:
             
@@ -209,9 +212,9 @@ def open_pop_up(thread, stdscr, active_panel):
 
     if active_panel == EXP :
 
-        preset = exp.get_current_preset(config)
-        preset = exp.pop_up_menu(stdscr, popup_win, preset)
-        exp.set_config(config, preset)
+        expset = exp.get_current_exp_set(config)
+        expset, fleet_mode = exp.pop_up_menu(stdscr, popup_win, expset)
+        exp.set_config(config, expset, fleet_mode)
     
     elif active_panel == PVP :
 
