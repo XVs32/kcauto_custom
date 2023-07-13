@@ -2,6 +2,7 @@ from pyvisauto import Region
 from random import choice
 from sys import exit
 import re
+import copy
 
 import api.api_core as api
 import config.config_core as cfg
@@ -87,8 +88,6 @@ class FleetSwitcherCore(object):
 
         return ship_list
 
-
-
     def update_fleetpreset_data(self, data):
         # print("update_fleetpreset_data")
         self.presets = {}
@@ -110,7 +109,8 @@ class FleetSwitcherCore(object):
         fleet_id = self._get_next_auto_fleet_id(fleet_id)
         for exp_rank in exp.expedition.exp_rank:
 
-            ship_pool_bak = ship_pool.copy()
+            ship_pool_bak = copy.deepcopy(ship_pool)
+
 
             fleetShipId, ship_pool = self._assign_ship( \
                 self.exp_fleet_ship_type[exp_rank["id"]], \
@@ -121,6 +121,7 @@ class FleetSwitcherCore(object):
 
             if fleetShipId == -1:
                 #failed to assign ships for this exp, restore the ship pool
+                Log.log_debug(f"ship_pool restore")
                 ship_pool = ship_pool_bak 
             else:
 
@@ -136,6 +137,7 @@ class FleetSwitcherCore(object):
             
         if fleet_id > 4:
             #assign for all fleets successed
+            Log.log_success(f"auto mode asigned ship for exp{exp.expedition.exp_for_fleet[2:]}")
             return True
         else:
             #some assign failed
@@ -147,7 +149,12 @@ class FleetSwitcherCore(object):
 
             input: 
                 fleet_list: The ship type 
-                    ex. 3
+                    ex. [{'type': 'DD', 'id': 0}, 
+                            {'type': 'DD', 'id': 1}, 
+                            {'type': 'DD', 'id': 2}, 
+                            {'type': 'DD', 'id': 3}, 
+                            {'type': 'DD', 'id': 4}, 
+                            {'type': 'DD', 'id': 5}]
                 ship_pool(dict): The pool of ship to use
                     ex. {"DD":[10,20,30], "CL":[41,42,43]}
             
@@ -226,9 +233,13 @@ class FleetSwitcherCore(object):
                     for ship_type in lc_temp_list[i]:
                         matching_keys.append(ship_type)
 
+            Log.log_debug(f"fleet_switcher_core: matching_keys = {matching_keys}")
+
             success = False
             for ship_type in matching_keys:
 
+                Log.log_debug(f"fleet_switcher_core: searching for {ship_type}")
+                Log.log_debug(f"len = {len(ship_pool[ship_type])}")
                 if len(ship_pool[ship_type]) > 0:
 
                     ship_id.append(ship_pool[ship_type].pop(0))
@@ -251,7 +262,7 @@ class FleetSwitcherCore(object):
             
             if success == False: 
                 #Cannot find a valid ship
-                raise ValueError("DEBUG -1")
+                Log.log_debug(f"fleet_switcher_core: assign ship failed for {fleet_list}")
                 return -1, ship_pool
 
         return ship_id, ship_pool
@@ -268,7 +279,8 @@ class FleetSwitcherCore(object):
             else:
                 break
 
-            if ExpeditionEnum.AUTO_0 in cur_fleet:
+            if any(s in cur_fleet\
+                for s in (ExpeditionEnum.AUTO, ExpeditionEnum.ACTIVE, ExpeditionEnum.PASSIVE, ExpeditionEnum.OVERNIGHT)):
                 break
         return fleet_id
 
@@ -369,8 +381,6 @@ class FleetSwitcherCore(object):
 
     def switch_fleet(self, context):
         preset_id = self._get_next_preset_id(context)
-
-        #self._get_fleet_preset(exp.expedition.exp_rank[next_exp]):
 
         if preset_id == AUTO_PRESET:
             
@@ -477,20 +487,10 @@ class FleetSwitcherCore(object):
                 continue
 
             if not ssw.ship_switcher.switch_slot_by_id(i-empty_slot_count,id):
+                #fleet data update
+                nav.navigate.to('home')
+                self.goto()
                 
-                for j in range(1, 5, 1):
-                    if id in flt.fleets.fleets[j].ship_ids:
-                        exchange_slot = flt.fleets.fleets[j].ship_ids.index(id)
-                        flt.fleets.fleets[j].ship_ids[exchange_slot] = flt.fleets.fleets[fleet_id].ship_ids[i-empty_slot_count]
-                        break
-
-                if len(flt.fleets.fleets[fleet_id].ship_ids) > i-empty_slot_count:
-                    flt.fleets.fleets[fleet_id].ship_ids[i-empty_slot_count-1] = id
-                else:
-                    flt.fleets.fleets[fleet_id].ship_ids.append()
-
-                return False
-            
             if id == EMPTY:
                 empty_slot_count += 1
         
