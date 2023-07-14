@@ -407,6 +407,14 @@ class FleetSwitcherCore(object):
                     
                     if not fleet_id in self.fleet_ship_id["exp"]:
                         continue
+                    
+                    flag = False
+                    for fleet in exp.expedition.fleets_at_base:
+                        if fleet.fleet_id == fleet_id:
+                            flag = True
+                            break
+                    if flag == False:
+                        return False
 
                     if not self.switch_to_costom_fleet(fleet_id, self.fleet_ship_id["exp"][fleet_id]):
                         return False
