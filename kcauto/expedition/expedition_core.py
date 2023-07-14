@@ -112,7 +112,6 @@ class ExpeditionCore(CoreBase):
             self.exp_rank.append({"id":id, "score":score})
 
         self.exp_rank.sort(key=self.cmp, reverse=True)
-        print(self.exp_rank)
 
     @property
     def available_expeditions(self):
