@@ -45,7 +45,8 @@ class ShipSwitcherCore(object):
         #if len(flt.fleets.fleets[1].ship_ids) >= slot and ship_local_id == flt.fleets.fleets[1].ship_ids[slot-1]:
             #return
 
-        self._select_switch_button(slot)
+        if not self._select_switch_button(slot):
+            return False
 
         if ship_local_id == -1:
             """Remove ship in this slot"""
@@ -174,11 +175,18 @@ class ShipSwitcherCore(object):
             kca_u.kca.game_x + 550 + ((zero_idx % 2) * 513),
             kca_u.kca.game_y + 295 + ((zero_idx // 2) * 168),
             125, 55)
-        kca_u.kca.click_existing(
-            slot_button_region, 'shipswitcher|shiplist_button.png')
+        if kca_u.kca.exists(
+            slot_button_region, 'shipswitcher|shiplist_button.png'):
+            kca_u.kca.click_existing(
+                slot_button_region, 'shipswitcher|shiplist_button.png')
+        else:
+            return False
+
         kca_u.kca.wait_vanish(
             slot_button_region, 'shipswitcher|shiplist_button.png')
         kca_u.kca.r['top'].hover()
+
+        return True
         
     def _select_remove_button(self):
         slot_button_region = Region(
