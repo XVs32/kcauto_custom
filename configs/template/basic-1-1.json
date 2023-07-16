@@ -3,7 +3,7 @@
 	"general.interaction_mode":	"direct_control",
 	"general.chrome_dev_port":	9222,
 	"general.paused":	false,
-	"passive_repair.enabled":	true,
+	"passive_repair.enabled":	false,
 	"passive_repair.repair_threshold":	1,
 	"event_reset.enabled":	true,
 	"event_reset.frequency":	3,
