@@ -49,6 +49,7 @@ venv.bak/
 !data/combat/*.json
 !data/combat/*/*.json
 !data/quests/*.json
+!data/expedition/*.json
 !configs/template/*.json
 !configs/template/sortie_mode_auto/*.json
 !data/config/*.json
