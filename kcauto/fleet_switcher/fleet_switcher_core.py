@@ -498,6 +498,7 @@ class FleetSwitcherCore(object):
                 #fleet data update
                 nav.navigate.to('home')
                 self.goto()
+                return False
                 
             if id == EMPTY:
                 empty_slot_count += 1
