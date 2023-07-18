@@ -43,6 +43,7 @@ This tool is designed to help users automate repetitive tasks such as Expedition
 * Factory Module &mdash; Runs daily develop and ship building 
 * More fleet presets &mdash; Unlimited fleet presets that you can define in a config file
 * Sortie mdoe: Auto &mdash; Auto finish daily/weekly/monthly quest (KC3 is needed)
+* Expedition mode **(New! 2023/7/18)** : Auto &mdash; Self balance expedition with auto ship switch
 * Support for 7-4, events
 * Bug fix(Fleet Switcher Module, interaction_mode, quest handling etc.)
 
