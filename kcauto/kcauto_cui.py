@@ -46,17 +46,17 @@ def init():
     # Define the sub-panels
     top = 0
     left = 0
-    next_top = 1 * curses.LINES // 6 
+    next_top = 2 * curses.LINES // 7 
     next_left = curses.COLS // 4
     expedition_panel = curses.newwin(next_top - top, next_left - left, top, left)
     top = next_top 
     left = 0
-    next_top = (1 + 2) * curses.LINES // 6
+    next_top = (2 + 2) * curses.LINES // 7
     next_left = curses.COLS // 4
     sortie_panel = curses.newwin(next_top - top, next_left - left, top, left)
     top = next_top 
     left = 0 
-    next_top = (1 + 2 + 2) * curses.LINES // 6
+    next_top = (2 + 2 + 2) * curses.LINES // 7
     next_left = curses.COLS // 4
     scheduler_panel = curses.newwin(next_top - top, next_left - left, top, left)
     top = next_top 
