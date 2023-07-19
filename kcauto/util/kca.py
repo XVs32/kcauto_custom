@@ -18,9 +18,12 @@ from constants import (
     GAME_W, GAME_H, VISUAL_URL, STRATEGY_ROOM_URL, API_URL, EXACT, DEFAULT, SLEEP_MODIFIER)
 from kca_enums.interaction_modes import InteractionModeEnum
 from kca_enums.kcsapi_paths import KCSAPIEnum
+
 from util.exceptions import ChromeCrashException
 from util.logger import Log
 
+import asyncio
+from pyppeteer import connect
 
 class Kca(object):
     """Primary kcauto utility class.
@@ -36,6 +39,7 @@ class Kca(object):
     game_y = None
     last_ui = None
     r = {}
+    html = None
 
     def __init__(self):
         Log.log_debug("Kca module initialized.")
@@ -134,20 +138,22 @@ class Kca(object):
 
         return True
 
-    def find_dmm(self):
+    def find_browser(self):
         """Method that finds the dmm logo on-screen and provide the offset for chrome driver"""
-        Log.log_msg("Finding DMM.")
-        screen = Region()
+        Log.log_msg("Finding browser.")
 
-        try:
-            dmm_logo = self.find(
-                screen, f'global|dmm_logo.png')
-        except FindFailed:
-            Log.log_error("Could not find dmm reference point.")
-            raise FindFailed()
+        window_info = self.visual_hook.Browser.getWindowForTarget(target_id=self.visual_tab_id)[0]["result"]["bounds"]
 
-        self.css_x = dmm_logo.x
-        self.css_y = dmm_logo.y
+        viewport_size = self.visual_hook.Page.getLayoutMetrics()[0]["result"]["cssLayoutViewport"]
+        
+        top_left_x = window_info["left"]
+        top_left_y = window_info["top"] + window_info["height"] - viewport_size["clientHeight"]
+
+        Log.log_debug(top_left_x)
+        Log.log_debug(top_left_y)
+
+        self.css_x = top_left_x
+        self.css_y = top_left_y
 
         return True
 
@@ -230,6 +236,18 @@ class Kca(object):
             self._update_regions()
 
         return True
+
+    def find_expedition_flag(self):
+        flag = True
+
+        # look for last-seen UI, if set
+        if self.last_ui:
+            if not self.exists('upper_right', f'expedition|expedition_flag_{self.last_ui}.png'):
+                flag = False 
+        else:
+            flag = False 
+
+        return flag
 
     def _update_regions(self):
         """Method that generates or updates all pre-defined regions
@@ -731,6 +749,28 @@ class Kca(object):
 
         return
 
+
+    async def get_html(self, url):
+        # Connect to the Chrome browser
+        browser = await connect(browserURL='http://localhost:9222')
+
+        # Create a new background tab
+        page = await browser.newPage()
+
+        # Navigate the background tab to a desired URL
+        await page.goto(url)
+
+        # Retrieve the HTML content
+        self.html = await page.content()
+        #Log.log_debug(f"kca.html: {self.html}")
+
+        # Close the background tab
+        await page.close()
+
+        # Close the connection to the browser
+        await browser.disconnect()
+
+
     def reload_kc3_strategy_page(self, subpage = ""):
         """method to open/refresh the kc3 strategy page in chrome
 
@@ -738,40 +778,10 @@ class Kca(object):
             subpage (string): The name of sub page to open. (ex. flowchart)
         """
 
-        self.cdt_init(target="kc3")
+        asyncio.get_event_loop().run_until_complete(self.get_html("chrome-extension://hkgmldnainaglpjngpajnnjfhpdjkohh/pages/strategy/strategy.html"+subpage))
 
-        strategy_tab_id = None
-        for n, tab in enumerate(self.kc3_hook.tabs):
-            if tab['url'] == STRATEGY_ROOM_URL + subpage:
-                strategy_tab_id = tab['id']
-
-        if strategy_tab_id != None :
-            """There is currenty a kc3 strategy page opened"""
-            self.kc3_hook.Target.closeTarget(targetId=strategy_tab_id)
-            self.cdt_init(target="kc3")
-
-        if platform == "linux" or platform == "linux2":
-            strategy_tab_id = self.kc3_hook.Target.createTarget(
-                url=STRATEGY_ROOM_URL + subpage,
-                newWindow=False,
-                background=True,
-                forTab=True)[0]["result"]["targetId"]
-        elif platform == "darwin":
-            strategy_tab_id = self.kc3_hook.Target.createTarget(
-                url=STRATEGY_ROOM_URL + subpage,
-                newWindow=False,
-                background=True,
-                forTab=True)["result"]["targetId"]
-        elif platform == "win32":
-            strategy_tab_id = self.kc3_hook.Target.createTarget(
-                url=STRATEGY_ROOM_URL + subpage,
-                newWindow=False,
-                background=True,
-                forTab=True)[0]["result"]["targetId"]
-
-
-        #self.kc3_hook.connect_targetID(strategy_tab_id)
-        self.kc3_hook.wait_event("Page.loadEventFired", timeout=5)
+        #Wait for quest panel finish closing
+        self.find_kancolle()
 
         return
 
@@ -789,38 +799,25 @@ class Kca(object):
             dict with key of quest name, and value of remaining actions needed.
             return None if quest is not combat type.
         """
-        retry = 0
-        while retry < 5:
 
-            self.reload_kc3_strategy_page(subpage = "#flowchart")
-            self.kc3_hook.DOM.getDocument()
-            html_code=self.kc3_hook.DOM.getOuterHTML(nodeId=5)
+        self.reload_kc3_strategy_page(subpage = "#flowchart")
 
-            if html_code[0] == None:
-                retry += 1
-            else:
-                break
-        
-        if html_code[0] == None:
-            Log.log_error("Cannot prase quest data from KC3. Shutdown kcauto.")
-            exit(1)
-
-        if platform == "linux" or platform == "linux2":
-            dom = PyQuery(html_code[0]["result"]["outerHTML"], parser='html')
-        elif platform == "darwin":
-            dom = PyQuery(html_code["result"]["outerHTML"], parser='html')
-        elif platform == "win32":
-            dom = PyQuery(html_code[0]["result"]["outerHTML"], parser='html')
+        dom = PyQuery(self.html, parser='html')
+        #Log.log_debug(f"kac.dom:{dom}")
 
         quest_tree_dom = dom("ul#questBox_rootFlow.questTree")
+        #Log.log_debug(f"kac.quest_tree_dom:{quest_tree_dom}")
 
         i = 0
         while True:
 
             quest_name = quest_tree_dom("div.questInfo").eq(i)(".questIcon").text()
+            #Log.log_debug(f"quest_name:{quest_name}")
+            
             if quest_name == target_quest_name:
                 
                 action_raw = quest_tree_dom("div.questInfo").eq(i)(".questCount").attr('title')
+                Log.log_debug(f"action_raw:{action_raw}")
                 if action_raw == None:
                     return None
                 action_raw_line = action_raw.split('\n')

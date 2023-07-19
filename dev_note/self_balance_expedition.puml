@@ -1,0 +1,40 @@
+@startuml
+-> expedition_module: run exp logic
+activate expedition_module
+opt self balance mode == true && exp_for_fleet == empty
+    expedition_module -> expedition_module: get exp ranking 
+    expedition_module -> fleet_switch_module: assign ship for exp
+    deactivate expedition_module
+    activate fleet_switch_module
+    expedition_module <-- fleet_switch_module: 
+    deactivate fleet_switch_module 
+    activate expedition_module
+    opt assign failed 
+        expedition_module -> expedition_module: disable exp module
+        <-- expedition_module: failed 
+    end
+    deactivate fleet_switch_module 
+    activate expedition_module
+    expedition_module -> fleet_switch_module: switch exp fleet
+    deactivate expedition_module
+    activate fleet_switch_module
+    expedition_module <-- fleet_switch_module: 
+    deactivate fleet_switch_module 
+    activate expedition_module
+    opt switch failed
+        expedition_module -> expedition_module: disable for 15 mins
+        <-- expedition_module: failed
+    end
+
+end
+
+
+    expedition_module -> expedition_module: send exp
+
+<-- expedition_module: success
+    deactivate expedition_module
+
+@enduml
+
+
+
