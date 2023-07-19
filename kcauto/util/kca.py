@@ -697,7 +697,7 @@ class Kca(object):
             pad (tuple): padding parameter used to modify click coordinate
         """
 
-        sleep(0.3) #Prevent kcauto form clicking too fast
+        sleep(1) #Prevent kcauto form clicking too fast
 
         offset_x = randint(-pad[3], r.w + pad[1])
         offset_y = randint(-pad[0], r.h + pad[2])
@@ -714,7 +714,7 @@ class Kca(object):
         Args:
             r (Region, Match): Region/Match region to hover 
         """
-        sleep(0.3) #Prevent kcauto form clicking too fast
+        sleep(1) #Prevent kcauto form clicking too fast
 
         offset_x = randint(0, r.w)
         offset_y = randint(0, r.h)
