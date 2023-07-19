@@ -1,6 +1,6 @@
 # kcauto_custom
 
-### ***Lastest download link: [Windows](https://github.com/XVs32/kcauto_custom/releases/tag/Windows_v1.0.0_pre-release), [Linux](https://github.com/XVs32/kcauto_custom/releases/tag/Linux_v1.0.0_pre-release)***
+### ***Lastest download link: [Windows](https://github.com/XVs32/kcauto_custom/releases/tag/Windows_v2.0.0), [Linux](https://github.com/XVs32/kcauto_custom/releases/tag/Linux_v2.0.0)***
 
 **[kcauto_custom](https://github.com/XVs32/kcauto_custom)** is a linux customized version of an archived project [kcauto](https://github.com/perryhuynh/kcauto) that includes additional features and functionality.  
 In comparison with **kcauto**, **kcauto_custom** is less flexible while being more automatic for easy daily use.  
