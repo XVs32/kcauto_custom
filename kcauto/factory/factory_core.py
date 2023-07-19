@@ -136,7 +136,22 @@ class FactoryCore(object):
                 if kca_u.kca.exists(build_slot_stat[i],
                                     "factory|build_finish.png"):
                     kca_u.kca.r[build_slot[i]].click()
-                    kca_u.kca.wait('lower_right_corner', 'global|next_alt.png', 20)
+
+                    kca_u.kca.sleep(1)
+                    retry = 0
+                    while not kca_u.kca.exists(
+                        build_slot_stat[i], "factory|build_idle.png")\
+                        and retry < 10:
+                        kca_u.kca.r[build_slot_stat[i]].click()
+                        kca_u.kca.sleep(3)
+                        retry += 1
+
+                    if retry == 10:
+                        Log.log_error("Cannot receive ship, probably because the port is full")
+                        Log.log_error("Disable factory module")
+                        self.enabled = False
+                        return False
+                    
                     while kca_u.kca.exists('lower_right_corner', 'global|next_alt.png'):
                         kca_u.kca.sleep()
                         kca_u.kca.r['shipgirl'].click()
@@ -147,7 +162,7 @@ class FactoryCore(object):
             """place the order on a empty slot"""
             for j in range(1,3):
                 if kca_u.kca.exists(build_slot_stat[j],
-                                    "factory|build_ready.png"):
+                                    "factory|build_idle.png"):
                     """click build slot"""
                     retry = 0
                     while not kca_u.kca.exists(
