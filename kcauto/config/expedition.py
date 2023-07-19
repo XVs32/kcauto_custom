@@ -2,6 +2,7 @@ from config.config_base import ConfigBase
 import combat.combat_core as com
 from kca_enums.expeditions import ExpeditionEnum
 from kca_enums.fleet_modes import FleetModeEnum, CombinedFleetModeEnum
+from util.json_data import JsonData
 
 
 class ConfigExpedition(ConfigBase):
@@ -9,6 +10,7 @@ class ConfigExpedition(ConfigBase):
     _fleet_2 = []
     _fleet_3 = []
     _fleet_4 = []
+    _fleet_preset = None
 
     def __init__(self, config):
         super().__init__(config)
@@ -16,11 +18,12 @@ class ConfigExpedition(ConfigBase):
         all_expeditions = (
             config['expedition.fleet_2'] + config['expedition.fleet_3']
             + config['expedition.fleet_4'])
-        if not "auto" in all_expeditions and len(all_expeditions) != len(set(all_expeditions)):
+        if JsonData.has_str(all_expeditions) == False and len(all_expeditions) != len(set(all_expeditions)):
             raise ValueError("Conflicting expeditions assigned")
         self.fleet_2 = config['expedition.fleet_2']
         self.fleet_3 = config['expedition.fleet_3']
         self.fleet_4 = config['expedition.fleet_4']
+        self.fleet_preset = config['expedition.fleet_preset']
 
     @property
     def enabled(self):
@@ -109,20 +112,17 @@ class ConfigExpedition(ConfigBase):
             expedition_fleets.append(4)
         return expedition_fleets
     
-    def set_auto_expedition(self, fleet_id):
-        if com.combat.enabled:
-            if fleet_id == 2:
-                self.fleet_2 = [2]
-            elif fleet_id == 3:
-                self.fleet_3 = [3]
-            elif fleet_id == 4:
-                self.fleet_4 = [6]
+    @property
+    def fleet_preset(self):
+        return self._fleet_preset
+
+    @fleet_preset.setter
+    def fleet_preset(self, value):
+        if not value:
+            self._fleet_preset = None
         else:
-            if fleet_id == 2:
-                self.fleet_2 = [5]
-            elif fleet_id == 3:
-                self.fleet_3 = [37]
-            elif fleet_id == 4:
-                self.fleet_4 = [38]
+            if value != "auto":
+                raise ValueError("The only supported expedition preset is 'auto'/null at the moment.")
+            self._fleet_preset = value
 
             

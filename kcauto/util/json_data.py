@@ -79,3 +79,18 @@ class JsonData(ABC):
             object: deserialized object.
         """
         return json.loads(json_str)
+
+    @classmethod
+    def has_str(cls, lst):
+        """Method to check if a list contains any string.
+
+        Args:
+            lst: list to check
+
+        Returns:
+            bool
+        """
+        for item in lst:
+            if isinstance(item, str):
+                return True
+        return False
