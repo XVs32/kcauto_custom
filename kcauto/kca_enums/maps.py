@@ -89,8 +89,8 @@ class MapEnum(EnumBase):
     W4_3_By4 = "4-3-By4"
     W4_4_By4 = "4-4-By4"
 
-    W7_2_2_By5 = "7-2-2-By5"
-    W7_3_2_By5 = "7-3-2-By5"
+    W7_2_M_By5 = "7-2-M-By5"
+    W7_3_P_By5 = "7-3-P-By5"
     W4_2_By5 = "4-2-By5"
 
     W1_2_By6 = "1-2-By6"
@@ -118,7 +118,7 @@ class MapEnum(EnumBase):
     W3_1_By11 = "3-1-By11"
     W3_3_By11 = "3-3-By11"
     W4_3_By11 = "4-3-By11"
-    W7_3_2_By11 = "7-3-2-By11"
+    W7_3_P_By11 = "7-3-P-By11"
 
     W1_5_By12 = "1-5-By12"
     W2_3_By12 = "2-3-By12"
