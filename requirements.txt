@@ -13,7 +13,7 @@ pynput==1.7.6
 pyquery==2.0.0
 PySimpleGUI==4.60.4
 pyvisauto==1.0.3
-requests==2.18.4
+requests
 lxml==4.2.5
 flake8==3.7.8
 pyppeteer==1.0.2
