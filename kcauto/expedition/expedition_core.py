@@ -53,65 +53,76 @@ class ExpeditionCore(CoreBase):
         return item["score"]
 
     def get_expedition_ranking(self):
+        
+        if  ExpeditionEnum.AUTO in cfg.config.expedition.all_expeditions\
+            or ExpeditionEnum.ACTIVE in cfg.config.expedition.all_expeditions\
+            or ExpeditionEnum.PASSIVE in cfg.config.expedition.all_expeditions\
+            or ExpeditionEnum.OVERNIGHT in cfg.config.expedition.all_expeditions:
 
-        min_time = 0x7fffffff
-        max_time = 0x00000000
+            min_time = 0x7fffffff
+            max_time = 0x00000000
 
-        if ExpeditionEnum.AUTO in cfg.config.expedition.all_expeditions:
-            if com.combat.enabled == False:
-                #Passive mode
-                min_time = 0
-                max_time = PASSIVE_TIME_INTERVAL
-            else:
+            if ExpeditionEnum.AUTO in cfg.config.expedition.all_expeditions:
+                if com.combat.enabled == False:
+                    #Passive mode
+                    min_time = 0
+                    max_time = PASSIVE_TIME_INTERVAL
+                else:
+                    #Active mode
+                    min_time = 0
+                    max_time = 0x7fffffff
+            elif ExpeditionEnum.ACTIVE in cfg.config.expedition.all_expeditions:
                 #Active mode
                 min_time = 0
                 max_time = 0x7fffffff
-        elif ExpeditionEnum.ACTIVE in cfg.config.expedition.all_expeditions:
-            #Active mode
-            min_time = 0
-            max_time = 0x7fffffff
-        elif ExpeditionEnum.PASSIVE in cfg.config.expedition.all_expeditions:
-            #Passive mode
-            min_time = 0
-            max_time = PASSIVE_TIME_INTERVAL
-        elif ExpeditionEnum.OVERNIGHT in cfg.config.expedition.all_expeditions:
-            #Active mode
-            min_time = 0
-            max_time = OVERNIGHT_TIME_INTERVAL
-
-
-
-        fuel_weight = max(MAX_RESOURCE - sts.stats.rsc.fuel, 0)
-        ammo_weight = max(MAX_RESOURCE - sts.stats.rsc.ammo, 0)
-        steel_weight = max(MAX_RESOURCE - sts.stats.rsc.steel, 0)
-        bauxite_weight = max(MAX_RESOURCE - sts.stats.rsc.bauxite, 0)
-
-        self.exp_rank = []
-
-        for exp in self.exp_data:
-
-            if exp["time"] > max_time or exp["time"] < min_time:
-                continue
-
-            id = exp["id"]
-
-            score =(exp["fuel"]  * fuel_weight +\
-                    exp["ammo"]  * ammo_weight +\
-                    exp["steel"] * steel_weight +\
-                    exp["baux"]  * bauxite_weight)
-            
-            if (ExpeditionEnum.AUTO in cfg.config.expedition.all_expeditions\
-                and com.combat.enabled == True)\
-                or ExpeditionEnum.ACTIVE in cfg.config.expedition.all_expeditions:
-                #Active mode
-                score /= exp["time"]
-            #else:
+            elif ExpeditionEnum.PASSIVE in cfg.config.expedition.all_expeditions:
                 #Passive mode
-                #score /= PASSIVE_TIME_INTERVAL #Does not affect ranking
-            
-            self.exp_rank.append({"id":id, "score":score})
+                min_time = 0
+                max_time = PASSIVE_TIME_INTERVAL
+            elif ExpeditionEnum.OVERNIGHT in cfg.config.expedition.all_expeditions:
+                #Active mode
+                min_time = 0
+                max_time = OVERNIGHT_TIME_INTERVAL
 
-        self.exp_rank.sort(key=self.cmp, reverse=True)
+
+
+            fuel_weight = max(MAX_RESOURCE - sts.stats.rsc.fuel, 0)
+            ammo_weight = max(MAX_RESOURCE - sts.stats.rsc.ammo, 0)
+            steel_weight = max(MAX_RESOURCE - sts.stats.rsc.steel, 0)
+            bauxite_weight = max(MAX_RESOURCE - sts.stats.rsc.bauxite, 0)
+
+            self.exp_rank = []
+
+            for exp in self.exp_data:
+
+                if exp["time"] > max_time or exp["time"] < min_time:
+                    continue
+
+                id = exp["id"]
+
+                score =(exp["fuel"]  * fuel_weight +\
+                        exp["ammo"]  * ammo_weight +\
+                        exp["steel"] * steel_weight +\
+                        exp["baux"]  * bauxite_weight)
+                
+                if (ExpeditionEnum.AUTO in cfg.config.expedition.all_expeditions\
+                    and com.combat.enabled == True)\
+                    or ExpeditionEnum.ACTIVE in cfg.config.expedition.all_expeditions:
+                    #Active mode
+                    score /= exp["time"]
+                #else:
+                    #Passive mode
+                    #score /= PASSIVE_TIME_INTERVAL #Does not affect ranking
+                
+                self.exp_rank.append({"id":id, "score":score})
+
+            self.exp_rank.sort(key=self.cmp, reverse=True)
+
+        else:
+            self.exp_rank = []
+
+            for id in cfg.config.expedition.all_expeditions:
+                self.exp_rank.append({"id":int(id.expedition), "score":0})
 
     @property
     def available_expeditions(self):

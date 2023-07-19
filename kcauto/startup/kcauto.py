@@ -87,17 +87,15 @@ class Kcauto(object):
 
         if exp.expedition.fleets_are_ready:
 
-            if (ExpeditionEnum.AUTO in cfg.config.expedition.all_expeditions\
-                or ExpeditionEnum.ACTIVE in cfg.config.expedition.all_expeditions\
-                or ExpeditionEnum.PASSIVE in cfg.config.expedition.all_expeditions\
-                or ExpeditionEnum.OVERNIGHT in cfg.config.expedition.all_expeditions)\
-                and exp.expedition.exp_for_fleet == []:
+            if exp.expedition.exp_for_fleet == []:
+
                 exp.expedition.get_expedition_ranking()
 
-                if not fsw.fleet_switcher.assign_exp_ship():
-                    exp.expedition.enabled = False
-                    Log.log_error(f"Failed to assign ships for self balance expedition, disable expedition module.")
-                    return False
+                if cfg.config.expedition.fleet_preset == "auto":
+                    if not fsw.fleet_switcher.assign_exp_ship():
+                        exp.expedition.enabled = False
+                        Log.log_error(f"Failed to assign ships for self balance expedition, disable expedition module.")
+                        return False
 
             if exp.expedition.is_fleetswitch_needed():
                 if self._run_fleetswitch_logic('expedition') == -2:
