@@ -106,7 +106,7 @@ class FleetSwitcherCore(object):
         self.fleet_ship_id["exp"] = {}
         exp.expedition.exp_for_fleet = [None, None, None, None, None]
         fleet_id = 1
-        fleet_id = self._get_next_auto_fleet_id(fleet_id)
+        fleet_id = self._get_next_exp_fleet_id(fleet_id)
         for exp_rank in exp.expedition.exp_rank:
 
             ship_pool_bak = copy.deepcopy(ship_pool)
@@ -129,7 +129,7 @@ class FleetSwitcherCore(object):
                 self.fleet_ship_id["exp"][fleet_id] = fleetShipId
                 exp.expedition.exp_for_fleet[fleet_id] = exp_rank["id"]
 
-                fleet_id = self._get_next_auto_fleet_id(fleet_id)
+                fleet_id = self._get_next_exp_fleet_id(fleet_id)
 
             if fleet_id > 4:
                 #assign for all fleets success
@@ -267,7 +267,7 @@ class FleetSwitcherCore(object):
 
         return ship_id, ship_pool
 
-    def _get_next_auto_fleet_id(self, fleet_id):
+    def _get_next_exp_fleet_id(self, fleet_id):
         while 1:
             fleet_id+=1
             if fleet_id == 2:
@@ -279,8 +279,7 @@ class FleetSwitcherCore(object):
             else:
                 break
 
-            if any(s in cur_fleet\
-                for s in (ExpeditionEnum.AUTO, ExpeditionEnum.ACTIVE, ExpeditionEnum.PASSIVE, ExpeditionEnum.OVERNIGHT)):
+            if cur_fleet != []:
                 break
         return fleet_id
 
@@ -341,7 +340,7 @@ class FleetSwitcherCore(object):
                 switch_flag = False
 
                 fleet_id = 1
-                fleet_id = self._get_next_auto_fleet_id(fleet_id)
+                fleet_id = self._get_next_exp_fleet_id(fleet_id)
                 while fleet_id < 5:
                     if flt.fleets.fleets[fleet_id].ship_ids == \
                         self.fleet_ship_id["exp"][fleet_id]:
@@ -349,7 +348,7 @@ class FleetSwitcherCore(object):
                     else:
                         Log.log_msg(f"attempt to load fleet {fleet_id}'s preset.")
                         switch_flag = True
-                    fleet_id = self._get_next_auto_fleet_id(fleet_id)
+                    fleet_id = self._get_next_exp_fleet_id(fleet_id)
                 
                 return switch_flag
 
@@ -397,10 +396,7 @@ class FleetSwitcherCore(object):
             elif context == "expedition":
                 Log.log_msg(f"Switching to Exp Preset.")
 
-                fleet_id = 1
-
-                while 1: 
-                    fleet_id = self._get_next_auto_fleet_id(fleet_id)
+                for fleet_id in range(2,5):
 
                     if fleet_id > 4:
                         break
