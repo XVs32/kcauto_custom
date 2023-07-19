@@ -112,6 +112,8 @@ class Recovery(object):
             elif kca_u.kca.exists(screen, 'global|next_alt.png', cached=True):
                 region = kca_u.kca.find(
                     screen, 'global|next_alt.png', cached=True)
+            region.x -= 100
+            region.y -= 100
             region.click()
         if kca_u.kca.exists(screen, 'nav|home_menu_sortie.png'):
             return True

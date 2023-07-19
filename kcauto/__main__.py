@@ -7,7 +7,7 @@ if __name__ == '__main__':
     """Main entry point for kcauto script. Decides whether or not to launch in
     CLI, GUI, or debug mode.
     """
-
+    Log.init()
     args = arg.args.parse_args()
 
     if args.debug:

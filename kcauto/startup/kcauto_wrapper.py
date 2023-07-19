@@ -18,7 +18,7 @@ def kcauto_main():
     while active_loop:
         try:
             # startup methods
-            _.kcauto.find_dmm()
+            _.kcauto.find_browser()
             _.kcauto.start_kancolle()
             _.kcauto.find_kancolle()
 
