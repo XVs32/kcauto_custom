@@ -73,7 +73,7 @@ For developer(Those who know what they are doing):
 ### [Beginner user guide](https://github.com/XVs32/kcauto_custom/wiki/Ch2.1:-Beginner-user-guide)  
 ### [Gamer user guide](https://github.com/XVs32/kcauto_custom/wiki/Ch2.2:-Gamer-user-guide)  
 ---
-*You need a github account for the following*
+*You will need a github account for the following*
 ### [Wishing pool](https://github.com/XVs32/kcauto_custom/discussions/categories/ideas): Wish/Idea for new functions
 ### [Bug report](https://github.com/XVs32/kcauto_custom/issues): Bro, something goes wrong
 ### [Q&A](https://github.com/XVs32/kcauto_custom/discussions/categories/q-a): How to use this/that?
