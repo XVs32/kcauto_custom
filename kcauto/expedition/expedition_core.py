@@ -1,7 +1,7 @@
 from pyvisauto import Region
 from random import choice
-import time
 
+from constants import MAX_RESOURCE, PASSIVE_TIME_INTERVAL, OVERNIGHT_TIME_INTERVAL
 import api.api_core as api
 import combat.combat_core as com
 import config.config_core as cfg
@@ -9,11 +9,12 @@ import fleet.fleet_core as flt
 import resupply.resupply_core as res
 import stats.stats_core as sts
 import util.kca as kca_u
+from util.timer import Timer
 from kca_enums.expeditions import ExpeditionEnum
 from kca_enums.kcsapi_paths import KCSAPIEnum
 from util.core_base import CoreBase
 from util.logger import Log
-
+from util.json_data import JsonData
 
 class ExpeditionCore(CoreBase):
     NUM_VISIBLE_EXPEDITONS = 8
@@ -25,12 +26,103 @@ class ExpeditionCore(CoreBase):
     module_name = 'expedition'
     module_display_name = 'Expedition'
     available_expeditions_per_world = {}
+    exp_data = None
+    exp_rank = []
+    exp_for_fleet = []
+    TYPE_PRIORITY = [""]
+    timer = None
 
-    def set_timer(self):
-        self.disable_timer = time.time()
+    def __init__(self):
+        """
+            Method to init expedition module
+        """
+        super().__init__()
+        self.timer = Timer()
+        self.exp_data = JsonData.load_json('data|expedition|expedition.json')
 
-    def time_up(self):
-        return time.time() > self.disable_timer + (3 * 60 * 60)
+    def is_fleetswitch_needed(self):
+        flag = False
+        if cfg.config.expedition.fleet_preset == "auto":
+            flag = True
+        return flag
+        
+        
+
+   # With a normal function
+    def cmp(self, item):
+        return item["score"]
+
+    def get_expedition_ranking(self):
+        
+        if  ExpeditionEnum.AUTO in cfg.config.expedition.all_expeditions\
+            or ExpeditionEnum.ACTIVE in cfg.config.expedition.all_expeditions\
+            or ExpeditionEnum.PASSIVE in cfg.config.expedition.all_expeditions\
+            or ExpeditionEnum.OVERNIGHT in cfg.config.expedition.all_expeditions:
+
+            min_time = 0x7fffffff
+            max_time = 0x00000000
+
+            if ExpeditionEnum.AUTO in cfg.config.expedition.all_expeditions:
+                if com.combat.enabled == False:
+                    #Passive mode
+                    min_time = 0
+                    max_time = PASSIVE_TIME_INTERVAL
+                else:
+                    #Active mode
+                    min_time = 0
+                    max_time = 0x7fffffff
+            elif ExpeditionEnum.ACTIVE in cfg.config.expedition.all_expeditions:
+                #Active mode
+                min_time = 0
+                max_time = 0x7fffffff
+            elif ExpeditionEnum.PASSIVE in cfg.config.expedition.all_expeditions:
+                #Passive mode
+                min_time = 0
+                max_time = PASSIVE_TIME_INTERVAL
+            elif ExpeditionEnum.OVERNIGHT in cfg.config.expedition.all_expeditions:
+                #Active mode
+                min_time = 0
+                max_time = OVERNIGHT_TIME_INTERVAL
+
+
+
+            fuel_weight = max(MAX_RESOURCE - sts.stats.rsc.fuel, 0)
+            ammo_weight = max(MAX_RESOURCE - sts.stats.rsc.ammo, 0)
+            steel_weight = max(MAX_RESOURCE - sts.stats.rsc.steel, 0)
+            bauxite_weight = max(MAX_RESOURCE - sts.stats.rsc.bauxite, 0)
+
+            self.exp_rank = []
+
+            for exp in self.exp_data:
+
+                if exp["time"] > max_time or exp["time"] < min_time:
+                    continue
+
+                id = exp["id"]
+
+                score =(exp["fuel"]  * fuel_weight +\
+                        exp["ammo"]  * ammo_weight +\
+                        exp["steel"] * steel_weight +\
+                        exp["baux"]  * bauxite_weight)
+                
+                if (ExpeditionEnum.AUTO in cfg.config.expedition.all_expeditions\
+                    and com.combat.enabled == True)\
+                    or ExpeditionEnum.ACTIVE in cfg.config.expedition.all_expeditions:
+                    #Active mode
+                    score /= exp["time"]
+                #else:
+                    #Passive mode
+                    #score /= PASSIVE_TIME_INTERVAL #Does not affect ranking
+                
+                self.exp_rank.append({"id":id, "score":score})
+
+            self.exp_rank.sort(key=self.cmp, reverse=True)
+
+        else:
+            self.exp_rank = []
+
+            for id in cfg.config.expedition.all_expeditions:
+                self.exp_rank.append({"id":int(id.expedition), "score":0})
 
     @property
     def available_expeditions(self):
@@ -59,8 +151,7 @@ class ExpeditionCore(CoreBase):
         Log.log_debug("Start receive expedetion")
         
         received_expeditions = False
-        while kca_u.kca.exists(
-                'expedition_flag', 'expedition|expedition_flag.png'):
+        while kca_u.kca.find_expedition_flag():
             Log.log_msg("Expedition received.")
             kca_u.kca.r['shipgirl'].click()
             api.api.update_from_api({KCSAPIEnum.PORT})
@@ -88,6 +179,7 @@ class ExpeditionCore(CoreBase):
             Log.log_success(f"Fleets {display_text} have returned!")
             return True
         return False
+
 
     @property
     def fleets_are_ready(self):
@@ -125,12 +217,18 @@ class ExpeditionCore(CoreBase):
         return fleets_to_send
 
     def send_expeditions(self):
+        #@todo: support validate when in auto mode
         self._validate_expeditions()
 
         for fleet in self.fleets_to_send:
-            expedition = choice(
-                cfg.config.expedition.expeditions_for_fleet(
-                    fleet.fleet_id))
+            
+            if any(s in cfg.config.expedition.expeditions_for_fleet(fleet.fleet_id)\
+                for s in (ExpeditionEnum.AUTO, ExpeditionEnum.ACTIVE, ExpeditionEnum.PASSIVE, ExpeditionEnum.OVERNIGHT)):
+                expedition = ExpeditionEnum(self.exp_for_fleet[fleet.fleet_id])
+            else:
+                expedition = choice(
+                    cfg.config.expedition.expeditions_for_fleet(
+                        fleet.fleet_id))
             Log.log_msg(
                 f"Sending fleet {fleet.fleet_id} to expedition "
                 f"{expedition.expedition}.")
@@ -147,11 +245,17 @@ class ExpeditionCore(CoreBase):
     def _validate_expeditions(self):
         if len(self.available_expeditions) == 0:
             raise ValueError("No list of available expeditions found.")
-        for expedition in cfg.config.expedition.all_expeditions:
-            if expedition not in self.available_expeditions:
-                raise ValueError(
-                    f"Specified expedition {expedition.expedition} is not "
-                    "unlocked.")
+        
+        all_expedtions = []
+        if not any(s in cfg.config.expedition.all_expeditions\
+            for s in (ExpeditionEnum.AUTO, ExpeditionEnum.ACTIVE, ExpeditionEnum.PASSIVE, ExpeditionEnum.OVERNIGHT)):
+            all_expedtions = cfg.config.expedition.all_expeditions
+
+            for expedition in all_expedtions:
+                if expedition not in self.available_expeditions:
+                    raise ValueError(
+                        f"Specified expedition {expedition.expedition} is not "
+                        "unlocked.")
 
     def _select_world(self, expedition):
         kca_u.kca.sleep()
