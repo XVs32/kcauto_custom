@@ -697,7 +697,7 @@ class Kca(object):
             pad (tuple): padding parameter used to modify click coordinate
         """
 
-        sleep(1) #Prevent kcauto form clicking too fast
+        sleep(0.5) #Prevent kcauto form clicking too fast
 
         offset_x = randint(-pad[3], r.w + pad[1])
         offset_y = randint(-pad[0], r.h + pad[2])
