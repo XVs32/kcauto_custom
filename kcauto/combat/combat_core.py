@@ -391,7 +391,7 @@ class CombatCore(CoreBase):
                 Log.log_debug("Sortie completed on resource node.")
                 self._click_until_port()
 
-            if kca_u.kca.exists('left', 'nav|home_menu_sortie.png'):
+            if kca_u.kca.exists('right', 'nav|home_menu.png'):
                 api.api.update_from_api(
                     {KCSAPIEnum.PORT}, need_all=False, timeout=2)
                 Log.log_debug("Sortie ended after resource or flagship end.")

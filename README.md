@@ -1,6 +1,6 @@
 # kcauto_custom
 
-### ***Lastest download link: [Windows](https://github.com/XVs32/kcauto_custom/releases/tag/Windows_v1.0.0_pre-release), [Linux](https://github.com/XVs32/kcauto_custom/releases/tag/Linux_v1.0.0_pre-release)***
+### ***Lastest download link(2023/7/20): [Windows](https://github.com/XVs32/kcauto_custom/releases/tag/Windows_v2.0.0), [Linux](https://github.com/XVs32/kcauto_custom/releases/tag/Linux_v2.0.0)***
 
 **[kcauto_custom](https://github.com/XVs32/kcauto_custom)** is a linux customized version of an archived project [kcauto](https://github.com/perryhuynh/kcauto) that includes additional features and functionality.  
 In comparison with **kcauto**, **kcauto_custom** is less flexible while being more automatic for easy daily use.  
@@ -42,7 +42,8 @@ This tool is designed to help users automate repetitive tasks such as Expedition
 * Akashi repair Module &mdash; Repair ships with akashi
 * Factory Module &mdash; Runs daily develop and ship building 
 * More fleet presets &mdash; Unlimited fleet presets that you can define in a config file
-* Sortie mdoe: Auto &mdash; Auto finish daily/weekly/monthly quest (KC3 is needed)
+* Sortie mdoe: Auto &mdash; Automatically complete daily/weekly/monthly quest (KC3 is needed)
+* Expedition mode: Auto &mdash; Self balance expedition with auto ship switch
 * Support for 7-4, events
 * Bug fix(Fleet Switcher Module, interaction_mode, quest handling etc.)
 
@@ -72,7 +73,7 @@ For developer(Those who know what they are doing):
 ### [Beginner user guide](https://github.com/XVs32/kcauto_custom/wiki/Ch2.1:-Beginner-user-guide)  
 ### [Gamer user guide](https://github.com/XVs32/kcauto_custom/wiki/Ch2.2:-Gamer-user-guide)  
 ---
-*You need a github account for the following*
+*You will need a github account for the following*
 ### [Wishing pool](https://github.com/XVs32/kcauto_custom/discussions/categories/ideas): Wish/Idea for new functions
 ### [Bug report](https://github.com/XVs32/kcauto_custom/issues): Bro, something goes wrong
 ### [Q&A](https://github.com/XVs32/kcauto_custom/discussions/categories/q-a): How to use this/that?

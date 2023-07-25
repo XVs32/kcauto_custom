@@ -237,6 +237,18 @@ class Kca(object):
 
         return True
 
+    def find_expedition_flag(self):
+        flag = True
+
+        # look for last-seen UI, if set
+        if self.last_ui:
+            if not self.exists('upper_right', f'expedition|expedition_flag_{self.last_ui}.png'):
+                flag = False 
+        else:
+            flag = False 
+
+        return flag
+
     def _update_regions(self):
         """Method that generates or updates all pre-defined regions
         accordingly based on the game's current x and y position.
@@ -685,7 +697,7 @@ class Kca(object):
             pad (tuple): padding parameter used to modify click coordinate
         """
 
-        sleep(0.3) #Prevent kcauto form clicking too fast
+        sleep(0.5) #Prevent kcauto form clicking too fast
 
         offset_x = randint(-pad[3], r.w + pad[1])
         offset_y = randint(-pad[0], r.h + pad[2])
@@ -702,7 +714,7 @@ class Kca(object):
         Args:
             r (Region, Match): Region/Match region to hover 
         """
-        sleep(0.3) #Prevent kcauto form clicking too fast
+        sleep(1) #Prevent kcauto form clicking too fast
 
         offset_x = randint(0, r.w)
         offset_y = randint(0, r.h)

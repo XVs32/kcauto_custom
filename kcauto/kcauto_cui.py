@@ -46,17 +46,17 @@ def init():
     # Define the sub-panels
     top = 0
     left = 0
-    next_top = 1 * curses.LINES // 6 
+    next_top = 2 * curses.LINES // 7 
     next_left = curses.COLS // 4
     expedition_panel = curses.newwin(next_top - top, next_left - left, top, left)
     top = next_top 
     left = 0
-    next_top = (1 + 2) * curses.LINES // 6
+    next_top = (2 + 2) * curses.LINES // 7
     next_left = curses.COLS // 4
     sortie_panel = curses.newwin(next_top - top, next_left - left, top, left)
     top = next_top 
     left = 0 
-    next_top = (1 + 2 + 2) * curses.LINES // 6
+    next_top = (2 + 2 + 2) * curses.LINES // 7
     next_left = curses.COLS // 4
     scheduler_panel = curses.newwin(next_top - top, next_left - left, top, left)
     top = next_top 
@@ -148,8 +148,11 @@ def refresh_panel():
 
     for panel in panels:
         if panel == EXP:
-            preset = exp.get_current_preset(config)
-            util.print_string(panels[panel], 0, 0, preset)
+            preset = exp.get_current_exp_set(config)
+            util.print_string(panels[panel], 0, -1, preset)
+
+            exp_fleet = exp.get_current_fleet(config)
+            util.print_string(panels[panel], 0, 0, exp_fleet)
 
         elif panel == SORTIE:
             
@@ -209,9 +212,9 @@ def open_pop_up(thread, stdscr, active_panel):
 
     if active_panel == EXP :
 
-        preset = exp.get_current_preset(config)
-        preset = exp.pop_up_menu(stdscr, popup_win, preset)
-        exp.set_config(config, preset)
+        expset = exp.get_current_exp_set(config)
+        expset, fleet_mode = exp.pop_up_menu(stdscr, popup_win, expset)
+        exp.set_config(config, expset, fleet_mode)
     
     elif active_panel == PVP :
 
