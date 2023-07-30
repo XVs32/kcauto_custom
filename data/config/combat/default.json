@@ -1,0 +1,23 @@
+{
+    "combat.check_fatigue": true,
+    "combat.check_lbas_fatigue": true,
+    "combat.clear_stop": false,
+
+    "combat.fleet_mode": "standard",
+
+    "combat.lbas_group_1_nodes": [],
+    "combat.lbas_group_2_nodes": [],
+    "combat.lbas_group_3_nodes": [],
+    "combat.lbas_groups": [],
+    "combat.node_formations": [],
+    "combat.node_night_battles": [],
+    "combat.node_selects": [],
+    "combat.port_check": false,
+    "combat.push_nodes": [],
+    "combat.repair_limit": 3,
+    "combat.repair_timelimit_hours": 0,
+    "combat.repair_timelimit_minutes": 0,
+    "combat.reserve_repair_dock": true,
+    "combat.retreat_limit": 4,
+    "combat.retreat_points": []
+}
