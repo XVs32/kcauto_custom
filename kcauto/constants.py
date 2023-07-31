@@ -41,3 +41,6 @@ WCTF_DB_URL = (
 WCTF_SUFFIX_URL = (
     'https://raw.githubusercontent.com/TeamFleet/WhoCallsTheFleet/master'
     '/app-db/ship_namesuffix.nedb')
+
+# config_path
+COMBAT_CONFIG = 'data/config/combat/'

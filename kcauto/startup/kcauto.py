@@ -1,3 +1,4 @@
+import os
 import combat.combat_core as com
 import factory.factory_core as fty
 import config.config_core as cfg
@@ -17,6 +18,7 @@ from kca_enums.expeditions import ExpeditionEnum
 from util.logger import Log
 from kca_enums.maps import MapEnum
 
+from constants import COMBAT_CONFIG
 
 class Kcauto(object):
     """Primary kcauto class.
@@ -227,6 +229,24 @@ class Kcauto(object):
 
         #update map_data for combat module
         com.combat.load_map_data(cfg.config.combat.sortie_map)
+
+        if cfg.config.combat.override == False:
+            #load user config
+            config_json = cfg.config.load_json(cfg.config.cfg_path)
+            cfg.config.combat.config_override(config_json)
+
+            #load default config
+            default_json = cfg.config.load_json(COMBAT_CONFIG + "default.json")
+            cfg.config.combat.config_override(default_json)
+
+            #load default config
+            sortie_queue = com.combat.get_sortie_queue()
+
+            if os.path.isfile(COMBAT_CONFIG + sortie_queue[0] + ".json"):
+                default_json = cfg.config.load_json(COMBAT_CONFIG + sortie_queue[0] + ".json")
+                cfg.config.combat.config_override(default_json)
+            else:
+                Log.log_warn(f"{sortie_queue[0]} combat config not found, use default combat config instead.")
 
         #apply for combat queue, assume map_data is up-to-date
         self.run_quest_logic('combat', fast_check = not was_sortie_queue_empty, force= was_sortie_queue_empty)
