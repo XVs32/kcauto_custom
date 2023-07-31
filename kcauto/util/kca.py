@@ -297,6 +297,7 @@ class Kca(object):
             'lbas_mode_switch', x + 1135, y + 200, 55, 80)
         self._create_or_shift_region('7th_next', x + 386, y + 400, 27, 27)
         # combat-related regions
+        self._create_or_shift_region('c_world', x + 180, y + 635, 650, 65)
         self._create_or_shift_region(
             'formation_line_ahead', x + 596, y + 256, 250, 44)
         self._create_or_shift_region(
