@@ -8,6 +8,7 @@ from kca_enums.lbas_groups import LBASGroupEnum
 from kca_enums.maps import MapEnum
 from kca_enums.nodes import NodeEnum, NamedNodeEnum
 from util.logger import Log
+import combat.lbas_core as lbas
 
 
 class ConfigCombat(ConfigBase):
@@ -88,6 +89,12 @@ class ConfigCombat(ConfigBase):
             self.repair_timelimit_minutes = config['combat.repair_timelimit_minutes']
         if "combat.lbas_groups" in config:
             self.lbas_groups = config['combat.lbas_groups']
+
+            lbas.lbas.enabled = (
+                True
+                if len(self.lbas_groups) > 0
+                else False)
+
         if "combat.lbas_group_1_nodes" in config:
             self.lbas_group_1_nodes = config['combat.lbas_group_1_nodes']
         if "combat.lbas_group_2_nodes" in config:
