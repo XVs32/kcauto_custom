@@ -390,6 +390,12 @@ class CombatCore(CoreBase):
             elif kca_u.kca.exists('lower_right_corner', 'global|next_alt.png'):
                 Log.log_debug("Sortie completed on resource node.")
                 self._click_until_port()
+            else:
+                Log.log_debug("Nothing happened")
+                if self._resolve_continue_sortie_prompt():
+                    api.api.update_from_api({KCSAPIEnum.SORTIE_SHIPDECK})
+                else:
+                    kca_u.kca.wait('left', 'nav|home_menu_sortie.png')
 
             if kca_u.kca.exists('right', 'nav|home_menu.png'):
                 api.api.update_from_api(
