@@ -126,7 +126,8 @@ class CombatCore(CoreBase):
                     'cleared': map_data.get('api_cleared', 0) == 1,
                     'lbas_bases': map_data.get('api_air_base_decks', []),
                     'difficulty': EventDifficultyEnum(
-                        map_data['api_eventmap']['api_selected_rank'])
+                        map_data['api_eventmap']['api_selected_rank']),
+                    'gauge_num': map_data['api_gauge_num']
                 }
 
     def should_and_able_to_sortie(self, ignore_supply = False):
