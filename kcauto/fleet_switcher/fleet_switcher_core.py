@@ -523,6 +523,7 @@ class FleetSwitcherCore(object):
             quest_name_len = len(quest_name) 
             if quest_name_len > 1:
                 return self.fleet_ship_id["combat"][key[:-quest_name_len - 1]]
+            
         raise ValueError("Unexpected preset id:" + str(key))
 
 
