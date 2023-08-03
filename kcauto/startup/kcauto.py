@@ -211,9 +211,9 @@ class Kcauto(object):
             if cfg.config.combat.sortie_map_read_only == MapEnum.auto_map_selete:
                 self.run_quest_logic('auto_sortie', fast_check=False, back_to_home=False, force= True) #quest module will call set_sortie_queue
             else:
-                Log.log_debug(f"Manual sortie mode:{cfg.config.combat.sortie_map.value}")
+                Log.log_debug(f"Manual sortie mode:{cfg.config.combat.sortie_map_read_only.value}")
 
-                sortie_queue = [cfg.config.combat.sortie_map.value]
+                sortie_queue = [cfg.config.combat.sortie_map_read_only.value]
                 com.combat.set_sortie_queue(sortie_queue)
         else:
             Log.log_msg(f"Sortie queue:{com.combat.get_sortie_queue()}")
@@ -226,6 +226,16 @@ class Kcauto(object):
         else:
             #update current sortie_map
             cfg.config.combat.sortie_map = com.combat.get_sortie_queue()[0]
+
+            """Check if multi stage map requested"""
+            MULTI_STAGE_MAPS = {"7-2":["G", "M"], "7-3":["E", "M"], "7-5":["K", "M", "Q", "T"]}
+            if cfg.config.combat.sortie_map.value in MULTI_STAGE_MAPS:
+                nav.navigate.to('combat')
+                Log.log_error(f"com.combat.sortie_map_stage: {com.combat.sortie_map_stage}")
+                stage = MULTI_STAGE_MAPS[cfg.config.combat.sortie_map.value][com.combat.sortie_map_stage - 1]
+                Log.log_error(f"stage: {stage}")
+
+                cfg.config.combat.sortie_map = cfg.config.combat.sortie_map.value + "-" + stage
 
         #update map_data for combat module
         com.combat.load_map_data(cfg.config.combat.sortie_map)
