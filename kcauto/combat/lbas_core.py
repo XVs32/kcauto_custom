@@ -31,6 +31,8 @@ class LBASCore(object):
                 continue
             elif sortie_world == '6' and group['api_area_id'] != 6:
                 continue
+            elif sortie_world == '7' and group['api_area_id'] != 7:
+                continue
 
             group_id = group['api_rid']
             group_instance = self.groups[group_id]

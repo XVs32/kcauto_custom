@@ -115,6 +115,13 @@ class CombatCore(CoreBase):
                     'enum': map_enum,
                     'cleared': map_data['api_cleared'] == 1
                 }
+
+                MULTI_STAGE_MAP_ID = [72, 73, 75]
+                if api_id in MULTI_STAGE_MAP_ID:
+                    self.available_maps[map_enum.world_and_map] = {
+                    'gauge_num': map_data['api_gauge_num']
+                    }
+
             else:
                 if event_map_id_start is None:
                     event_map_id_start = api_id
@@ -196,6 +203,10 @@ class CombatCore(CoreBase):
         if self.available_maps[cfg.config.combat.sortie_map.world_and_map]['cleared']:
             return True
         return False
+
+    @property
+    def sortie_map_stage(self):
+        return self.available_maps[cfg.config.combat.sortie_map.world_and_map]['gauge_num']
 
     def load_map_data(self, sortie_map):
         Log.log_debug("Debug:load_map_data called")
