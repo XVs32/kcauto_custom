@@ -216,7 +216,7 @@ class FleetSwitcherCore(object):
                     offset += 1
             
             if req_dc > 0 or req_dc_carrier > 0:
-                for i in range(1, req_dc, 1):
+                for i in range(1, min(req_dc,5), 1):
                     for ship_type in dc_temp_list[i]:
                         matching_keys.insert(0, ship_type)
 
