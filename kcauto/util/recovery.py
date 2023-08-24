@@ -106,7 +106,8 @@ class Recovery(object):
         """
         while (
                 kca_u.kca.exists(screen, 'global|next.png')
-                or kca_u.kca.exists(screen, 'global|next_alt.png')):
+                or kca_u.kca.exists(screen, 'global|next_alt.png'))\
+                and not kca_u.kca.find_expedition_flag():
             if kca_u.kca.exists(screen, 'global|next.png', cached=True):
                 region = kca_u.kca.find(screen, 'global|next.png', cached=True)
             elif kca_u.kca.exists(screen, 'global|next_alt.png', cached=True):
