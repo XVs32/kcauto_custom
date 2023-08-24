@@ -40,7 +40,7 @@
 	"7-2-G":[{"type":"DE","id":0}, {"type":"DE","id":1}, {"type":"DE","id":2}, {"type":"CVL","id":0}, {"type":"CVL","id":1}],
 	"7-2-M":[{"type":"CV","id":0}, {"type":"FBB","id":0}, {"type":"CVL","id":0}, {"type":"CAV","id":0}, {"type":"DD_FS","id":0}, {"type":"DD_FS","id":1}],
 	"7-3-E":[{"type":"Haguro","id":0}, {"type":"Kamikaze","id":0}, {"type":"DD","id":0}, {"type":"AV","id":0}],
-	"7-3-M":[{"type":"Haguro","id":0}, {"type":"Kamikaze","id":0}, {"type":"CAV","id":0}, {"type":"AV","id":0}],
+	"7-3-P":[{"type":"Haguro","id":0}, {"type":"Kamikaze","id":0}, {"type":"CAV","id":0}, {"type":"AV","id":0}],
 	"7-4":	[{"type":"BBV","id":0}, {"type":"BBV","id":1}, {"type":"CL","id":0}, {"type":"DD","id":0}, {"type":"DD","id":1}, {"type":"DD","id":2}],
 	"7-5-K":[{"type":"BBV","id":0}, {"type":"CAV","id":0}, {"type":"CLT","id":0}, {"type":"DD","id":0}, {"type":"DD","id":1}, {"type":"CL","id":0}],
 	"7-5-M":[{"type":"BBV","id":0}, {"type":"CAV","id":0}, {"type":"CLT","id":0}, {"type":"DD","id":0}, {"type":"DD","id":1}, {"type":"CL","id":0}],
@@ -121,7 +121,7 @@
 	"4-4-By4":	[{"type":"CA","id":0}, {"type":"CA","id":1}, {"type":"CA","id":2}, {"type":"DD","id":0}, {"type":"DD","id":1}, {"type":"CL","id":0}],
 
 	"7-2-M-By5":[{"type":"CV","id":0}, {"type":"FBB","id":0}, {"type":"CVL","id":0}, {"type":"Haguro","id":0}, {"type":"Kamikaze","id":0}, {"type":"DD_FS","id":0}],
-	"7-3-M-By5":[{"type":"Haguro","id":0}, {"type":"Kamikaze","id":0}, {"type":"CAV","id":0}, {"type":"AV","id":0}],
+	"7-3-P-By5":[{"type":"Haguro","id":0}, {"type":"Kamikaze","id":0}, {"type":"CAV","id":0}, {"type":"AV","id":0}],
 	"4-2-By5":	[{"type":"BB", "id": 0}, {"type":"CV", "id": 0}, {"type":"Haguro", "id": 0}, {"type":"CL", "id": 0}, {"type":"DD", "id": 0}, {"type":"Kamikaze", "id": 0}],
 
 	"1-2-By6":	[{"type":"DD","id":0}, {"type":"DD","id":1}, {"type":"DD","id":2}, {"type":"DD","id":3}, {"type":"CL","id":0}],
@@ -149,7 +149,7 @@
 	"3-1-By11":	[],
 	"3-3-By11":	[],
 	"4-3-By11":	[],
-	"7-3-M-By11":[],
+	"7-3-P-By11":[],
 
 	"1-5-By12":	[],
 	"2-3-By12":	[],
