@@ -843,8 +843,26 @@ class Kca(object):
                     elif boss_count > 0:
                         action["1-5"] = boss_count 
                     elif sortie_count > 0:
-                        action["1-1"] = sortie_count 
+                        action["1-1"] = sortie_count
 
+                elif quest_name == "Bq8":
+                    action_raw_line[0] = action_raw_line[0].replace(' ', '/')
+                    s_1_5_count =        int(action_raw_line[0].split("/")[1]) - int(action_raw_line[0].split("/")[0])
+                    action_raw_line[1] = action_raw_line[1].replace(' ', '/')
+                    s_7_1_count =        int(action_raw_line[1].split("/")[1]) - int(action_raw_line[1].split("/")[0])
+                    action_raw_line[2] = action_raw_line[2].replace(' ', '/')
+                    s_7_2_G_count =      int(action_raw_line[2].split("/")[1]) - int(action_raw_line[2].split("/")[0])
+                    action_raw_line[3] = action_raw_line[3].replace(' ', '/')
+                    s_7_2_M_count =      int(action_raw_line[3].split("/")[1]) - int(action_raw_line[3].split("/")[0])
+
+                    if s_1_5_count > 0:
+                        action["1-5"] = s_1_5_count
+                    elif s_7_1_count > 0:
+                        action["7-1"] = s_7_1_count
+                    elif s_7_2_G_count > 0:
+                        action["7-2-G"] = s_7_2_G_count
+                    elif s_7_2_M_count > 0:
+                        action["7-2-M"] = s_7_2_M_count
 
                 else:
 
