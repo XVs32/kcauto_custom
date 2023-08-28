@@ -4,6 +4,8 @@ from time import sleep
 
 import config.config_core as cfg
 import stats.stats_core as sts
+import expedition.expedition_core as exp
+
 import util.kca as kca_u
 from util.logger import Log
 
@@ -104,20 +106,29 @@ class Recovery(object):
         Returns:
             bool: True if recovery was successful; False otherwise.
         """
-        while (
-                kca_u.kca.exists(screen, 'global|next.png')
-                or kca_u.kca.exists(screen, 'global|next_alt.png'))\
-                and not kca_u.kca.find_expedition_flag():
-            if kca_u.kca.exists(screen, 'global|next.png', cached=True):
+        retry = 0
+        while retry < 10:
+            if kca_u.kca.exists(screen, 'global|next.png'):
                 region = kca_u.kca.find(screen, 'global|next.png', cached=True)
+
             elif kca_u.kca.exists(screen, 'global|next_alt.png', cached=True):
                 region = kca_u.kca.find(
                     screen, 'global|next_alt.png', cached=True)
+
+            elif kca_u.kca.exists(screen, 'nav|home_menu_sortie.png', cached=True):
+                kca_u.kca.find_kancolle()
+                exp.expedition.receive_expedition()
+                return True
+
+            else:
+                retry += 1
+                sleep(1)
+                continue
+            
             region.x -= 100
             region.y -= 100
             region.click()
-        if kca_u.kca.exists(screen, 'nav|home_menu_sortie.png'):
-            return True
+        
         return False
 
     @classmethod
