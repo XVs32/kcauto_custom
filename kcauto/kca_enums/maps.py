@@ -52,6 +52,11 @@ class MapEnum(EnumBase):
     W5_1_Bq7 = "5-1-Bq7"
     W5_3_Bq7 = "5-3-Bq7"
     W5_4_Bq7 = "5-4-Bq7"
+
+    W1_5_Bq8 = "1-5-Bq8"
+    W7_1_Bq8 = "7-1-Bq8"
+    W7_2_G_Bq8 = "7-2-G-Bq8"
+    W7_2_M_Bq8 = "7-2-M-Bq8"
     
     W1_3_Bq9 = "1-3-Bq9"
     W1_4_Bq9 = "1-4-Bq9"
