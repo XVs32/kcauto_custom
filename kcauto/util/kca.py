@@ -1,4 +1,5 @@
 import os
+import glob
 from sys import platform, exit
 import requests
 from pyquery import PyQuery
@@ -124,6 +125,16 @@ class Kca(object):
         from the get_data api call. Otherwise, it will load the stored data
         from previous startups.
         """
+        # Create a pattern to match the files
+        pattern = os.path.join('.', '.screenshot*.png')
+
+        # Find all files that match the pattern
+        files = glob.glob(pattern)
+
+        # Remove all matching files
+        for file in files:
+            os.remove(file)
+
         screen = Region()
         if self.click_existing(screen, 'global|game_start.png'):
             Log.log_msg("Starting kancolle from splash screen.")
@@ -132,6 +143,7 @@ class Kca(object):
             self.wait(screen, 'nav|home_menu_sortie.png', 60)
             Log.log_success("Kancolle successfully started.")
             shp.ships.load_wctf_names(force_update=True)
+
         else:
             api.api.update_ship_library_from_json()
         self.sleep()
