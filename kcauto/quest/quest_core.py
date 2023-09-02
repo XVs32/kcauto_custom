@@ -8,6 +8,7 @@ import combat.combat_core as com
 import config.config_core as cfg
 import stats.stats_core as sts
 import util.kca as kca_u
+import expedition.expedition_core as exp
 from constants import NEAR_EXACT, PAGE_NAV
 from kca_enums.kcsapi_paths import KCSAPIEnum
 from kca_enums.maps import MapEnum
@@ -387,8 +388,7 @@ class QuestCore(CoreBase):
                 if cfg.config.combat.sortie_map not in q.map_context and current_combat_map not in q.map_context:
                     continue
             if q.expedition_context:
-                if not (
-                        set(cfg.config.expedition.all_expeditions)
+                if not (  set(exp.expedition.exp_for_fleet)
                         & set(q.expedition_context)):
                     continue
             relevant_quests.append(q)
