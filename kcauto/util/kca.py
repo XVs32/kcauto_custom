@@ -1,4 +1,5 @@
 import os
+import json
 import glob
 from sys import platform, exit
 import requests
@@ -146,6 +147,18 @@ class Kca(object):
 
         else:
             api.api.update_ship_library_from_json()
+
+        local_ships_json = {"ship": []}
+        for ship in shp.ships.local_ships:
+            local_ships_json["ship"].append({"name": ship.name, \
+                                             "name_jp": ship.name_jp,
+                                             "id":ship.api_id,\
+                                             "level":ship.level,\
+                                             "type": ship.ship_type.name})
+
+        with open("ship.json", "w", encoding='utf-8') as f:
+            json.dump(local_ships_json, f, indent=4, ensure_ascii=False)
+
         self.sleep()
 
         return True
