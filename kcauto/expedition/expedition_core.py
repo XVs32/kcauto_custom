@@ -122,7 +122,7 @@ class ExpeditionCore(CoreBase):
             self.exp_rank = []
 
             for id in cfg.config.expedition.all_expeditions:
-                self.exp_rank.append({"id":int(id.expedition), "score":0})
+                self.exp_rank.append({"id":int(id.value), "score":0})
 
     @property
     def available_expeditions(self):
