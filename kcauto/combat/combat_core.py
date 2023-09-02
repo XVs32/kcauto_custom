@@ -561,30 +561,30 @@ class CombatCore(CoreBase):
         Log.log_debug("Resolve continue sortie prompt.")
         continue_sortie = True
         retreat_limit = cfg.config.combat.retreat_limit
-        if self.current_node in cfg.config.combat.push_nodes:
+        if NodeEnum(self.current_node.name) in cfg.config.combat.push_nodes:
             Log.log_msg(f"{self.current_node} is specified as a push node.")
-            return True
-        for fleet in flt.fleets.combat_fleets:
-            if fleet.weakest_state >= retreat_limit:
-                Log.log_warn(
-                    f"Fleet {fleet.fleet_id} has ships with "
-                    f"{retreat_limit.display_name} damage or above.")
+        else:
+            for fleet in flt.fleets.combat_fleets:
+                if fleet.weakest_state >= retreat_limit:
+                    Log.log_warn(
+                        f"Fleet {fleet.fleet_id} has ships with "
+                        f"{retreat_limit.display_name} damage or above.")
+                    continue_sortie = False
+                elif fleet.visual_health['heavy'] > 0:
+                    Log.log_warn(
+                        f"Fleet {fleet.fleet_id} has a critically damaged ship "
+                        "not calculated from the API.")
+                    continue_sortie = False
+            if (
+                    NodeEnum(self.current_node.name)
+                    in cfg.config.combat.retreat_points):
+                Log.log_debug("Retreat specified in config.")
                 continue_sortie = False
-            elif fleet.visual_health['heavy'] > 0:
-                Log.log_warn(
-                    f"Fleet {fleet.fleet_id} has a critically damaged ship "
-                    "not calculated from the API.")
+            if (
+                    NodeEnum(len(self.combat_nodes_run))
+                    in cfg.config.combat.retreat_points):
+                Log.log_debug("Retreat specified combat # in config.")
                 continue_sortie = False
-        if (
-                NodeEnum(self.current_node.name)
-                in cfg.config.combat.retreat_points):
-            Log.log_debug("Retreat specified in config.")
-            continue_sortie = False
-        if (
-                NodeEnum(len(self.combat_nodes_run))
-                in cfg.config.combat.retreat_points):
-            Log.log_debug("Retreat specified combat # in config.")
-            continue_sortie = False
 
         if continue_sortie:
             Log.log_msg("Continuing sortie.")
