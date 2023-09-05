@@ -30,6 +30,7 @@ class ExpeditionCore(CoreBase):
     exp_rank = []
     exp_for_fleet = []
     TYPE_PRIORITY = [""]
+    cur_exp = [0,0,0,0]
     timer = None
 
     def __init__(self):
