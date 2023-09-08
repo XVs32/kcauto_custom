@@ -28,9 +28,9 @@
 	"5-2":	[{"type":"Shokaku","id":0}, {"type":"Zuikaku","id":0}, {"type":"FBB","id":0}, {"type":"FBB","id":1}, {"type":"DD","id":0}, {"type":"DD","id":1}],
 	"5-3":	[{"type":"FBB","id":0}, {"type":"FBB","id":1}, {"type":"CA","id":0}, {"type":"CL","id":0}, {"type":"DD","id":0}, {"type":"DD","id":1}],
 	"5-4":	[{"type":"BB","id":0}, {"type":"BB","id":1}, {"type":"CV","id":0}, {"type":"CV","id":1}, {"type":"CA","id":0}, {"type":"CL","id":0}],
-	"5-5":	[{"type":"Yamato","id":0}, {"type":"Musashi","id":0}, {"type":"CAV","id":0}, {"type":"CL","id":0}, {"type":"DD","id":0}, {"type":"DD","id":1}],
+	"5-5":	[{"type":"Yamato","id":0}, {"type":"Musashi","id":0}, {"type":"CAV","id":0}, {"type":"CL","id":0}, {"type":"DD_FS","id":0}, {"type":"DD_FS","id":1}],
 	
-	"6-1":	[{"type":"CV","id":0}, {"type":"CLT","id":0}, {"type":"CL","id":0}, {"type":"SS","id":0}, {"type":"SS","id":1}, {"type":"SS","id":2}],
+	"6-1":	[{"type":"SS","id":0}, {"type":"SS","id":1}, {"type":"SS","id":2}, {"type":"CV","id":0}, {"type":"CLT","id":0}, {"type":"CL","id":0}],
 	"6-2":	[{"type": "BB", "id": 0}, {"type": "CV", "id": 0}, {"type": "CAV", "id": 0}, {"type": "CLT", "id": 0}, {"type": "DD", "id": 0}, {"type": "DD", "id": 1}],
 	"6-3":	[{"type":"CL","id":0}, {"type":"DD","id":0}, {"type":"DD","id":1}, {"type":"DD","id":2}, {"type":"DD","id":3}, {"type":"AV","id":0}],
 	"6-4":	[{"type": "FBB", "id": 0}, {"type": "CAV", "id": 0}, {"type": "CL", "id": 0}, {"type": "DD", "id": 0}, {"type": "DD", "id": 1}, {"type": "DD", "id": 2}],
@@ -46,7 +46,6 @@
 	"7-5-M":[{"type":"BBV","id":0}, {"type":"CAV","id":0}, {"type":"CLT","id":0}, {"type":"DD","id":0}, {"type":"DD","id":1}, {"type":"CL","id":0}],
 	"7-5-Q":[{"type":"BBV","id":0}, {"type":"CAV","id":0}, {"type":"CL","id":0}, {"type":"DD","id":0}, {"type":"DD","id":1}, {"type":"DD","id":2}],
 	"7-5-T":[{"type":"BBV","id":0}, {"type":"CAV","id":0}, {"type":"CL","id":0}, {"type":"DD","id":0}, {"type":"DD","id":1}, {"type":"DD","id":2}],
-
 	
 	"2-2-A":	[{"type":"AV","id":0}, {"type":"BCVL","id":0}, {"type":"BCVL","id":1}, {"type":"CVL","id":0}, {"type":"SS","id":0}, {"type":"CLT","id":0}],
 	
@@ -120,7 +119,7 @@
 	"4-3-By4":	[{"type":"CA","id":0}, {"type":"CA","id":1}, {"type":"CA","id":2}, {"type":"DD","id":0}, {"type":"CV","id":0}, {"type":"CV","id":1}],
 	"4-4-By4":	[{"type":"CA","id":0}, {"type":"CA","id":1}, {"type":"CA","id":2}, {"type":"DD","id":0}, {"type":"DD","id":1}, {"type":"CL","id":0}],
 
-	"7-2-M-By5":[{"type":"CV","id":0}, {"type":"FBB","id":0}, {"type":"CVL","id":0}, {"type":"Haguro","id":0}, {"type":"Kamikaze","id":0}, {"type":"DD_FS","id":0}],
+	"7-2-2-By5":[{"type":"CV","id":0}, {"type":"FBB","id":0}, {"type":"CVL","id":0}, {"type":"Haguro","id":0}, {"type":"Kamikaze","id":0}, {"type":"DD_FS","id":0}],
 	"7-3-P-By5":[{"type":"Haguro","id":0}, {"type":"Kamikaze","id":0}, {"type":"CAV","id":0}, {"type":"AV","id":0}],
 	"4-2-By5":	[{"type":"BB", "id": 0}, {"type":"CV", "id": 0}, {"type":"Haguro", "id": 0}, {"type":"CL", "id": 0}, {"type":"DD", "id": 0}, {"type":"Kamikaze", "id": 0}],
 
