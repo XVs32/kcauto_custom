@@ -3,6 +3,7 @@ from kca_enums.enum_base import EnumBase
 
 
 class ExpeditionEnum(EnumBase):
+    NULL = 0
     AUTO = "auto"
     ACTIVE = "active"
     PASSIVE = "passive"
