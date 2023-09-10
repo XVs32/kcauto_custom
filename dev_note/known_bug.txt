@@ -1,2 +1,2 @@
-1. Cannot detect the progress of a map(ex. kcauto do not know if 7-2-2 is available)
+1. Cannot detect the progress of a map(ex. kcauto do not know if 7-2-M is available)
 

@@ -1,0 +1,10 @@
+{
+    "combat.node_selects": ["F>H"],
+    "combat.node_formations": [
+	    "P:echelon"
+    ],
+	"combat.lbas_groups":	  [1],
+	"combat.lbas_group_1_nodes": ["P","P"],
+	"combat.lbas_group_2_nodes": [],
+    "combat.lbas_group_3_nodes": []
+}

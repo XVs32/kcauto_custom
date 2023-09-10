@@ -272,7 +272,7 @@ def open_pop_up(thread, stdscr, active_panel):
             elif key == KEY_ENTER:
                 if isYes == True:
                     # open the file for writing
-                    with open('configs/config_cui.json', 'w') as output:
+                    with open('configs/config_cui.json', 'w', encoding='utf-8') as output:
                         # parse the JSON data using json.load()
                         json.dump(config, output, indent=4, sort_keys=True)
                     output.close()

@@ -1,0 +1,6 @@
+{
+	"combat.lbas_groups":	  [1,2,3],
+	"combat.lbas_group_1_nodes": ["N","N"],
+	"combat.lbas_group_2_nodes": [],
+    "combat.lbas_group_3_nodes": []
+}

@@ -1,0 +1,146 @@
+{
+	"AARL_COMMENT": "Anti Air Rocket Launcher: ship with 12cm 30-tube Rocket Launcher Kai 2",
+	"AARL":	[1111,1111,1111,1111],
+	"AARL_NAME":	["Gambier","Hornet","隼鷹","Ranger"],
+
+	"AV":   [1111, 1111],
+	"AV_NAME":["Mizuho", "Commandant Teste 改"],
+
+	"BB":	[1111,1111],
+	"BB_NAME":	["長門", "陸奧"],
+
+	"FBB":	[1111,1111],
+	"FBB_NAME":	["Haruna", "massachusetts"],
+
+	"BBV":	[1111,1111],
+	"BBV_NAME":	["Hyuuga","Ise"],
+
+	"CA":   [1111,11111,1111],
+	"CA_NAME":["Choukai", "Tuscaloosa", "Northampton"],
+
+	"CA_G_COMMENT": "CA Ground: CA which anti land-based enemy",
+	"CA_G":   [1111, 1111],
+	"CA_G_NAME":["鳥海", "羽黒"],
+
+	"CA_F_COMMENT": "CA Fighter: CA which can load Fighter",
+	"CA_F":	[1111],
+	"CA_F_NAME":	["Pola改"],
+
+	"CAV":	[1111],
+	"CAV_NAME":	["最上"],
+
+	"CL":   [1111,1111,1111],
+	"CL_NAME":	["Abukuma ", "Ooyodo ", "Honolulu"],
+
+	"CL_AS_COMMENT": "CL Anti Submarine: CL which anti submarine",
+	"CL_AS":   [1111],
+	"CL_AS_NAME":	["Yura"],
+
+	"CLT":	[1111,1111,1111],
+	"CLT_NAME":	["北上改二","大井改二","木曾改二"],
+
+	"CV":     [1111,1111],
+	"CV_NAME":["加賀","大鳳 改"],   
+
+	"CVL":	[1111, 1111],
+	"CVL_NAME":	["Junyou", "Zuihou "],
+
+	"BCVL_COMMENT": "Bomber CVL: CVL which has bomber only",
+	"BCVL":	[1111,1111],
+	"BCVL_NAME":	["","千歳航改二"],
+
+	"DD":   [1111,1111,1111,1111,1111],
+	"DD_NAME":	["Inazuma","Yuudachi","Ikazuchi","Верный","Ushio"],
+
+	"DD_AS_COMMENT": "DD Anti Submarine: DD which anti submarine",
+	"DD_AS":   [1110],
+	"DD_AS_NAME":	["Jervis"],
+
+	"DD_FS_COMMENT": "DD Firepower & Submarine: DD which has firepower and anti submarine",
+	"DD_FS":   [1111, 1111, 1111],
+	"DD_FS_NAME":	[ "Johnston", "Fletcher","Samuel"],
+
+	"DD_G_COMMENT": "DD Ground: DD which which anti land-based enemy",
+	"DD_G":   [1111, 1111],
+	"DD_G_NAME":	["朝潮", "Z1"],
+
+	"DE":   [1111,1111,1111,1111],
+	"DE_NAME":	["日振", "松輪", "對馬", "大東"],
+
+	"SS":     [1111,1111,1111,1111,1111,1111],
+	"SS_NAME":["I-400","呂500","Maruyu","伊47 改","scamp","伊504"],
+
+	"F+BB":	[1111,1111],
+	"F+BB_NAME":	["金剛", "榛名"],
+
+	"F+CA":	[1111,1111],
+	"F+CA_NAME":	["鈴谷改二","熊野改二"],
+
+	"F+CL":   [1111],
+	"F+CL_NAME":	["Brooklyn"],
+
+	"F+CV":	[1111],
+	"F+CV_NAME":	["赤城"],
+
+	"F+CVL":	[1111],
+	"F+CVL_NAME":	["瑞鳳改二"],
+
+	"F+DD":   [1111, 1111, 1111, 1111, 1111],
+	"F+DD_NAME":	["叢雲", "欠雷", "島風", "Scirocco", "雪風"],
+	
+	"TRAIN":	[1111],
+	"TRAIN_NAME":	["熊野丸"],
+	
+	
+	"Akashi":	[1111],
+	"Asashimo":	[1111],
+	"ayanami":  [1111],
+	"Haguro":	[1111],
+	"Kamikaze":	[1111],
+	"Musashi":  [1111],
+	"Myoko":	[1111],
+	"Nachi":	[1111],
+	"Naganami":	[1111],
+	"Shikinami":[1111],
+	"Shokaku":	[1111],
+	"Yamato":	[1111],
+	"Zuikaku":	[1111],
+
+	"6_4_C":	[1111,1111,1111,1111,1111,1111],
+	"6_4_C_NAME":	[],
+
+	"EXP_3LC_DD":	[1111, 1111, 1111],
+	"EXP_3LC_DD_NAME":	["Murasame", "Arashio", "Arashio"],
+	"EXP_3DC_DD":	[1111, 1111, 1111, 1111, 1111, 1111],
+	"EXP_3DC_DD_NAME":	["Murakumo", "秋雲", "Johnston", "曉", "Teruzuki", "電"],
+	"EXP_2DC_DD":	[1111, 1111, 1111, 1111],
+	"EXP_2DC_DD_NAME":	["黑潮", "Johnston", "Kuroshio", "狹霧"],
+	"EXP_DD":	 	[1111],
+	"EXP_DD_NAME":	["Kishinami"],
+
+	"EXP_4LC_CL":	[1111],
+	"EXP_4LC_CL_NAME":	["鬼怒"],
+	"EXP_3LC_CL":	[1111],
+	"EXP_3LC_CL_NAME":	["由良"],
+	"EXP_CL":	[1111, 1111],
+	"EXP_CL_NAME":	["Perth", "Kuma"],
+
+	"EXP_AV":	[1111],
+	"EXP_AV_NAME":	["瑞穂"],
+
+	"EXP_CA":	[1111],
+	"EXP_CA_NAME":	["青葉"],
+
+	"EXP_DE":	[1111, 1111],
+	"EXP_DE_NAME":	["択捉", "八丈"],
+
+	"EXP_SS":	[1111, 1111],
+	"EXP_SS_NAME":	["伊401", "伊8"],
+	
+	"EXP_AS":	[1111],
+	"EXP_AS_NAME":	["長鯨"],
+
+	"NULL":   [99999]
+}
+	
+	

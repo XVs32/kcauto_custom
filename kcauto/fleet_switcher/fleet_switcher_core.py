@@ -3,6 +3,8 @@ from random import choice
 from sys import exit
 import re
 import copy
+import shutil
+
 
 import api.api_core as api
 import config.config_core as cfg
@@ -37,7 +39,12 @@ class FleetSwitcherCore(object):
         """
             method to load the setting in ship_pool.json
         """
-        ship_pool = JsonData.load_json('configs|ship_pool.json')
+        # open the file for reading
+        try:
+            ship_pool = JsonData.load_json('configs|ship_pool.json')
+        except FileNotFoundError:
+            ship_pool = JsonData.load_json('data|config|ship_pool.json')
+            shutil.copyfile('data/config/ship_pool.json', 'configs/ship_pool.json')
         return ship_pool
 
     def _load_fleet_preset(self, ship_pool):
@@ -46,7 +53,11 @@ class FleetSwitcherCore(object):
             and output the fleet preset of each map
         """
         #combat_fleet has the id of a ship
-        fleet_preset_data = JsonData.load_json('configs|fleet_preset.json')
+        try:
+            fleet_preset_data = JsonData.load_json('configs|fleet_preset.json')
+        except FileNotFoundError:
+            fleet_preset_data = JsonData.load_json('data|config|fleet_preset.json')
+            shutil.copyfile('data/config/fleet_preset.json', 'configs/fleet_preset.json')
         self.fleet_ship_id["combat"] = {}
         for map_name in fleet_preset_data:
 
@@ -216,7 +227,7 @@ class FleetSwitcherCore(object):
                     offset += 1
             
             if req_dc > 0 or req_dc_carrier > 0:
-                for i in range(1, req_dc, 1):
+                for i in range(1, min(req_dc,5), 1):
                     for ship_type in dc_temp_list[i]:
                         matching_keys.insert(0, ship_type)
 
@@ -523,6 +534,7 @@ class FleetSwitcherCore(object):
             quest_name_len = len(quest_name) 
             if quest_name_len > 1:
                 return self.fleet_ship_id["combat"][key[:-quest_name_len - 1]]
+            
         raise ValueError("Unexpected preset id:" + str(key))
 
 
