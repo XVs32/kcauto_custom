@@ -53,3 +53,4 @@ venv.bak/
 !configs/template/*.json
 !configs/template/sortie_mode_auto/*.json
 !data/config/*.json
+!data/config/*/*.json

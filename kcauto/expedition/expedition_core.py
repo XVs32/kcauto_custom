@@ -30,6 +30,7 @@ class ExpeditionCore(CoreBase):
     exp_rank = []
     exp_for_fleet = []
     TYPE_PRIORITY = [""]
+    cur_exp = [0,0,0,0]
     timer = None
 
     def __init__(self):
@@ -122,7 +123,7 @@ class ExpeditionCore(CoreBase):
             self.exp_rank = []
 
             for id in cfg.config.expedition.all_expeditions:
-                self.exp_rank.append({"id":int(id.expedition), "score":0})
+                self.exp_rank.append({"id":int(id.value), "score":0})
 
     @property
     def available_expeditions(self):

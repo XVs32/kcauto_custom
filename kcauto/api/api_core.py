@@ -266,6 +266,13 @@ class ApiWrapper(object):
         except KeyError:
             Log.log_debug("No quest data found in API response.")
 
+        try:
+            for i in range(1, len(data['api_data']['api_deck_port'])):
+                exp.expedition.cur_exp[i] = data['api_data']['api_deck_port'][i]["api_mission"][1]
+            
+        except KeyError:
+            Log.log_debug("No exp data found in API response.")
+
         return None
 
     def _process_sortie_maps(self, data):

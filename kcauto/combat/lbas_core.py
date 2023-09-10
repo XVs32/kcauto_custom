@@ -31,6 +31,8 @@ class LBASCore(object):
                 continue
             elif sortie_world == '6' and group['api_area_id'] != 6:
                 continue
+            elif sortie_world == '7' and group['api_area_id'] != 7:
+                continue
 
             group_id = group['api_rid']
             group_instance = self.groups[group_id]
@@ -78,7 +80,7 @@ class LBASCore(object):
                         group_instance.state,
                         group_instance.desired_group_state)
             kca_u.kca.sleep(0.5)
-            kca_u.kca.click_existing('lower_left', 'combat|c_world_1.png')
+            kca_u.kca.click("c_world")
             kca_u.kca.sleep(1)
 
         if rest_groups:
@@ -124,13 +126,11 @@ class LBASCore(object):
         if cfg.config.combat.sortie_map.world == 'E':
             kca_u.kca.click_existing(
                 'lower_left', 'combat|lbas_resupply_menu_button_event.png')
-            kca_u.kca.sleep()
-            kca_u.kca.while_wrapper(self._lbas_panel_check_cond, timeout=10)
         else:
             kca_u.kca.click_existing(
                 'upper_right', 'combat|lbas_resupply_menu_button.png')
-            kca_u.kca.sleep()
-            kca_u.kca.wait('upper_right', 'combat|lbas_group_tab_1.png')
+        kca_u.kca.sleep()
+        kca_u.kca.while_wrapper(self._lbas_panel_check_cond, timeout=10)
         kca_u.kca.sleep()
 
     def _lbas_panel_resupply_cond(self):
