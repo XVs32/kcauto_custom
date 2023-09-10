@@ -21,7 +21,7 @@ class ShipsCore(object):
         self.local_ships = []
         self.local_ships_by_local_id = {}
         for ship in data:
-            ship_instance = ship_instance = self.get_ship_from_api_id(
+            ship_instance = self.get_ship_from_api_id(
                 ship['api_ship_id'], ship)
             self.local_ships.append(ship_instance)
             self.local_ships_by_local_id[ship['api_id']] = ship_instance
