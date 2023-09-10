@@ -115,6 +115,13 @@ class CombatCore(CoreBase):
                     'enum': map_enum,
                     'cleared': map_data['api_cleared'] == 1
                 }
+
+                MULTI_STAGE_MAP_ID = [72, 73, 75]
+                if api_id in MULTI_STAGE_MAP_ID:
+                    self.available_maps[map_enum.world_and_map] = {
+                    'gauge_num': map_data['api_gauge_num']
+                    }
+
             else:
                 if event_map_id_start is None:
                     event_map_id_start = api_id
@@ -126,7 +133,8 @@ class CombatCore(CoreBase):
                     'cleared': map_data.get('api_cleared', 0) == 1,
                     'lbas_bases': map_data.get('api_air_base_decks', []),
                     'difficulty': EventDifficultyEnum(
-                        map_data['api_eventmap']['api_selected_rank'])
+                        map_data['api_eventmap']['api_selected_rank']),
+                    'gauge_num': map_data['api_gauge_num']
                 }
 
     def should_and_able_to_sortie(self, ignore_supply = False):
@@ -195,6 +203,10 @@ class CombatCore(CoreBase):
         if self.available_maps[cfg.config.combat.sortie_map.world_and_map]['cleared']:
             return True
         return False
+
+    @property
+    def sortie_map_stage(self):
+        return self.available_maps[cfg.config.combat.sortie_map.world_and_map]['gauge_num']
 
     def load_map_data(self, sortie_map):
         Log.log_debug("Debug:load_map_data called")
@@ -549,30 +561,30 @@ class CombatCore(CoreBase):
         Log.log_debug("Resolve continue sortie prompt.")
         continue_sortie = True
         retreat_limit = cfg.config.combat.retreat_limit
-        if self.current_node in cfg.config.combat.push_nodes:
+        if NodeEnum(self.current_node.name) in cfg.config.combat.push_nodes:
             Log.log_msg(f"{self.current_node} is specified as a push node.")
-            return True
-        for fleet in flt.fleets.combat_fleets:
-            if fleet.weakest_state >= retreat_limit:
-                Log.log_warn(
-                    f"Fleet {fleet.fleet_id} has ships with "
-                    f"{retreat_limit.display_name} damage or above.")
+        else:
+            for fleet in flt.fleets.combat_fleets:
+                if fleet.weakest_state >= retreat_limit:
+                    Log.log_warn(
+                        f"Fleet {fleet.fleet_id} has ships with "
+                        f"{retreat_limit.display_name} damage or above.")
+                    continue_sortie = False
+                elif fleet.visual_health['heavy'] > 0:
+                    Log.log_warn(
+                        f"Fleet {fleet.fleet_id} has a critically damaged ship "
+                        "not calculated from the API.")
+                    continue_sortie = False
+            if (
+                    NodeEnum(self.current_node.name)
+                    in cfg.config.combat.retreat_points):
+                Log.log_debug("Retreat specified in config.")
                 continue_sortie = False
-            elif fleet.visual_health['heavy'] > 0:
-                Log.log_warn(
-                    f"Fleet {fleet.fleet_id} has a critically damaged ship "
-                    "not calculated from the API.")
+            if (
+                    NodeEnum(len(self.combat_nodes_run))
+                    in cfg.config.combat.retreat_points):
+                Log.log_debug("Retreat specified combat # in config.")
                 continue_sortie = False
-        if (
-                NodeEnum(self.current_node.name)
-                in cfg.config.combat.retreat_points):
-            Log.log_debug("Retreat specified in config.")
-            continue_sortie = False
-        if (
-                NodeEnum(len(self.combat_nodes_run))
-                in cfg.config.combat.retreat_points):
-            Log.log_debug("Retreat specified combat # in config.")
-            continue_sortie = False
 
         if continue_sortie:
             Log.log_msg("Continuing sortie.")

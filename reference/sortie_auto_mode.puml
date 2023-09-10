@@ -1,0 +1,30 @@
+@startuml
+
+activate combat
+
+opt sortie queue is empty
+combat -> quest: set sorite queue
+deactivate combat
+activate quest
+quest -> quest: get next combat quest
+quest -> quest: set sortie queue to match quest
+quest -> combat: 
+deactivate quest
+activate combat
+end
+
+note over combat
+sortie queue must not be empty here
+end note
+combat -> combat: set current sortie map as first element in sortie queue
+
+combat -> combat:  update map data with current sortie map
+
+combat -> combat:  go sortie
+
+opt sortie success
+combat -> combat: pop first element in sortie queue
+end
+
+deactivate combat
+@enduml

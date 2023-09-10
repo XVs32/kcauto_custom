@@ -8,6 +8,7 @@ from kca_enums.lbas_groups import LBASGroupEnum
 from kca_enums.maps import MapEnum
 from kca_enums.nodes import NodeEnum, NamedNodeEnum
 from util.logger import Log
+import combat.lbas_core as lbas
 
 
 class ConfigCombat(ConfigBase):
@@ -34,6 +35,7 @@ class ConfigCombat(ConfigBase):
     _reserve_repair_dock = False
     _port_check = False
     _clear_stop = False
+    _override = False
 
     def __init__(self, config):
         Log.log_debug("Combat config init called")
@@ -62,6 +64,53 @@ class ConfigCombat(ConfigBase):
         self.reserve_repair_dock = config['combat.reserve_repair_dock']
         self.port_check = config['combat.port_check']
         self.clear_stop = config['combat.clear_stop']
+        self._override = config['combat.override']
+
+    def config_override(self, config):
+        if "combat.fleet_mode" in config:
+            self.fleet_mode = config['combat.fleet_mode']
+        if "combat.retreat_points" in config:
+            self.retreat_points = config['combat.retreat_points']
+        if "combat.node_selects" in config:
+            self.node_selects = config['combat.node_selects']
+        if "combat.node_formations" in config:
+            self.node_formations = config['combat.node_formations']
+        if "combat.node_night_battles" in config:
+            self.node_night_battles = config['combat.node_night_battles']
+        if "combat.push_nodes" in config:
+            self.push_nodes = config['combat.push_nodes']
+        if "combat.retreat_limit" in config:
+            self.retreat_limit = config['combat.retreat_limit']
+        if "combat.repair_limit" in config:
+            self.repair_limit = config['combat.repair_limit']
+        if "combat.repair_timelimit_hours" in config:
+            self.repair_timelimit_hours = config['combat.repair_timelimit_hours']
+        if "combat.repair_timelimit_minutes" in config:
+            self.repair_timelimit_minutes = config['combat.repair_timelimit_minutes']
+        if "combat.lbas_groups" in config:
+            self.lbas_groups = config['combat.lbas_groups']
+
+            lbas.lbas.enabled = (
+                True
+                if len(self.lbas_groups) > 0
+                else False)
+
+        if "combat.lbas_group_1_nodes" in config:
+            self.lbas_group_1_nodes = config['combat.lbas_group_1_nodes']
+        if "combat.lbas_group_2_nodes" in config:
+            self.lbas_group_2_nodes = config['combat.lbas_group_2_nodes']
+        if "combat.lbas_group_3_nodes" in config:
+            self.lbas_group_3_nodes = config['combat.lbas_group_3_nodes']
+        if "combat.check_fatigue" in config:
+            self.check_fatigue = config['combat.check_fatigue']
+        if "combat.check_lbas_fatigue" in config:
+            self.check_lbas_fatigue = config['combat.check_lbas_fatigue']
+        if "combat.reserve_repair_dock" in config:
+            self.reserve_repair_dock = config['combat.reserve_repair_dock']
+        if "combat.port_check" in config:
+            self.port_check = config['combat.port_check']
+        if "combat.clear_stop" in config:
+            self.clear_stop = config['combat.clear_stop']
 
     @property
     def enabled(self):
@@ -71,8 +120,19 @@ class ConfigCombat(ConfigBase):
     def enabled(self, value):
         if type(value) is not bool:
             raise ValueError(
-                "Specified value for pvp enabled is not a boolean.")
+                "Specified value for combat enabled is not a boolean.")
         self._enabled = value
+
+    @property
+    def override(self):
+        return self._override
+
+    @override.setter
+    def override(self, value):
+        if type(value) is not bool:
+            raise ValueError(
+                "Specified value for combat override is not a boolean.")
+        self._override = value
 
     @property
     def fleet_presets(self):
