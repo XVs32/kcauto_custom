@@ -9,7 +9,7 @@ MAX_FLEET_PRESETS = 15
 
 AUTO_PRESET = 0
 
-MAX_RESOURCE = 300000
+MAX_RESOURCE = 350000
 
 PASSIVE_TIME_INTERVAL = 180
 OVERNIGHT_TIME_INTERVAL = 600
@@ -41,3 +41,6 @@ WCTF_DB_URL = (
 WCTF_SUFFIX_URL = (
     'https://raw.githubusercontent.com/TeamFleet/WhoCallsTheFleet/master'
     '/app-db/ship_namesuffix.nedb')
+
+# config_path
+COMBAT_CONFIG = 'data/config/combat/'

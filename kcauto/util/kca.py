@@ -1,4 +1,6 @@
 import os
+import json
+import glob
 from sys import platform, exit
 import requests
 from pyquery import PyQuery
@@ -124,6 +126,16 @@ class Kca(object):
         from the get_data api call. Otherwise, it will load the stored data
         from previous startups.
         """
+        # Create a pattern to match the files
+        pattern = os.path.join('.', '.screenshot*.png')
+
+        # Find all files that match the pattern
+        files = glob.glob(pattern)
+
+        # Remove all matching files
+        for file in files:
+            os.remove(file)
+
         screen = Region()
         if self.click_existing(screen, 'global|game_start.png'):
             Log.log_msg("Starting kancolle from splash screen.")
@@ -132,8 +144,21 @@ class Kca(object):
             self.wait(screen, 'nav|home_menu_sortie.png', 60)
             Log.log_success("Kancolle successfully started.")
             shp.ships.load_wctf_names(force_update=True)
+
         else:
             api.api.update_ship_library_from_json()
+
+        local_ships_json = {"ship": []}
+        for ship in shp.ships.local_ships:
+            local_ships_json["ship"].append({"name": ship.name, \
+                                             "name_jp": ship.name_jp,
+                                             "id":ship.api_id,\
+                                             "level":ship.level,\
+                                             "type": ship.ship_type.name})
+
+        with open("ship.json", "w", encoding='utf-8') as f:
+            json.dump(local_ships_json, f, indent=4, ensure_ascii=False)
+
         self.sleep()
 
         return True
@@ -297,6 +322,7 @@ class Kca(object):
             'lbas_mode_switch', x + 1135, y + 200, 55, 80)
         self._create_or_shift_region('7th_next', x + 386, y + 400, 27, 27)
         # combat-related regions
+        self._create_or_shift_region('c_world', x + 180, y + 635, 650, 65)
         self._create_or_shift_region(
             'formation_line_ahead', x + 596, y + 256, 250, 44)
         self._create_or_shift_region(
@@ -697,7 +723,7 @@ class Kca(object):
             pad (tuple): padding parameter used to modify click coordinate
         """
 
-        sleep(1) #Prevent kcauto form clicking too fast
+        sleep(0.5) #Prevent kcauto form clicking too fast
 
         offset_x = randint(-pad[3], r.w + pad[1])
         offset_y = randint(-pad[0], r.h + pad[2])
@@ -842,8 +868,26 @@ class Kca(object):
                     elif boss_count > 0:
                         action["1-5"] = boss_count 
                     elif sortie_count > 0:
-                        action["1-1"] = sortie_count 
+                        action["1-1"] = sortie_count
 
+                elif quest_name == "Bq8":
+                    action_raw_line[0] = action_raw_line[0].replace(' ', '/')
+                    s_1_5_count =        int(action_raw_line[0].split("/")[1]) - int(action_raw_line[0].split("/")[0])
+                    action_raw_line[1] = action_raw_line[1].replace(' ', '/')
+                    s_7_1_count =        int(action_raw_line[1].split("/")[1]) - int(action_raw_line[1].split("/")[0])
+                    action_raw_line[2] = action_raw_line[2].replace(' ', '/')
+                    s_7_2_G_count =      int(action_raw_line[2].split("/")[1]) - int(action_raw_line[2].split("/")[0])
+                    action_raw_line[3] = action_raw_line[3].replace(' ', '/')
+                    s_7_2_M_count =      int(action_raw_line[3].split("/")[1]) - int(action_raw_line[3].split("/")[0])
+
+                    if s_1_5_count > 0:
+                        action["1-5"] = s_1_5_count
+                    elif s_7_1_count > 0:
+                        action["7-1"] = s_7_1_count
+                    elif s_7_2_G_count > 0:
+                        action["7-2-G"] = s_7_2_G_count
+                    elif s_7_2_M_count > 0:
+                        action["7-2-M"] = s_7_2_M_count
 
                 else:
 
