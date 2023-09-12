@@ -6,7 +6,7 @@
 In comparison with **kcauto**, **kcauto_custom** is less flexible while being more automatic for easy daily use.  
 This tool is designed to help users automate repetitive tasks such as Expedition, Combat, PvP, Repair & Resupply, ultimately saving time and improving efficiency. 
 
-***Warnning*** : kcauto_custom is not made for Windows(althought it could theoretically run on Windows), I might or might not fix any compatibility problems.
+***Warnning*** : kcauto_custom is not made for Windows(althought it could theoretically run on Windows), I might or might not fix any compatibility issues.
 
 ![Screenshot from 2023-05-05 23-42-59](https://user-images.githubusercontent.com/16824564/236490338-2930fada-2a0b-47da-958c-7d150b421c48.png)
 
@@ -33,8 +33,6 @@ This tool is designed to help users automate repetitive tasks such as Expedition
 * Scheduled and manual sleeping and pausing of individual modules or entire script
 * Automatic catbomb and script recovery
 * Random variations in navigation, timers, and click positions to combat bot detection
-* Hot-reload config files
-* Open-source codebase
 
 ### Features form kcauto_custom
 
@@ -47,31 +45,12 @@ This tool is designed to help users automate repetitive tasks such as Expedition
 * Support for 7-4, events
 * Bug fix(Fleet Switcher Module, interaction_mode, quest handling etc.)
 
-## Installation
-
-[wiki](https://github.com/XVs32/kcauto_custom/wiki/Ch1:-Setup-guide)  
-For non-developer:
-* Windows
-    * Double click `kcauto_cui.exe` 
-        * Or, run `.\kcauto_cui.exe` in Powershell for better user experience
-* Linux
-    * Run `./kcauto_cui`
-    
----
-
-For developer(Those who know what they are doing):
-* Install Python 3.7.3
-* (Unix only) Install additional pacakges `python3-tk scrot`
-* Install pip if not already installed
-* (Optional, but recommended) Install `pipenv` using `pip install pipenv`
-* Install dependencies:
-  * `pip`-mode: `pip install -r requirements.txt`
-  * `pipenv`-mode: `pipenv shell`, then `pipenv install --ignore-pipfile`
-
 ## Wiki page
 ### [Setup guide](https://github.com/XVs32/kcauto_custom/wiki/Ch1:-Setup-guide)  
-### [Beginner user guide](https://github.com/XVs32/kcauto_custom/wiki/Ch2.1:-Beginner-user-guide)  
-### [Gamer user guide](https://github.com/XVs32/kcauto_custom/wiki/Ch2.2:-Gamer-user-guide)  
+### [Beginner user guide](https://github.com/XVs32/kcauto_custom/wiki/Ch2:-Beginner-user-guide)  
+### [Gamer user guide ‐‐ Sortie](https://github.com/XVs32/kcauto_custom/wiki/Ch3.1:-Gamer-user-guide-%E2%80%90%E2%80%90-Sortie)  
+### [Gamer user guide ‐‐ Expedition](https://github.com/XVs32/kcauto_custom/wiki/Ch3.2:-Gamer-user-guide-%E2%80%90%E2%80%90-Expedition)  
+
 ---
 *You will need a github account for the following*
 ### [Wishing pool](https://github.com/XVs32/kcauto_custom/discussions/categories/ideas): Wish/Idea for new functions
