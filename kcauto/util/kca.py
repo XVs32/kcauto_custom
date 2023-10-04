@@ -146,6 +146,7 @@ class Kca(object):
             shp.ships.load_wctf_names(force_update=True)
 
         else:
+            Log.log_debug("Can't find splash screen.")
             api.api.update_ship_library_from_json()
 
         local_ships_json = {"ship": []}
