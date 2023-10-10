@@ -11,7 +11,7 @@ MAP = -1
 WORLD = 1
 
 world_list = {0:"", 1:"1", 2:"2", 3:"3", 4:"4", 5:"5", 6:"6", 7:"7", 8:"E", 9:""}
-map_list = {0:"", 1:"1", 2:"2", 3:"3", 4:"4", 5:"5", 6:"6", 7:""}
+map_list = {0:"", 1:"1", 2:"2", 3:"3", 4:"4", 5:"5", 6:"6", 7:"7", 8:""}
 mode_list = ["disable(akashi mode)", "auto", "normal"]
 preset_list = {DISABLE:["disable", "akashi mode"], NORMAL:["disable", "auto", "1", "2", "3"]}
 
