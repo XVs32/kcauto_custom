@@ -1,8 +1,8 @@
 {
     "world": "E",
     "subworld": 6,
-    "panel": 1,
-    "page": 4,
+    "panel": 2,
+    "page": 3,
     "enemy_context": [
         "subs",
         "carriers",
@@ -139,6 +139,9 @@
             "coords": [
                 515,
                 172
+            ],
+            "types": [
+                "sub"
             ]
         },
         "S": {
