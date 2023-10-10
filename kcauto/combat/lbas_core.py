@@ -159,6 +159,8 @@ class LBASCore(object):
 
         kca_u.kca.wait_vanish(
             'lower_right', 'combat|lbas_resupply_in_progress.png')
+        kca_u.kca.wait(
+            'upper_right', f'combat|lbas_group_tab_{group_id}.png')
         kca_u.kca.sleep(1)
 
     def _set_to_desired_state(self, start, stop):
