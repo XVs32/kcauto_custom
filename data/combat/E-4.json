@@ -2,7 +2,7 @@
     "world": "E",
     "subworld": 4,
     "panel": 1,
-    "page": 3,
+    "page": 2,
     "enemy_context": [
         "subs",
         "carriers",
@@ -48,7 +48,7 @@
                 237
             ],
             "types": [
-                "boss"
+                "sub"
             ]
         },
         "G": {
@@ -70,15 +70,15 @@
             "coords": [
                 534,
                 520
-            ],
-            "types": [
-                "sub"
             ]
         },
         "J": {
             "coords": [
                 626,
                 486
+            ],
+            "types": [
+                "sub"
             ]
         },
         "K": {
@@ -160,6 +160,9 @@
             "coords": [
                 827,
                 235
+            ],
+            "types": [
+                "sub"
             ]
         },
         "V": {
