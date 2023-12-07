@@ -249,14 +249,14 @@ class Kcauto(object):
             default_json = cfg.config.load_json(COMBAT_CONFIG + "default.json")
             cfg.config.combat.config_override(default_json)
 
-            #load default config
-            sortie_queue = com.combat.get_sortie_queue()
-
-            if os.path.isfile(COMBAT_CONFIG + sortie_queue[0] + ".json"):
-                default_json = cfg.config.load_json(COMBAT_CONFIG + sortie_queue[0] + ".json")
+            if os.path.isfile(COMBAT_CONFIG + cfg.config.combat.sortie_map.value + ".json"):
+                default_json = cfg.config.load_json(COMBAT_CONFIG + cfg.config.combat.sortie_map.value + ".json")
+                cfg.config.combat.config_override(default_json)
+            elif os.path.isfile(COMBAT_CONFIG + cfg.config.combat.sortie_map.world_and_map + ".json"):
+                default_json = cfg.config.load_json(COMBAT_CONFIG + cfg.config.combat.sortie_map.world_and_map + ".json")
                 cfg.config.combat.config_override(default_json)
             else:
-                Log.log_warn(f"{sortie_queue[0]} combat config not found, use default combat config instead.")
+                Log.log_warn(f"{cfg.config.combat.sortie_map.value} combat config not found, use default combat config instead.")
 
         #apply for combat queue, assume map_data is up-to-date
         self.run_quest_logic('combat', fast_check = not was_sortie_queue_empty, force= was_sortie_queue_empty)
