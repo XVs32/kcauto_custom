@@ -800,4 +800,15 @@ class CombatCore(CoreBase):
 
         return self.sortie_queue
 
+    def solve_gimmick(self):
+
+        data = JsonData.load_json(f'data|temp|gimmick.json')
+
+        try:
+            data[self.sortie_queue]["gimmick_level"] += 1
+            JsonData.dump_json(data, 'data|temp|gimmick.json')
+            
+        except KeyError:
+            Log.log_debug("No exp data found in API response.")
+
 combat = CombatCore()
