@@ -116,3 +116,12 @@ class KCTime(ABC):
         dhms['hours'], rem = divmod(rem, 60 * 60)
         dhms['minutes'], dhms['seconds'] = divmod(rem, 60)
         return dhms
+
+    @staticmethod
+    def is_same_month(timestamp1, timestamp2):
+        # Convert the timestamps to datetime objects
+        dt1 = datetime.fromtimestamp(timestamp1)
+        dt2 = datetime.fromtimestamp(timestamp2)
+
+        # Check if the year and the month are the same for both timestamps
+        return dt1.year == dt2.year and dt1.month == dt2.month
