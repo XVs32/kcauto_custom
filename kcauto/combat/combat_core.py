@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 from operator import sub
+import time
 import threading
 
 import api.api_core as api
@@ -809,6 +810,35 @@ class CombatCore(CoreBase):
             JsonData.dump_json(data, 'data|temp|gimmick.json')
             
         except KeyError:
-            Log.log_debug("No exp data found in API response.")
+            Log.log_debug("Invalid gimmick update requested.")
+    def check_gimmick(self):
+        """
+            method to check what gimmick to go next for the current sortie map
+            return None if no gimmick is availble
+        """
+        data = JsonData.load_json(f'data|temp|gimmick.json')
+        map_name = cfg.config.combat.sortie_map.value
+
+        """Reset gimmick each month"""
+        try:
+            if not KCTime.is_same_month(data[map_name]["timestamp"], time.time()):
+                Log.log_debug("Gimmick renew")
+                data[map_name]["timestamp"] = time.time()
+                data[map_name]["gimmick_level"] = 0
+                JsonData.dump_json(data, 'data|temp|gimmick.json')
+        except KeyError:
+            pass
+
+        gimmick_level = None
+
+        """gimmick_level rules for each map(7-5 only for now)"""
+        if map_name == "7-5"\
+        and (self.sortie_map_stage - 1) >= 1:
+            try:
+                gimmick_level = data[map_name]["gimmick_level"]
+            except KeyError:
+                pass
+
+        return gimmick_level
 
 combat = CombatCore()
