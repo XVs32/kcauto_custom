@@ -274,6 +274,7 @@ class ApiWrapper(object):
 
         try:
             gimmick = data['api_event_object']['api_m_flag2']
+            Log.log_debug(f"Gimmick data found = {gimmick}.")
             if gimmick == 1:
                 """A gimmick is solved"""
                 com.combat.solve_gimmick()
