@@ -228,11 +228,24 @@ class Kcauto(object):
             cfg.config.combat.sortie_map = com.combat.get_sortie_queue()[0]
 
             """Check if multi stage map requested"""
-            MULTI_STAGE_MAPS = {"7-2":["G", "M"], "7-3":["E", "M"], "7-5":["K", "M", "Q", "T"]}
-            if cfg.config.combat.sortie_map.value in MULTI_STAGE_MAPS:
+            MULTI_STAGE_MAPS = {"7-2":["G", "M"], "7-3":["E", "M"], "7-5":["K", "Q", "T"]}
+            GIMMICK_MAPS = {"7-5":["M"]}
+            map_name = cfg.config.combat.sortie_map.value
+            if map_name in MULTI_STAGE_MAPS:
                 nav.navigate.to('combat')
                 Log.log_error(f"com.combat.sortie_map_stage: {com.combat.sortie_map_stage}")
-                stage = MULTI_STAGE_MAPS[cfg.config.combat.sortie_map.value][com.combat.sortie_map_stage - 1]
+
+                try:
+                    Log.log_debug(f"Gimmick needed to be finish")
+                    stage = GIMMICK_MAPS[map_name][com.combat.check_gimmick()]
+                except TypeError:
+                    stage = MULTI_STAGE_MAPS[map_name][com.combat.sortie_map_stage - 1]
+                except IndexError:
+                    stage = MULTI_STAGE_MAPS[map_name][com.combat.sortie_map_stage - 1]
+                except KeyError:
+                    stage = MULTI_STAGE_MAPS[map_name][com.combat.sortie_map_stage - 1]
+
+
                 Log.log_error(f"stage: {stage}")
 
                 cfg.config.combat.sortie_map = cfg.config.combat.sortie_map.value + "-" + stage
@@ -273,6 +286,7 @@ class Kcauto(object):
 
             if com.combat.conduct_sortie():
 
+                Log.log_debug(f"conduct sortie end")
                 #sortie success, pop the head of sortie_queue
                 com.combat.pop_sortie_queue()
                 
