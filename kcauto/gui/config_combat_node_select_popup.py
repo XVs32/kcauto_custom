@@ -1,7 +1,7 @@
 import PySimpleGUI as sg
 
 from gui.layout_base import LayoutBase
-from kca_enums.nodes import NamedNodeEnum
+from kca_enums.nodes import NodeEnum
 
 
 class ConfigCombatNodeSelectPopupLayout(LayoutBase):
@@ -27,14 +27,14 @@ class ConfigCombatNodeSelectPopupLayout(LayoutBase):
             [
                 sg.Combo(
                     [
-                        x.display_name for x in NamedNodeEnum
+                        x.display_name for x in NodeEnum
                         if x.display_name not in [y[0] for y in node_selects]],
                     key='node_1_combo',
                     font=cls.FONT_10,
                     size=(4, 1)),
                 sg.Text(' to ', font=cls.FONT_10),
                 sg.Combo(
-                    [x.display_name for x in NamedNodeEnum],
+                    [x.display_name for x in NodeEnum],
                     key='node_2_combo',
                     font=cls.FONT_10,
                     size=(4, 1)),
@@ -78,7 +78,7 @@ class ConfigCombatNodeSelectPopupLayout(LayoutBase):
                 popup_window['node_1_combo'].Update(
                     value=None,
                     values=[
-                        x.display_name for x in NamedNodeEnum
+                        x.display_name for x in NodeEnum
                         if x.display_name
                         not in [y.split('>')[0] for y in lb_values]],
                     set_to_index=None)
@@ -91,7 +91,7 @@ class ConfigCombatNodeSelectPopupLayout(LayoutBase):
                 popup_window['node_1_combo'].Update(
                     value=None,
                     values=[
-                        x.display_name for x in NamedNodeEnum
+                        x.display_name for x in NodeEnum
                         if x.display_name
                         not in [
                             y.split('>')[0]

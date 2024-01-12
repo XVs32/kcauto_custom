@@ -233,7 +233,7 @@ class Kca(object):
             except FindFailed:
                 Log.log_debug("Not using UI 4 or 5")
             attempt += 1
-            sleep(1)
+            self.sleep(1)
             if attempt > 3:
                 Log.log_error("Could not find Kancolle reference point.")
                 raise FindFailed()
@@ -724,7 +724,7 @@ class Kca(object):
             pad (tuple): padding parameter used to modify click coordinate
         """
 
-        sleep(0.5) #Prevent kcauto form clicking too fast
+        self.sleep(0.5) #Prevent kcauto form clicking too fast
 
         offset_x = randint(-pad[3], r.w + pad[1])
         offset_y = randint(-pad[0], r.h + pad[2])
@@ -741,7 +741,7 @@ class Kca(object):
         Args:
             r (Region, Match): Region/Match region to hover 
         """
-        sleep(1) #Prevent kcauto form clicking too fast
+        self.sleep(1) #Prevent kcauto form clicking too fast
 
         offset_x = randint(0, r.w)
         offset_y = randint(0, r.h)

@@ -1,7 +1,7 @@
 import PySimpleGUI as sg
 from gui.layout_base import LayoutBase
 
-from kca_enums.nodes import NamedNodeEnum
+from kca_enums.nodes import NodeEnum
 
 
 class ConfigCombatPushNodePopupLayout(LayoutBase):
@@ -26,7 +26,7 @@ class ConfigCombatPushNodePopupLayout(LayoutBase):
             [
                 sg.Combo(
                     [
-                        x.display_name for x in NamedNodeEnum
+                        x.display_name for x in NodeEnum
                         if x.display_name not in nodes],
                     key='node_combo',
                     font=cls.FONT_10,
@@ -70,7 +70,7 @@ class ConfigCombatPushNodePopupLayout(LayoutBase):
                 popup_window['node_combo'].Update(
                     value=None,
                     values=[
-                        x.display_name for x in NamedNodeEnum
+                        x.display_name for x in NodeEnum
                         if x.display_name not in lb_values],
                     set_to_index=None)
 
@@ -82,7 +82,7 @@ class ConfigCombatPushNodePopupLayout(LayoutBase):
                 popup_window['node_combo'].Update(
                     value=None,
                     values=[
-                        x.display_name for x in NamedNodeEnum
+                        x.display_name for x in NodeEnum
                         if x.display_name not in popup_window['nodes'].Values],
                     set_to_index=None)
 
