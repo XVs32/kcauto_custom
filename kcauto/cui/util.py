@@ -100,9 +100,4 @@ def run_external_program(panel):
     print_log(panel, "kcauto ended\n")
 
 def signal_handler(signal = None, frame = None):
-    curses.endwin()
-    global process
-    if process != None:
-        process.kill()
-    print("Exiting gracefully...")
     exit(0)
