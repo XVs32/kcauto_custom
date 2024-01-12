@@ -269,9 +269,17 @@ class ApiWrapper(object):
         try:
             for i in range(1, len(data['api_data']['api_deck_port'])):
                 exp.expedition.cur_exp[i] = data['api_data']['api_deck_port'][i]["api_mission"][1]
-            
         except KeyError:
             Log.log_debug("No exp data found in API response.")
+
+        try:
+            gimmick = data['api_event_object']['api_m_flag2']
+            Log.log_debug(f"Gimmick data found = {gimmick}.")
+            if gimmick == 1:
+                """A gimmick is solved"""
+                com.combat.solve_gimmick()
+        except KeyError:
+            Log.log_debug("No gimmick data found in API response.")
 
         return None
 

@@ -98,5 +98,6 @@ class Log(ABC):
         """
         if arg.args.parsed_args.debug_output:
             print(cls._log_format(msg), flush=True)
-            cls.log_file.write(cls._log_format(msg) + "\n")
-            cls.log_file.flush()
+
+        cls.log_file.write(cls._log_format(msg) + "\n")
+        cls.log_file.flush()

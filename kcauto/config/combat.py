@@ -6,7 +6,7 @@ from kca_enums.fleet_modes import FleetModeEnum, CombinedFleetModeEnum
 from kca_enums.formations import FormationEnum
 from kca_enums.lbas_groups import LBASGroupEnum
 from kca_enums.maps import MapEnum
-from kca_enums.nodes import NodeEnum, NamedNodeEnum
+from kca_enums.nodes import NodeEnum, NodeEnum
 from util.logger import Log
 import combat.lbas_core as lbas
 
@@ -234,8 +234,8 @@ class ConfigCombat(ConfigBase):
             if len(split) != 2:
                 raise ValueError("Node select in wrong format.")
             if (
-                    not NamedNodeEnum.contains_value(split[0])
-                    or not NamedNodeEnum.contains_value(split[1])):
+                    not NodeEnum.contains_value(split[0])
+                    or not NodeEnum.contains_value(split[1])):
                 raise ValueError("Bad node specified in node select.")
             node_selects[split[0]] = NodeEnum(split[1])
         self._node_selects = node_selects
@@ -285,7 +285,7 @@ class ConfigCombat(ConfigBase):
     @push_nodes.setter
     def push_nodes(self, value):
         for node in value:
-            if not NamedNodeEnum.contains_value(node):
+            if not NodeEnum.contains_value(node):
                 raise ValueError("Invalid node specified for push nodes.")
         self._push_nodes = [NodeEnum(node) for node in value]
 
@@ -353,7 +353,7 @@ class ConfigCombat(ConfigBase):
                 and len(value) not in (0, 2)):
             raise ValueError("0 or 2 nodes not specified for LBAS 1")
         for node in value:
-            if not NamedNodeEnum.contains_value(node):
+            if not NodeEnum.contains_value(node):
                 raise ValueError("Invalid node specified for LBAS 1")
         self._lbas_group_1_nodes = [NodeEnum(node) for node in value]
 
@@ -368,7 +368,7 @@ class ConfigCombat(ConfigBase):
                 and len(value) not in (0, 2)):
             raise ValueError("0 or 2 nodes not specified for LBAS 2")
         for node in value:
-            if not NamedNodeEnum.contains_value(node):
+            if not NodeEnum.contains_value(node):
                 raise ValueError("Invalid node specified for LBAS 2")
         self._lbas_group_2_nodes = [NodeEnum(node) for node in value]
 
@@ -383,7 +383,7 @@ class ConfigCombat(ConfigBase):
                 and len(value) not in (0, 2)):
             raise ValueError("0 or 2 nodes not specified for LBAS 3")
         for node in value:
-            if not NamedNodeEnum.contains_value(node):
+            if not NodeEnum.contains_value(node):
                 raise ValueError("Invalid node specified for LBAS 3")
         self._lbas_group_3_nodes = [NodeEnum(node) for node in value]
 
