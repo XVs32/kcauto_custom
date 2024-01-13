@@ -2,6 +2,7 @@
 # use "sudo apt install python3.7-distutils" first if needed
 # use "sudo apt-get install python3.7-tk" first if needed
 # use "sudo apt-get install scrot" first if needed
+# use "pip install windows-curses" for windows system
 
 tk
 click==6.7
