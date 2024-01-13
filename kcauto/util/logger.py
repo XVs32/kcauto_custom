@@ -1,6 +1,8 @@
 from abc import ABC
 from time import strftime
 from datetime import datetime
+from dateutil.relativedelta import relativedelta
+import os
 
 import args.args_core as arg
 
@@ -16,6 +18,30 @@ class Log(ABC):
 
     @classmethod
     def init(cls):
+
+        # Specify the directory path
+        directory = 'log'
+
+        # Calculate the date one month ago from the current date
+        one_month_ago = datetime.now() - relativedelta(months=1)
+
+        # Iterate over the file names in the directory
+        for filename in os.listdir(directory):
+            if os.path.isfile(os.path.join(directory, filename)):
+
+                # Extract the date and time part from the filename
+                date_time_str = filename[:-4]  # Remove the '.log' extension
+
+                # Define the format of the date and time in the filename
+                date_time_format = "%d-%m-%Y-%H-%M-%S"
+
+                # Parse the date and time string into a datetime object
+                date_time_obj = datetime.strptime(date_time_str, date_time_format)
+
+                # Check if date_time_obj is one month or older
+                if date_time_obj <= one_month_ago :
+                    os.remove(os.path.join(directory, filename))
+
         # dd/mm/YY H:M:S
         dt_string = datetime.now().strftime("%d-%m-%Y-%H-%M-%S")
         cls.log_file = open( "log/" + dt_string + ".log", "w", encoding='utf-8')
