@@ -536,6 +536,8 @@ class Kca(object):
             region (Region, Match, str): Region/Match object or pre-defined
                 region key.
         """
+        self.sleep(0.5)
+
         r = self._get_region(region)
         if (cfg.config.general.interaction_mode
                 is InteractionModeEnum.DIRECT_CONTROL):
@@ -554,6 +556,8 @@ class Kca(object):
             pad (tuple, optional): click region modifier. Defaults to
                 (0, 0, 0, 0).
         """
+        self.sleep(0.5)
+
         r = self._get_region(region)
         if (cfg.config.general.interaction_mode
                 is InteractionModeEnum.DIRECT_CONTROL):
@@ -586,7 +590,6 @@ class Kca(object):
         try:
             match = r.find(self._create_asset_path(asset), similarity, cached)
             self.click(match, pad=pad)
-            self.sleep()
             return True
         except FindFailed:
             return False
@@ -724,8 +727,6 @@ class Kca(object):
             pad (tuple): padding parameter used to modify click coordinate
         """
 
-        self.sleep(0.5) #Prevent kcauto form clicking too fast
-
         offset_x = randint(-pad[3], r.w + pad[1])
         offset_y = randint(-pad[0], r.h + pad[2])
         x = r.x - self.css_x
@@ -741,7 +742,6 @@ class Kca(object):
         Args:
             r (Region, Match): Region/Match region to hover 
         """
-        self.sleep(1) #Prevent kcauto form clicking too fast
 
         offset_x = randint(0, r.w)
         offset_y = randint(0, r.h)

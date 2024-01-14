@@ -3,6 +3,7 @@ from time import strftime
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 import os
+import sys
 
 import args.args_core as arg
 
@@ -18,6 +19,9 @@ class Log(ABC):
 
     @classmethod
     def init(cls):
+
+        #force using utf-8
+        sys.stdout.reconfigure(encoding='utf-8')
 
         # Specify the directory path
         directory = 'log'
