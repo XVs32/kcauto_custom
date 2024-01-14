@@ -360,29 +360,29 @@ class Kca(object):
         self._create_or_shift_region(
             "develop_region", x + 215, y + 480, 200, 50)
         self._create_or_shift_region(
-            "order_oil_region_1", x + 547, y + 227, 10, 5)
+            "order_oil_region_1", x + 552, y + 226, 10, 10)
         self._create_or_shift_region(
-            "order_oil_region_10", x + 742, y + 207, 5, 5)
+            "order_oil_region_10", x + 742, y + 194, 10, 10)
         self._create_or_shift_region(
-            "order_oil_region_100", x + 742, y + 247, 5, 5)
+            "order_oil_region_100", x + 742, y + 236, 10, 10)
         self._create_or_shift_region(
-            "order_ammo_region_1", x + 547, y + 422, 10, 5)
+            "order_ammo_region_1", x + 552, y + 420, 10, 10)
         self._create_or_shift_region(
-            "order_ammo_region_10", x + 742, y + 407, 5, 5)
+            "order_ammo_region_10", x + 742, y + 390, 10, 10)
         self._create_or_shift_region(
-            "order_ammo_region_100", x + 742, y + 447, 5, 5)
+            "order_ammo_region_100", x + 742, y + 430, 10, 10)
         self._create_or_shift_region(
-            "order_steel_region_1", x + 887, y + 227, 10, 5)
+            "order_steel_region_1", x + 890, y + 226, 10, 10)
         self._create_or_shift_region(
-            "order_steel_region_10", x + 1082, y + 207, 5, 5)
+            "order_steel_region_10", x + 1085, y + 194, 10, 10)
         self._create_or_shift_region(
-            "order_steel_region_100", x + 1082, y + 247, 5, 5)
+            "order_steel_region_100", x + 1085, y + 236, 10, 10) 
         self._create_or_shift_region(
-            "order_bauxite_region_1", x + 887, y + 422, 10, 5)
+            "order_bauxite_region_1", x + 890, y + 420, 10, 10)
         self._create_or_shift_region(
-            "order_bauxite_region_10", x + 1082, y + 407, 5, 5)
+            "order_bauxite_region_10", x + 1085, y + 390, 10, 10)
         self._create_or_shift_region(
-            "order_bauxite_region_100", x + 1082, y + 447, 5, 5)
+            "order_bauxite_region_100", x + 1085, y + 430, 10, 10)
 
     def _create_or_shift_region(self, key, x, y, w, h):
         """Helper method for generating or shifting an existing Region's x
