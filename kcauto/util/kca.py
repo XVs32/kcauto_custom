@@ -546,6 +546,8 @@ class Kca(object):
                 is InteractionModeEnum.CHROME_DRIVER):
             self._chrome_driver_hover_method(r)
 
+        self.sleep(0.5)
+
     def click(self, region, pad=(0, 0, 0, 0)):
         """Helper method that clicks a passed in region. The pad parameter
         allows for further tweaking of the valid click region.
@@ -565,6 +567,8 @@ class Kca(object):
         elif (cfg.config.general.interaction_mode
                 is InteractionModeEnum.CHROME_DRIVER):
             self._chrome_driver_click_method(r, pad)
+
+        self.sleep(0.5)
 
     def click_existing(
             self, region, asset, similarity=DEFAULT, pad=(0, 0, 0, 0),
