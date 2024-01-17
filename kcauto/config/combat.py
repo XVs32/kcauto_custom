@@ -24,6 +24,7 @@ class ConfigCombat(ConfigBase):
     _node_night_battles = {}
     _push_nodes = []
     _retreat_limit = None
+    _repair_bucket_threshold = None
     _repair_limit = None
     _repair_timelimit_hours = None
     _repair_timelimit_minutes = None
@@ -53,6 +54,7 @@ class ConfigCombat(ConfigBase):
         self.node_night_battles = config['combat.node_night_battles']
         self.push_nodes = config['combat.push_nodes']
         self.retreat_limit = config['combat.retreat_limit']
+        self.repair_bucket_threshold = config['combat.repair_bucket_threshold']
         self.repair_limit = config['combat.repair_limit']
         self.repair_timelimit_hours = config['combat.repair_timelimit_hours']
         self.repair_timelimit_minutes = config[
@@ -85,6 +87,8 @@ class ConfigCombat(ConfigBase):
             self.push_nodes = config['combat.push_nodes']
         if "combat.retreat_limit" in config:
             self.retreat_limit = config['combat.retreat_limit']
+        if "combat.repair_bucket_threshold" in config:
+            self.repair_bucket_threshold = config['combat.repair_bucket_threshold']
         if "combat.repair_limit" in config:
             self.repair_limit = config['combat.repair_limit']
         if "combat.repair_timelimit_hours" in config:
@@ -214,6 +218,15 @@ class ConfigCombat(ConfigBase):
                 "Combat fleet cannot be combined if expedition 2 fleets are "
                 "defined")
         self._fleet_mode = fleet_mode
+
+    @property
+    def repair_bucket_threshold(self):
+        return self._repair_bucket_threshold
+
+    @repair_bucket_threshold.setter
+    def repair_bucket_threshold(self, value):
+        self._repair_bucket_threshold = value
+        Log.log_debug(f"_repair_bucket_threshold set {self._repair_bucket_threshold}")
 
     @property
     def retreat_points(self):
