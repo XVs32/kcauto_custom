@@ -11,8 +11,8 @@
     "combat.lbas_groups": [],
     "combat.node_formations": [],
     "combat.node_night_battles": [],
-    "combat.node_selects": [
-    ],
+    "combat.node_selects": [],
+    "combat.node_smoke": [],
     "combat.override": false,
     "combat.port_check": false,
     "combat.push_nodes": [],
