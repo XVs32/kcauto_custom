@@ -18,6 +18,7 @@ class ConfigCombat(ConfigBase):
     _sortie_map_read_only = None
     _fleet_mode = None
     _retreat_points = []
+    _node_smoke = []
     _node_selects = {}
     _node_formations = {}
     _node_night_battles = {}
@@ -46,6 +47,7 @@ class ConfigCombat(ConfigBase):
         self.sortie_map_read_only = config['combat.sortie_map']
         self.fleet_mode = config['combat.fleet_mode']
         self.retreat_points = config['combat.retreat_points']
+        self.node_smoke = config['combat.node_smoke']
         self.node_selects = config['combat.node_selects']
         self.node_formations = config['combat.node_formations']
         self.node_night_battles = config['combat.node_night_battles']
@@ -71,6 +73,8 @@ class ConfigCombat(ConfigBase):
             self.fleet_mode = config['combat.fleet_mode']
         if "combat.retreat_points" in config:
             self.retreat_points = config['combat.retreat_points']
+        if "combat.node_smoke" in config:
+            self.node_smoke = config['combat.node_smoke']
         if "combat.node_selects" in config:
             self.node_selects = config['combat.node_selects']
         if "combat.node_formations" in config:
@@ -221,6 +225,19 @@ class ConfigCombat(ConfigBase):
             if not NodeEnum.contains_value(node):
                 raise ValueError("Invalid node specified")
         self._retreat_points = [NodeEnum(node) for node in value]
+
+    @property
+    def node_smoke(self):
+        return self._node_smoke
+
+    @node_smoke.setter
+    def node_smoke(self, value):
+        node_smoke = [] 
+        for node in value:
+            if not NodeEnum.contains_value(node):
+                raise ValueError("Bad node specified in node select.")
+            node_smoke.append(NodeEnum(node)) 
+        self._node_smoke = node_smoke
 
     @property
     def node_selects(self):
