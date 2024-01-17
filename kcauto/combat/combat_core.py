@@ -355,6 +355,9 @@ class CombatCore(CoreBase):
                 Log.log_msg(f"Combat at node {self.current_node}.")
 
                 if node_type == self.NODE_TYPE_COMBAT:
+
+                    self._resolve_smoke_prompt()
+
                     self._resolve_formation_prompt()
                     #api.api.update_from_api(self.COMBAT_APIS, need_all=False)
 
@@ -499,6 +502,16 @@ class CombatCore(CoreBase):
                 return self.NODE_TYPE_END
 
             kca_u.kca.sleep(1)
+
+    def _resolve_smoke_prompt(self):
+        
+        if NodeEnum(self.current_node.name) in cfg.config.combat.node_smoke:
+            Log.log_msg("Smoke activated in config")
+            if kca_u.kca.click_existing(
+                'lower', 'fleet|smoke_disable.png'):
+                Log.log_debug("Smoke activated")
+            else:
+                Log.log_debug("Smoke button not found")
 
     def _resolve_formation_prompt(self):
         Log.log_debug("Resolving formation prompt.")
