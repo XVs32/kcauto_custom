@@ -1,5 +1,5 @@
 {
-	"combat.check_fatigue": true,
+    "combat.check_fatigue": true,
     "combat.check_lbas_fatigue": true,
     "combat.clear_stop": false,
     "combat.enabled": false,
@@ -9,6 +9,7 @@
     "combat.lbas_group_2_nodes": [],
     "combat.lbas_group_3_nodes": [],
     "combat.lbas_groups": [],
+    "combat.node_smoke": [],
     "combat.node_formations": [],
     "combat.node_night_battles": [],
     "combat.node_selects": [],
