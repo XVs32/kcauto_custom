@@ -1,5 +1,5 @@
-{    
-	"combat.check_fatigue": true,
+{
+    "combat.check_fatigue": true,
     "combat.check_lbas_fatigue": true,
     "combat.clear_stop": false,
     "combat.enabled": true,
@@ -9,6 +9,7 @@
     "combat.lbas_group_2_nodes": [],
     "combat.lbas_group_3_nodes": [],
     "combat.lbas_groups": [],
+    "combat.node_smoke": [],
     "combat.node_formations": [],
     "combat.node_night_battles": [],
     "combat.node_selects": [],
@@ -21,7 +22,7 @@
     "combat.reserve_repair_dock": true,
     "combat.retreat_limit": 4,
     "combat.retreat_points": [],
-	"combat.sortie_map":	"1-1",
+    "combat.sortie_map": "1-1",
     "event_reset.enabled": false,
     "event_reset.farm_difficulty": 2,
     "event_reset.frequency": 3,
