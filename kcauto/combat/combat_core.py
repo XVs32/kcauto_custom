@@ -359,21 +359,16 @@ class CombatCore(CoreBase):
                     #api.api.update_from_api(self.COMBAT_APIS, need_all=False)
 
                 self.combat_nodes_run.append(self.current_node)
-                if self.current_node.boss_node or self.boss_api:
-                    self.boss_api = False
-                    Log.log_msg("Dismissing boss dialogue.")
-                    kca_u.kca.sleep(3)
-                    if not kca_u.kca.exists(
-                        'lower_right_corner', 'global|next.png'):
-                        kca_u.kca.r['center'].click()
-                    kca_u.kca.sleep()
-                    if not kca_u.kca.exists(
-                        'lower_right_corner', 'global|next.png'):
-                        kca_u.kca.r['center'].click()
-                    kca_u.kca.r['lbas'].hover()
 
                 while not kca_u.kca.exists(
                         'lower_right_corner', 'global|next.png'):
+                    
+                    if self.current_node.boss_node or self.boss_api:
+                        #Todo: only trigger when screen doesn't change at all
+                        Log.log_debug_msg("Dismissing boss dialogue.")
+                        kca_u.kca.r['center'].click()
+                        kca_u.kca.sleep(3)
+
                     if kca_u.kca.exists('kc', 'global|combat_nb_fight.png'):
                         Log.log_debug("Night battle prompt.")
 
