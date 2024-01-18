@@ -21,6 +21,7 @@
     "combat.override": false,
     "combat.port_check": false,
     "combat.push_nodes": [],
+    "combat.repair_bucket_threshold": 500,
     "combat.repair_limit": 3,
     "combat.repair_timelimit_hours": 0,
     "combat.repair_timelimit_minutes": 0,
