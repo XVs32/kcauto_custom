@@ -368,7 +368,7 @@ class CombatCore(CoreBase):
                     
                     if self.current_node.boss_node or self.boss_api:
                         #Todo: only trigger when screen doesn't change at all
-                        Log.log_debug_msg("Dismissing boss dialogue.")
+                        Log.log_msg("Dismissing boss dialogue.")
                         kca_u.kca.r['center'].click()
                         kca_u.kca.sleep(3)
 
