@@ -58,3 +58,5 @@ class KCSAPIEnum(EnumBase):
     PVP_ENEMY_INFO = 'kcsapi/api_req_member/get_practice_enemyinfo'
     PVP_RESULTS = 'kcsapi/api_req_practice/battle_result'
     EXPEDITION_START = 'kcsapi/api_req_mission/start'
+    #equipment
+    FREE_EQUIPMENT = 'kcsapi/api_get_member/ship3'
