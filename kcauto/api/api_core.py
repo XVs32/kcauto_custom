@@ -7,6 +7,7 @@ from datetime import datetime, timedelta
 import combat.combat_core as com
 import combat.lbas_core as lbas
 import expedition.expedition_core as exp
+import ships.equipment_core as equ 
 import fleet.fleet_core as flt
 import fleet_switcher.fleet_switcher_core as fsw
 import pvp.pvp_core as pvp
@@ -239,6 +240,8 @@ class ApiWrapper(object):
         try:
             ship_data = data['api_data']['api_ship']
             shp.ships.update_local_ships(ship_data)
+            equ.equipment.get_loaded_equipment(ship_data)
+            
         except KeyError:
             Log.log_debug("No ship data found in API response.")
 
@@ -273,7 +276,7 @@ class ApiWrapper(object):
             Log.log_debug("No exp data found in API response.")
 
         try:
-            gimmick = data['api_event_object']['api_m_flag2']
+            gimmick = data['api_data']['api_event_object']['api_m_flag2']
             Log.log_debug(f"Gimmick data found = {gimmick}.")
             if gimmick == 1:
                 """A gimmick is solved"""
