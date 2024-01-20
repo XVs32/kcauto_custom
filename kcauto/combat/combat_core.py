@@ -463,7 +463,6 @@ class CombatCore(CoreBase):
     def _next_node_handler(self):
 
         while self.combat_api_listener_enable:
-            Log.log_msg(f"Listening...")
             api_result = api.api.update_from_api(
                 self.COMBAT_APIS | self.RESULT_APIS | self.SHIPDECK_API, need_all=False, timeout=5)
             if KCSAPIEnum.SORTIE_NEXT.name in api_result:
