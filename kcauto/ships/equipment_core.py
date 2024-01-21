@@ -1,6 +1,8 @@
+from datetime import datetime
 from util.json_data import JsonData
 from util.logger import Log
 from util.wctf import WhoCallsTheFleetData
+import nav.nav as nav
 
 class EquipmentCore(object):
 
@@ -19,11 +21,22 @@ class EquipmentCore(object):
         self.equipment["loaded"] = {}
         
         for ship in api_data:
-            Log.log_debug(f"ship {ship['api_id']} equipment")
-            Log.log_debug(ship["api_slot"])
-            Log.log_debug(ship["api_slot_ex"])
             self.equipment["loaded"][ship['api_id']] = ship["api_slot"]
             self.equipment["loaded"][ship['api_id']].append(ship["api_slot_ex"])
-        Log.log_debug(self.equipment["loaded"])
+
+
+    def save_loaded_equipment(self):
+        """
+            method to save the loaded equipment list to a json file
+        """
+        
+        nav.navigate.to('refresh_home')
+
+        dt_string = datetime.now().strftime("%d-%m-%Y-%H-%M-%S")
+        JsonData.dump_json(self.equipment["loaded"], 'data|equipment|' + dt_string + '.json')
+
+        Log.log_success(f"Equipment list saved at data/equipment/{dt_string}.json")
+
+        exit(0)
 
 equipment = EquipmentCore()
