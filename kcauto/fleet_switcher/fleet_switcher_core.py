@@ -485,31 +485,44 @@ class FleetSwitcherCore(object):
             ship_list(int list): ships to use
         """
         EMPTY = -1
+        retry = 0
 
-        flt.fleets.fleets[fleet_id].select()
-        
-        empty_slot_count = 0
+        while True:
 
-        size = max(len(flt.fleets.fleets[fleet_id].ship_ids), len(ship_list))
-        for i in range(1,size + 1):
-            if i > len(ship_list):
-                id = EMPTY #remove this slot
-            else:
-                id = ship_list[i - 1]
+            flt.fleets.fleets[fleet_id].select()
+            
+            empty_slot_count = 0
 
-            if i <= len(flt.fleets.fleets[fleet_id].ship_ids) and \
-                id == flt.fleets.fleets[fleet_id].ship_ids[i-1]:
-                continue
+            size = max(len(flt.fleets.fleets[fleet_id].ship_ids), len(ship_list))
+            for i in range(1,size + 1):
+                if i > len(ship_list):
+                    id = EMPTY #remove this slot
+                else:
+                    id = ship_list[i - 1]
 
-            if not ssw.ship_switcher.switch_slot_by_id(i-empty_slot_count,id):
-                #fleet data update
-                nav.navigate.to('home')
-                self.goto()
-                return False
-                
-            if id == EMPTY:
-                empty_slot_count += 1
-        
+                if i <= len(flt.fleets.fleets[fleet_id].ship_ids) and \
+                    id == flt.fleets.fleets[fleet_id].ship_ids[i-1]:
+                    continue
+
+                if not ssw.ship_switcher.switch_slot_by_id(i-empty_slot_count,id):
+                    #fleet data update
+                    nav.navigate.to('home')
+                    self.goto()
+
+                    if retry < 1:
+                        retry += 1
+                        Log.log_msg(f"retrying...")
+                        continue
+                    else:
+                        return False
+                else:
+                    retry = 0
+                    
+                if id == EMPTY:
+                    empty_slot_count += 1
+            
+            break
+            
         return True
 
     def _scroll_preset_list(self, target_clicks):
