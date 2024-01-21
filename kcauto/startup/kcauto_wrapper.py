@@ -3,11 +3,13 @@ from pyvisauto import FindFailed
 from time import sleep
 
 import startup.kcauto as _
+import args.args_core as arg
 from constants import LOOP_BREAK_SECONDS
 from util.exceptions import (
     ApiException, Catbomb201Exception, ChromeCrashException)
 from util.logger import Log
 from util.recovery import Recovery
+import ships.equipment_core as equ 
 
 
 def kcauto_main():
@@ -21,6 +23,11 @@ def kcauto_main():
             _.kcauto.find_browser()
             _.kcauto.start_kancolle()
             _.kcauto.find_kancolle()
+
+            
+            if arg.args.parsed_args.save_equipment:
+                equ.equipment.save_loaded_equipment()
+                #kcauto should end here
 
             while kca_loop:
                 # primary logic
