@@ -28,6 +28,9 @@ def kcauto_main():
             if arg.args.parsed_args.save_equipment:
                 equ.equipment.save_loaded_equipment()
                 #kcauto should end here
+            elif arg.args.parsed_args.load_equipment:
+                equ.equipment.load_loaded_equipment(arg.args.parsed_args.load_equipment)
+                #kcauto should end here
 
             while kca_loop:
                 # primary logic
