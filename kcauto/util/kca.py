@@ -397,6 +397,7 @@ class Kca(object):
         self._create_or_shift_region('3_slot_unload_equipment', x + 478, y + 394, 4, 4)
         self._create_or_shift_region('4_slot_unload_equipment', x + 478, y + 444, 4, 4)
         self._create_or_shift_region('5_slot_unload_equipment', x + 478, y + 494, 4, 4)
+        self._create_or_shift_region('reinforce_slot_unload_equipment', x + 1162, y + 481, 4, 4)
 
     def _create_or_shift_region(self, key, x, y, w, h):
         """Helper method for generating or shifting an existing Region's x
