@@ -77,7 +77,6 @@ class EquipmentCore(object):
                 Log.log_error("kcauto failed to load the selected ship, exiting...")
                 break
 
-            start_id += fleet_size
 
             nav.navigate.to('equipment')
 
@@ -88,7 +87,7 @@ class EquipmentCore(object):
 
                 if kca_u.kca.exists('equipment_panel', 'shipswitcher|1_slot_ship.png'):
                     Log.log_debug(f"1 slot ship")
-                    kca_u.kca.click('1_slot_unload_equipment') 
+                    kca_u.kca.click('1_slot_unload_equipment')
                 elif kca_u.kca.exists('equipment_panel', 'shipswitcher|2_slot_ship.png',cached=True):
                     Log.log_debug(f"2 slot ship")
                     kca_u.kca.click('2_slot_unload_equipment') 
@@ -101,6 +100,16 @@ class EquipmentCore(object):
                 else: 
                     Log.log_debug(f"5 slot ship")
                     kca_u.kca.click('5_slot_unload_equipment') 
+
+                kca_u.kca.wait('lower', 'shipswitcher|equipment_panel.png')
+                
+                if self.equipment["loaded"][unload_ship_id[start_id + i]][-1] > 0:
+                    Log.log_debug(f"reinforce slot ship")
+                    kca_u.kca.click('reinforce_slot_unload_equipment') 
+
+                kca_u.kca.wait('lower', 'shipswitcher|equipment_panel.png')
+
+            start_id += fleet_size
 
         exit(0)
 
