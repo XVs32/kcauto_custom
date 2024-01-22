@@ -429,12 +429,12 @@ class FleetSwitcherCore(object):
             elif context == 'factory_develop':
                 Log.log_msg(f"Switching to {cfg.config.factory.develop_secretary} for develop.")
 
-                ssw.ship_switcher.current_shipcomp_page = 1
+                ssw.ship_switcher.current_page = 1
                 ssw.ship_switcher.switch_slot_by_id(1,cfg.config.factory.develop_secretary)
             elif context == 'factory_build':
                 Log.log_msg(f"Switching to {cfg.config.factory.build_secretary} for construction.")
 
-                ssw.ship_switcher.current_shipcomp_page = 1
+                ssw.ship_switcher.current_page = 1
                 ssw.ship_switcher.switch_slot_by_id(1,cfg.config.factory.build_secretary)
 
         else:
