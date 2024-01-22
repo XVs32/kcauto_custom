@@ -211,6 +211,10 @@ class ApiWrapper(object):
             return True
         elif request_type is KCSAPIEnum.LBAS_RESUPPLY_ACTION:
             return True
+        elif request_type is KCSAPIEnum.FREE_EQUIPMENT:
+            return self._process_free_equipment_data(data)
+        
+
         return None
 
     def _process_get_data(self, data):
@@ -410,5 +414,18 @@ class ApiWrapper(object):
             Log.log_error(e)
             sys.exit(1)
 
+
+    def _process_free_equipment_data(self, data):
+        equ.equipment.equipment['free'] = []
+        try:
+            keys = data['api_data']['api_slot_data'].keys()
+            sorted_keys = sorted(keys, key=lambda x: (len(x), x))
+            for key in sorted_keys:
+                equ.equipment.equipment['free'] = equ.equipment.equipment['free'] + data['api_data']['api_slot_data'][key]
+            
+        except KeyError:
+            Log.log_debug("No provisional equipment data found in API response")
+
+        #Log.log_debug(free_equipment)
 
 api = ApiWrapper()
