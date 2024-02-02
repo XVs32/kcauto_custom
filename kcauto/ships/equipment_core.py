@@ -1,6 +1,7 @@
 from datetime import datetime
 import api.api_core as api
 import fleet_switcher.fleet_switcher_core as fsw
+import ships.ships_core as shp
 import ship_switcher.ship_switcher_core as ssw
 import nav.nav as nav
 from kca_enums.kcsapi_paths import KCSAPIEnum
@@ -12,10 +13,27 @@ from util.wctf import WhoCallsTheFleetData
 class EquipmentCore(object):
 
     equipment = {}
+    reinforce_general_category = {}
+    reinforce_special = {}
 
     def __init__(self):
+        self.equipment["raw"] = {}
         self.equipment["loaded"] = {}
         self.equipment["free"] = []
+        self.equipment["id"] = {}
+
+        try:
+            self.reinforce_general_category = JsonData.load_json('data|temp|reinforce_general_category.json')
+            self.reinforce_special = JsonData.load_json('data|temp|reinforce_special.json')
+        except FileNotFoundError:
+            Log.log_error("Reinforce equipment data not found, please start kcauto from splash screen")
+
+        try:
+            self.equipment["id"] = JsonData.load_json('data|temp|equipment_list.json')
+        except FileNotFoundError:
+            Log.log_debug("Equipment data not found, use empty list instead")
+            JsonData.dump_json(self.equipment["id"], 'data|temp|equipment_list.json')
+            
 
     def get_loaded_equipment(self, api_data):
         """
@@ -172,7 +190,7 @@ class EquipmentCore(object):
                 kca_u.kca.click('ship_'+ str(i + 1)) 
 
                 ssw.ship_switcher.current_page = 1
-                for slot in range(1,6):
+                for slot in range(1,7):
 
                     equipment_id = target_config[str(load_ship_id[start_id + i])][slot - 1]
                     if equipment_id == -1:
@@ -180,17 +198,21 @@ class EquipmentCore(object):
 
                     if slot < 6:
                         kca_u.kca.click(str(slot) + '_slot_equipment') 
+
+                        if slot == 1:
+                            kca_u.kca.click_existing('upper_right', 'shipswitcher|equipment_sort_arrow.png')
+                            kca_u.kca.click('equipment_sort_all')
+                        
+                        kca_u.kca.wait('upper_right', 'shipswitcher|equipment_sort_all.png')
                     else:
                         kca_u.kca.click('reinforce_slot_equipment') 
 
-                    if slot == 1:
-                        kca_u.kca.click_existing('upper_right', 'shipswitcher|equipment_sort_arrow.png')
-                        kca_u.kca.click('equipment_sort_all')
-                    
-                    kca_u.kca.wait('upper_right', 'shipswitcher|equipment_sort_all.png')
-
                     try:
-                        row_id = self.equipment["free"].index(equipment_id)
+                        if slot < 6:
+                            row_id = self.equipment["free"].index(equipment_id)
+                        else:
+                            row_id = self.get_reinforce_equipment_list(load_ship_id[start_id + i]).index(equipment_id)
+                            ssw.ship_switcher.current_page = 1
                     except ValueError:
                         Log.log_error(f"Cannot find equipment {equipment_id}, did you scrapped it?")
                         continue
@@ -209,5 +231,94 @@ class EquipmentCore(object):
 
         Log.log_debug(load_ship_id)
         exit()
+
+    def get_reinforce_equipment_list(self, local_id):
+
+        Log.log_debug("equipment_list")
+        
+        equipment_list = []
+
+        ship = shp.ships.local_ships_by_local_id[local_id]
+        special_equipment_list = self.get_special_reinforce_equipment(local_id) # sqecial equipment for this ship only
+
+        keys = self.equipment['raw'].keys()
+        sorted_keys = sorted(keys, key=lambda x: (len(x), x))
+        Log.log_debug(sorted_keys)
+
+        for key in sorted_keys:
+            #key is always "api_slottypeXXX"
+            if int(key[12:]) in self.reinforce_general_category:
+                equipment_list = equipment_list + self.equipment['raw'][key]
+            else:
+                # see if this category has any special reinforce equipment
+                Log.log_debug("test1")
+                Log.log_debug(key)
+                Log.log_debug(self.equipment['raw'][key])
+                for production_id in self.equipment['raw'][key]:
+                    name_id = self._get_name_id(production_id)
+                    if name_id in special_equipment_list:
+                        equipment_list.append(production_id)
+                        Log.log_debug("hit")
+
+
+        Log.log_debug("equipment_list")
+        Log.log_debug(equipment_list)
+
+        return equipment_list
+
+    def get_special_reinforce_equipment(self, local_id):
+
+        equipment_list = []
+
+        ship = shp.ships.local_ships_by_local_id[local_id]
+        Log.log_debug(type(ship.api_id))
+        Log.log_debug(ship.api_id)
+        Log.log_debug(type(ship.ship_family))
+        Log.log_debug(ship.ship_family)
+        Log.log_debug(type(ship.ship_type.id))
+        Log.log_debug(ship.ship_type.id)
+        
+        Log.log_debug(self.reinforce_special)
+
+        for key in self.reinforce_special:
+            if (self.reinforce_special[key]["api_ship_ids"] is not None \
+            and str(ship.api_id) in self.reinforce_special[key]["api_ship_ids"].keys())\
+            or (self.reinforce_special[key]["api_ctypes"] is not None \
+            and str(ship.ship_family) in self.reinforce_special[key]["api_ctypes"].keys())\
+            or (self.reinforce_special[key]["api_stypes"] is not None \
+            and str(ship.ship_type.id) in self.reinforce_special[key]["api_stypes"].keys()):
+                Log.log_debug("hit")
+                equipment_list.append(int(key))
+
+
+        Log.log_debug("special equipment_list")
+        Log.log_debug(equipment_list)
+
+        return equipment_list
+
+    def _get_name_id(self, production_id):
+        """method to convert equipment production id to equipment name id"""
+
+        for id in self.equipment["id"]:
+            if id["api_id"] == production_id:
+                return id["api_slotitem_id"]        
+        Log.log_warn(f"Cannot find production_id:{production_id} in equipment list, performing sortie to update")
+        return None
+
+    def _get_production_id(self, name_id):
+        """method to convert equipment name id to equipment production id list"""
+        
+        is_any_match = False
+        output_list = []
+
+        for id in self.equipment["id"]:
+            if id["api_slotitem_id"] == name_id:
+                output_list.append(id["api_id"])
+                is_any_match = True
+
+        if is_any_match == True:
+            Log.log_warn(f"Cannot find namd_id:{name_id} in equipment list, looks like you don't have any")
+
+        return output_list
 
 equipment = EquipmentCore()
