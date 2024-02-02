@@ -30,6 +30,9 @@ class ApiWrapper(object):
 
     def update_from_api(
             self, target_apis={KCSAPIEnum.ANY}, need_all=True, timeout=30):
+        """
+            method to read the APIs in queue, all APIs in queue currently will be removed after this method is finished
+        """
         if KCSAPIEnum.NONE in target_apis:
             return
 
@@ -193,6 +196,8 @@ class ApiWrapper(object):
             return self._process_battle_result(data)
         elif request_type is KCSAPIEnum.SORTIE_SHIPDECK:
             return self._process_battle_deck(data)
+        elif request_type is KCSAPIEnum.SORTIE_END:
+            return self._process_equipment_data(data)
         elif request_type is KCSAPIEnum.EXPEDITION_LIST:
             return self._process_expedition_list(data)
         elif request_type is KCSAPIEnum.EXPEDITION_START:
@@ -222,6 +227,11 @@ class ApiWrapper(object):
             get_data_ship = data['api_data']['api_mst_ship']
             shp.ships.update_ship_library(get_data_ship)
             JsonData.dump_json(get_data_ship, 'data|temp|get_data_ship.json')
+            
+            equ.equipment.reinforce_general_category = data['api_data']['api_mst_equip_exslot']
+            equ.equipment.reinforce_special = data['api_data']['api_mst_equip_exslot_ship']
+            JsonData.dump_json(equ.equipment.reinforce_general_category, 'data|temp|reinforce_general_category.json')
+            JsonData.dump_json(equ.equipment.reinforce_special, 'data|temp|reinforce_special.json')
         except KeyError:
             Log.log_debug("No getData found in API response.")
 
@@ -414,11 +424,19 @@ class ApiWrapper(object):
             Log.log_error(e)
             sys.exit(1)
 
+    def _process_equipment_data(self, data):
+        try:
+            JsonData.dump_json(data['api_data'], 'data|temp|equipment_list.json')
+        except KeyError:
+            Log.log_debug("No equipment found in API response.")
+
 
     def _process_free_equipment_data(self, data):
+        equ.equipment.equipment['raw'] = {}
         equ.equipment.equipment['free'] = []
         try:
-            keys = data['api_data']['api_slot_data'].keys()
+            equ.equipment.equipment['raw'] = data['api_data']['api_slot_data']
+            keys = equ.equipment.equipment['raw'].keys()
             sorted_keys = sorted(keys, key=lambda x: (len(x), x))
             for key in sorted_keys:
                 equ.equipment.equipment['free'] = equ.equipment.equipment['free'] + data['api_data']['api_slot_data'][key]
