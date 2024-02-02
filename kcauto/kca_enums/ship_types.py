@@ -31,3 +31,7 @@ class ShipTypeEnum(EnumBase):
     @property
     def display_name(self):
         return self.name
+
+    @property
+    def id(self):
+        return self.value
