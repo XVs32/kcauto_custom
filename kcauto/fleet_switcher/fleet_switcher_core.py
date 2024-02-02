@@ -506,22 +506,23 @@ class FleetSwitcherCore(object):
 
                 if not ssw.ship_switcher.switch_slot_by_id(i-empty_slot_count,id):
                     #fleet data update
-                    nav.navigate.to('home')
-                    self.goto()
-
-                    if retry < 1:
-                        retry += 1
-                        Log.log_msg(f"retrying...")
-                        continue
-                    else:
-                        return False
+                    retry += 1
+                    break
                 else:
                     retry = 0
                     
                 if id == EMPTY:
                     empty_slot_count += 1
-            
-            break
+
+            if retry == 1:
+                Log.log_msg(f"retrying...")
+                nav.navigate.to('home')
+                self.goto()
+                continue
+            elif retry > 1:
+                return False
+            else:
+                break
             
         return True
 
