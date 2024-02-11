@@ -466,7 +466,7 @@ class CombatCore(CoreBase):
 
         while self.combat_api_listener_enable:
             api_result = api.api.update_from_api(
-                self.COMBAT_APIS | self.RESULT_APIS | self.SHIPDECK_API | self.EQUIP_API, need_all=False, timeout=5)
+                self.COMBAT_APIS | self.RESULT_APIS | self.SHIPDECK_API | self.EQUIP_API, need_all=True, timeout=5)
             if KCSAPIEnum.SORTIE_NEXT.name in api_result:
                 self._find_next_node(
                     api_result[KCSAPIEnum.SORTIE_NEXT.name][0])
