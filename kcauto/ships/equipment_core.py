@@ -15,6 +15,8 @@ class EquipmentCore(object):
     equipment = {}
     reinforce_general_category = {}
     reinforce_special = {}
+    ship_type = []
+    equipment_special = []
 
     def __init__(self):
         self.equipment["raw"] = {}
@@ -25,6 +27,8 @@ class EquipmentCore(object):
         try:
             self.reinforce_general_category = JsonData.load_json('data|temp|reinforce_general_category.json')
             self.reinforce_special = JsonData.load_json('data|temp|reinforce_special.json')
+            self.ship_type = JsonData.load_json('data|temp|ship_type.json')
+            self.equipment_special = JsonData.load_json('data|temp|equipment_ship_special.json')
         except FileNotFoundError:
             Log.log_error("Reinforce equipment data not found, please start kcauto from splash screen")
 
@@ -193,7 +197,7 @@ class EquipmentCore(object):
                 for slot in range(1,7):
 
                     equipment_id = target_config[str(load_ship_id[start_id + i])][slot - 1]
-                    if equipment_id == -1:
+                    if equipment_id == -1 or equipment_id == 0:
                         continue
 
                     if slot < 6:
@@ -239,7 +243,7 @@ class EquipmentCore(object):
         equipment_list = []
 
         ship = shp.ships.local_ships_by_local_id[local_id]
-        special_equipment_list = self.get_special_reinforce_equipment(local_id) # sqecial equipment for this ship only
+        special_equipment_list = self.get_special_reinforce_equipment(ship) # sqecial equipment for this ship only
 
         keys = self.equipment['raw'].keys()
         sorted_keys = sorted(keys, key=lambda x: (len(x), x))
@@ -247,13 +251,13 @@ class EquipmentCore(object):
 
         for key in sorted_keys:
             #key is always "api_slottypeXXX"
-            if int(key[12:]) in self.reinforce_general_category:
+            Log.log_debug(key)
+            Log.log_debug(self.equipment['raw'][key])
+            if      int(key[12:]) in self.reinforce_general_category \
+                and self._is_available_category(ship, int(key[12:])):
                 equipment_list = equipment_list + self.equipment['raw'][key]
             else:
                 # see if this category has any special reinforce equipment
-                Log.log_debug("test1")
-                Log.log_debug(key)
-                Log.log_debug(self.equipment['raw'][key])
                 for production_id in self.equipment['raw'][key]:
                     name_id = self._get_name_id(production_id)
                     if name_id in special_equipment_list:
@@ -266,11 +270,12 @@ class EquipmentCore(object):
 
         return equipment_list
 
-    def get_special_reinforce_equipment(self, local_id):
+    def get_special_reinforce_equipment(self, ship):
+
+        WILDCARD_SHIP_TYPE = "99"
 
         equipment_list = []
 
-        ship = shp.ships.local_ships_by_local_id[local_id]
         Log.log_debug(type(ship.api_id))
         Log.log_debug(ship.api_id)
         Log.log_debug(type(ship.ship_family))
@@ -281,12 +286,20 @@ class EquipmentCore(object):
         Log.log_debug(self.reinforce_special)
 
         for key in self.reinforce_special:
-            if (self.reinforce_special[key]["api_ship_ids"] is not None \
-            and str(ship.api_id) in self.reinforce_special[key]["api_ship_ids"].keys())\
-            or (self.reinforce_special[key]["api_ctypes"] is not None \
-            and str(ship.ship_family) in self.reinforce_special[key]["api_ctypes"].keys())\
-            or (self.reinforce_special[key]["api_stypes"] is not None \
-            and str(ship.ship_type.id) in self.reinforce_special[key]["api_stypes"].keys()):
+            if \
+                (self.reinforce_special[key]["api_ship_ids"] is not None \
+                and \
+                str(ship.api_id) in self.reinforce_special[key]["api_ship_ids"].keys())\
+            or \
+                (self.reinforce_special[key]["api_ctypes"] is not None \
+                and \
+                str(ship.ship_family) in self.reinforce_special[key]["api_ctypes"].keys())\
+            or \
+                (self.reinforce_special[key]["api_stypes"] is not None \
+                and \
+                    (str(ship.ship_type.id) in self.reinforce_special[key]["api_stypes"].keys() \
+                        or\
+                    WILDCARD_SHIP_TYPE in self.reinforce_special[key]["api_stypes"].keys())):
                 Log.log_debug("hit")
                 equipment_list.append(int(key))
 
@@ -320,5 +333,28 @@ class EquipmentCore(object):
             Log.log_warn(f"Cannot find namd_id:{name_id} in equipment list, looks like you don't have any")
 
         return output_list
+
+    def _is_available_category(self, target_ship, category_id):
+
+        # If this ship has a special available equipment category
+        ship_id = target_ship.api_id
+        for ship in self.equipment_special:
+            if ship["api_ship_id"] == ship_id:
+                if category_id in ship["api_equip_type"]:
+                    return True
+                else:
+                    return False
+
+        # If this ship use general equipment category
+        type_id = target_ship.ship_type.id
+        for ship in self.ship_type:
+            if ship["api_id"] == type_id:
+                if ship["api_equip_type"][str(category_id)] == 1:
+                    return True
+                else:
+                    return False
+
+        Log.log_warn(f"Cannot find ship type id:{type_id}")
+        return False
 
 equipment = EquipmentCore()
