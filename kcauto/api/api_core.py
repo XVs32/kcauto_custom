@@ -232,6 +232,10 @@ class ApiWrapper(object):
             equ.equipment.reinforce_special = data['api_data']['api_mst_equip_exslot_ship']
             JsonData.dump_json(equ.equipment.reinforce_general_category, 'data|temp|reinforce_general_category.json')
             JsonData.dump_json(equ.equipment.reinforce_special, 'data|temp|reinforce_special.json')
+
+            JsonData.dump_json(data['api_data']['api_mst_stype'], 'data|temp|ship_type.json')
+            JsonData.dump_json(data['api_data']['api_mst_equip_ship'], 'data|temp|equipment_ship_special.json')
+
         except KeyError:
             Log.log_debug("No getData found in API response.")
 
@@ -440,6 +444,9 @@ class ApiWrapper(object):
             sorted_keys = sorted(keys, key=lambda x: (len(x), x))
             for key in sorted_keys:
                 equ.equipment.equipment['free'] = equ.equipment.equipment['free'] + data['api_data']['api_slot_data'][key]
+
+            Log.log_debug("equipment updated")
+            Log.log_debug(f"{equ.equipment.equipment['raw']}")
             
         except KeyError:
             Log.log_debug("No provisional equipment data found in API response")
