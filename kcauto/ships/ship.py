@@ -11,10 +11,11 @@ from util.kc_time import KCTime
 class Ship(object):
     _name = None
     _name_jp = None
-    api_id = None
-    sortno = None       #Id used in ship switcher
+    api_id = None       #ship name id
+    sortno = None       #Id used in ship switcher, picture book id 
     sort_id = None
-    ship_type = None
+    ship_type = None    #stype api
+    ship_family = None  #ctype api
     local_id = None     #The production code of a ship
     level = None
     hp = None
@@ -42,6 +43,7 @@ class Ship(object):
                 self.name = ship['api_name']
                 self.name_jp = ship['api_name']
                 self.ship_type = ShipTypeEnum(ship['api_stype'])
+                self.ship_family = ship['api_ctype']
                 self.ammo_max = ship['api_bull_max']
                 self.fuel_max = ship['api_fuel_max']
                 break
