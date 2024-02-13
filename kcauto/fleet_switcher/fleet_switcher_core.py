@@ -429,12 +429,12 @@ class FleetSwitcherCore(object):
             elif context == 'factory_develop':
                 Log.log_msg(f"Switching to {cfg.config.factory.develop_secretary} for develop.")
 
-                ssw.ship_switcher.current_shipcomp_page = 1
+                ssw.ship_switcher.current_page = 1
                 ssw.ship_switcher.switch_slot_by_id(1,cfg.config.factory.develop_secretary)
             elif context == 'factory_build':
                 Log.log_msg(f"Switching to {cfg.config.factory.build_secretary} for construction.")
 
-                ssw.ship_switcher.current_shipcomp_page = 1
+                ssw.ship_switcher.current_page = 1
                 ssw.ship_switcher.switch_slot_by_id(1,cfg.config.factory.build_secretary)
 
         else:
@@ -485,31 +485,45 @@ class FleetSwitcherCore(object):
             ship_list(int list): ships to use
         """
         EMPTY = -1
+        retry = 0
 
-        flt.fleets.fleets[fleet_id].select()
-        
-        empty_slot_count = 0
+        while True:
 
-        size = max(len(flt.fleets.fleets[fleet_id].ship_ids), len(ship_list))
-        for i in range(1,size + 1):
-            if i > len(ship_list):
-                id = EMPTY #remove this slot
-            else:
-                id = ship_list[i - 1]
+            flt.fleets.fleets[fleet_id].select()
+            
+            empty_slot_count = 0
 
-            if i <= len(flt.fleets.fleets[fleet_id].ship_ids) and \
-                id == flt.fleets.fleets[fleet_id].ship_ids[i-1]:
-                continue
+            size = max(len(flt.fleets.fleets[fleet_id].ship_ids), len(ship_list))
+            for i in range(1,size + 1):
+                if i > len(ship_list):
+                    id = EMPTY #remove this slot
+                else:
+                    id = ship_list[i - 1]
 
-            if not ssw.ship_switcher.switch_slot_by_id(i-empty_slot_count,id):
-                #fleet data update
+                if i <= len(flt.fleets.fleets[fleet_id].ship_ids) and \
+                    id == flt.fleets.fleets[fleet_id].ship_ids[i-1]:
+                    continue
+
+                if not ssw.ship_switcher.switch_slot_by_id(i-empty_slot_count,id):
+                    #fleet data update
+                    retry += 1
+                    break
+                else:
+                    retry = 0
+                    
+                if id == EMPTY:
+                    empty_slot_count += 1
+
+            if retry == 1:
+                Log.log_msg(f"retrying...")
                 nav.navigate.to('home')
                 self.goto()
+                continue
+            elif retry > 1:
                 return False
-                
-            if id == EMPTY:
-                empty_slot_count += 1
-        
+            else:
+                break
+            
         return True
 
     def _scroll_preset_list(self, target_clicks):

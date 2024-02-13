@@ -47,6 +47,7 @@ class CombatCore(CoreBase):
     }
     RESULT_APIS = {KCSAPIEnum.SORTIE_RESULT, KCSAPIEnum.SORTIE_CF_RESULT}
     SHIPDECK_API = {KCSAPIEnum.SORTIE_SHIPDECK}
+    EQUIP_API = {KCSAPIEnum.SORTIE_END}
     API_COMBAT_PHASES_TYPE1 = (
         'api_hougeki', 'api_hougeki1', 'api_hougeki2', 'api_hougeki3')
     API_COMBAT_PHASES_TYPE2 = ('api_opening_atack', 'api_raigeki')
@@ -56,6 +57,7 @@ class CombatCore(CoreBase):
     NODE_TYPE_COMBAT_FINISH = 2
     NODE_TYPE_SELECT = 3
     NODE_TYPE_NOTHING = 4
+    NODE_TYPE_FORMATION_SKIP = 5
     module_name = 'combat'
     module_display_name = 'Combat'
     available_maps = {}
@@ -350,7 +352,9 @@ class CombatCore(CoreBase):
             # Go to next acrion needed node
             node_type = self._cycle_between_nodes(sortie_map)
         
-            if node_type == self.NODE_TYPE_COMBAT or node_type == self.NODE_TYPE_COMBAT_FINISH :
+            if     node_type == self.NODE_TYPE_COMBAT \
+                or node_type == self.NODE_TYPE_COMBAT_FINISH \
+                or node_type == self.NODE_TYPE_FORMATION_SKIP :
 
                 Log.log_msg(f"Combat at node {self.current_node}.")
 
@@ -363,15 +367,15 @@ class CombatCore(CoreBase):
 
                 self.combat_nodes_run.append(self.current_node)
 
+                if self.current_node.boss_node or self.boss_api:
+                    #Todo: only trigger when screen doesn't change at all
+                    kca_u.kca.sleep(8)
+                    Log.log_msg("Dismissing boss dialogue.")
+                    kca_u.kca.r['center'].click()
+
                 while not kca_u.kca.exists(
                         'lower_right_corner', 'global|next.png'):
                     
-                    if self.current_node.boss_node or self.boss_api:
-                        #Todo: only trigger when screen doesn't change at all
-                        Log.log_msg("Dismissing boss dialogue.")
-                        kca_u.kca.r['center'].click()
-                        kca_u.kca.sleep(3)
-
                     if kca_u.kca.exists('kc', 'global|combat_nb_fight.png'):
                         Log.log_debug("Night battle prompt.")
 
@@ -405,26 +409,24 @@ class CombatCore(CoreBase):
                     kca_u.kca.r['combat_click'].click()
                     kca_u.kca.sleep()
 
-                if flt.fleets.combined_fleet:
-                    if kca_u.kca.exists('lower', 'combat|fcf_retreat_ship.png'):
-                        Log.log_error("FCF prompt is not supported yet. T^T")
-                        # self._resolve_fcf_prompt()
-
-                if kca_u.kca.exists('kc', 'combat|combat_retreat.png'):
+                if kca_u.kca.exists('lower', 'combat|fcf_retreat_ship.png'):
+                    Log.log_error("FCF prompt is not supported yet. T^T")
+                    # self._resolve_fcf_prompt()
+                elif kca_u.kca.exists('kc', 'combat|combat_retreat.png'):
                     Log.log_debug("Continue sortie prompt.")
                     if self._resolve_continue_sortie_prompt():
                         Log.log_debug("Continue button pressed")
-                        continue
                         #api.api.update_from_api({KCSAPIEnum.SORTIE_SHIPDECK})
                     else:
                         kca_u.kca.wait('left', 'nav|home_menu_sortie.png')
                         conducting_sortie = False
-                        continue
                 elif kca_u.kca.exists(
                         'lower_right', 'combat|combat_flagship_dmg.png'):
                     Log.log_debug("Flagship heavily damaged.")
                     conducting_sortie = False
-                    continue
+                elif kca_u.kca.exists('left', 'nav|home_menu_sortie.png'):
+                    Log.log_debug("backed to port.")
+                    conducting_sortie = False
 
             elif node_type == self.NODE_TYPE_SELECT:
                 kca_u.kca.sleep()
@@ -456,7 +458,7 @@ class CombatCore(CoreBase):
     def _click_until_port(self):
         while not kca_u.kca.exists('left', 'nav|home_menu_sortie.png'):
             api_result = api.api.update_from_api(
-                {KCSAPIEnum.PORT}, need_all=False, timeout=3)
+                {KCSAPIEnum.PORT} | self.SHIPDECK_API | self.EQUIP_API, need_all=False, timeout=3)
             if KCSAPIEnum.PORT.name not in api_result:
                 kca_u.kca.r['combat_click'].click()
 
@@ -464,7 +466,7 @@ class CombatCore(CoreBase):
 
         while self.combat_api_listener_enable:
             api_result = api.api.update_from_api(
-                self.COMBAT_APIS | self.RESULT_APIS | self.SHIPDECK_API, need_all=False, timeout=5)
+                self.COMBAT_APIS | self.RESULT_APIS | self.SHIPDECK_API | self.EQUIP_API, need_all=True, timeout=5)
             if KCSAPIEnum.SORTIE_NEXT.name in api_result:
                 self._find_next_node(
                     api_result[KCSAPIEnum.SORTIE_NEXT.name][0])
@@ -496,6 +498,8 @@ class CombatCore(CoreBase):
             elif kca_u.kca.exists('lower_right_corner', 'global|next_alt.png'):
                 # resource node end
                 return self.NODE_TYPE_END
+            elif kca_u.kca.exists('kc', 'global|combat_nb_fight.png'):
+                return self.NODE_TYPE_FORMATION_SKIP
             elif kca_u.kca.exists('left', 'nav|home_menu_sortie.png'):
                 # back at home already
                 return self.NODE_TYPE_END

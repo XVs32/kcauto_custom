@@ -384,6 +384,30 @@ class Kca(object):
         self._create_or_shift_region(
             "order_bauxite_region_100", x + 1085, y + 430, 10, 10)
 
+        # equipment-related regions
+        self._create_or_shift_region('equipment_panel', x + 455, y + 226, 125, 268)
+        self._create_or_shift_region('ship_1', x + 205, y + 225, 235, 50)
+        self._create_or_shift_region('ship_2', x + 205, y + 306, 235, 50)
+        self._create_or_shift_region('ship_3', x + 205, y + 387, 235, 50)
+        self._create_or_shift_region('ship_4', x + 205, y + 468, 235, 50)
+        self._create_or_shift_region('ship_5', x + 205, y + 549, 235, 50)
+        self._create_or_shift_region('ship_6', x + 205, y + 630, 235, 50)
+        self._create_or_shift_region('1_slot_unload_equipment', x + 478, y + 294, 4, 4)
+        self._create_or_shift_region('2_slot_unload_equipment', x + 478, y + 344, 4, 4)
+        self._create_or_shift_region('3_slot_unload_equipment', x + 478, y + 394, 4, 4)
+        self._create_or_shift_region('4_slot_unload_equipment', x + 478, y + 444, 4, 4)
+        self._create_or_shift_region('5_slot_unload_equipment', x + 478, y + 494, 4, 4)
+        self._create_or_shift_region('reinforce_slot_unload_equipment', x + 1162, y + 481, 4, 4)
+
+        self._create_or_shift_region('1_slot_equipment', x + 530, y + 260, 270, 20)
+        self._create_or_shift_region('2_slot_equipment', x + 530, y + 307, 270, 20)
+        self._create_or_shift_region('3_slot_equipment', x + 530, y + 354, 270, 20)
+        self._create_or_shift_region('4_slot_equipment', x + 530, y + 401, 270, 20)
+        self._create_or_shift_region('5_slot_equipment', x + 530, y + 448, 270, 20)
+        self._create_or_shift_region('reinforce_slot_equipment', x + 1117, y + 471, 20, 20)
+
+        self._create_or_shift_region('equipment_sort_all', x + 783, y + 622, 50, 12)
+
     def _create_or_shift_region(self, key, x, y, w, h):
         """Helper method for generating or shifting an existing Region's x
         and y position.
