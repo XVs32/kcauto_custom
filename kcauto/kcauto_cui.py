@@ -5,6 +5,8 @@ import json
 import threading
 import subprocess
 
+import time
+
 from cui.macro import *
 import cui.expedition as exp
 import cui.pvp as pvp
@@ -38,6 +40,30 @@ def init():
 
     curses.curs_set(0)
 
+    resize_panel()
+
+    # Start colors in curses
+    curses.start_color()
+    curses.init_pair(SORTIE,    curses.COLOR_BLACK, curses.COLOR_RED)
+    curses.init_pair(SCHEDULER, curses.COLOR_BLACK, curses.COLOR_MAGENTA)
+    curses.init_pair(PVP,       curses.COLOR_BLACK, curses.COLOR_GREEN)
+    curses.init_pair(EXP,       curses.COLOR_BLACK, curses.COLOR_CYAN)
+    curses.init_pair(LOG,       curses.COLOR_WHITE, curses.COLOR_BLACK)
+
+    curses.init_pair(SORTIE + len(panels),    curses.COLOR_WHITE, curses.COLOR_RED)
+    curses.init_pair(SCHEDULER + len(panels), curses.COLOR_WHITE, curses.COLOR_MAGENTA)
+    curses.init_pair(PVP + len(panels),       curses.COLOR_WHITE, curses.COLOR_GREEN)
+    curses.init_pair(EXP + len(panels),       curses.COLOR_WHITE, curses.COLOR_CYAN)
+    curses.init_pair(LOG + len(panels),       curses.COLOR_BLACK, curses.COLOR_WHITE)
+
+    curses.init_pair(LOG_RED,       curses.COLOR_RED,   curses.COLOR_BLACK)
+    curses.init_pair(LOG_GREEN,     curses.COLOR_GREEN, curses.COLOR_BLACK)
+    curses.init_pair(LOG_YELLOW,    curses.COLOR_YELLOW,curses.COLOR_BLACK)
+    curses.init_pair(LOG_CYAN,      curses.COLOR_CYAN,  curses.COLOR_BLACK)
+    curses.init_pair(LOG_GREEN_ACTIVE,curses.COLOR_GREEN,  curses.COLOR_WHITE)
+
+
+def resize_panel():
     if curses.LINES < 8:
         raise ValueError("Error: Window too small(make it taller)")
     if curses.COLS < 45:
@@ -78,26 +104,6 @@ def init():
     # Define the panels list
     panels = {EXP:expedition_panel, SORTIE: sortie_panel, SCHEDULER: scheduler_panel, PVP: pvp_panel, LOG: log_panel}
 
-    # Start colors in curses
-    curses.start_color()
-    curses.init_pair(SORTIE,    curses.COLOR_BLACK, curses.COLOR_RED)
-    curses.init_pair(SCHEDULER, curses.COLOR_BLACK, curses.COLOR_MAGENTA)
-    curses.init_pair(PVP,       curses.COLOR_BLACK, curses.COLOR_GREEN)
-    curses.init_pair(EXP,       curses.COLOR_BLACK, curses.COLOR_CYAN)
-    curses.init_pair(LOG,       curses.COLOR_WHITE, curses.COLOR_BLACK)
-
-    curses.init_pair(SORTIE + len(panels),    curses.COLOR_WHITE, curses.COLOR_RED)
-    curses.init_pair(SCHEDULER + len(panels), curses.COLOR_WHITE, curses.COLOR_MAGENTA)
-    curses.init_pair(PVP + len(panels),       curses.COLOR_WHITE, curses.COLOR_GREEN)
-    curses.init_pair(EXP + len(panels),       curses.COLOR_WHITE, curses.COLOR_CYAN)
-    curses.init_pair(LOG + len(panels),       curses.COLOR_BLACK, curses.COLOR_WHITE)
-
-    curses.init_pair(LOG_RED,       curses.COLOR_RED,   curses.COLOR_BLACK)
-    curses.init_pair(LOG_GREEN,     curses.COLOR_GREEN, curses.COLOR_BLACK)
-    curses.init_pair(LOG_YELLOW,    curses.COLOR_YELLOW,curses.COLOR_BLACK)
-    curses.init_pair(LOG_CYAN,      curses.COLOR_CYAN,  curses.COLOR_BLACK)
-    curses.init_pair(LOG_GREEN_ACTIVE,curses.COLOR_GREEN,  curses.COLOR_WHITE)
-
 
 def draw_menu(stdscr):
 
@@ -132,6 +138,17 @@ def draw_menu(stdscr):
             k = 0
         elif k == KEY_ESC:
             util.signal_handler()
+        elif k == curses.KEY_RESIZE:
+            time.sleep(0.1)
+            curses.update_lines_cols()
+            time.sleep(0.1)
+            resize_panel()
+            time.sleep(0.1)
+            update_active_panel(active_panel)
+            refresh_panel()
+
+            # Wait for next input
+            k = stdscr.getch()
         else:
             # Wait for next input
             k = stdscr.getch()

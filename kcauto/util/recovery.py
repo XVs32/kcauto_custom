@@ -80,11 +80,11 @@ class Recovery(object):
         if cfg.config.general.is_direct_control:
             pyautogui.moveTo(1, 1)
             pyautogui.press('esc')
-            sleep(0.5)
+            kca_u.kca.sleep(0.5)
             pyautogui.press('space')
-            sleep(0.5)
+            kca_u.kca.sleep(0.5)
             pyautogui.press('f10')
-            sleep(0.5)
+            kca_u.kca.sleep(0.5)
 
         try:
             if kca_u.kca.find_kancolle():
@@ -122,13 +122,13 @@ class Recovery(object):
 
             else:
                 retry += 1
-                sleep(1)
+                kca_u.kca.sleep(1)
                 continue
             
             region.x -= 100
             region.y -= 100
             region.click()
-            sleep(1)
+            kca_u.kca.sleep(1)
         
         return False
 
@@ -180,7 +180,7 @@ class Recovery(object):
                 Log.log_warn(
                     f"Catbomb Recovery attempt {catbomb_count}. Sleeping for "
                     f"{sleep_len} seconds before next recovery attempt.")
-                sleep(sleep_len)
+                kca_u.kca.sleep(sleep_len)
             else:
                 return False
         return False
@@ -219,16 +219,16 @@ class Recovery(object):
         """
         if cfg.config.general.is_direct_control:
             pyautogui.press('f5')
-            sleep(0.5)
+            kca_u.kca.sleep(0.5)
             pyautogui.press('space')
-            sleep(0.5)
+            kca_u.kca.sleep(0.5)
             pyautogui.press('tab')
-            sleep(0.5)
+            kca_u.kca.sleep(0.5)
             pyautogui.press('space')
-            sleep(5)
+            kca_u.kca.sleep(5)
         else:
             kca_u.kca.visual_hook.Page.reload()
-            sleep(0.5)
+            kca_u.kca.sleep(0.5)
 
         kca_u.kca.wait(screen, 'global|game_start.png', 90)
-        sleep(3)
+        kca_u.kca.sleep(3)
