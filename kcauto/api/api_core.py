@@ -7,6 +7,7 @@ from datetime import datetime, timedelta
 import combat.combat_core as com
 import combat.lbas_core as lbas
 import expedition.expedition_core as exp
+import ships.equipment_core as equ 
 import fleet.fleet_core as flt
 import fleet_switcher.fleet_switcher_core as fsw
 import pvp.pvp_core as pvp
@@ -29,6 +30,9 @@ class ApiWrapper(object):
 
     def update_from_api(
             self, target_apis={KCSAPIEnum.ANY}, need_all=True, timeout=30):
+        """
+            method to read the APIs in queue, all APIs in queue currently will be removed after this method is finished
+        """
         if KCSAPIEnum.NONE in target_apis:
             return
 
@@ -192,6 +196,8 @@ class ApiWrapper(object):
             return self._process_battle_result(data)
         elif request_type is KCSAPIEnum.SORTIE_SHIPDECK:
             return self._process_battle_deck(data)
+        elif request_type is KCSAPIEnum.SORTIE_END:
+            return self._process_equipment_data(data)
         elif request_type is KCSAPIEnum.EXPEDITION_LIST:
             return self._process_expedition_list(data)
         elif request_type is KCSAPIEnum.EXPEDITION_START:
@@ -210,6 +216,10 @@ class ApiWrapper(object):
             return True
         elif request_type is KCSAPIEnum.LBAS_RESUPPLY_ACTION:
             return True
+        elif request_type is KCSAPIEnum.FREE_EQUIPMENT:
+            return self._process_free_equipment_data(data)
+        
+
         return None
 
     def _process_get_data(self, data):
@@ -217,6 +227,15 @@ class ApiWrapper(object):
             get_data_ship = data['api_data']['api_mst_ship']
             shp.ships.update_ship_library(get_data_ship)
             JsonData.dump_json(get_data_ship, 'data|temp|get_data_ship.json')
+            
+            equ.equipment.reinforce_general_category = data['api_data']['api_mst_equip_exslot']
+            equ.equipment.reinforce_special = data['api_data']['api_mst_equip_exslot_ship']
+            JsonData.dump_json(equ.equipment.reinforce_general_category, 'data|temp|reinforce_general_category.json')
+            JsonData.dump_json(equ.equipment.reinforce_special, 'data|temp|reinforce_special.json')
+
+            JsonData.dump_json(data['api_data']['api_mst_stype'], 'data|temp|ship_type.json')
+            JsonData.dump_json(data['api_data']['api_mst_equip_ship'], 'data|temp|equipment_ship_special.json')
+
         except KeyError:
             Log.log_debug("No getData found in API response.")
 
@@ -239,6 +258,8 @@ class ApiWrapper(object):
         try:
             ship_data = data['api_data']['api_ship']
             shp.ships.update_local_ships(ship_data)
+            equ.equipment.get_loaded_equipment(ship_data)
+            
         except KeyError:
             Log.log_debug("No ship data found in API response.")
 
@@ -269,9 +290,17 @@ class ApiWrapper(object):
         try:
             for i in range(1, len(data['api_data']['api_deck_port'])):
                 exp.expedition.cur_exp[i] = data['api_data']['api_deck_port'][i]["api_mission"][1]
-            
         except KeyError:
             Log.log_debug("No exp data found in API response.")
+
+        try:
+            gimmick = data['api_data']['api_event_object']['api_m_flag2']
+            Log.log_debug(f"Gimmick data found = {gimmick}.")
+            if gimmick == 1:
+                """A gimmick is solved"""
+                com.combat.solve_gimmick()
+        except KeyError:
+            Log.log_debug("No gimmick data found in API response.")
 
         return None
 
@@ -399,5 +428,29 @@ class ApiWrapper(object):
             Log.log_error(e)
             sys.exit(1)
 
+    def _process_equipment_data(self, data):
+        try:
+            JsonData.dump_json(data['api_data'], 'data|temp|equipment_list.json')
+        except KeyError:
+            Log.log_debug("No equipment found in API response.")
+
+
+    def _process_free_equipment_data(self, data):
+        equ.equipment.equipment['raw'] = {}
+        equ.equipment.equipment['free'] = []
+        try:
+            equ.equipment.equipment['raw'] = data['api_data']['api_slot_data']
+            keys = equ.equipment.equipment['raw'].keys()
+            sorted_keys = sorted(keys, key=lambda x: (len(x), x))
+            for key in sorted_keys:
+                equ.equipment.equipment['free'] = equ.equipment.equipment['free'] + data['api_data']['api_slot_data'][key]
+
+            Log.log_debug("equipment updated")
+            Log.log_debug(f"{equ.equipment.equipment['raw']}")
+            
+        except KeyError:
+            Log.log_debug("No provisional equipment data found in API response")
+
+        #Log.log_debug(free_equipment)
 
 api = ApiWrapper()

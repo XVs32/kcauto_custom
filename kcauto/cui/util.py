@@ -55,7 +55,6 @@ def print_log(panel, string):
     panel.refresh()
 
 
-
 def run_external_program(panel):
     # Start the external program and redirect its output
     global process
@@ -64,11 +63,11 @@ def run_external_program(panel):
         filename = "kcauto.bin"
         decode = "unicode_escape"
         if os.path.isfile(filename):
-            process = subprocess.Popen(['./kcauto.bin', '--cli', '--cfg', 'config_cui'], stdout=subprocess.PIPE)
+            process = subprocess.Popen(['./kcauto.bin', '--cli', '--cfg', 'config_cui'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
             time.sleep(1)
             print_log(panel, "Starting from " + filename + "\n")
         else:
-            process = subprocess.Popen(['python3.7', 'kcauto', '--cli', '--cfg', 'config_cui'], stdout=subprocess.PIPE)
+            process = subprocess.Popen(['python3.7', 'kcauto', '--cli', '--cfg', 'config_cui'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
             time.sleep(1)
             print_log(panel, filename + " does not exist\n")
             print_log(panel, "Start kcauto in python instead\n")
@@ -77,11 +76,11 @@ def run_external_program(panel):
         filename = "kcauto.exe"
         decode = "windows-1252"
         if os.path.isfile(filename):
-            process = subprocess.Popen(['kcauto.exe', '--cli', '--cfg', 'config_cui'], stdout=subprocess.PIPE)
+            process = subprocess.Popen(['kcauto.exe', '--cli', '--cfg', 'config_cui'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
             time.sleep(1)
             print_log(panel, "Starting from " + filename + "\n")
         else:
-            process = subprocess.Popen(['python', 'kcauto', '--cli', '--cfg', 'config_cui'], stdout=subprocess.PIPE)
+            process = subprocess.Popen(['python', 'kcauto', '--cli', '--cfg', 'config_cui'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
             time.sleep(1)
             print_log(panel, filename + " does not exist\n")
             print_log(panel, "Start kcauto in python instead\n")
@@ -101,9 +100,4 @@ def run_external_program(panel):
     print_log(panel, "kcauto ended\n")
 
 def signal_handler(signal = None, frame = None):
-    curses.endwin()
-    global process
-    if process != None:
-        process.kill()
-    print("Exiting gracefully...")
     exit(0)

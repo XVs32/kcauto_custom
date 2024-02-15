@@ -21,6 +21,10 @@ class LBASCore(object):
             self.groups[group.value] = LBASGroup(int(group.value))
 
     def update_lbas_groups(self, data):
+        """
+            method to read the LBAS info from "api_air_base"
+            into LBAS module
+        """
         Log.log_debug("Updating LBAS group data from API.")
         for group in LBASGroupEnum:
             self.groups[group.value].api_enabled = False
@@ -29,9 +33,7 @@ class LBASCore(object):
         for group in data:
             if sortie_world == 'E' and group['api_area_id'] < 40:
                 continue
-            elif sortie_world == '6' and group['api_area_id'] != 6:
-                continue
-            elif sortie_world == '7' and group['api_area_id'] != 7:
+            elif sortie_world != group['api_area_id']:
                 continue
 
             group_id = group['api_rid']

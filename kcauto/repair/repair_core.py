@@ -190,7 +190,7 @@ class RepairCore(object):
         Log.log_msg(
             "Ship repair time of "
             f"{KCTime.timedelta_to_str(ship.repair_time_delta)}.")
-        if context == 'combat' and self._ship_needs_bucket(ship):
+        if context == 'combat' and self._ship_needs_bucket(ship) and self._bucket_threshold():
             Log.log_msg("Using bucket to repair.")
             kca_u.kca.click_existing(
                 'right', 'repair|bucket_switch.png', cached=True)
@@ -213,6 +213,14 @@ class RepairCore(object):
         if ship.repair_time_delta > repair_timelimit:
             return True
         return False
+
+    def _bucket_threshold(self):
+        if sts.stats.rsc.bucket > cfg.config.combat.repair_bucket_threshold:
+            Log.log_debug(f"bucket threshold pass")
+            return True
+        else:
+            Log.log_debug(f"bucket threshold fail")
+            return False
 
     @property
     def _local_ships_sorted_by_repair(self):
