@@ -494,6 +494,9 @@ class FleetSwitcherCore(object):
             empty_slot_count = 0
 
             size = max(len(flt.fleets.fleets[fleet_id].ship_ids), len(ship_list))
+
+            any_vaild_switch = False
+            retry = False
             for i in range(1,size + 1):
                 if i > len(ship_list):
                     id = EMPTY #remove this slot
@@ -506,21 +509,23 @@ class FleetSwitcherCore(object):
 
                 if not ssw.ship_switcher.switch_slot_by_id(i-empty_slot_count,id):
                     #fleet data update
-                    retry += 1
-                    break
+                    if any_vaild_switch == True:
+                        Log.log_msg(f"retrying...")
+                        nav.navigate.to('home')
+                        self.goto()
+                        retry = True 
+                        break
+                    else:
+                        return False
+                    
                 else:
-                    retry = 0
+                    any_vaild_switch = True
                     
                 if id == EMPTY:
                     empty_slot_count += 1
 
-            if retry == 1:
-                Log.log_msg(f"retrying...")
-                nav.navigate.to('home')
-                self.goto()
+            if retry == True:
                 continue
-            elif retry > 1:
-                return False
             else:
                 break
             
