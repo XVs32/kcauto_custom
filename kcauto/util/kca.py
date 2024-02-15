@@ -233,7 +233,7 @@ class Kca(object):
             except FindFailed:
                 Log.log_debug("Not using UI 4 or 5")
             attempt += 1
-            sleep(1)
+            self.sleep(1)
             if attempt > 3:
                 Log.log_error("Could not find Kancolle reference point.")
                 raise FindFailed()
@@ -360,29 +360,53 @@ class Kca(object):
         self._create_or_shift_region(
             "develop_region", x + 215, y + 480, 200, 50)
         self._create_or_shift_region(
-            "order_oil_region_1", x + 547, y + 227, 10, 5)
+            "order_oil_region_1", x + 552, y + 226, 10, 10)
         self._create_or_shift_region(
-            "order_oil_region_10", x + 742, y + 207, 5, 5)
+            "order_oil_region_10", x + 742, y + 194, 10, 10)
         self._create_or_shift_region(
-            "order_oil_region_100", x + 742, y + 247, 5, 5)
+            "order_oil_region_100", x + 742, y + 236, 10, 10)
         self._create_or_shift_region(
-            "order_ammo_region_1", x + 547, y + 422, 10, 5)
+            "order_ammo_region_1", x + 552, y + 420, 10, 10)
         self._create_or_shift_region(
-            "order_ammo_region_10", x + 742, y + 407, 5, 5)
+            "order_ammo_region_10", x + 742, y + 390, 10, 10)
         self._create_or_shift_region(
-            "order_ammo_region_100", x + 742, y + 447, 5, 5)
+            "order_ammo_region_100", x + 742, y + 430, 10, 10)
         self._create_or_shift_region(
-            "order_steel_region_1", x + 887, y + 227, 10, 5)
+            "order_steel_region_1", x + 890, y + 226, 10, 10)
         self._create_or_shift_region(
-            "order_steel_region_10", x + 1082, y + 207, 5, 5)
+            "order_steel_region_10", x + 1085, y + 194, 10, 10)
         self._create_or_shift_region(
-            "order_steel_region_100", x + 1082, y + 247, 5, 5)
+            "order_steel_region_100", x + 1085, y + 236, 10, 10) 
         self._create_or_shift_region(
-            "order_bauxite_region_1", x + 887, y + 422, 10, 5)
+            "order_bauxite_region_1", x + 890, y + 420, 10, 10)
         self._create_or_shift_region(
-            "order_bauxite_region_10", x + 1082, y + 407, 5, 5)
+            "order_bauxite_region_10", x + 1085, y + 390, 10, 10)
         self._create_or_shift_region(
-            "order_bauxite_region_100", x + 1082, y + 447, 5, 5)
+            "order_bauxite_region_100", x + 1085, y + 430, 10, 10)
+
+        # equipment-related regions
+        self._create_or_shift_region('equipment_panel', x + 455, y + 226, 125, 268)
+        self._create_or_shift_region('ship_1', x + 205, y + 225, 235, 50)
+        self._create_or_shift_region('ship_2', x + 205, y + 306, 235, 50)
+        self._create_or_shift_region('ship_3', x + 205, y + 387, 235, 50)
+        self._create_or_shift_region('ship_4', x + 205, y + 468, 235, 50)
+        self._create_or_shift_region('ship_5', x + 205, y + 549, 235, 50)
+        self._create_or_shift_region('ship_6', x + 205, y + 630, 235, 50)
+        self._create_or_shift_region('1_slot_unload_equipment', x + 478, y + 294, 4, 4)
+        self._create_or_shift_region('2_slot_unload_equipment', x + 478, y + 344, 4, 4)
+        self._create_or_shift_region('3_slot_unload_equipment', x + 478, y + 394, 4, 4)
+        self._create_or_shift_region('4_slot_unload_equipment', x + 478, y + 444, 4, 4)
+        self._create_or_shift_region('5_slot_unload_equipment', x + 478, y + 494, 4, 4)
+        self._create_or_shift_region('reinforce_slot_unload_equipment', x + 1162, y + 481, 4, 4)
+
+        self._create_or_shift_region('1_slot_equipment', x + 530, y + 260, 270, 20)
+        self._create_or_shift_region('2_slot_equipment', x + 530, y + 307, 270, 20)
+        self._create_or_shift_region('3_slot_equipment', x + 530, y + 354, 270, 20)
+        self._create_or_shift_region('4_slot_equipment', x + 530, y + 401, 270, 20)
+        self._create_or_shift_region('5_slot_equipment', x + 530, y + 448, 270, 20)
+        self._create_or_shift_region('reinforce_slot_equipment', x + 1117, y + 471, 20, 20)
+
+        self._create_or_shift_region('equipment_sort_all', x + 783, y + 622, 50, 12)
 
     def _create_or_shift_region(self, key, x, y, w, h):
         """Helper method for generating or shifting an existing Region's x
@@ -536,6 +560,8 @@ class Kca(object):
             region (Region, Match, str): Region/Match object or pre-defined
                 region key.
         """
+        self.sleep(0.5)
+
         r = self._get_region(region)
         if (cfg.config.general.interaction_mode
                 is InteractionModeEnum.DIRECT_CONTROL):
@@ -543,6 +569,8 @@ class Kca(object):
         elif (cfg.config.general.interaction_mode
                 is InteractionModeEnum.CHROME_DRIVER):
             self._chrome_driver_hover_method(r)
+
+        self.sleep(0.5)
 
     def click(self, region, pad=(0, 0, 0, 0)):
         """Helper method that clicks a passed in region. The pad parameter
@@ -554,6 +582,8 @@ class Kca(object):
             pad (tuple, optional): click region modifier. Defaults to
                 (0, 0, 0, 0).
         """
+        self.sleep(0.5)
+
         r = self._get_region(region)
         if (cfg.config.general.interaction_mode
                 is InteractionModeEnum.DIRECT_CONTROL):
@@ -561,6 +591,8 @@ class Kca(object):
         elif (cfg.config.general.interaction_mode
                 is InteractionModeEnum.CHROME_DRIVER):
             self._chrome_driver_click_method(r, pad)
+
+        self.sleep(0.5)
 
     def click_existing(
             self, region, asset, similarity=DEFAULT, pad=(0, 0, 0, 0),
@@ -586,7 +618,6 @@ class Kca(object):
         try:
             match = r.find(self._create_asset_path(asset), similarity, cached)
             self.click(match, pad=pad)
-            self.sleep()
             return True
         except FindFailed:
             return False
@@ -724,8 +755,6 @@ class Kca(object):
             pad (tuple): padding parameter used to modify click coordinate
         """
 
-        sleep(0.5) #Prevent kcauto form clicking too fast
-
         offset_x = randint(-pad[3], r.w + pad[1])
         offset_y = randint(-pad[0], r.h + pad[2])
         x = r.x - self.css_x
@@ -741,7 +770,6 @@ class Kca(object):
         Args:
             r (Region, Match): Region/Match region to hover 
         """
-        sleep(1) #Prevent kcauto form clicking too fast
 
         offset_x = randint(0, r.w)
         offset_y = randint(0, r.h)

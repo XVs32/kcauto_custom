@@ -14,7 +14,7 @@ from gui.config_combat_node_formation_popup import (
 from kca_enums.maps import MapEnum
 from kca_enums.fleet_modes import FleetModeEnum
 from kca_enums.damage_states import DamageStateEnum
-from kca_enums.nodes import NamedNodeEnum
+from kca_enums.nodes import NodeEnum
 
 
 class ConfigCombatLayout(LayoutBase):
@@ -36,12 +36,12 @@ class ConfigCombatLayout(LayoutBase):
                 font=cls.FONT_10,
                 enable_events=True),
             sg.Combo(
-                [''] + [x.display_name for x in NamedNodeEnum],
+                [''] + [x.display_name for x in NodeEnum],
                 key=f'combat.lbas_group_{group_id}_node_1',
                 font=cls.FONT_10,
                 size=(4, 1)),
             sg.Combo(
-                [''] + [x.display_name for x in NamedNodeEnum],
+                [''] + [x.display_name for x in NodeEnum],
                 key=f'combat.lbas_group_{group_id}_node_2',
                 font=cls.FONT_10,
                 size=(4, 1)),

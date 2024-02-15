@@ -140,7 +140,8 @@ class NavigateList(object):
     # in x, y pixel format
     OFFSET = {
         'repair': (0, 0),
-        'shipcomp': (17, -4)
+        'shipcomp': (17, -4),
+        'equipment': (-4, -4)
     }
 
     @classmethod
@@ -168,37 +169,46 @@ class NavigateList(object):
             page_delta = target_page - current_page
             if target_page == 1:
                 # shortcut for first page
+                #Log.log_error("first")
                 cls._change_page(region, 'first', cls.OFFSET[offset_mode])
                 current_page = 1
             elif target_page == page_count:
                 # shortcut for last page
+                #Log.log_error("last")
                 cls._change_page(region, 'last', cls.OFFSET[offset_mode])
                 current_page = page_count
             elif target_page <= 5 and (current_page <= 3 or page_count <= 5):
+                #Log.log_error("direct 1")
                 cls._change_page(region, target_page, cls.OFFSET[offset_mode])
                 current_page = target_page
             elif (current_page >= page_count - 2
                     and target_page >= page_count - 4):
+                #Log.log_error("direct 2")
                 cls._change_page(
                     region, abs(page_count - target_page - 5),
                     cls.OFFSET[offset_mode])
                 current_page = target_page
             elif -3 < page_delta < 3:
+                #Log.log_error("direct 3")
                 cls._change_page(
                     region, 3 + page_delta, cls.OFFSET[offset_mode])
                 current_page = current_page + page_delta
             elif page_delta <= - 3:
                 if target_page <= 5:
+                    #Log.log_error("back to first")
                     cls._change_page(region, 'first', cls.OFFSET[offset_mode])
                     current_page = 1
                 else:
+                    #Log.log_error("prev")
                     cls._change_page(region, 'prev', cls.OFFSET[offset_mode])
                     current_page -= 5
             elif page_delta >= 3:
                 if target_page > page_count - 5:
+                    #Log.log_error("go to last")
                     cls._change_page(region, 'last', cls.OFFSET[offset_mode])
                     current_page = page_count
                 else:
+                    #Log.log_error("next")
                     cls._change_page(region, 'next', cls.OFFSET[offset_mode])
                     current_page += 5
         kca_u.kca.sleep(0.5)
@@ -220,17 +230,21 @@ class NavigateList(object):
         """
         Log.log_debug(f"Changing to page {target} with {offset} offsets.")
         if target == 'first':
-            kca_u.kca.click_existing(
-                region, 'global|page_first.png', pad=PAGE_NAV)
+            x_start = kca_u.kca.game_x + 735 - (50*2) + offset[0]
+            y_start = kca_u.kca.game_y + 675 + offset[1]
+            Region(x_start, y_start, 16, 15).click()
         elif target == 'prev':
-            kca_u.kca.click_existing(
-                region, 'global|page_prev.png', pad=PAGE_NAV)
+            x_start = kca_u.kca.game_x + 735 - (50*1) + offset[0]
+            y_start = kca_u.kca.game_y + 675 + offset[1]
+            Region(x_start, y_start, 16, 15).click()
         elif target == 'next':
-            kca_u.kca.click_existing(
-                region, 'global|page_next.png', pad=PAGE_NAV)
+            x_start = kca_u.kca.game_x + 735 + (4 * 53) + (50*1) + offset[0]
+            y_start = kca_u.kca.game_y + 675 + offset[1]
+            Region(x_start, y_start, 16, 15).click()
         elif target == 'last':
-            kca_u.kca.click_existing(
-                region, 'global|page_last.png', pad=PAGE_NAV)
+            x_start = kca_u.kca.game_x + 735 + (4 * 53) + (50*2) + offset[0]
+            y_start = kca_u.kca.game_y + 675 + offset[1]
+            Region(x_start, y_start, 16, 15).click()
         elif 1 <= target <= 5:
             zero_target = target - 1
             x_start = kca_u.kca.game_x + 735 + (zero_target * 53) + offset[0]

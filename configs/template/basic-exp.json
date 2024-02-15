@@ -1,5 +1,5 @@
-{    
-	"combat.check_fatigue": true,
+{
+    "combat.check_fatigue": true,
     "combat.check_lbas_fatigue": true,
     "combat.clear_stop": false,
     "combat.enabled": false,
@@ -9,12 +9,14 @@
     "combat.lbas_group_2_nodes": [],
     "combat.lbas_group_3_nodes": [],
     "combat.lbas_groups": [],
+    "combat.node_smoke": [],
     "combat.node_formations": [],
     "combat.node_night_battles": [],
     "combat.node_selects": [],
     "combat.override": false,
     "combat.port_check": false,
     "combat.push_nodes": [],
+    "combat.repair_bucket_threshold": 500,
     "combat.repair_limit": 3,
     "combat.repair_timelimit_hours": 0,
     "combat.repair_timelimit_minutes": 0,
@@ -27,9 +29,15 @@
     "event_reset.frequency": 3,
     "event_reset.reset_difficulty": 3,
     "expedition.enabled": true,
-    "expedition.fleet_2": [1],
-    "expedition.fleet_3": [2],
-    "expedition.fleet_4": [3],
+    "expedition.fleet_2": [
+        1
+    ],
+    "expedition.fleet_3": [
+        2
+    ],
+    "expedition.fleet_4": [
+        3
+    ],
     "expedition.fleet_preset": null,
     "factory.build_recipe": [
         30,
