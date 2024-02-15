@@ -1,4 +1,5 @@
 from datetime import datetime
+from sys import exit
 import api.api_core as api
 import fleet_switcher.fleet_switcher_core as fsw
 import ships.ships_core as shp
@@ -234,7 +235,7 @@ class EquipmentCore(object):
 
 
         Log.log_debug(load_ship_id)
-        exit()
+        exit(0)
 
     def get_reinforce_equipment_list(self, local_id):
 
