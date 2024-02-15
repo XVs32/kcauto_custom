@@ -7,6 +7,7 @@ from kca_enums.kcsapi_paths import KCSAPIEnum
 import combat.combat_core as com
 import config.config_core as cfg
 import nav.nav as nav
+import ships.equipment_core as equ 
 import ships.ships_core as shp
 import stats.stats_core as sts
 import util.kca as kca_u
@@ -17,7 +18,7 @@ from util.logger import Log
 
 class ShipSwitcherCore(object):
     rules = {}
-    current_shipcomp_page = 1
+    current_page = 1
     DUMMY = -1
 
     def __init__(self):
@@ -55,7 +56,7 @@ class ShipSwitcherCore(object):
             ship_idx = self._get_ship_idx_by_local_id(ship_local_id)
             kca_u.kca.sleep(1)
             self._reset_shiplist()
-            self._select_replacement_ship(ship_idx)
+            self.select_replacement_row(ship_idx)
             kca_u.kca.sleep(1)
             if not self._switch_ship():
                 return False
@@ -167,7 +168,7 @@ class ShipSwitcherCore(object):
 
     def goto(self):
         nav.navigate.to('fleetcomp')
-        self.current_shipcomp_page = 1
+        self.current_page = 1
         
     def _select_switch_button(self, slot_id):
         zero_idx = slot_id - 1
@@ -213,43 +214,69 @@ class ShipSwitcherCore(object):
                 cached=True)
             kca_u.kca.sleep(0.1)
 
-    def _select_replacement_ship(self, ship_idx, ship = None):
+    def select_replacement_row(self, row_idx, ship = None, mode = "ship"):
         
         """ship_idx // 10 gives 0 when ship_idx < 10, the "if" statement is not needed---XVs32"""
         """target_page = (ship_idx // 10) + 1 if ship_idx > 9 else 1"""
-        target_page = (ship_idx // 10) + 1
-        if ship == None:
-            Log.log_msg(f"Selecting {ship_idx}"
-                        f"(From pg{self.current_shipcomp_page} to pg{target_page}).")
-        else:
-            Log.log_msg(
-                f"Selecting lvl{ship.level} {ship.name} "
-                f"(pg{target_page}#{ship_idx}).")
+
+        target_page = (row_idx // 10) + 1
+
+        if mode == "ship":
+            if ship == None:
+                Log.log_msg(f"Selecting {row_idx}"
+                            f"(From pg{self.current_page} to pg{target_page}).")
+            else:
+                Log.log_msg(
+                    f"Selecting lvl{ship.level} {ship.name} "
+                    f"(pg{target_page}#{row_idx}).")
+        elif mode == "equipment":
+            Log.log_msg(f"Selecting {row_idx}"
+                        f"(From pg{self.current_page} to pg{target_page}).")
+            pass
         
         """Floor division gives 9 pages when ship count == 96, which should be 10 pages ---XVs32"""
         """tot_pages = shp.ships.current_ship_count // 10"""
         """Since "current_ship_count" could never goes under 1, this could be"""
         """tot_pages = (shp.ships.current_ship_count - 1) // 10 + 1"""
         """Which is a bit cleaner and faster"""
-        tot_pages = shp.ships.current_ship_count // 10 + min(1, shp.ships.current_ship_count%10) 
+        if mode == "ship":
+            tot_pages = (shp.ships.current_ship_count -1) // 10 + 1
+        elif mode == "equipment":
+            tot_pages = (len(equ.equipment.equipment['free']) -1) // 10 + 1
 
         list_control_region = Region(
             kca_u.kca.game_x + 625, kca_u.kca.game_y + 655, 495, 45)
         kca_u.kca.sleep(0.5)
+
+        if mode == "ship":
+            offset_mode = 'shipcomp' 
+        elif mode == "equipment":
+            offset_mode = 'equipment' 
         nav.navigate_list.to_page(
-            list_control_region, tot_pages, self.current_shipcomp_page,
-            target_page, 'shipcomp')
-        self.current_shipcomp_page = target_page
+            list_control_region, tot_pages, self.current_page,
+            target_page, offset_mode)
+        self.current_page = target_page
         
-        
-        shipcomp_list_region = Region(
-            kca_u.kca.game_x + 590,
-            kca_u.kca.game_y + 225 + (ship_idx % 10 * 43),
-            435, 34)
-        kca_u.kca.click(shipcomp_list_region)
+       
+        if mode == "ship":
+            row_region = Region(
+                kca_u.kca.game_x + 590,
+                kca_u.kca.game_y + 225 + (row_idx % 10 * 43),
+                435, 34)
+        elif mode == "equipment":
+            row_region = Region(
+                kca_u.kca.game_x + 590,
+                kca_u.kca.game_y + 195 + 5 + (row_idx % 10 * 45),
+                435, 34)
+
+        kca_u.kca.click(row_region)
         kca_u.kca.r['top'].hover()
-        kca_u.kca.wait(
-            'lower_right', 'shipswitcher|shiplist_shipmenu.png')
+        if mode == "ship":
+            kca_u.kca.wait(
+                'lower_right', 'shipswitcher|shiplist_shipmenu.png')
+        elif mode == "equipment":
+            kca_u.kca.wait(
+                'lower_right', 'shipswitcher|shiplist_shipswitch_button.png')
 
     def _switch_ship(self):
 

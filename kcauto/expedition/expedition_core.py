@@ -290,6 +290,7 @@ class ExpeditionCore(CoreBase):
 
     def _dispatch_expedition(self, fleet, expedition):
         if kca_u.kca.click_existing('lower_right', 'global|sortie_select.png'):
+            kca_u.kca.sleep(1) #wait for fleet select panel anime to finish
             fleet.select()
             kca_u.kca.r['top'].hover()
 

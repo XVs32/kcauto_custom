@@ -54,7 +54,11 @@ class KCSAPIEnum(EnumBase):
     SORTIE_CF_ECF_LD_SHOOTING = (
         'kcsapi/api_req_combined_battle/each_ld_shooting')
     SORTIE_CF_RESULT = 'kcsapi/api_req_combined_battle/battleresult'
+    # sortie endpoint
+    SORTIE_END = 'kcsapi/api_get_member/slot_item'
     # pvp
     PVP_ENEMY_INFO = 'kcsapi/api_req_member/get_practice_enemyinfo'
     PVP_RESULTS = 'kcsapi/api_req_practice/battle_result'
     EXPEDITION_START = 'kcsapi/api_req_mission/start'
+    #equipment
+    FREE_EQUIPMENT = 'kcsapi/api_get_member/ship3'

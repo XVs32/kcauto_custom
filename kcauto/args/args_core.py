@@ -45,6 +45,12 @@ class ArgsCore(object):
             help=(
                 "similarity to search asset with in debug mode; defaults to "
                 f"{DEFAULT}"))
+        self.parser.add_argument(
+            '--save-equipment', action='store_true',
+            help="save current equipment config")
+        self.parser.add_argument(
+            '--load-equipment', type=str, action='store',
+            help="load current equipment config")
 
     def parse_args(self):
         self.parsed_args = self.parser.parse_args()

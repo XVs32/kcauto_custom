@@ -82,21 +82,17 @@ class FactoryCore(object):
                 resource -= 10
                 while resource >= 100:
                     kca_u.kca.r[self.order_resource_region[i][100]].click()
-                    kca_u.kca.sleep
                     resource -= 100
                 while resource >= 10:
                     kca_u.kca.r[self.order_resource_region[i][10]].click()
-                    kca_u.kca.sleep
                     resource -= 10
                 while resource >= 1:
                     kca_u.kca.r[self.order_resource_region[i][1]].click()
-                    kca_u.kca.sleep
                     resource -= 1
 
             if count >= 3:
                 """click triple develop"""
                 kca_u.kca.r["use_item_region"].click()
-                kca_u.kca.sleep
                 count -= 3
             else:
                 count -= 1
@@ -104,10 +100,8 @@ class FactoryCore(object):
             kca_u.kca.r["order_confirm_region"].click()
             kca_u.kca.wait('lower_right_corner', 'global|next_alt.png', 20)
             while kca_u.kca.exists('lower_right_corner', 'global|next_alt.png'):
-                kca_u.kca.sleep()
                 kca_u.kca.r['shipgirl'].click()
                 kca_u.kca.r['top'].hover()
-                kca_u.kca.sleep()
 
         return True
 
@@ -185,15 +179,12 @@ class FactoryCore(object):
                         resource -= 30
                         while resource >= 100:
                             kca_u.kca.r[self.order_resource_region[i][100]].click()
-                            kca_u.kca.sleep
                             resource -= 100
                         while resource >= 10:
                             kca_u.kca.r[self.order_resource_region[i][10]].click()
-                            kca_u.kca.sleep
                             resource -= 10
                         while resource >= 1:
                             kca_u.kca.r[self.order_resource_region[i][1]].click()
-                            kca_u.kca.sleep
                             resource -= 1
 
                     kca_u.kca.r["order_confirm_region"].click()

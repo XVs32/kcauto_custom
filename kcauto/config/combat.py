@@ -6,7 +6,7 @@ from kca_enums.fleet_modes import FleetModeEnum, CombinedFleetModeEnum
 from kca_enums.formations import FormationEnum
 from kca_enums.lbas_groups import LBASGroupEnum
 from kca_enums.maps import MapEnum
-from kca_enums.nodes import NodeEnum, NamedNodeEnum
+from kca_enums.nodes import NodeEnum, NodeEnum
 from util.logger import Log
 import combat.lbas_core as lbas
 
@@ -18,11 +18,13 @@ class ConfigCombat(ConfigBase):
     _sortie_map_read_only = None
     _fleet_mode = None
     _retreat_points = []
+    _node_smoke = []
     _node_selects = {}
     _node_formations = {}
     _node_night_battles = {}
     _push_nodes = []
     _retreat_limit = None
+    _repair_bucket_threshold = None
     _repair_limit = None
     _repair_timelimit_hours = None
     _repair_timelimit_minutes = None
@@ -46,11 +48,13 @@ class ConfigCombat(ConfigBase):
         self.sortie_map_read_only = config['combat.sortie_map']
         self.fleet_mode = config['combat.fleet_mode']
         self.retreat_points = config['combat.retreat_points']
+        self.node_smoke = config['combat.node_smoke']
         self.node_selects = config['combat.node_selects']
         self.node_formations = config['combat.node_formations']
         self.node_night_battles = config['combat.node_night_battles']
         self.push_nodes = config['combat.push_nodes']
         self.retreat_limit = config['combat.retreat_limit']
+        self.repair_bucket_threshold = config['combat.repair_bucket_threshold']
         self.repair_limit = config['combat.repair_limit']
         self.repair_timelimit_hours = config['combat.repair_timelimit_hours']
         self.repair_timelimit_minutes = config[
@@ -71,6 +75,8 @@ class ConfigCombat(ConfigBase):
             self.fleet_mode = config['combat.fleet_mode']
         if "combat.retreat_points" in config:
             self.retreat_points = config['combat.retreat_points']
+        if "combat.node_smoke" in config:
+            self.node_smoke = config['combat.node_smoke']
         if "combat.node_selects" in config:
             self.node_selects = config['combat.node_selects']
         if "combat.node_formations" in config:
@@ -81,6 +87,8 @@ class ConfigCombat(ConfigBase):
             self.push_nodes = config['combat.push_nodes']
         if "combat.retreat_limit" in config:
             self.retreat_limit = config['combat.retreat_limit']
+        if "combat.repair_bucket_threshold" in config:
+            self.repair_bucket_threshold = config['combat.repair_bucket_threshold']
         if "combat.repair_limit" in config:
             self.repair_limit = config['combat.repair_limit']
         if "combat.repair_timelimit_hours" in config:
@@ -212,6 +220,15 @@ class ConfigCombat(ConfigBase):
         self._fleet_mode = fleet_mode
 
     @property
+    def repair_bucket_threshold(self):
+        return self._repair_bucket_threshold
+
+    @repair_bucket_threshold.setter
+    def repair_bucket_threshold(self, value):
+        self._repair_bucket_threshold = value
+        Log.log_debug(f"_repair_bucket_threshold set {self._repair_bucket_threshold}")
+
+    @property
     def retreat_points(self):
         return self._retreat_points
 
@@ -221,6 +238,19 @@ class ConfigCombat(ConfigBase):
             if not NodeEnum.contains_value(node):
                 raise ValueError("Invalid node specified")
         self._retreat_points = [NodeEnum(node) for node in value]
+
+    @property
+    def node_smoke(self):
+        return self._node_smoke
+
+    @node_smoke.setter
+    def node_smoke(self, value):
+        node_smoke = [] 
+        for node in value:
+            if not NodeEnum.contains_value(node):
+                raise ValueError("Bad node specified in node select.")
+            node_smoke.append(NodeEnum(node)) 
+        self._node_smoke = node_smoke
 
     @property
     def node_selects(self):
@@ -234,8 +264,8 @@ class ConfigCombat(ConfigBase):
             if len(split) != 2:
                 raise ValueError("Node select in wrong format.")
             if (
-                    not NamedNodeEnum.contains_value(split[0])
-                    or not NamedNodeEnum.contains_value(split[1])):
+                    not NodeEnum.contains_value(split[0])
+                    or not NodeEnum.contains_value(split[1])):
                 raise ValueError("Bad node specified in node select.")
             node_selects[split[0]] = NodeEnum(split[1])
         self._node_selects = node_selects
@@ -285,7 +315,7 @@ class ConfigCombat(ConfigBase):
     @push_nodes.setter
     def push_nodes(self, value):
         for node in value:
-            if not NamedNodeEnum.contains_value(node):
+            if not NodeEnum.contains_value(node):
                 raise ValueError("Invalid node specified for push nodes.")
         self._push_nodes = [NodeEnum(node) for node in value]
 
@@ -353,7 +383,7 @@ class ConfigCombat(ConfigBase):
                 and len(value) not in (0, 2)):
             raise ValueError("0 or 2 nodes not specified for LBAS 1")
         for node in value:
-            if not NamedNodeEnum.contains_value(node):
+            if not NodeEnum.contains_value(node):
                 raise ValueError("Invalid node specified for LBAS 1")
         self._lbas_group_1_nodes = [NodeEnum(node) for node in value]
 
@@ -368,7 +398,7 @@ class ConfigCombat(ConfigBase):
                 and len(value) not in (0, 2)):
             raise ValueError("0 or 2 nodes not specified for LBAS 2")
         for node in value:
-            if not NamedNodeEnum.contains_value(node):
+            if not NodeEnum.contains_value(node):
                 raise ValueError("Invalid node specified for LBAS 2")
         self._lbas_group_2_nodes = [NodeEnum(node) for node in value]
 
@@ -383,7 +413,7 @@ class ConfigCombat(ConfigBase):
                 and len(value) not in (0, 2)):
             raise ValueError("0 or 2 nodes not specified for LBAS 3")
         for node in value:
-            if not NamedNodeEnum.contains_value(node):
+            if not NodeEnum.contains_value(node):
                 raise ValueError("Invalid node specified for LBAS 3")
         self._lbas_group_3_nodes = [NodeEnum(node) for node in value]
 
