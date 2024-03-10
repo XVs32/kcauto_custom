@@ -30,11 +30,19 @@ class LBASCore(object):
             self.groups[group.value].api_enabled = False
 
         sortie_world = cfg.config.combat.sortie_map.world
+        sortie_map = cfg.config.combat.sortie_map.map
         for group in data:
+            Log.log_debug(f"group['api_area_id']:{group['api_area_id']}")
+            Log.log_debug(f"sortie_map:{sortie_map}")
             if sortie_world == 'E' and group['api_area_id'] < 40:
                 continue
-            elif sortie_world != group['api_area_id']:
+            elif sortie_world != 'E' and sortie_world != group['api_area_id']:
                 continue
+
+            if sortie_world == 'E':
+                sortie_map = sortie_map - 1
+                if sortie_map >0:
+                    continue
 
             group_id = group['api_rid']
             group_instance = self.groups[group_id]
@@ -108,8 +116,8 @@ class LBASCore(object):
                         (panel_pos == 'l' and node_instance.x < 420)
                         or (panel_pos == 'r' and node_instance.x > 780)):
                     kca_u.kca.hover(panel)
+                kca_u.kca.sleep(3)
                 node_instance.select()
-                kca_u.kca.sleep(1.3)
             kca_u.kca.r['lbas'].hover()
             kca_u.kca.click_existing('upper', 'combat|lbas_assign_confirm.png')
             kca_u.kca.r['lbas'].hover()
