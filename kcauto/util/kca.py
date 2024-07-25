@@ -532,6 +532,7 @@ class Kca(object):
             Match: Match instance of best asset match.
         """
         r = self._get_region(region)
+        r.SCAN_RATE = 0.5 #slow down SCAN_RATE to 0.5 for lower CPU usage
         return r.wait(self._create_asset_path(asset), wait, similarity)
 
     def wait_vanish(self, region, asset, wait=30, similiarity=DEFAULT):
@@ -550,6 +551,7 @@ class Kca(object):
             bool: True when asset no longer exists on-screen.
         """
         r = self._get_region(region)
+        r.SCAN_RATE = 0.5 #slow down SCAN_RATE to 0.5 for lower CPU usage
         return r.wait_vanish(self._create_asset_path(asset), wait, similiarity)
 
     def hover(self, region):
@@ -635,6 +637,7 @@ class Kca(object):
                 DEFAULT.
         """
         r = self._get_region(region)
+        r.SCAN_RATE = 0.5 #slow down SCAN_RATE to 0.5 for lower CPU usage
         match = r.wait(self._create_asset_path(asset), wait, similarity)
         self.click(match)
 
