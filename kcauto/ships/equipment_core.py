@@ -4,6 +4,7 @@ import api.api_core as api
 import fleet_switcher.fleet_switcher_core as fsw
 import ships.ships_core as shp
 import ship_switcher.ship_switcher_core as ssw
+import fleet.fleet_core as flt
 import nav.nav as nav
 from kca_enums.kcsapi_paths import KCSAPIEnum
 import util.kca as kca_u
@@ -52,6 +53,30 @@ class EquipmentCore(object):
             self.equipment["loaded"][ship['api_id']] = ship["api_slot"]
             self.equipment["loaded"][ship['api_id']].append(ship["api_slot_ex"])
 
+    def get_fleet_equipment(self, fleet_id):
+        """
+            method to read the loaded equipment list of a fleet
+
+            fleet_id (dict) : fleet id, starts from 1
+        """
+        
+        return #temp skip
+        print (flt.fleets.fleets[fleet_id].ship_ids)
+        
+        equipment_list = {}
+        
+        for ship_id in flt.fleets.fleets[fleet_id].ship_ids:
+            equipment_list[ship_id] = self.equipment["loaded"][ship_id]
+            
+        
+        #dt_string = datetime.now().strftime("%d-%m-%Y-%H-%M-%S")
+        dt_string = "combat_only_test"
+        JsonData.dump_json(equipment_list, 'data|equipment|' + dt_string + '.json')
+            
+        Log.log_success(f"Equipment list saved at data/equipment/{dt_string}.json")
+                
+        exit(1)
+            
 
     def save_loaded_equipment(self):
         """
@@ -68,6 +93,12 @@ class EquipmentCore(object):
         exit(0)
 
     def load_loaded_equipment(self, file_name):
+        """
+            method to load the equipment ref from json file
+        """
+        
+        print("load in")
+        
         if not self.unload_equipment(file_name):
             #self.equipment_list_update()
             pass
@@ -95,17 +126,30 @@ class EquipmentCore(object):
         unload_ship_id = []
 
         for ship_id in self.equipment["loaded"]:
-            try:
+            
+            if str(ship_id) in target_config:
                 if self.equipment["loaded"][ship_id] != target_config[str(ship_id)]\
                     and self.equipment["loaded"][ship_id] != EMPTY_a\
                     and self.equipment["loaded"][ship_id] != EMPTY_b:
                     unload_ship_id.append(ship_id)
                     any_unload = True
-            except KeyError:
-                if self.equipment["loaded"][ship_id] != EMPTY_a\
+            else: #target_config does not care this ship, but we still have to strip it if it holds any equipment we care
+                
+                if  self.equipment["loaded"][ship_id] != EMPTY_a\
                 and self.equipment["loaded"][ship_id] != EMPTY_b:
-                    unload_ship_id.append(ship_id)
-                    any_unload = True
+                    
+                    target_equipments = set()
+                    
+                    for equipment_list in target_config.values():
+                        target_equipments.update(equipment_list)
+                        
+                    target_equipments.discard(0)
+                    target_equipments.discard(-1)
+                        
+                    for euipment in self.equipment["loaded"][ship_id]:
+                        if euipment in target_equipments:
+                            unload_ship_id.append(ship_id)
+                            any_unload = True
 
         start_id = 0
         while len(unload_ship_id) > start_id:

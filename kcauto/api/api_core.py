@@ -258,6 +258,7 @@ class ApiWrapper(object):
         try:
             ship_data = data['api_data']['api_ship']
             shp.ships.update_local_ships(ship_data)
+            JsonData.dump_json(ship_data, 'data|temp|local_ship.json')
             equ.equipment.get_loaded_equipment(ship_data)
             
         except KeyError:
