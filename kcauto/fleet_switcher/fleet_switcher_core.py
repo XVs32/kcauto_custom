@@ -4,6 +4,8 @@ from sys import exit
 import re
 import copy
 import shutil
+import os
+import json
 
 
 import api.api_core as api
@@ -15,6 +17,7 @@ import nav.nav as nav
 import util.kca as kca_u
 from util.logger import Log
 import ship_switcher.ship_switcher_core as ssw
+import ships.equipment_core as equ 
 from util.json_data import JsonData
 from kca_enums.kcsapi_paths import KCSAPIEnum
 from kca_enums.expeditions import ExpeditionEnum
@@ -33,7 +36,7 @@ class FleetSwitcherCore(object):
     def __init__(self):
         self._set_next_combat_preset()
         
-        self._load_fleet_preset(self._load_ship_pool())
+        self._load_fleet_preset()
 
     def _load_ship_pool(self):
         """
@@ -47,11 +50,24 @@ class FleetSwitcherCore(object):
             shutil.copyfile('data/config/ship_pool.json', 'configs/ship_pool.json')
         return ship_pool
 
-    def _load_fleet_preset(self, ship_pool):
+    def _load_fleet_preset(self):
         """
-            method to load the setting in fleet_preset.json
-            and output the fleet preset of each map
+            method to load the noro6 settings under config/noro6
         """
+        
+        # read every .json file under config/noro6 folder
+        
+        # Example usage
+        NORO6_FOLDER = 'configs/noro6'
+        noro6_json_data = {}
+        for filename in os.listdir(NORO6_FOLDER):
+            if filename.endswith('.json'):
+                file_path = os.path.join(NORO6_FOLDER, filename)
+                noro6_json_data[filename] = JsonData.load_json(file_path)
+                
+        print(noro6_json_data)
+        exit(0) #testing end...
+                
         #combat_fleet has the id of a ship
         try:
             fleet_preset_data = JsonData.load_json('configs|fleet_preset.json')
@@ -341,8 +357,12 @@ class FleetSwitcherCore(object):
                 Log.log_debug("Preset Fleet is already loaded.")
                 return False
 
-        if preset_id == AUTO_PRESET:
+        elif preset_id == AUTO_PRESET:
             if context == 'combat':
+                
+                #check if equipment preset exist
+                equ.equipment.get_fleet_equipment(1)
+                
                 if flt.fleets.fleets[1].ship_ids == self._get_fleet_preset(cfg.config.combat.sortie_map.value):
                     Log.log_debug("Custom preset Fleet is already loaded.")
                     return False
