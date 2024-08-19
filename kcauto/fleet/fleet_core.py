@@ -1,6 +1,7 @@
 import config.config_core as cfg
 from fleet.fleet import Fleet
 from kca_enums.fleet_modes import FleetModeEnum, CombinedFleetModeEnum
+from kca_enums.fleet import FleetEnum
 from util.kc_time import KCTime
 from util.logger import Log
 
@@ -9,10 +10,12 @@ class FleetCore(object):
     fleets = {}
 
     def __init__(self):
-        self.fleets[1] = Fleet(1, 'combat')
-        self.fleets[2] = Fleet(2, 'expedition', False)
-        self.fleets[3] = Fleet(3, 'expedition', False)
-        self.fleets[4] = Fleet(4, 'expedition', False)
+        
+        Log.log_debug("FleetCore init.")
+        self.fleets[1] = Fleet(1, FleetEnum.COMBAT)
+        self.fleets[2] = Fleet(2, FleetEnum.EXPEDITION, False)
+        self.fleets[3] = Fleet(3, FleetEnum.EXPEDITION, False)
+        self.fleets[4] = Fleet(4, FleetEnum.EXPEDITION, False)
 
     def update_fleets(self, data):
         Log.log_debug("Updating fleet data from API.")
@@ -25,10 +28,10 @@ class FleetCore(object):
                 fleet.enabled = True
             if fleet_id == 2:
                 fleet.fleet_type = (
-                    'combat' if self.combined_fleet else 'expedition')
+                    FleetEnum.COMBAT if self.combined_fleet else FleetEnum.EXPEDITION)
             if fleet_id == 3:
                 fleet.fleet_type = (
-                    'combat' if self.strike_force_fleet else 'expedition')
+                    FleetEnum.COMBAT if self.strike_force_fleet else FleetEnum.EXPEDITION)
             fleet.ship_ids = fleet_data['api_ship']
             at_base = fleet_data['api_mission'][0] == 0
             if at_base != fleet.at_base:

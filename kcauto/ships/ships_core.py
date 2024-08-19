@@ -6,8 +6,8 @@ from util.wctf import WhoCallsTheFleetData
 
 class ShipsCore(object):
     max_ship_count = 0
-    local_ships = []
-    local_ships_by_local_id = {}
+    ship_pool = []
+    local_ships_by_production_id = {}
     ship_library = []
     name_db = {}
 
@@ -15,16 +15,18 @@ class ShipsCore(object):
         Log.log_debug("Initializing Ship core.")
         self.load_wctf_names()
 
-    def update_local_ships(self, data):
+    def update_ship_pool(self, data):
         # from this api call, api_id = local_api_id, and api_ship_id = api_id
         Log.log_debug("Updating ship data from API.")
-        self.local_ships = []
-        self.local_ships_by_local_id = {}
+        self.ship_pool = {}
         for ship in data:
             ship_instance = self.get_ship_from_api_id(
                 ship['api_ship_id'], ship)
-            self.local_ships.append(ship_instance)
-            self.local_ships_by_local_id[ship['api_id']] = ship_instance
+            self.ship_pool[ship['api_id']] = ship_instance
+            
+        print("self.ship_pool")
+        print(self.ship_pool)
+        exit()
 
     def update_ship_library(self, data):
         Log.log_debug("Updating ship library data.")
@@ -46,13 +48,25 @@ class ShipsCore(object):
 
     @property
     def current_ship_count(self):
-        return len(self.local_ships)
+        return len(self.ship_pool)
 
-    def get_local_ships(self, req_ships):
+    def get_ship_with_production_id(self, req_ships):
+        """get ship obj with a list of ship production id
+
+        Args:
+            req_ships (list of int): a list of ship production id
+
+        Returns:
+            ships: list of ship obj
+        """
+        
         ships = []
-        for local_id in req_ships:
-            ships.append(self.local_ships_by_local_id[local_id])
+        for production_id in req_ships:
+            ships.append(self.local_ships_by_production_id[production_id])
         return ships
+    
+    def get_ship_from_(self, ship_id):
+        return self.ship_pool[ship_id]
 
     def get_ship_from_api_id(self, api_id, local_ship_data=None):
         return Ship(api_id, local_data=local_ship_data)

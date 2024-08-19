@@ -90,7 +90,8 @@ class RepairCore(object):
         idx_of_combat_ships = {}
         idx_of_passive_ships = {}
         for idx, ship in enumerate(repair_list):
-            if ship.damage is DamageStateEnum.REPAIRING:
+            
+            if ship.production_id in self.ships_under_repair:
                 continue
             elif ship in flt.fleets.combat_ships:
                 if ship.damage >= cfg.config.combat.repair_limit:
@@ -225,7 +226,7 @@ class RepairCore(object):
     @property
     def _local_ships_sorted_by_repair(self):
         return sorted(
-            [s for s in shp.ships.local_ships if s.hp_p < 1],
+            [s for s in shp.ships.ship_pool if s.hp_p < 1],
             key=lambda s: (s.hp_p, s.sort_id, s.local_id))
 
     @property
@@ -239,7 +240,7 @@ class RepairCore(object):
     @property
     def ships_need_repair(self):
         if cfg.config.passive_repair.enabled:
-            for ship in shp.ships.local_ships:
+            for ship in shp.ships.ship_pool:
                 if ship.damage >= cfg.config.passive_repair.repair_threshold:
                     if ship not in flt.fleets.active_ships:
                         return True

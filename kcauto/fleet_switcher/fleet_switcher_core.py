@@ -13,6 +13,8 @@ import config.config_core as cfg
 import combat.combat_core as com
 import expedition.expedition_core as exp
 import fleet.fleet_core as flt
+from fleet.fleet import Fleet
+from fleet.noro6 import Noro6 
 import nav.nav as nav
 import util.kca as kca_u
 from util.logger import Log
@@ -28,7 +30,8 @@ class FleetSwitcherCore(object):
     max_presets = 0
     presets = {}
     next_combat_preset = None
-    fleet_ship_id = {"combat":{}, "exp":{}}
+    
+    custom_presets = {}
     exp_fleet_ship_id = {}
     exp_ship_pool = {}
     exp_fleet_ship_type = {}
@@ -56,36 +59,46 @@ class FleetSwitcherCore(object):
         """
         
         # read every .json file under config/noro6 folder
-        
-        # Example usage
         NORO6_FOLDER = 'configs/noro6'
-        noro6_json_data = {}
         for filename in os.listdir(NORO6_FOLDER):
             if filename.endswith('.json'):
                 file_path = os.path.join(NORO6_FOLDER, filename)
-                noro6_json_data[filename] = JsonData.load_json(file_path)
                 
-        print(noro6_json_data)
+                self.custom_presets[filename] = self._noro6_to_kcauto(file_path)
+                #self.noro6_filename_phrase(filename)
+                
         exit(0) #testing end...
-                
-        #combat_fleet has the id of a ship
-        try:
-            fleet_preset_data = JsonData.load_json('configs|fleet_preset.json')
-        except FileNotFoundError:
-            fleet_preset_data = JsonData.load_json('data|config|fleet_preset.json')
-            shutil.copyfile('data/config/fleet_preset.json', 'configs/fleet_preset.json')
-        self.fleet_ship_id["combat"] = {}
-        for map_name in fleet_preset_data:
-
-            self.fleet_ship_id["combat"][map_name] = \
-                self._get_fleet_ship_id(fleet_preset_data[map_name], ship_pool)
-
-        #exp_fleet has the type and id, like what's in fleet_preset.json
-        #it needs to access ship_pool.json to get the actual id of the ship
-        self.exp_fleet_ship_type = {}
-        for exp_info in exp.expedition.exp_data:
-            fleet = self._get_fleet_ship_type_from_composition(exp_info["reqComposition"])
-            self.exp_fleet_ship_type[exp_info["id"]] = fleet
+        
+    def _noro6_to_kcauto(self, file_path):
+        """
+            method to convert noro6 preset to kcauto preset
+            output: (kcauto preset) 
+        """
+         
+        ret = {}
+        noro6 = Noro6(file_path)
+ 
+        for fleet_id in range(1, noro6.get_fleet_count() + 1 ):
+            noro6.get_fleet(fleet_id)
+            ret[fleet_id] = Fleet(fleet_id, noro6.get_preset_type(), False)
+            
+            temp_ships = []
+            for i in range(1, noro6.get_ship_count() + 1 ):
+                self._get_production_id_from_noro6_ship(noro6.get_ship(i))
+                temp_ships.append()
+                        
+    def _get_production_id_from_noro6_ship(self, ship):
+        """
+            method to find the most match ship from noro6 ship info
+            input: noro6 ship info
+            output: kcauto ship obj
+        """
+        print(ship)
+        exit()
+        
+        
+        
+        
 
     def _get_fleet_ship_id(self, fleet_ship_type, ship_pool):
         """
@@ -130,7 +143,7 @@ class FleetSwitcherCore(object):
 
         ship_pool = self._load_ship_pool()
 
-        self.fleet_ship_id["exp"] = {}
+        self.custom_presets["exp"] = {}
         exp.expedition.exp_for_fleet = [None, None, None, None, None]
         fleet_id = 1
         fleet_id = self._get_next_exp_fleet_id(fleet_id)
@@ -153,7 +166,7 @@ class FleetSwitcherCore(object):
             else:
 
                 #Save the fleetShipId
-                self.fleet_ship_id["exp"][fleet_id] = fleetShipId
+                self.custom_presets["exp"][fleet_id] = fleetShipId
                 exp.expedition.exp_for_fleet[fleet_id] = exp_rank["id"]
 
                 fleet_id = self._get_next_exp_fleet_id(fleet_id)
@@ -374,7 +387,7 @@ class FleetSwitcherCore(object):
                 fleet_id = self._get_next_exp_fleet_id(fleet_id)
                 while fleet_id < 5:
                     if flt.fleets.fleets[fleet_id].ship_ids == \
-                        self.fleet_ship_id["exp"][fleet_id]:
+                        self.custom_presets["exp"][fleet_id]:
                         Log.log_msg(f"preset for fleet {fleet_id} is already loaded.")
                     else:
                         Log.log_msg(f"attempt to load fleet {fleet_id}'s preset.")
@@ -432,7 +445,7 @@ class FleetSwitcherCore(object):
                     if fleet_id > 4:
                         break
                     
-                    if not fleet_id in self.fleet_ship_id["exp"]:
+                    if not fleet_id in self.custom_presets["exp"]:
                         continue
                     
                     flag = False
@@ -443,7 +456,7 @@ class FleetSwitcherCore(object):
                     if flag == False:
                         return False
 
-                    if not self.switch_to_costom_fleet(fleet_id, self.fleet_ship_id["exp"][fleet_id]):
+                    if not self.switch_to_costom_fleet(fleet_id, self.custom_presets["exp"][fleet_id]):
                         return False
 
             elif context == 'factory_develop':
@@ -565,14 +578,14 @@ class FleetSwitcherCore(object):
             input: 
                 key(string): the name of combat map(ex. 1-1-Bm2)
         """
-        if key in self.fleet_ship_id["combat"]:
-            return self.fleet_ship_id["combat"][key]
+        if key in self.custom_presets["combat"]:
+            return self.custom_presets["combat"][key]
         else:
             quest_name = key.split("-")[-1]
             """The key contain a quest name"""
             quest_name_len = len(quest_name) 
             if quest_name_len > 1:
-                return self.fleet_ship_id["combat"][key[:-quest_name_len - 1]]
+                return self.custom_presets["combat"][key[:-quest_name_len - 1]]
             
         raise ValueError("Unexpected preset id:" + str(key))
 

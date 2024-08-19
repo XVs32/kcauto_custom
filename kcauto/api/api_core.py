@@ -257,7 +257,7 @@ class ApiWrapper(object):
 
         try:
             ship_data = data['api_data']['api_ship']
-            shp.ships.update_local_ships(ship_data)
+            shp.ships.update_ship_pool(ship_data)
             JsonData.dump_json(ship_data, 'data|temp|local_ship.json')
             equ.equipment.get_loaded_equipment(ship_data)
             
@@ -356,7 +356,7 @@ class ApiWrapper(object):
     def _process_battle_deck(self, data):
         try:
             deck_data = data['api_data']['api_ship_data']
-            shp.ships.update_local_ships(deck_data)
+            shp.ships.update_ship_pool(deck_data)
             for fleet in flt.fleets.combat_fleets:
                 fleet.update_ship_data()
         except KeyError:
