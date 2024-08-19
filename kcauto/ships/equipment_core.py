@@ -287,7 +287,7 @@ class EquipmentCore(object):
         
         equipment_list = []
 
-        ship = shp.ships.local_ships_by_local_id[local_id]
+        ship = shp.ships.local_ships_by_production_id[local_id]
         special_equipment_list = self.get_special_reinforce_equipment(ship) # sqecial equipment for this ship only
 
         keys = self.equipment['raw'].keys()

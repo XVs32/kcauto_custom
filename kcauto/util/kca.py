@@ -150,7 +150,7 @@ class Kca(object):
             api.api.update_ship_library_from_json()
 
         local_ships_json = {"ship": []}
-        for ship in shp.ships.local_ships:
+        for ship in shp.ships.ship_pool:
             local_ships_json["ship"].append({"name": ship.name, \
                                              "name_jp": ship.name_jp,
                                              "id":ship.api_id,\
