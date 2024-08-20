@@ -65,7 +65,7 @@ class ShipsCore(object):
             ships.append(self.local_ships_by_production_id[production_id])
         return ships
     
-    def get_ship_from_(self, ship_id):
+    def get_ship_from_production_id(self, ship_id):
         return self.ship_pool[ship_id]
 
     def get_ship_from_api_id(self, api_id, local_ship_data=None):
