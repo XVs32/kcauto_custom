@@ -14,7 +14,6 @@ import combat.combat_core as com
 import expedition.expedition_core as exp
 import fleet.fleet_core as flt
 from fleet.fleet import Fleet
-from fleet.noro6 import Noro6 
 import nav.nav as nav
 import util.kca as kca_u
 from util.logger import Log
@@ -53,52 +52,7 @@ class FleetSwitcherCore(object):
             shutil.copyfile('data/config/ship_pool.json', 'configs/ship_pool.json')
         return ship_pool
 
-    def _load_fleet_preset(self):
-        """
-            method to load the noro6 settings under config/noro6
-        """
-        
-        # read every .json file under config/noro6 folder
-        NORO6_FOLDER = 'configs/noro6'
-        for filename in os.listdir(NORO6_FOLDER):
-            if filename.endswith('.json'):
-                file_path = os.path.join(NORO6_FOLDER, filename)
-                
-                self.custom_presets[filename] = self._noro6_to_kcauto(file_path)
-                #self.noro6_filename_phrase(filename)
-                
-        exit(0) #testing end...
-        
-    def _noro6_to_kcauto(self, file_path):
-        """
-            method to convert noro6 preset to kcauto preset
-            output: (kcauto preset) 
-        """
-         
-        ret = {}
-        noro6 = Noro6(file_path)
- 
-        for fleet_id in range(1, noro6.get_fleet_count() + 1 ):
-            noro6.get_fleet(fleet_id)
-            ret[fleet_id] = Fleet(fleet_id, noro6.get_preset_type(), False)
-            
-            temp_ships = []
-            for i in range(1, noro6.get_ship_count() + 1 ):
-                self._get_production_id_from_noro6_ship(noro6.get_ship(i))
-                temp_ships.append()
-                        
-    def _get_production_id_from_noro6_ship(self, ship):
-        """
-            method to find the most match ship from noro6 ship info
-            input: noro6 ship info
-            output: kcauto ship obj
-        """
-        print(ship)
-        exit()
-        
-        
-        
-        
+       
 
     def _get_fleet_ship_id(self, fleet_ship_type, ship_pool):
         """
