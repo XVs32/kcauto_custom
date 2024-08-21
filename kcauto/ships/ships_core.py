@@ -20,8 +20,8 @@ class ShipsCore(object):
         Log.log_debug("Updating ship data from API.")
         self.ship_pool = {}
         for ship in data:
-            ship_instance = self.get_ship_from_api_id(
-                ship['api_ship_id'], ship)
+            ship_instance = self.create_ship(
+                self.get_ship_static_data(ship["api_sortno"]), ship)
             self.ship_pool[ship['api_id']] = ship_instance
             
         print("self.ship_pool")
@@ -31,6 +31,11 @@ class ShipsCore(object):
     def update_ship_library(self, data):
         Log.log_debug("Updating ship library data.")
         self.ship_library = data
+        
+    def get_ship_static_data(self,api_sortno):
+        for ship in self.ship_library:
+            if ship['api_sortno'] == api_sortno:
+                return ship
 
     def load_wctf_names(self, force_update=False):
         if force_update:
@@ -68,8 +73,9 @@ class ShipsCore(object):
     def get_ship_from_production_id(self, ship_id):
         return self.ship_pool[ship_id]
 
-    def get_ship_from_api_id(self, api_id, local_ship_data=None):
-        return Ship(api_id, local_data=local_ship_data)
+    def create_ship(self, static_data, local_data):
+        
+        return Ship(static_data, local_data)
 
     def get_ship_from_sortno(self, sortno):
         return Ship(sortno, id_type='sortno')

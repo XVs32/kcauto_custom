@@ -29,17 +29,17 @@ class Ship(object):
     
     equipments :equipment = []
 
-    def __init__(self, share_data, local_data, equipments = None):
+    def __init__(self, static_data, local_data, equipments = None):
         
-        self.api_id = share_data['api_id']
-        self.sortno = share_data['api_sortno']
-        self.sort_id = share_data['api_sort_id']
-        self.name = share_data['api_name']
-        self.name_jp = share_data['api_name']
-        self.ship_type = ShipTypeEnum(share_data['api_stype'])
-        self.ship_family = share_data['api_ctype']
-        self.ammo_max = share_data['api_bull_max']
-        self.fuel_max = share_data['api_fuel_max']
+        self.api_id = static_data['api_id']
+        self.sortno = static_data['api_sortno']
+        self.sort_id = static_data['api_sort_id']
+        self.name = static_data['api_name']
+        self.name_jp = static_data['api_name']
+        self.ship_type = ShipTypeEnum(static_data['api_stype'])
+        self.ship_family = static_data['api_ctype']
+        self.ammo_max = static_data['api_bull_max']
+        self.fuel_max = static_data['api_fuel_max']
 
         self.production_id = local_data['api_id']
         self.level = local_data['api_lv']
@@ -59,26 +59,13 @@ class Ship(object):
 
     @name.setter
     def name(self, value):
-        """
-        if self.api_id in shp.ships.name_db:
-            name_db_entry = shp.ships.name_db[self.api_id]
-            if name_db_entry['non_jp']:
-                value = name_db_entry['non_jp']
-            elif name_db_entry['jp']:
-                value = name_db_entry['jp']
         self._name = value
-        """
 
     @property
     def name_jp(self):
         return self._name_jp
     @name_jp.setter
     def name_jp(self, value):
-        """
-        if self.api_id in shp.ships.name_db:
-            name_db_entry = shp.ships.name_db[self.api_id]
-            self._name_jp = name_db_entry['jp']
-        """
         self._name_jp = value
 
 
