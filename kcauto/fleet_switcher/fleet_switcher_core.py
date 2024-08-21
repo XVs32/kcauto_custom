@@ -37,8 +37,6 @@ class FleetSwitcherCore(object):
 
     def __init__(self):
         self._set_next_combat_preset()
-        
-        self._load_fleet_preset()
 
     def _load_ship_pool(self):
         """

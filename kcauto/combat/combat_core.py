@@ -731,7 +731,7 @@ class CombatCore(CoreBase):
                 self.map_cleared = True
         if 'api_get_ship' in data:
             dropped_ship_id = data['api_get_ship']['api_ship_id']
-            ship = shp.ships.get_ship_from_api_id(dropped_ship_id)
+            ship = shp.ships.create_ship(dropped_ship_id)
             self.rescued_ships.append(ship)
             Log.log_success(f"Rescued {ship.name} (#{ship.sortno}).")
             sts.stats.combat.ships_rescued += 1
