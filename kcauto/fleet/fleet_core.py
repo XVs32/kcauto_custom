@@ -118,10 +118,6 @@ class FleetCore(object):
                 active_ships += self.fleets[fleet_id].ship_data
         return active_ships
 
-    # fleet_id starts form 1
-    def get_fleet_id_and_name(self, fleet_id):
-        self.fleets[fleet_id].get_fleet_id_and_name()
-
     def __str__(self):
         for fleet_id in self.fleets:
             fleet = self.fleets[fleet_id]
