@@ -69,6 +69,7 @@ class Kcauto(object):
         if not com.combat.enabled and self.is_first_print_fleet:
             self.is_first_print_fleet = False
             nav.navigate.to('refresh_home')
+            flt.fleets.fleets[1].get_fleet_id_and_name()
         else:
             return False
 
