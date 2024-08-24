@@ -54,6 +54,17 @@ class FleetCore(object):
             self.fleets[self.ACTIVE_FLEET_KEY][fleet_id].enabled = False
 
     @property
+    def combat_fleets_id(self):
+        if cfg.config.combat.enabled:
+            if cfg.config.combat.fleet_mode is FleetModeEnum.STANDARD:
+                return [1]
+            elif cfg.config.combat.fleet_mode is FleetModeEnum.STRIKE:
+                return [3]
+            elif CombinedFleetModeEnum.contains_value(
+                    cfg.config.combat.fleet_mode.value):
+                return [1,2]
+
+    @property
     def combat_fleets(self):
         if cfg.config.combat.enabled:
             if cfg.config.combat.fleet_mode is FleetModeEnum.STANDARD:
