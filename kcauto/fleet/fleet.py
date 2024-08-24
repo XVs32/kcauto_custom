@@ -20,7 +20,7 @@ class Fleet(object):
     _at_base = True
     _ship_ids = []
     _return_time = None
-    ship_data :Ship = []
+    ship_data = []
     visual_health = []
 
     def __init__(self, fleet_id, fleet_type, enabled=True):
@@ -30,7 +30,9 @@ class Fleet(object):
         self.fleet_type = fleet_type
 
     def update_ship_data(self):
-        self.ship_data = shp.ships.get_ship_with_production_id(self.ship_ids)
+        self.ship_data = []
+        for id in self.ship_ids:
+            self.ship_data.append(shp.ships.get_ship_from_production_id(id))
 
     def select(self):
         Log.log_debug(f"Selecting fleet {self.fleet_id}.")
