@@ -10,6 +10,8 @@ from util.json_data import JsonData
 
 import os
 class FleetCore(object):
+    
+    ACTIVE_FLEET_KEY = "active_fleet"
     fleets = {}
     
     is_custom_fleet_loaded = False
@@ -17,10 +19,12 @@ class FleetCore(object):
     def __init__(self):
         
         Log.log_debug("FleetCore init.")
-        self.fleets[1] = Fleet(1, FleetEnum.COMBAT)
-        self.fleets[2] = Fleet(2, FleetEnum.EXPEDITION, False)
-        self.fleets[3] = Fleet(3, FleetEnum.EXPEDITION, False)
-        self.fleets[4] = Fleet(4, FleetEnum.EXPEDITION, False)
+        
+        self.fleets[self.ACTIVE_FLEET_KEY] = {}
+        self.fleets[self.ACTIVE_FLEET_KEY][1] = Fleet(1, FleetEnum.COMBAT)
+        self.fleets[self.ACTIVE_FLEET_KEY][2] = Fleet(2, FleetEnum.EXPEDITION, False)
+        self.fleets[self.ACTIVE_FLEET_KEY][3] = Fleet(3, FleetEnum.EXPEDITION, False)
+        self.fleets[self.ACTIVE_FLEET_KEY][4] = Fleet(4, FleetEnum.EXPEDITION, False)
 
     def update_fleets(self, data):
         Log.log_debug("Updating fleet data from API.")
@@ -28,7 +32,7 @@ class FleetCore(object):
         for fleet_data in data:
             fleet_id = fleet_data['api_id']
             fleets_in_data.append(fleet_id)
-            fleet = self.fleets[fleet_id]
+            fleet = self.fleets[self.ACTIVE_FLEET_KEY][fleet_id]
             if not fleet.enabled:
                 fleet.enabled = True
             if fleet_id == 2:
@@ -45,20 +49,20 @@ class FleetCore(object):
             if return_time != fleet.return_time:
                 fleet.return_time = fleet_data['api_mission'][2]
 
-        remove_fleets = set(fleets_in_data) - set(self.fleets.keys())
+        remove_fleets = set(fleets_in_data) - set(self.fleets[self.ACTIVE_FLEET_KEY].keys())
         for fleet_id in remove_fleets:
-            self.fleets[fleet_id].enabled = False
+            self.fleets[self.ACTIVE_FLEET_KEY][fleet_id].enabled = False
 
     @property
     def combat_fleets(self):
         if cfg.config.combat.enabled:
             if cfg.config.combat.fleet_mode is FleetModeEnum.STANDARD:
-                return [self.fleets[1]]
+                return [self.fleets[self.ACTIVE_FLEET_KEY][1]]
             elif cfg.config.combat.fleet_mode is FleetModeEnum.STRIKE:
-                return [self.fleets[3]]
+                return [self.fleets[self.ACTIVE_FLEET_KEY][3]]
             elif CombinedFleetModeEnum.contains_value(
                     cfg.config.combat.fleet_mode.value):
-                return [self.fleets[1], self.fleets[2]]
+                return [self.fleets[self.ACTIVE_FLEET_KEY][1], self.fleets[self.ACTIVE_FLEET_KEY][2]]
         return []
 
     @property
@@ -72,14 +76,14 @@ class FleetCore(object):
     @property
     def pvp_fleet(self):
         if cfg.config.pvp.enabled:
-            return self.fleets[1]
+            return self.fleets[self.ACTIVE_FLEET_KEY][1]
         return []
 
     @property
     def ships_in_fleets(self):
         ships = []
-        for fleet_id in self.fleets:
-            ships.extend(self.fleets[fleet_id].ship_ids)
+        for fleet_id in self.fleets[self.ACTIVE_FLEET_KEY]:
+            ships.extend(self.fleets[self.ACTIVE_FLEET_KEY][fleet_id].ship_ids)
         return ships
 
     @property
@@ -90,17 +94,17 @@ class FleetCore(object):
 
         if (
                 len(cfg.config.expedition.fleet_2) > 0
-                and self.fleets[2].enabled):
-            expedition_fleets.append(self.fleets[2])
+                and self.fleets[self.ACTIVE_FLEET_KEY][2].enabled):
+            expedition_fleets.append(self.fleets[self.ACTIVE_FLEET_KEY][2])
         if (
                 not self.strike_force_fleet
                 and len(cfg.config.expedition.fleet_3) > 0
-                and self.fleets[3].enabled):
-            expedition_fleets.append(self.fleets[3])
+                and self.fleets[self.ACTIVE_FLEET_KEY][3].enabled):
+            expedition_fleets.append(self.fleets[self.ACTIVE_FLEET_KEY][3])
         if (
                 len(cfg.config.expedition.fleet_4) > 0
-                and self.fleets[4].enabled):
-            expedition_fleets.append(self.fleets[4])
+                and self.fleets[self.ACTIVE_FLEET_KEY][4].enabled):
+            expedition_fleets.append(self.fleets[self.ACTIVE_FLEET_KEY][4])
         return expedition_fleets
 
     @property
@@ -113,18 +117,18 @@ class FleetCore(object):
     @property
     def active_ships(self):
         active_ships = []
-        for fleet_id in self.fleets:
-            if self.fleets[fleet_id].enabled:
-                active_ships += self.fleets[fleet_id].ship_data
+        for fleet_id in self.fleets[self.ACTIVE_FLEET_KEY]:
+            if self.fleets[self.ACTIVE_FLEET_KEY][fleet_id].enabled:
+                active_ships += self.fleets[self.ACTIVE_FLEET_KEY][fleet_id].ship_data
         return active_ships
 
     # fleet_id starts form 1
     def get_fleet_id_and_name(self, fleet_id):
-        self.fleets[fleet_id].get_fleet_id_and_name()
+        self.fleets[self.ACTIVE_FLEET_KEY][fleet_id].get_fleet_id_and_name()
 
     def __str__(self):
-        for fleet_id in self.fleets:
-            fleet = self.fleets[fleet_id]
+        for fleet_id in self.fleets[self.ACTIVE_FLEET_KEY]:
+            fleet = self.fleets[self.ACTIVE_FLEET_KEY][fleet_id]
             if fleet.enabled:
                 Log.log_msg(fleet)
                 
@@ -155,15 +159,8 @@ class FleetCore(object):
         for filename in os.listdir(NORO6_FOLDER):
             if filename.endswith('.json'):
                 file_path = os.path.join(NORO6_FOLDER, filename)
+                self.fleets[filename[:-5]] = self._noro6_to_kcauto(file_path, ship_pool)
                 
-                self.fleets[filename] = self._noro6_to_kcauto(file_path, ship_pool)
-                #self.noro6_filename_phrase(filename)
-                
-        
-        print(self.fleets)        
-        exit(0) #testing end...
-        pass
-        
     def _noro6_to_kcauto(self, file_path, ship_pool):
         """
             method to convert noro6 preset to kcauto preset
@@ -177,18 +174,14 @@ class FleetCore(object):
             noro6.get_fleet(fleet_id)
             ret[fleet_id] = Fleet(fleet_id, noro6.get_preset_type(), False)
             
-            temp_ships = []
+            ret[fleet_id].ship_data = []
             for i in range(1, noro6.get_ship_count() + 1 ):
                 temp_ship_pool = ship_pool.copy()
-                temp_ships.append(
+                ret[fleet_id].ship_data.append(
                     self._get_ship_from_noro6_ship(noro6.get_ship(i), temp_ship_pool)
                 )
                 
-            #@todo form these ships into a fleet, save it in fleet_core
-            print("temp_ships")
-            print(temp_ships)
-                
-        return temp_ships
+        return ret 
                         
     def _get_ship_from_noro6_ship(self, noro_ship, ship_pool):
         """
