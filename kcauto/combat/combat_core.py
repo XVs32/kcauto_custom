@@ -155,14 +155,14 @@ class CombatCore(CoreBase):
         if not self.enabled or not self.time_to_sortie:
             return False
         if cfg.config.combat.port_check:
-            if shp.ships.current_ship_count == shp.ships.max_ship_count:
+            if shp.ships.ship_count == shp.ships.max_ship_count:
                 Log.log_msg("Port is full.")
                 self.set_next_sortie_time(15)
                 return False
         if cfg.config.combat.sortie_map == MapEnum.auto_map_selete: #No map available in auto sortie map select mode
                 return False
         if cfg.config.combat.sortie_map.world == 'E':
-            if shp.ships.current_ship_count >= shp.ships.max_ship_count - 5:
+            if shp.ships.ship_count >= shp.ships.max_ship_count - 5:
                 Log.log_warn("Port is too full for event map.")
                 self.set_next_sortie_time(15)
                 return False

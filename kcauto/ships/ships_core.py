@@ -24,9 +24,6 @@ class ShipsCore(object):
                 self.get_ship_static_data(ship["api_sortno"]), ship)
             self.ship_pool[ship['api_id']] = ship_instance
             
-        print("self.ship_pool")
-        print(self.ship_pool)
-        exit()
 
     def update_ship_library(self, data):
         Log.log_debug("Updating ship library data.")
@@ -52,33 +49,15 @@ class ShipsCore(object):
             self.name_db[int(key)] = temp_db[key]
 
     @property
-    def current_ship_count(self):
+    def ship_count(self):
         return len(self.ship_pool)
 
-    def get_ship_with_production_id(self, req_ships):
-        """get ship obj with a list of ship production id
-
-        Args:
-            req_ships (list of int): a list of ship production id
-
-        Returns:
-            ships: list of ship obj
-        """
-        
-        ships = []
-        for production_id in req_ships:
-            ships.append(self.local_ships_by_production_id[production_id])
-        return ships
-    
     def get_ship_from_production_id(self, ship_id):
+        
         return self.ship_pool[ship_id]
 
     def create_ship(self, static_data, local_data):
-        
         return Ship(static_data, local_data)
-
-    def get_ship_from_sortno(self, sortno):
-        return Ship(sortno, id_type='sortno')
-
+    
 
 ships = ShipsCore()
