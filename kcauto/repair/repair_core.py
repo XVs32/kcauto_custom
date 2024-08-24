@@ -171,7 +171,7 @@ class RepairCore(object):
         page = (idx // 10) + 1 if idx > 9 else 1
         Log.log_msg(f"Selecting lvl{ship.level} {ship.name} (pg{page}#{idx}).")
         if page > 1:
-            tot_pages = shp.ships.current_ship_count // 10
+            tot_pages = shp.ships.ship_count // 10
             list_control_region = Region(
                 kca_u.kca.game_x + 610, kca_u.kca.game_y + 660, 490, 45)
             nav.navigate_list.to_page(

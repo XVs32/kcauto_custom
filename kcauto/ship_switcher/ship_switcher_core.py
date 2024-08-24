@@ -240,7 +240,7 @@ class ShipSwitcherCore(object):
         """tot_pages = (shp.ships.current_ship_count - 1) // 10 + 1"""
         """Which is a bit cleaner and faster"""
         if mode == "ship":
-            tot_pages = (shp.ships.current_ship_count -1) // 10 + 1
+            tot_pages = (shp.ships.ship_count -1) // 10 + 1
         elif mode == "equipment":
             tot_pages = (len(equ.equipment.equipment['free']) -1) // 10 + 1
 

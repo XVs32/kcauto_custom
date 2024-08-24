@@ -11,6 +11,8 @@ from util.json_data import JsonData
 import os
 class FleetCore(object):
     fleets = {}
+    
+    is_custom_fleet_loaded = False
 
     def __init__(self):
         
@@ -130,7 +132,14 @@ class FleetCore(object):
     def load_custom_fleets(self):
         """
             method to load the noro6 settings under config/noro6
+            gets trigger on the first time when port api received
         """
+        
+        if self.is_custom_fleet_loaded == False:
+            self.is_custom_fleet_loaded = True
+        else:
+            Log.log_debug("Custom fleets are already loaded")
+            return
         
         # if file local_ship.json exists, load it into ship_data
         file_path = "data/temp/local_ship.json"
@@ -150,15 +159,17 @@ class FleetCore(object):
                 self.fleets[filename] = self._noro6_to_kcauto(file_path, ship_pool)
                 #self.noro6_filename_phrase(filename)
                 
+        
+        print(self.fleets)        
         exit(0) #testing end...
         pass
         
-    def _noro6_to_kcauto(self, file_path):
+    def _noro6_to_kcauto(self, file_path, ship_pool):
         """
             method to convert noro6 preset to kcauto preset
             output: (kcauto preset) 
         """
-         
+        
         ret = {}
         noro6 = Noro6(file_path)
  
@@ -168,10 +179,14 @@ class FleetCore(object):
             
             temp_ships = []
             for i in range(1, noro6.get_ship_count() + 1 ):
-                self._get_ship_from_noro6_ship(noro6.get_ship(i))
-                temp_ships.append()
+                temp_ship_pool = ship_pool.copy()
+                temp_ships.append(
+                    self._get_ship_from_noro6_ship(noro6.get_ship(i), temp_ship_pool)
+                )
                 
             #@todo form these ships into a fleet, save it in fleet_core
+            print("temp_ships")
+            print(temp_ships)
                 
         return temp_ships
                         
@@ -183,14 +198,15 @@ class FleetCore(object):
         """
         
         #search ship_pool, if ship_pool[i]["id"] != ship["id"], remove ship_pool[i]
-        
         for i in range(len(ship_pool)-1,-1,-1):
+            
+            
             if ship_pool[i]["api_ship_id"] != noro_ship["id"]:
                 ship_pool.pop(i)
             elif ship_pool[i]["api_slot_ex"] == 0 and noro_ship["exa"] == True:
                 ship_pool.pop(i)
             elif ship_pool[i]["api_lv"] == noro_ship["lv"]:
-                return shp.ships.get_ship_from_production_id(ship_pool[i])
+                return shp.ships.get_ship_from_production_id(ship_pool[i]["api_id"])
             
         #sort by the absolute value of difference between api_lv and lv
         ship_pool.sort(key=lambda x: abs(x["api_lv"] - noro_ship["lv"]))

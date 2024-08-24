@@ -143,7 +143,7 @@ class SchedulerCore(object):
                         self._set_module_enabled_state(rule, False)
                         break
             elif rule.condition_type is SchedulerSlot0Enum.DOCKS_FULL:
-                if shp.ships.current_ship_count == shp.ships.max_ship_count:
+                if shp.ships.ship_count == shp.ships.max_ship_count:
                     Log.log_success("Port is full. Executing Scheduler rule.")
                     self._set_module_enabled_state(rule, False)
             elif rule.condition_type is SchedulerSlot0Enum.CLEAR_STOP:
