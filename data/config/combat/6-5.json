@@ -1,6 +1,19 @@
 {
-	"combat.lbas_groups":	  [1,2,3],
-	"combat.lbas_group_1_nodes": ["M","M"],
-	"combat.lbas_group_2_nodes": ["M","M"],
-    "combat.lbas_group_3_nodes": []
+	"combat.lbas_groups": [
+		1,
+		2,
+		3
+	],
+	"combat.lbas_group_1_nodes": [
+		"M",
+		"M"
+	],
+	"combat.lbas_group_2_nodes": [
+		"C",
+		"M"
+	],
+	"combat.lbas_group_3_nodes": [],
+	"combat.node_formations": [
+		"C:double_line"
+	]
 }
