@@ -168,6 +168,10 @@ class ConfigCombat(ConfigBase):
             args: 
                 value (str): The Id of a map, ex 1-1, 3-5, 6-4 
         """
+        
+        if value[0] != "B":
+            value = "B-" + value
+            
         if not MapEnum.contains_value(value):
             raise ValueError("Invalid map specified:" + str(value))
         self._sortie_map = MapEnum(value)
@@ -184,6 +188,9 @@ class ConfigCombat(ConfigBase):
             args: 
                 value (str): The Id of a map, ex 1-1, 3-5, 6-4 
         """
+        
+        if value[0] != "B":
+            value = "B-" + value
         if not MapEnum.contains_value(value):
             raise ValueError("Invalid map specified:" + str(value))
         Log.log_debug("SET _sortie_map_read_only: {MapEnum(value)}")

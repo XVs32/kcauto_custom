@@ -222,8 +222,8 @@ class CombatCore(CoreBase):
     def load_map_data(self, sortie_map):
         Log.log_debug("Debug:load_map_data called")
         if self.map_data is None or self.map_data.name != sortie_map.world_and_map:
-            Log.log_debug("Debug:load_map excute with " + str(sortie_map.world_and_map))
-            data = JsonData.load_json(f'data|combat|{sortie_map.world_and_map}.json')
+            Log.log_debug("Debug:load_map excute with " + str(sortie_map.without_quest))
+            data = JsonData.load_json(f'data|combat|{sortie_map.without_quest}.json')
             self.map_data = MapData(sortie_map, data)
 
     @property

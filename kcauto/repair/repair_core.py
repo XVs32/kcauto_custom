@@ -226,8 +226,8 @@ class RepairCore(object):
     @property
     def _local_ships_sorted_by_repair(self):
         return sorted(
-            [s for s in shp.ships.ship_pool if s.hp_p < 1],
-            key=lambda s: (s.hp_p, s.sort_id, s.local_id))
+            [shp.ships.ship_pool[s] for s in shp.ships.ship_pool],
+            key=lambda s: (shp.ships.ship_pool[s].hp, shp.ships.ship_pool[s].sort_id, shp.ships.ship_pool[s].production_id))
 
     @property
     def fleets_need_repair(self):
