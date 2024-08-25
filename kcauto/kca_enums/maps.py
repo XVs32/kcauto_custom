@@ -149,19 +149,19 @@ class MapEnum(EnumBase):
     
     @property
     def world(self):
-        world = self.value.split("-")[0]
+        world = self.value.split("-")[1]
         if world == "E":
             return world
         return int(world)
 
     @property
     def map(self):
-        return int(self.value.split("-")[1])
+        return int(self.value.split("-")[2])
 
     @property
     def world_and_map(self):
         if self.value != "auto":
-            return self.value.split("-")[0] + "-" + self.value.split("-")[1] 
+            return self.value.split("-")[1] + "-" + self.value.split("-")[2] 
         else:
             return "auto"
 

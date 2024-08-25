@@ -30,8 +30,9 @@ class Fleet(object):
         self.fleet_type = fleet_type
 
     def update_ship_data(self):
+        ship_ids = self.ship_ids
         self.ship_data = []
-        for id in self.ship_ids:
+        for id in ship_ids:
             self.ship_data.append(shp.ships.get_ship_from_production_id(id))
 
     def select(self):
@@ -73,10 +74,12 @@ class Fleet(object):
             Log.log_success(f"Fleet {self.fleet_id} activated.")
         elif value is False and print_log:
             Log.log_success(f"Fleet {self.fleet_id} deactivated.")
+            """
             self._at_base = True
             self._ships = []
             self._return_time = None
             self.ship_data = []
+            """
         self._enabled = value
 
     @property

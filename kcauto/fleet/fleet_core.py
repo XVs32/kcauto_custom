@@ -27,7 +27,8 @@ class FleetCore(object):
         self.fleets[self.ACTIVE_FLEET_KEY][4] = Fleet(4, FleetEnum.EXPEDITION, False)
 
     def update_fleets(self, data):
-        Log.log_debug("Updating fleet data from API.")
+        
+        print("Updating fleet data from API.") 
         fleets_in_data = []
         for fleet_data in data:
             fleet_id = fleet_data['api_id']
@@ -47,11 +48,18 @@ class FleetCore(object):
             return_time = KCTime.convert_epoch(fleet_data['api_mission'][2])
             if return_time != fleet.return_time:
                 fleet.return_time = fleet_data['api_mission'][2]
+                
+            fleet.ship_data = []
+            for ship_id in fleet_data['api_ship']:
+                if ship_id != -1:
+                    fleet.ship_data.append(
+                        shp.ships.get_ship_from_production_id(ship_id)
+                    )
 
         remove_fleets = set(fleets_in_data) - set(self.fleets[self.ACTIVE_FLEET_KEY].keys())
         for fleet_id in remove_fleets:
             self.fleets[self.ACTIVE_FLEET_KEY][fleet_id].enabled = False
-
+            
     @property
     def combat_fleets_id(self):
         if cfg.config.combat.enabled:
@@ -170,16 +178,6 @@ class FleetCore(object):
             if filename.endswith('.json'):
                 file_path = os.path.join(NORO6_FOLDER, filename)
                 self.fleets[filename[:-5]] = self._noro6_to_kcauto(file_path, ship_pool)
-                
-        print("self.fleets['B-6-5']")
-        print(self.fleets["B-6-5"][1].ship_data)
-        print(self.fleets["B-6-5"][2].ship_data)
-        print(self.fleets["B-6-5"][3].ship_data)
-        print(self.fleets["B-6-5"][4].ship_data)
-        
-        #wait for keyboard input
-        input("Press Enter to continue...")
-        
                 
     def _noro6_to_kcauto(self, file_path, ship_pool):
         """
