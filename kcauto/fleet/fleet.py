@@ -100,14 +100,13 @@ class Fleet(object):
 
     @property
     def ship_ids(self):
-        return self._ship_ids
-
-    @ship_ids.setter
-    def ship_ids(self, value):
-        if type(value) is not list:
-            raise TypeError("Not a list!")
-        self._ship_ids = [ship_id for ship_id in value if ship_id > -1]
-        self.update_ship_data()
+        
+        ret = []
+        
+        for ship in self.ship_data:
+            ret.append(ship.production_id)
+        
+        return ret
 
     @property
     def return_time(self):

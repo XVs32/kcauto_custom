@@ -125,10 +125,10 @@ class ShipSwitchRule(object):
                     return True
             return False
         
-        if ship.local_id in flt.fleets.ships_in_fleets:
+        if ship.production_id in flt.fleets.ships_in_fleets:
             return False
         """load the ship even if it is under repair -- XVs32"""
-        """if ship.local_id in rep.repair.ships_under_repair:
+        """if ship.production_id in rep.repair.ships_under_repair:
             return False"""
         
         for criterion in self.criteria:

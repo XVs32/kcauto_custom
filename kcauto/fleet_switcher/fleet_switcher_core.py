@@ -318,19 +318,25 @@ class FleetSwitcherCore(object):
             return False
 
         if preset_id in self.presets:
-            if self.presets[preset_id] == flt.fleets.fleets[1].ship_ids:
+            if self.presets[preset_id] == flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][1].ship_ids:
                 Log.log_debug("Preset Fleet is already loaded.")
                 return False
 
         elif preset_id == AUTO_PRESET:
             if context == 'combat':
                 
-                #check if equipment preset exist
-                equ.equipment.get_fleet_equipment(1)
+                #check if equipment preset exist<=temp disable for noro relate dev
+                #equ.equipment.get_fleet_equipment(1)
                 
-                if flt.fleets.fleets[1].ship_ids == self._get_fleet_preset(cfg.config.combat.sortie_map.value):
-                    Log.log_debug("Custom preset Fleet is already loaded.")
+                if not (cfg.config.combat.sortie_map.value in flt.fleets.fleets):
+                    Log.log_warn(f"Custom fleet not found for {cfg.config.combat.sortie_map.value}")
                     return False
+                for id in flt.fleets.combat_fleets_id:               
+                    if flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][id].ship_ids != flt.fleets.fleets[cfg.config.combat.sortie_map.value][id].ship_ids:
+                        return True
+                    
+                Log.log_debug("Custom preset Fleet is already loaded.")
+                return False
             elif context == "expedition":
 
                 switch_flag = False
@@ -338,7 +344,7 @@ class FleetSwitcherCore(object):
                 fleet_id = 1
                 fleet_id = self._get_next_exp_fleet_id(fleet_id)
                 while fleet_id < 5:
-                    if flt.fleets.fleets[fleet_id].ship_ids == \
+                    if flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][fleet_id].ship_ids == \
                         self.custom_presets["exp"][fleet_id]:
                         Log.log_msg(f"preset for fleet {fleet_id} is already loaded.")
                     else:
@@ -352,7 +358,7 @@ class FleetSwitcherCore(object):
                 if cfg.config.factory.develop_secretary == 0:
                     Log.log_warn("Develop secretary is not specified.")
                     return False
-                if flt.fleets.fleets[1].ship_ids[0] == cfg.config.factory.develop_secretary:
+                if flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][1].ship_ids[0] == cfg.config.factory.develop_secretary:
                     Log.log_debug("Develop secretary is already loaded.")
                     return False
                 else:
@@ -361,7 +367,7 @@ class FleetSwitcherCore(object):
                 if cfg.config.factory.build_secretary == 0:
                     Log.log_warn("Build secretary is not specified.")
                     return False
-                if flt.fleets.fleets[1].ship_ids[0] == cfg.config.factory.build_secretary:
+                if flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][1].ship_ids[0] == cfg.config.factory.build_secretary:
                     Log.log_debug("Build secretary is already loaded.")
                     return False
                 else:
@@ -462,34 +468,35 @@ class FleetSwitcherCore(object):
                 self._set_next_combat_preset()
         return True
 
-    def switch_to_costom_fleet(self, fleet_id, ship_list):
+    def switch_to_costom_fleet(self, fleet_id, costom_fleet):
         """
             method to switch the ship in {fleet_id} to ships defined in {ship_list}
 
             fleet_id(int): fleet to switch, index starts from 1
-            ship_list(int list): ships to use
+            ship_list(fleetcore_obj): ships to use
         """
         EMPTY = -1
         retry = 0
 
         while True:
 
-            flt.fleets.fleets[fleet_id].select()
+            flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][fleet_id].select()
             
             empty_slot_count = 0
 
-            size = max(len(flt.fleets.fleets[fleet_id].ship_ids), len(ship_list))
+            size = max(len(flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][fleet_id].ship_ids), len(costom_fleet[fleet_id].ship_ids))
 
             any_vaild_switch = False
             retry = False
             for i in range(1,size + 1):
-                if i > len(ship_list):
+                if i > len(costom_fleet[fleet_id].ship_ids):
                     id = EMPTY #remove this slot
                 else:
-                    id = ship_list[i - 1]
+                    id = costom_fleet[fleet_id].ship_ids[i-1]
 
-                if i <= len(flt.fleets.fleets[fleet_id].ship_ids) and \
-                    id == flt.fleets.fleets[fleet_id].ship_ids[i-1]:
+                if i <= len(flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][fleet_id].ship_ids) and \
+                    id == flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][fleet_id].ship_ids[i-1]:
+                    Log.log_debug("Ship loaded already")
                     continue
 
                 if not ssw.ship_switcher.switch_slot_by_id(i-empty_slot_count,id):
@@ -528,19 +535,17 @@ class FleetSwitcherCore(object):
         """
             method to get the preset for combat or expedition
             input: 
-                key(string): the name of combat map(ex. 1-1-Bm2)
+                key(string): the name of combat map(ex. Bm2-1-1)
         """
-        if key in self.custom_presets["combat"]:
-            return self.custom_presets["combat"][key]
+        if key in flt.fleets.fleets:
+            return flt.fleets.fleets[key]
         else:
-            quest_name = key.split("-")[-1]
-            """The key contain a quest name"""
-            quest_name_len = len(quest_name) 
-            if quest_name_len > 1:
-                return self.custom_presets["combat"][key[:-quest_name_len - 1]]
             
-        raise ValueError("Unexpected preset id:" + str(key))
-
+            if key[0]=="B":
+                key[0] + key[self.value.index("-"):]
+            else:
+                Log.log_error("Unexpected preset id:" + str(key))
+            return flt.fleets.fleets[key]
 
 
 fleet_switcher = FleetSwitcherCore()

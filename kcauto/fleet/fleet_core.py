@@ -41,7 +41,6 @@ class FleetCore(object):
             if fleet_id == 3:
                 fleet.fleet_type = (
                     FleetEnum.COMBAT if self.strike_force_fleet else FleetEnum.EXPEDITION)
-            fleet.ship_ids = fleet_data['api_ship']
             at_base = fleet_data['api_mission'][0] == 0
             if at_base != fleet.at_base:
                 fleet.at_base = at_base
@@ -171,6 +170,16 @@ class FleetCore(object):
             if filename.endswith('.json'):
                 file_path = os.path.join(NORO6_FOLDER, filename)
                 self.fleets[filename[:-5]] = self._noro6_to_kcauto(file_path, ship_pool)
+                
+        print("self.fleets['B-6-5']")
+        print(self.fleets["B-6-5"][1].ship_data)
+        print(self.fleets["B-6-5"][2].ship_data)
+        print(self.fleets["B-6-5"][3].ship_data)
+        print(self.fleets["B-6-5"][4].ship_data)
+        
+        #wait for keyboard input
+        input("Press Enter to continue...")
+        
                 
     def _noro6_to_kcauto(self, file_path, ship_pool):
         """

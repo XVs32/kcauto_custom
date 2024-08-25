@@ -216,6 +216,7 @@ class Kcauto(object):
             return False
         else:
             #update current sortie_map
+            #@todo fix sortie queue map name
             cfg.config.combat.sortie_map = com.combat.get_sortie_queue()[0]
 
             """Check if multi stage map requested"""
