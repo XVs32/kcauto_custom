@@ -56,7 +56,7 @@ class ShipsCore(object):
         
         return self.ship_pool[ship_id]
 
-    def create_ship(self, static_data, local_data):
+    def create_ship(self, static_data, local_data = Ship.EMPTY_LOCAL_DATA):
         return Ship(static_data, local_data)
     
 

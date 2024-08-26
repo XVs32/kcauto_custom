@@ -8,6 +8,19 @@ from ships.equipment import equipment
 
 
 class Ship(object):
+    
+    EMPTY_LOCAL_DATA = {
+        'api_id': 0,
+        'api_lv':0,
+        'api_nowhp':0,
+        'api_maxhp':0,
+        'api_bull':0,
+        'api_fuel':0,
+        'api_cond':0,
+        'api_locked':False,
+        'api_ndock_time':0
+    }
+    
     _name = None
     _name_jp = None
     api_id = None       #ship name id
