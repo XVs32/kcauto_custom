@@ -7,6 +7,7 @@ from kca_enums.fleet import FleetEnum
 from util.kc_time import KCTime
 from util.logger import Log
 from util.json_data import JsonData
+import ships.equipment_core as equ 
 
 import os
 class FleetCore(object):
@@ -157,19 +158,14 @@ class FleetCore(object):
             gets trigger on the first time when port api received
         """
         
+        print("HIT")
+        print("HIT")
+        print("HIT")
+        
         if self.is_custom_fleet_loaded == False:
             self.is_custom_fleet_loaded = True
         else:
             Log.log_debug("Custom fleets are already loaded")
-            return
-        
-        # if file local_ship.json exists, load it into ship_data
-        file_path = "data/temp/local_ship.json"
-
-        if os.path.exists(file_path):
-            ship_pool = JsonData.load_json('data|temp|local_ship.json')
-        else:
-            Log.log_error("local_ship.json does not exist, is this the first time you run kcauto?")
             return
         
         # read every .json file under config/noro6 folder
@@ -177,9 +173,15 @@ class FleetCore(object):
         for filename in os.listdir(NORO6_FOLDER):
             if filename.endswith('.json'):
                 file_path = os.path.join(NORO6_FOLDER, filename)
-                self.fleets[filename[:-5]] = self._noro6_to_kcauto(file_path, ship_pool)
+                self.fleets[filename[:-5]] = self._noro6_to_kcauto(file_path)
                 
-    def _noro6_to_kcauto(self, file_path, ship_pool):
+                equ.equipment.custom_equipment[filename[:-5]] = equ.equipment._noro6_to_kcauto(file_path)
+        
+        print("equ.equipment.custom_equipmentent")
+        print(equ.equipment.custom_equipment)   
+        exit(0)
+                
+    def _noro6_to_kcauto(self, file_path):
         """
             method to convert noro6 preset to kcauto preset
             output: (kcauto preset) 
@@ -194,37 +196,12 @@ class FleetCore(object):
             
             ret[fleet_id].ship_data = []
             for i in range(1, noro6.get_ship_count() + 1 ):
-                temp_ship_pool = ship_pool.copy()
                 ret[fleet_id].ship_data.append(
-                    self._get_ship_from_noro6_ship(noro6.get_ship(i), temp_ship_pool)
+                    shp.ships.get_ship_from_noro6_ship(noro6.get_ship(i))
                 )
                 
         return ret 
-                        
-    def _get_ship_from_noro6_ship(self, noro_ship, ship_pool):
-        """
-            method to find the most match ship in ship_pool from noro6 ship info
-            input: noro6 ship info
-            output: kcauto ship obj
-        """
-        
-        #search ship_pool, if ship_pool[i]["id"] != ship["id"], remove ship_pool[i]
-        for i in range(len(ship_pool)-1,-1,-1):
-            
-            
-            if ship_pool[i]["api_ship_id"] != noro_ship["id"]:
-                ship_pool.pop(i)
-            elif ship_pool[i]["api_slot_ex"] == 0 and noro_ship["exa"] == True:
-                ship_pool.pop(i)
-            elif ship_pool[i]["api_lv"] == noro_ship["lv"]:
-                return shp.ships.get_ship_from_production_id(ship_pool[i]["api_id"])
-            
-        #sort by the absolute value of difference between api_lv and lv
-        ship_pool.sort(key=lambda x: abs(x["api_lv"] - noro_ship["lv"]))
-
-        return shp.ships.get_ship_from_production_id(ship_pool[0])
-            
-                
+                                       
         
         
         

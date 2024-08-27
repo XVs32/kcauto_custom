@@ -85,7 +85,7 @@ class Noro6(object):
             self.ship_key = key
             return self.raw[self.fleet_key][key]
         
-    def get_item(self, item_id):
+    def get_equipment(self, item_id):
         """
         method to get an item's raw json by id
         Assume get_ship has been called before this
@@ -141,6 +141,29 @@ class Noro6(object):
         for i in range(1, 8): # 1 ~ 7
             key = "s" + str(i)
             if key in self.raw[self.fleet_key]:
+                count += 1
+                
+        return count
+    
+    def get_equipment_count(self):
+        """
+        method to get the vaild equipment count
+        Assume get_ship has been called before this
+        Returns:
+            ret : the equipment count
+        """
+
+        if self.raw is None:
+            return 0
+        if self.raw[self.fleet_key] is None:
+            return 0
+        if self.raw[self.fleet_key][self.ship_key] is None:
+            return 0
+        count = 0
+        
+        for i in range(1, 7): # 1 ~ 6
+            key = "i" + str(i)
+            if key in self.raw[self.fleet_key][self.ship_key]["items"]:
                 count += 1
                 
         return count

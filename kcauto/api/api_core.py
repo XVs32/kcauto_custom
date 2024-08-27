@@ -260,7 +260,6 @@ class ApiWrapper(object):
             shp.ships.update_ship_pool(ship_data)
             JsonData.dump_json(ship_data, 'data|temp|local_ship.json')
             flt.fleets.load_custom_fleets()
-            equ.equipment.get_loaded_equipment(ship_data)
             
         except KeyError:
             Log.log_debug("No ship data found in API response.")
