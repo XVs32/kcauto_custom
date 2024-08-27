@@ -389,8 +389,17 @@ class FleetSwitcherCore(object):
                 Log.log_msg(f"Switching to Fleet Preset for {cfg.config.combat.sortie_map}.")
 
                 fleet_list = self._get_fleet_preset(cfg.config.combat.sortie_map.value)
-                if not self.switch_to_costom_fleet(1, fleet_list):
-                    return False
+                equipment_list = self._get_equipment_preset(cfg.config.combat.sortie_map.value)
+                
+                print("flt.fleets.combat_fleets_id")
+                print(flt.fleets.combat_fleets_id)
+                
+                for combat_fleet_id in flt.fleets.combat_fleets_id:
+                    if not self.switch_to_costom_fleet(combat_fleet_id, fleet_list):
+                        return False
+                    
+                    if not self.switch_to_costom_equipment(combat_fleet_id, equipment_list):
+                        return False
 
                 """Check if next combat possible, since new ship is switched in"""
                 """Refresh home to update ship list"""
@@ -522,6 +531,9 @@ class FleetSwitcherCore(object):
                 break
             
         return True
+    
+    def switch_to_costom_equipment(self, fleet_id, costom_equipment):
+        pass
 
     def _scroll_preset_list(self, target_clicks):
         Log.log_debug(f"Scrolling to target preset ({target_clicks} clicks).")
@@ -546,6 +558,11 @@ class FleetSwitcherCore(object):
             else:
                 Log.log_error("Unexpected preset id:" + str(key))
             return flt.fleets.fleets[key]
+        
+        
+    def _get_equipment_preset(self, key):
+        equ.equipment._noro6_to_kcauto()
+        pass
 
 
 fleet_switcher = FleetSwitcherCore()

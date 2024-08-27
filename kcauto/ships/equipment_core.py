@@ -11,6 +11,7 @@ import util.kca as kca_u
 from util.json_data import JsonData
 from util.logger import Log
 from util.wctf import WhoCallsTheFleetData
+from fleet.noro6 import Noro6 
 
 class EquipmentCore(object):
 
@@ -19,6 +20,10 @@ class EquipmentCore(object):
     reinforce_special = {}
     ship_type = []
     equipment_special = []
+    
+    custom_equipment = {}
+    
+    is_custom_fleet_equipment_loaded = False
 
     def __init__(self):
         self.equipment["raw"] = {}
@@ -40,7 +45,60 @@ class EquipmentCore(object):
             Log.log_debug("Equipment data not found, use empty list instead")
             JsonData.dump_json(self.equipment["id"], 'data|temp|equipment_list.json')
             
+    def _noro6_to_kcauto(self, file_path):
+        """
+            method to load the noro6 equipment list
+            convert it to kcauto format and save it to a json file
+            file_name (str): equipment config json file
+            output (kcauto preset) :
+        """
+        
+        ret = {}
+        noro6 = Noro6(file_path)
+ 
+        for fleet_id in range(1, noro6.get_fleet_count() + 1 ):
+            noro6.get_fleet(fleet_id)
+            
+            for i in range(1, noro6.get_ship_count() + 1 ):
+                ship = shp.ships.get_ship_from_noro6_ship(noro6.get_ship(i))
+                ret[ship.production_id] = []
+                
+                for j in range(1, noro6.get_equipment_count() + 1 ):
+                    ret[ship.production_id].append(
+                        self._get_equipment_from_noro6_equipment(noro6.get_equipment(j))
+                    )
+                
+        return ret 
+    
+    def _get_equipment_from_noro6_equipment(self, noro6_equipment):
+        """
+            method to convert noro6 equipment to kcauto equipment
+            noro6_equipment (dict): noro6 equipment data
+            output (kcauto equipment) :
+        """
+        production_id_list = self._get_production_id(noro6_equipment["id"])
+       
+        temp_equipment = []
+        for id in production_id_list:
+            for equipment in self.equipment["id"]:
+                if equipment["api_id"] == id:
+                    temp_equipment.append(equipment)
+                    break
+            
+        
+        for i in range(len(temp_equipment)-1,-1,-1):
+            
+            #@todo handle "api_alv"/"mas" (plane exp level)
+            #if "api_alv" in temp_equipment[i] and "mas" in noro6_equipment:
+            if temp_equipment[i]["api_level"] == noro6_equipment["rf"]:
+                return temp_equipment[i]
+            
+        #sort by the absolute value of difference between api_lv and rf
+        temp_equipment.sort(key=lambda x: abs(x["api_lv"] - noro6_equipment["rf"]))
 
+        return temp_equipment[0]
+        
+ 
     def get_loaded_equipment(self, api_data):
         """
             method to read the loaded equipment list from api data 
@@ -53,14 +111,13 @@ class EquipmentCore(object):
             self.equipment["loaded"][ship['api_id']] = ship["api_slot"]
             self.equipment["loaded"][ship['api_id']].append(ship["api_slot_ex"])
 
-    def get_fleet_equipment(self, fleet_id):
+    def save_fleet_equipment(self, fleet_id):
         """
             method to read the loaded equipment list of a fleet
 
             fleet_id (dict) : fleet id, starts from 1
         """
         
-        return #temp skip
         print (flt.fleets.fleets[fleet_id].ship_ids)
         
         equipment_list = {}
@@ -69,12 +126,13 @@ class EquipmentCore(object):
             equipment_list[ship_id] = self.equipment["loaded"][ship_id]
             
         
-        #dt_string = datetime.now().strftime("%d-%m-%Y-%H-%M-%S")
-        dt_string = "combat_only_test"
+        dt_string = datetime.now().strftime("%d-%m-%Y-%H-%M-%S")
         JsonData.dump_json(equipment_list, 'data|equipment|' + dt_string + '.json')
             
         Log.log_success(f"Equipment list saved at data/equipment/{dt_string}.json")
-                
+        
+        
+        Log.log_error(f"this function is temp disabled.") 
         exit(1)
             
 
@@ -100,6 +158,7 @@ class EquipmentCore(object):
         print("load in")
         
         if not self.unload_equipment(file_name):
+            #@todo if no equipment is unloaded, load/upload whatever to update the equipment list
             #self.equipment_list_update()
             pass
 

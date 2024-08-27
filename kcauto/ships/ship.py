@@ -18,7 +18,8 @@ class Ship(object):
         'api_fuel':0,
         'api_cond':0,
         'api_locked':False,
-        'api_ndock_time':0
+        'api_ndock_time':0,
+        'api_slot_ex':0
     }
     
     _name = None
@@ -39,6 +40,7 @@ class Ship(object):
     morale = None
     locked = None
     ndock_time_ms = None
+    slot_ex = None
     
     equipments :equipment = []
 
@@ -63,6 +65,8 @@ class Ship(object):
         self.morale = local_data['api_cond']
         self.locked = local_data['api_locked'] == 1
         self.ndock_time_ms = local_data['api_ndock_time']
+        self.slot_ex = local_data['api_slot_ex']
+        
             
         self.equipments = equipments
 
