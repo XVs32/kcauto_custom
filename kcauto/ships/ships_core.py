@@ -66,21 +66,6 @@ class ShipsCore(object):
             output: kcauto ship obj
         """
         
-        ship_pool = list(self.ship_pool.values())
-        
-        #search ship_pool, if ship_pool[i]["id"] != ship["id"], remove ship_pool[i]
-        for i in range(len(ship_pool)-1,-1,-1):
-            
-            if ship_pool[i].api_id != noro_ship["id"]:
-                ship_pool.pop(i)
-            elif ship_pool[i].slot_ex == 0 and noro_ship["exa"] == True:
-                ship_pool.pop(i)
-            elif ship_pool[i].level == noro_ship["lv"]:
-                return self.get_ship_from_production_id(ship_pool[i].production_id)
-            
-        #sort by the absolute value of difference between api_lv and lv
-        ship_pool.sort(key=lambda x: abs(x.level - noro_ship["lv"]))
-
-        return self.get_ship_from_production_id(ship_pool[0].production_id)
+        return self.get_ship_from_production_id(noro_ship["un"])
 
 ships = ShipsCore()

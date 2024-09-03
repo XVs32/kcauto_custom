@@ -169,13 +169,14 @@ class FleetCore(object):
             return
         
         # read every .json file under config/noro6 folder
-        NORO6_FOLDER = 'configs/noro6'
-        for filename in os.listdir(NORO6_FOLDER):
-            if filename.endswith('.json'):
-                file_path = os.path.join(NORO6_FOLDER, filename)
-                self.fleets[filename[:-5]] = self._noro6_to_kcauto(file_path)
-                
-                equ.equipment.custom_equipment[filename[:-5]] = equ.equipment._noro6_to_kcauto(file_path)
+        NORO6_CONFIG = 'configs/noro6/noro6'
+        self.fleets = self._noro6_to_kcauto(NORO6_CONFIG)
+        print("PASS")
+        print(self.fleets)
+        input("enter")
+        
+        
+        equ.equipment.custom_equipment = equ.equipment._noro6_to_kcauto(NORO6_CONFIG)
         
         print("equ.equipment.custom_equipmentent")
         print(equ.equipment.custom_equipment)   
@@ -190,21 +191,19 @@ class FleetCore(object):
         ret = {}
         noro6 = Noro6(file_path)
  
-        for fleet_id in range(1, noro6.get_fleet_count() + 1 ):
-            noro6.get_fleet(fleet_id)
-            ret[fleet_id] = Fleet(fleet_id, noro6.get_preset_type(), False)
-            
-            ret[fleet_id].ship_data = []
-            for i in range(1, noro6.get_ship_count() + 1 ):
-                ret[fleet_id].ship_data.append(
-                    shp.ships.get_ship_from_noro6_ship(noro6.get_ship(i))
-                )
+        for preset in noro6.presets:
+            noro6.get_map(preset["name"])
+            ret[preset["name"]] = {}
+            for fleet_id in range(1, noro6.get_fleet_count() + 1 ):
+                noro6.get_fleet(fleet_id)
+                ret[preset["name"]][fleet_id] = Fleet(fleet_id, noro6.get_preset_type(), False)
+                
+                ret[preset["name"]][fleet_id].ship_data = []
+                for i in range(1, noro6.get_ship_count() + 1 ):
+                    ret[preset["name"]][fleet_id].ship_data.append(
+                        shp.ships.get_ship_from_noro6_ship(noro6.get_ship(i))
+                    )
                 
         return ret 
-                                       
-        
-        
-        
- 
 
 fleets = FleetCore()

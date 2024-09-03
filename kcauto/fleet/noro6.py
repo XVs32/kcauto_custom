@@ -1,36 +1,67 @@
-from datetime import datetime
-
-import config.config_core as cfg
-import ships.ships_core as shp
-import util.kca as kca_u
-from kca_enums.damage_states import DamageStateEnum
-from kca_enums.fatigue_states import FatigueStateEnum
 from kca_enums.fleet import FleetEnum
 
 from constants import VISUAL_DAMAGE, FLEET_NUMBER_ICON
-from util.kc_time import KCTime
 from util.logger import Log
+import json
 from util.json_data import JsonData
 
-
+from util.lzstring import LZString
 
 class Noro6(object):
     
+    NORO6_FOLDER = 'configs/noro6'
     
+    data = None
     
-    raw = None
-    
-    filename = None
-    fleet_key = None
-    ship_key = None
-    item_key = None
+    presets = []
+    map = None
+    fleet = None
+    ship = None
+    item = None
 
     def __init__(self, filepath=None):
+        
         if filepath is not None:
-            self.raw = JsonData.load_json(filepath)
             
-            #get filename from filepath
-            self.filename = filepath.split('/')[-1]
+            with open(filepath, 'r') as file:
+                compressed = file.read()
+
+            decompressed = LZString.decompressFromUTF16(compressed)
+            
+            #read decompress as json
+            data = json.loads(decompressed)
+            self.data = data["savedata"]
+            self.get_presets(self.data)
+            
+        self.map = None
+        self.fleet = None
+        self.ship = None
+        self.item = None
+                
+    def get_presets(self, config):
+        
+        if config["isDirectory"] == True:
+            for item in config["childItems"]:
+                self.get_presets(item)
+        else:
+            self.presets.append(config)
+            
+    def get_map(self, name):
+        
+        """
+        method to get the config by name
+        Returns:
+        """
+        for preset in self.presets:
+            if preset["name"] == name:
+                self.map = preset
+                self.fleet = None
+                self.ship = None
+                self.item = None
+                return preset
+            
+        IndexError(f"can't find map {name} in noro6")
+            
             
     def get_preset_type(self):
         """
@@ -38,14 +69,13 @@ class Noro6(object):
         Returns:
             type: COMBAT(1), EXPEDITION(2)
         """
-        if self.filename is None:
+        if self.map is None:
             return None
         
-        if self.filename[0] == 'B':
+        if self.map["name"][0] == 'B':
             return FleetEnum.COMBAT
-        elif self.filename[0] == 'D':
+        elif self.map["name"][0] == 'D':
             return FleetEnum.EXPEDITION
-        
 
     def get_fleet(self, fleet_id):
         """
@@ -56,14 +86,25 @@ class Noro6(object):
         Returns:
             ret : the dict of the fleet or None if not found
         """
-        if self.raw is None:
+        #handle key not found error
+        
+        if "managerr" not in self.map:
+            return None
+        if "fleetInfo" not in self.map["manager"]:
+            return None
+        #read string in self.map["manager"] as json
+        fleetInfo = json.loads(self.map["manager"])["fleetInfo"]
+        
+        if fleetInfo is None:
+            return 0
+        if len(fleetInfo["fleets"]) < fleet_id:
             return None
         
-        key = "f" + str(fleet_id)
+        self.ship = None
+        self.item = None
         
-        if key in self.raw:
-            self.fleet_key = key 
-            return self.raw[key]
+        self.fleet = fleetInfo["fleets"][fleet_id-1]
+        return self.fleet
 
     def get_ship(self, ship_id):
         """
@@ -75,15 +116,16 @@ class Noro6(object):
         Returns:
             ret : the dict of the ship or None if not found
         """
-        
-        if self.raw is None or self.fleet_key is None:
+        if self.fleet is None:
             return None
 
-        key = "s" + str(ship_id)
+        if len(self.fleet["ships"]) < ship_id:
+            return None
 
-        if key in self.raw[self.fleet_key]:
-            self.ship_key = key
-            return self.raw[self.fleet_key][key]
+        self.item = None
+        self.ship = self.fleet["ships"][ship_id-1]
+        return self.ship
+        
         
     def get_equipment(self, item_id):
         """
@@ -95,15 +137,15 @@ class Noro6(object):
         Returns:
             ret : the dict of the item or None if not found
         """
-
-        if self.raw is None or self.fleet_key is None or self.ship_key is None:
+        if self.ship is None:
             return None
 
-        key = "i" + str(item_id)
+        if len(self.ship["is"]) < item_id:
+            return None
 
-        if key in self.raw[self.fleet_key][self.ship_key]["items"]:
-            self.item_key = key
-            return self.raw[self.fleet_key][self.ship_key]["items"][key]
+        self.item = self.ship["is"][item_id-1]
+        return self.item
+        
         
     def get_fleet_count(self):
         """
@@ -111,17 +153,19 @@ class Noro6(object):
         Returns:
             ret : the fleet count
         """
-
-        if self.raw is None:
+        if self.map is None:
+            return 0
+        if self.map["manager"] is None:
             return 0
         
-        count = 0
+        #read string in self.map["manager"] as json
+        fleetInfo = json.loads(self.map["manager"])["fleetInfo"]
+        print(fleetInfo)
         
-        for i in range(1, 5): # 1 ~ 4
-            key = "f" + str(i)
-            if key in self.raw:
-                count += 1
-        
+        if fleetInfo is None:
+            return 0
+        count = len(fleetInfo["fleets"])
+
         return count
 
     def get_ship_count(self):
@@ -131,17 +175,9 @@ class Noro6(object):
         Returns:
             ret : the ship count
         """
-
-        if self.raw is None:
+        if self.fleet is None:
             return 0
-        if self.raw[self.fleet_key] is None:
-            return 0
-        count = 0
-        
-        for i in range(1, 8): # 1 ~ 7
-            key = "s" + str(i)
-            if key in self.raw[self.fleet_key]:
-                count += 1
+        count = len(self.fleet["ships"])
                 
         return count
     
@@ -153,17 +189,8 @@ class Noro6(object):
             ret : the equipment count
         """
 
-        if self.raw is None:
+        if self.ship is None:
             return 0
-        if self.raw[self.fleet_key] is None:
-            return 0
-        if self.raw[self.fleet_key][self.ship_key] is None:
-            return 0
-        count = 0
-        
-        for i in range(1, 7): # 1 ~ 6
-            key = "i" + str(i)
-            if key in self.raw[self.fleet_key][self.ship_key]["items"]:
-                count += 1
+        count = len(self.ship["is"])
                 
         return count
