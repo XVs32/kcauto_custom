@@ -170,17 +170,17 @@ class FleetCore(object):
         
         # read every .json file under config/noro6 folder
         NORO6_CONFIG = 'configs/noro6/noro6'
-        self.fleets = self._noro6_to_kcauto(NORO6_CONFIG)
+        
+        #merge custom fleets data into fleet core
+        self.fleets = {**self.fleets, **self._noro6_to_kcauto(NORO6_CONFIG)}
         print("PASS")
         print(self.fleets)
-        input("enter")
         
         
         equ.equipment.custom_equipment = equ.equipment._noro6_to_kcauto(NORO6_CONFIG)
         
         print("equ.equipment.custom_equipmentent")
         print(equ.equipment.custom_equipment)   
-        exit(0)
                 
     def _noro6_to_kcauto(self, file_path):
         """
