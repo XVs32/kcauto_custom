@@ -6,7 +6,7 @@ from util.wctf import WhoCallsTheFleetData
 
 class ShipsCore(object):
     max_ship_count = 0
-    ship_pool = []
+    ship_pool = {}
     local_ships_by_production_id = {}
     ship_library = []
     name_db = {}
