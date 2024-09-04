@@ -319,6 +319,6 @@ class ShipSwitcherCore(object):
     def _local_ships_sorted_by_class(self):
         return sorted(
             [shp.ships.ship_pool[s] for s in shp.ships.ship_pool],
-            key=lambda s: (shp.ships.ship_pool[s].sort_id, shp.ships.ship_pool[s].production_id))
+            key=lambda ship: (ship.sort_id, ship.production_id))
 
 ship_switcher = ShipSwitcherCore()
