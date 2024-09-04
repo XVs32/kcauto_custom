@@ -53,20 +53,36 @@ class EquipmentCore(object):
             output (kcauto preset) :
         """
         
+        equipment_bak = self.equipment["id"].copy()
+        
         ret = {}
         noro6 = Noro6(file_path)
  
-        for fleet_id in range(1, noro6.get_fleet_count() + 1 ):
-            noro6.get_fleet(fleet_id)
-            
-            for i in range(1, noro6.get_ship_count() + 1 ):
-                ship = shp.ships.get_ship_from_noro6_ship(noro6.get_ship(i))
-                ret[ship.production_id] = []
+        for preset in noro6.presets:
+            noro6.get_map(preset["name"])
+            ret[preset["name"]] = {}
+           
+            for fleet_id in range(1, noro6.get_fleet_count() + 1 ):
+                noro6.get_fleet(fleet_id)
                 
-                for j in range(1, noro6.get_equipment_count() + 1 ):
-                    ret[ship.production_id].append(
-                        self._get_equipment_from_noro6_equipment(noro6.get_equipment(j))
-                    )
+                for i in range(1, noro6.get_ship_count() + 1 ):
+                    ship = shp.ships.get_ship_from_noro6_ship(noro6.get_ship(i))
+                    ret[preset["name"]][ship.production_id] = []
+                    
+                    for j in range(1, noro6.get_equipment_count() + 1 ):
+                        
+                        this_equipment = self._get_equipment_from_noro6_equipment(noro6.get_equipment(j))
+                        ret[preset["name"]][ship.production_id].append(
+                            this_equipment
+                        )
+                        
+                        #remove this equipment from equipment pool
+                        for equipment in self.equipment["id"]:
+                            if equipment["api_id"] == this_equipment["api_id"]:
+                                self.equipment["id"].remove(equipment)
+                                break
+                        
+            self.equipment["id"] = equipment_bak.copy()                    
                 
         return ret 
     
@@ -76,25 +92,25 @@ class EquipmentCore(object):
             noro6_equipment (dict): noro6 equipment data
             output (kcauto equipment) :
         """
-        production_id_list = self._get_production_id(noro6_equipment["id"])
+        production_id_list = self._get_production_id(noro6_equipment["i"])
        
         temp_equipment = []
         for id in production_id_list:
             for equipment in self.equipment["id"]:
                 if equipment["api_id"] == id:
                     temp_equipment.append(equipment)
-                    break
-            
         
         for i in range(len(temp_equipment)-1,-1,-1):
             
-            #@todo handle "api_alv"/"mas" (plane exp level)
-            #if "api_alv" in temp_equipment[i] and "mas" in noro6_equipment:
-            if temp_equipment[i]["api_level"] == noro6_equipment["rf"]:
+            #@todo handle "api_alv"/"l" (plane exp level)
+            #if "api_alv" in temp_equipment[i] and "l" in noro6_equipment:
+            if temp_equipment[i]["api_level"] == noro6_equipment["r"]:
                 return temp_equipment[i]
             
+        print("can't find exact same equ")
         #sort by the absolute value of difference between api_lv and rf
-        temp_equipment.sort(key=lambda x: abs(x["api_lv"] - noro6_equipment["rf"]))
+        temp_equipment.sort(key=lambda x: abs(x["api_level"] - noro6_equipment["r"]))
+        #@todo send warring, can't find exact same equipment
 
         return temp_equipment[0]
         
@@ -433,7 +449,7 @@ class EquipmentCore(object):
                 output_list.append(id["api_id"])
                 is_any_match = True
 
-        if is_any_match == True:
+        if is_any_match != True:
             Log.log_warn(f"Cannot find namd_id:{name_id} in equipment list, looks like you don't have any")
 
         return output_list

@@ -88,7 +88,7 @@ class Noro6(object):
         """
         #handle key not found error
         
-        if "managerr" not in self.map:
+        if "manager" not in self.map:
             return None
         if "fleetInfo" not in self.map["manager"]:
             return None
@@ -144,6 +144,12 @@ class Noro6(object):
             return None
 
         self.item = self.ship["is"][item_id-1]
+        
+        if 'r' not in self.item:
+            self.item['r'] = 0
+        if 'l' not in self.item:
+            self.item['l'] = 0
+        
         return self.item
         
         
@@ -177,8 +183,11 @@ class Noro6(object):
         """
         if self.fleet is None:
             return 0
-        count = len(self.fleet["ships"])
-                
+        count = 0
+        for ship in self.fleet["ships"]:
+            if ship["i"] != 0 :
+                count += 1
+        
         return count
     
     def get_equipment_count(self):
@@ -194,3 +203,9 @@ class Noro6(object):
         count = len(self.ship["is"])
                 
         return count
+    
+    def print_status(self):
+        print(f"map: {self.map['name']}")
+        print(f"fleet: {self.fleet}") if self.fleet is not None else None
+        print(f"ship: {self.ship}") if self.ship is not None else None
+        print(f"item: {self.item}") if self.item is not None else None
