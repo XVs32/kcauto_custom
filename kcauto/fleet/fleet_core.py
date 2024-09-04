@@ -203,7 +203,7 @@ class FleetCore(object):
                     ret[preset["name"]][fleet_id].ship_data.append(
                         shp.ships.get_ship_from_noro6_ship(noro6.get_ship(i))
                     )
-                
+                    
         return ret 
 
 fleets = FleetCore()
