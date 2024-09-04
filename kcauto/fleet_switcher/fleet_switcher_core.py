@@ -559,10 +559,7 @@ class FleetSwitcherCore(object):
                 Log.log_error("Unexpected preset id:" + str(key))
             return flt.fleets.fleets[key]
         
-        
     def _get_equipment_preset(self, key):
-        equ.equipment._noro6_to_kcauto()
-        pass
-
+        return equ.equipment.custom_equipment[key]
 
 fleet_switcher = FleetSwitcherCore()
