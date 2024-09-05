@@ -389,16 +389,18 @@ class FleetSwitcherCore(object):
                 Log.log_msg(f"Switching to Fleet Preset for {cfg.config.combat.sortie_map}.")
 
                 fleet_list = self._get_fleet_preset(cfg.config.combat.sortie_map.value)
-                equipment_list = self._get_equipment_preset(cfg.config.combat.sortie_map.value)
+                #equipment_list = self._get_equipment_preset(cfg.config.combat.sortie_map.value)
                 
                 print("flt.fleets.combat_fleets_id")
                 print(flt.fleets.combat_fleets_id)
                 
                 for combat_fleet_id in flt.fleets.combat_fleets_id:
-                    if not self.switch_to_costom_fleet(combat_fleet_id, fleet_list):
-                        return False
+                    #if not self.switch_to_costom_equipment(combat_fleet_id, equipment_list):
+                    self.switch_to_costom_equipment(cfg.config.combat.sortie_map.value)
                     
-                    if not self.switch_to_costom_equipment(combat_fleet_id, equipment_list):
+                    input("equipment switch done")
+                        
+                    if not self.switch_to_costom_fleet(combat_fleet_id, fleet_list):
                         return False
 
                 """Check if next combat possible, since new ship is switched in"""
@@ -488,6 +490,15 @@ class FleetSwitcherCore(object):
         retry = 0
 
         while True:
+            
+            print("fleet_id")
+            print(fleet_id)
+            
+            print("fleet")
+            print(flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY])
+            
+            print("costom_fleet")
+            print(costom_fleet)
 
             flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][fleet_id].select()
             
@@ -532,7 +543,10 @@ class FleetSwitcherCore(object):
             
         return True
     
-    def switch_to_costom_equipment(self, fleet_id, costom_equipment):
+    def switch_to_costom_equipment(self, map_name):
+        print("switch_to_costom_equipment")
+        print(map_name)
+        equ.equipment.load_loaded_equipment(map_name)
         pass
 
     def _scroll_preset_list(self, target_clicks):
