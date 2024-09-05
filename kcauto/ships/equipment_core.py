@@ -7,11 +7,13 @@ import ship_switcher.ship_switcher_core as ssw
 import fleet.fleet_core as flt
 import nav.nav as nav
 from kca_enums.kcsapi_paths import KCSAPIEnum
+from kca_enums.fleet import FleetEnum
 import util.kca as kca_u
 from util.json_data import JsonData
 from util.logger import Log
 from util.wctf import WhoCallsTheFleetData
 from fleet.noro6 import Noro6 
+from fleet.fleet import Fleet
 
 class EquipmentCore(object):
 
@@ -73,7 +75,7 @@ class EquipmentCore(object):
                         
                         this_equipment = self._get_equipment_from_noro6_equipment(noro6.get_equipment(j))
                         ret[preset["name"]][ship.production_id].append(
-                            this_equipment
+                            this_equipment["api_id"]
                         )
                         
                         #remove this equipment from equipment pool
@@ -81,6 +83,9 @@ class EquipmentCore(object):
                             if equipment["api_id"] == this_equipment["api_id"]:
                                 self.equipment["id"].remove(equipment)
                                 break
+                    #padding to 6 equipment slot with -1
+                    for k in range(noro6.get_equipment_count() + 1, 7):
+                        ret[preset["name"]][ship.production_id].append(-1)
                         
             self.equipment["id"] = equipment_bak.copy()                    
                 
@@ -90,7 +95,7 @@ class EquipmentCore(object):
         """
             method to convert noro6 equipment to kcauto equipment
             noro6_equipment (dict): noro6 equipment data
-            output (kcauto equipment) :
+            output (int) : equipment production id
         """
         production_id_list = self._get_production_id(noro6_equipment["i"])
        
@@ -166,23 +171,23 @@ class EquipmentCore(object):
 
         exit(0)
 
-    def load_loaded_equipment(self, file_name):
+    def load_loaded_equipment(self, map_name):
         """
             method to load the equipment ref from json file
         """
         
         print("load in")
         
-        if not self.unload_equipment(file_name):
+        if not self.unload_equipment(map_name):
             #@todo if no equipment is unloaded, load/upload whatever to update the equipment list
             #self.equipment_list_update()
             pass
 
-        self.load_equipment(file_name)
+        self.load_equipment(map_name)
 
 
 
-    def unload_equipment(self, file_name):
+    def unload_equipment(self, map_name):
         """
             method to load the loaded equipment list from a json file
             file_name (str): equipment config json file
@@ -195,15 +200,18 @@ class EquipmentCore(object):
 
         nav.navigate.to('refresh_home')
 
-        target_config = JsonData.load_json('data|equipment|' + file_name + '.json')
+        target_config = self.custom_equipment[map_name]
+        Log.log_debug("target_config1")
         Log.log_debug(target_config)
 
+        Log.log_debug("self.equipment[loaded]")
+        Log.log_debug(self.equipment["loaded"])
         unload_ship_id = []
 
         for ship_id in self.equipment["loaded"]:
             
             if str(ship_id) in target_config:
-                if self.equipment["loaded"][ship_id] != target_config[str(ship_id)]\
+                if self.equipment["loaded"][ship_id] != target_config[ship_id]\
                     and self.equipment["loaded"][ship_id] != EMPTY_a\
                     and self.equipment["loaded"][ship_id] != EMPTY_b:
                     unload_ship_id.append(ship_id)
@@ -226,12 +234,26 @@ class EquipmentCore(object):
                             unload_ship_id.append(ship_id)
                             any_unload = True
 
+        #@todo temp element repeat fix
+        unload_ship_id = list(set(unload_ship_id))
+        print("unload_ship_id")
+        print(unload_ship_id)
+        
         start_id = 0
         while len(unload_ship_id) > start_id:
             fsw.fleet_switcher.goto()
 
             fleet_size = min(6, len(unload_ship_id) - start_id)
-            if not fsw.fleet_switcher.switch_to_costom_fleet(1, unload_ship_id[start_id:start_id+fleet_size]):
+            print("start unload equ")
+            
+            temp_fleet = {}
+            temp_fleet[1]=(Fleet("unload_equipment", FleetEnum.COMBAT, False))
+            temp_fleet[1].ship_data = []
+            for i in range(0, fleet_size):
+                temp_fleet[1].ship_data.append(
+                    shp.ships.get_ship_from_production_id(unload_ship_id[start_id + i])
+                )
+            if not fsw.fleet_switcher.switch_to_costom_fleet(1, temp_fleet):
                 Log.log_error("kcauto failed to load the selected ship, exiting...")
                 break
 
@@ -272,14 +294,14 @@ class EquipmentCore(object):
 
         return any_unload
 
-    def load_equipment(self, file_name):
+    def load_equipment(self, map_name):
 
         EMPTY_a = [-1,-1,-1,-1,-1,0]
         EMPTY_b = [-1,-1,-1,-1,-1,-1]
 
         nav.navigate.to('refresh_home')
 
-        target_config = JsonData.load_json('data|equipment|' + file_name + '.json')
+        target_config = self.custom_equipment[map_name]
         Log.log_debug(target_config)
 
         load_ship_id = []
