@@ -86,6 +86,18 @@ class EquipmentCore(object):
                     #padding to 6 equipment slot with -1
                     for k in range(noro6.get_equipment_count() + 1, 7):
                         ret[preset["name"]][ship.production_id].append(-1)
+                   
+                    
+                    reinforce_equipment = noro6.get_reinforce_equipment()
+                    if reinforce_equipment["i"] > 0:
+                        this_equipment = self._get_equipment_from_noro6_equipment(reinforce_equipment)
+                        ret[preset["name"]][ship.production_id][6-1] = this_equipment["api_id"]
+                    
+                        #remove this equipment from equipment pool
+                        for equipment in self.equipment["id"]:
+                            if equipment["api_id"] == this_equipment["api_id"]:
+                                self.equipment["id"].remove(equipment)
+                                break
                         
             self.equipment["id"] = equipment_bak.copy()                    
                 
@@ -203,14 +215,14 @@ class EquipmentCore(object):
         target_config = self.custom_equipment[map_name]
         Log.log_debug("target_config1")
         Log.log_debug(target_config)
-
+        
         Log.log_debug("self.equipment[loaded]")
         Log.log_debug(self.equipment["loaded"])
         unload_ship_id = []
 
         for ship_id in self.equipment["loaded"]:
             
-            if str(ship_id) in target_config:
+            if ship_id in target_config:
                 if self.equipment["loaded"][ship_id] != target_config[ship_id]\
                     and self.equipment["loaded"][ship_id] != EMPTY_a\
                     and self.equipment["loaded"][ship_id] != EMPTY_b:
@@ -308,12 +320,12 @@ class EquipmentCore(object):
 
         for ship_id in self.equipment["loaded"]:
             try:
-                if      target_config[str(ship_id)] == EMPTY_a\
-                    or  target_config[str(ship_id)] == EMPTY_b:
+                if      target_config[ship_id] == EMPTY_a\
+                    or  target_config[ship_id] == EMPTY_b:
                     #nothing to load
                     continue
 
-                if self.equipment["loaded"][ship_id] != target_config[str(ship_id)]:
+                if self.equipment["loaded"][ship_id] != target_config[ship_id]:
                     # at this point, every ship doesn't have the target equipment should get unloaded already
                     load_ship_id.append(ship_id)
             except KeyError:
@@ -324,7 +336,14 @@ class EquipmentCore(object):
             fsw.fleet_switcher.goto()
 
             fleet_size = min(6, len(load_ship_id) - start_id)
-            if not fsw.fleet_switcher.switch_to_costom_fleet(1, load_ship_id[start_id:start_id+fleet_size]):
+            temp_fleet = {}
+            temp_fleet[1]=(Fleet("load_equipment", FleetEnum.COMBAT, False))
+            temp_fleet[1].ship_data = []
+            for i in range(0, fleet_size):
+                temp_fleet[1].ship_data.append(
+                    shp.ships.get_ship_from_production_id(load_ship_id[start_id + i])
+                )
+            if not fsw.fleet_switcher.switch_to_costom_fleet(1, temp_fleet):
                 Log.log_error("kcauto failed to load the selected ship, exiting...")
                 break
 
@@ -338,7 +357,7 @@ class EquipmentCore(object):
                 ssw.ship_switcher.current_page = 1
                 for slot in range(1,7):
 
-                    equipment_id = target_config[str(load_ship_id[start_id + i])][slot - 1]
+                    equipment_id = target_config[load_ship_id[start_id + i]][slot - 1]
                     if equipment_id == -1 or equipment_id == 0:
                         continue
 
@@ -380,11 +399,10 @@ class EquipmentCore(object):
 
     def get_reinforce_equipment_list(self, local_id):
 
-        Log.log_debug("equipment_list")
         
         equipment_list = []
 
-        ship = shp.ships.local_ships_by_production_id[local_id]
+        ship = shp.ships.get_ship_from_production_id(local_id)
         special_equipment_list = self.get_special_reinforce_equipment(ship) # sqecial equipment for this ship only
 
         keys = self.equipment['raw'].keys()

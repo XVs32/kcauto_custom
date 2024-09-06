@@ -151,7 +151,24 @@ class Noro6(object):
             self.item['l'] = 0
         
         return self.item
+    
+    def get_reinforce_equipment(self):
+        """
+        method to get the reinforce equipment
+        Assume get_ship has been called before this
+        Returns:
+            ret : the dict of the reinforce equipment or None if not found
+        """
+        if self.ship is None:
+            return None
+
+        self.item = self.ship["ex"]
         
+        if 'r' not in self.item:
+            self.item['r'] = 0
+        if 'l' not in self.item:
+            self.item['l'] = 0
+        return self.item
         
     def get_fleet_count(self):
         """
