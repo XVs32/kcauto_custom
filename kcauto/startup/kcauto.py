@@ -313,7 +313,6 @@ class Kcauto(object):
 
         while fsw.fleet_switcher.require_fleetswitch(context):
             switch_needed = True
-            fsw.fleet_switcher.goto()
             if not fsw.fleet_switcher.switch_fleet(context):
                 self.handle_back_to_home(True)
                 return -2
