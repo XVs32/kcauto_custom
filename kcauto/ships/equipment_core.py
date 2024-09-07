@@ -392,11 +392,6 @@ class EquipmentCore(object):
 
             start_id += fleet_size
 
-
-
-        Log.log_debug(load_ship_id)
-        exit(0)
-
     def get_reinforce_equipment_list(self, local_id):
 
         

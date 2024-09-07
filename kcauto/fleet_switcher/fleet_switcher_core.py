@@ -331,7 +331,7 @@ class FleetSwitcherCore(object):
                 if not (cfg.config.combat.sortie_map.value in flt.fleets.fleets):
                     Log.log_warn(f"Custom fleet not found for {cfg.config.combat.sortie_map.value}")
                     return False
-                for id in flt.fleets.combat_fleets_id:               
+                for id in flt.fleets.combat_fleets_id:
                     if flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][id].ship_ids != flt.fleets.fleets[cfg.config.combat.sortie_map.value][id].ship_ids:
                         return True
                     
@@ -381,6 +381,7 @@ class FleetSwitcherCore(object):
         ssw.ship_switcher.goto()
 
     def switch_fleet(self, context):
+        self.goto()
         preset_id = self._get_next_preset_id(context)
 
         if preset_id == AUTO_PRESET:
@@ -399,6 +400,7 @@ class FleetSwitcherCore(object):
                     self.switch_to_costom_equipment(cfg.config.combat.sortie_map.value)
                     
                     input("equipment switch done")
+                    self.goto()
                         
                     if not self.switch_to_costom_fleet(combat_fleet_id, fleet_list):
                         return False
