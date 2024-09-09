@@ -98,6 +98,10 @@ class EquipmentCore(object):
                             if equipment["api_id"] == this_equipment["api_id"]:
                                 self.equipment["id"].remove(equipment)
                                 break
+                    else:
+                        ret[preset["name"]][ship.production_id][6-1] = reinforce_equipment["i"]
+
+                        
                         
             self.equipment["id"] = equipment_bak.copy()                    
                 
@@ -213,11 +217,14 @@ class EquipmentCore(object):
         nav.navigate.to('refresh_home')
 
         target_config = self.custom_equipment[map_name]
+            
         Log.log_debug("target_config1")
         Log.log_debug(target_config)
         
         Log.log_debug("self.equipment[loaded]")
         Log.log_debug(self.equipment["loaded"])
+        
+        
         unload_ship_id = []
 
         for ship_id in self.equipment["loaded"]:

@@ -161,8 +161,12 @@ class Noro6(object):
         """
         if self.ship is None:
             return None
-
+        
         self.item = self.ship["ex"]
+        
+        #if reinforce slot enable but empty
+        if self.ship["re"] is True and self.item['i'] == 0:
+            self.item['i'] = -1
         
         if 'r' not in self.item:
             self.item['r'] = 0
