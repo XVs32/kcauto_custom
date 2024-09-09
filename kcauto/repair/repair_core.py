@@ -101,11 +101,11 @@ class RepairCore(object):
                     if ship not in flt.fleets.active_ships:
                         idx_of_passive_ships[idx] = ship
 
-        if len(idx_of_combat_ships) + len(idx_of_passive_ships) == 0:
-            Log.log_debug("No combat or passive ships to repair.")
-            return False
 
         while self.can_conduct_repairs:
+            if len(idx_of_combat_ships) + len(idx_of_passive_ships) == 0:
+                Log.log_debug("No combat or passive ships to repair.")
+                return False
             Log.log_debug(
                 f"Combat repair index: {idx_of_combat_ships.keys()}")
             Log.log_debug(
@@ -180,7 +180,7 @@ class RepairCore(object):
             self.current_repair_list_page = page
         repair_list_region = Region(
             kca_u.kca.game_x + 596,
-            kca_u.kca.game_y + 194 + (idx % 10 * 46),
+            kca_u.kca.game_y + 187 + (idx % 10 * 48),
             500, 31)
         kca_u.kca.click(repair_list_region)
         kca_u.kca.r['top'].hover()
@@ -227,7 +227,7 @@ class RepairCore(object):
     def _local_ships_sorted_by_repair(self):
         return sorted(
             [shp.ships.ship_pool[s] for s in shp.ships.ship_pool],
-            key=lambda ship: (ship.hp, ship.sort_id, ship.production_id))
+            key=lambda ship: (ship.hp_p, ship.sort_id, ship.production_id))
 
     @property
     def fleets_need_repair(self):
@@ -240,11 +240,10 @@ class RepairCore(object):
     @property
     def ships_need_repair(self):
         if cfg.config.passive_repair.enabled:
-            for ship in shp.ships.ship_pool:
-                if ship.damage >= cfg.config.passive_repair.repair_threshold:
-                    if ship not in flt.fleets.active_ships:
+            for id in shp.ships.ship_pool:
+                if shp.ships.ship_pool[id].damage >= cfg.config.passive_repair.repair_threshold:
+                    if shp.ships.ship_pool[id] not in flt.fleets.active_ships:
                         return True
         return False
-
 
 repair = RepairCore()
