@@ -4,24 +4,17 @@ from sys import exit
 import re
 import copy
 import shutil
-import os
-import json
 
-
-import api.api_core as api
 import config.config_core as cfg
 import combat.combat_core as com
 import expedition.expedition_core as exp
 import fleet.fleet_core as flt
-from fleet.fleet import Fleet
 import nav.nav as nav
 import util.kca as kca_u
 from util.logger import Log
 import ship_switcher.ship_switcher_core as ssw
 import ships.equipment_core as equ 
 from util.json_data import JsonData
-from kca_enums.kcsapi_paths import KCSAPIEnum
-from kca_enums.expeditions import ExpeditionEnum
 from constants import AUTO_PRESET
 
 class FleetSwitcherCore(object):
@@ -392,14 +385,10 @@ class FleetSwitcherCore(object):
                 fleet_list = self._get_fleet_preset(cfg.config.combat.sortie_map.value)
                 #equipment_list = self._get_equipment_preset(cfg.config.combat.sortie_map.value)
                 
-                print("flt.fleets.combat_fleets_id")
-                print(flt.fleets.combat_fleets_id)
-                
                 for combat_fleet_id in flt.fleets.combat_fleets_id:
                     #if not self.switch_to_costom_equipment(combat_fleet_id, equipment_list):
                     self.switch_to_costom_equipment(cfg.config.combat.sortie_map.value)
                     
-                    input("equipment switch done")
                     self.goto()
                         
                     if not self.switch_to_costom_fleet(combat_fleet_id, fleet_list):
@@ -493,15 +482,6 @@ class FleetSwitcherCore(object):
 
         while True:
             
-            print("fleet_id")
-            print(fleet_id)
-            
-            print("fleet")
-            print(flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY])
-            
-            print("costom_fleet")
-            print(costom_fleet)
-
             flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][fleet_id].select()
             
             empty_slot_count = 0
@@ -546,8 +526,6 @@ class FleetSwitcherCore(object):
         return True
     
     def switch_to_costom_equipment(self, map_name):
-        print("switch_to_costom_equipment")
-        print(map_name)
         equ.equipment.load_loaded_equipment(map_name)
         pass
 
