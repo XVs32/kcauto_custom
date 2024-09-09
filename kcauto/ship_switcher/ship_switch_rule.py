@@ -79,10 +79,10 @@ class ShipSwitchRule(object):
     @property
     def ship_in_slot(self):
         """Return None if the slot is empty -- XVs32"""
-        if len(flt.fleets.fleets[1].ship_data) < self.slot_id:
+        if len(flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][1].ship_data) < self.slot_id:
             return None
             
-        return flt.fleets.fleets[1].ship_data[self.slot_id - 1]
+        return flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][1].ship_data[self.slot_id - 1]
 
     def is_switch_out(self):
         slot_ship = self.ship_in_slot
