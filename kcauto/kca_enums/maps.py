@@ -138,7 +138,7 @@ class MapEnum(EnumBase):
     W3_2_By12 = "By12-3-2"
     W5_3_By12 = "By12-5-3"
 
-    auto_map_selete = "auto"
+    auto_map_selete = "B-auto"
 
     @property
     def quest(self):
