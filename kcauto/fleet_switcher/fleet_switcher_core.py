@@ -383,11 +383,11 @@ class FleetSwitcherCore(object):
                 Log.log_msg(f"Switching to Fleet Preset for {cfg.config.combat.sortie_map}.")
 
                 fleet_list = self._get_fleet_preset(cfg.config.combat.sortie_map.value)
-                #equipment_list = self._get_equipment_preset(cfg.config.combat.sortie_map.value)
+                equipment_key = self._get_equipment_preset(cfg.config.combat.sortie_map.value)
                 
                 for combat_fleet_id in flt.fleets.combat_fleets_id:
                     #if not self.switch_to_costom_equipment(combat_fleet_id, equipment_list):
-                    self.switch_to_costom_equipment(cfg.config.combat.sortie_map.value)
+                    self.switch_to_costom_equipment(equipment_key)
                     
                     self.goto()
                         
@@ -546,14 +546,27 @@ class FleetSwitcherCore(object):
         if key in flt.fleets.fleets:
             return flt.fleets.fleets[key]
         else:
-            
             if key[0]=="B":
-                key[0] + key[self.value.index("-"):]
+                
+                quest_end = key.find("-")
+                
+                Log.log_warn(f"Preset {str(key)} not found, use default {key[0] + key[quest_end:]}")
+                key = key[0] + key[quest_end:]
             else:
                 Log.log_error("Unexpected preset id:" + str(key))
             return flt.fleets.fleets[key]
         
     def _get_equipment_preset(self, key):
-        return equ.equipment.custom_equipment[key]
-
+        
+        if key in flt.fleets.fleets:
+            return key
+        else:
+            if key[0]=="B":
+                
+                quest_end = key.find("-")
+                key = key[0] + key[quest_end:]
+            else:
+                Log.log_error("Unexpected preset id:" + str(key))
+            return key
+        
 fleet_switcher = FleetSwitcherCore()
