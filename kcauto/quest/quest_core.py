@@ -340,7 +340,8 @@ class QuestCore(CoreBase):
                 else:
                     for key in sortie_dict:
                         for i in range(0, sortie_dict[key]):
-                            sortie_list.append(key+"-"+next_quest)
+                            #sortie_list.append(key+"-"+next_quest)
+                            sortie_list.append(next_quest +"-"+ key)
 
                 com.combat.set_sortie_queue(sortie_list)
 
