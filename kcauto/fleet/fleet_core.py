@@ -158,10 +158,6 @@ class FleetCore(object):
             gets trigger on the first time when port api received
         """
         
-        print("HIT")
-        print("HIT")
-        print("HIT")
-        
         if self.is_custom_fleet_loaded == False:
             self.is_custom_fleet_loaded = True
         else:
@@ -173,15 +169,32 @@ class FleetCore(object):
         
         #merge custom fleets data into fleet core
         self.fleets = {**self.fleets, **self._noro6_to_kcauto(NORO6_CONFIG)}
-        print("PASS")
-        print(self.fleets)
-        
         
         equ.equipment.custom_equipment = equ.equipment._noro6_to_kcauto(NORO6_CONFIG)
         
-        print("equ.equipment.custom_equipmentent")
-        print(equ.equipment.custom_equipment)   
-                
+    def load_custom_exp_pool(self):
+        """
+            method to get the custom exp pool data
+            by exclude ships in custom fleets
+            
+            Assume load_custom_fleets is called
+            
+            output: (list of ship ids)
+        """
+        
+        exp_pool = shp.ships.ship_pool.copy() 
+        
+        for key in self.fleets:
+            if key == self.ACTIVE_FLEET_KEY:
+                continue
+            
+            for fleet_id in self.fleets[key]:
+                for ship in self.fleets[key][fleet_id].ship_data:
+                    if ship.production_id in exp_pool:
+                        exp_pool.pop(ship.production_id)
+        
+        return exp_pool
+            
     def _noro6_to_kcauto(self, file_path):
         """
             method to convert noro6 preset to kcauto preset

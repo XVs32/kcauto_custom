@@ -261,6 +261,7 @@ class ApiWrapper(object):
             equ.equipment.get_loaded_equipment(ship_data)
             JsonData.dump_json(ship_data, 'data|temp|local_ship.json')
             flt.fleets.load_custom_fleets()
+            flt.fleets.load_custom_exp_pool()
             
             
         except KeyError:
