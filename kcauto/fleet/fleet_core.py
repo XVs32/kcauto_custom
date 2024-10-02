@@ -4,16 +4,22 @@ from fleet.noro6 import Noro6
 import ships.ships_core as shp
 from kca_enums.fleet_modes import FleetModeEnum, CombinedFleetModeEnum
 from kca_enums.fleet import FleetEnum
+from kca_enums.ship_types import ShipTypeEnum
 from util.kc_time import KCTime
 from util.logger import Log
 from util.json_data import JsonData
 import ships.equipment_core as equ 
+import expedition.expedition_core as exp
 
 import os
+import copy
 class FleetCore(object):
     
     ACTIVE_FLEET_KEY = "active_fleet"
+    EXP_POOL_KEY = "exp_pool"
+    
     fleets = {}
+    
     
     is_custom_fleet_loaded = False
 
@@ -26,6 +32,7 @@ class FleetCore(object):
         self.fleets[self.ACTIVE_FLEET_KEY][2] = Fleet(2, FleetEnum.EXPEDITION, False)
         self.fleets[self.ACTIVE_FLEET_KEY][3] = Fleet(3, FleetEnum.EXPEDITION, False)
         self.fleets[self.ACTIVE_FLEET_KEY][4] = Fleet(4, FleetEnum.EXPEDITION, False)
+        self.fleets[self.EXP_POOL_KEY] = {}
 
     def update_fleets(self, data):
         
@@ -182,18 +189,35 @@ class FleetCore(object):
             output: (list of ship ids)
         """
         
+        self.fleets[self.EXP_POOL_KEY] = {}
         exp_pool = shp.ships.ship_pool.copy() 
         
         for key in self.fleets:
-            if key == self.ACTIVE_FLEET_KEY:
+            if key == self.ACTIVE_FLEET_KEY or key == self.EXP_POOL_KEY:
                 continue
             
             for fleet_id in self.fleets[key]:
                 for ship in self.fleets[key][fleet_id].ship_data:
                     if ship.production_id in exp_pool:
                         exp_pool.pop(ship.production_id)
-        
-        return exp_pool
+                        
+        self.fleets[self.EXP_POOL_KEY] = {}
+        for ship_id in exp_pool:
+            ship = shp.ships.get_ship_from_production_id(ship_id)
+            if ship.ship_type not in self.fleets[self.EXP_POOL_KEY]:
+                self.fleets[self.EXP_POOL_KEY][ship.ship_type] = [] 
+            
+            #if this ship is not locked, do not add to exp pool
+            if ship.locked == False:
+                continue
+            
+            self.fleets[self.EXP_POOL_KEY][ship.ship_type].append(ship) 
+            
+        for ship_type in self.fleets[self.EXP_POOL_KEY]:
+            #sort each ship_type with ammo_max + fuel_max, if ammo_max + fuel_max are the same, sort with level
+            self.fleets[self.EXP_POOL_KEY][ship_type].sort(key=lambda x: (x.ammo_max + x.fuel_max, x.level))
+            
+        return 
             
     def _noro6_to_kcauto(self, file_path):
         """
@@ -218,5 +242,232 @@ class FleetCore(object):
                     )
                     
         return ret 
+    
+    def assign_exp_ship(self):
+
+        FLEET_ID_OFFSET = 2
+
+        exp_ship_pool = copy.deepcopy(self.fleets[self.EXP_POOL_KEY]) 
+
+        exp.expedition.exp_for_fleet = [None, None, None, None, None]
+        fleet_id = 1
+        fleet_id = self._get_next_exp_fleet_id(fleet_id)
+        
+        for exp_rank in exp.expedition.exp_rank:
+
+            exp_ship_pool_bak = copy.deepcopy(exp_ship_pool)
+            
+            exp_ship_requirement = self._get_exp_ship_requirement_from_composition(exp.expedition.exp_data[exp_rank["id"] - 1]["reqComposition"])
+            
+            print("/////////////////////////////////////")
+            print(exp_rank["id"])
+            print(exp_ship_requirement)
+
+            fleet_ship_id_list, exp_ship_pool = self._assign_ship( \
+                exp_ship_requirement, \
+                exp_ship_pool,
+                exp.expedition.exp_data[exp_rank["id"] - 1]["reqDrum"],
+                exp.expedition.exp_data[exp_rank["id"] - 1]["reqDrumCarriers"],
+                4)
+
+            if fleet_ship_id_list == -1:
+                #failed to assign ships for this exp, restore the ship pool
+                Log.log_debug(f"ship_pool restore")
+                exp_ship_pool = exp_ship_pool_bak 
+            else:
+
+                #Save the fleetShipId
+                self.custom_presets["exp"][fleet_id] = fleet_ship_id_list
+                exp.expedition.exp_for_fleet[fleet_id] = exp_rank["id"]
+
+                fleet_id = self._get_next_exp_fleet_id(fleet_id)
+
+            if fleet_id > 4:
+                #assign for all fleets success
+                break
+            
+        if fleet_id > 4:
+            #assign for all fleets successed
+            Log.log_success(f"auto mode asigned ship for exp{exp.expedition.exp_for_fleet[2:]}")
+            return True
+        else:
+            #some assign failed
+            return False
+
+    def _assign_ship(self, fleet_list, ship_pool, req_dc=0, req_dc_carrier=0, req_lc=4):
+        """
+            Method to assign the ship with the given fleet_list and ship_pool
+
+            input: 
+                fleet_list: The list of ship type (shipTypeEnum)
+                ship_pool(dict): The pool of ship to use
+                    ex. {"DD":[10,20,30], "CL":[41,42,43]}
+            
+            output:
+                -1: failed to assign a valid fleet
+                ship_id(dict): the ship to use for the specified exp
+                    (ex: [14,15,62,2,1,73]
+            Note:
+                This function should handle the wildcard("NA") type,
+                so that the output here should not contain any "NA"
+        """
+        
+        print(ship_pool)
+        
+        TYPE_NA = 0
+        TYPE_DD = 2
+        
+        ship_id = []
+        for ship_enum in fleet_list:
+            if ship_enum == ShipTypeEnum(TYPE_NA):
+                #@todo: apply the wildcard handling
+                ship_enum = ShipTypeEnum(TYPE_DD) 
+                
+            print("ship_enum")
+            print(ship_enum)
+            for ship in ship_pool[ship_enum]:
+                print(ship)
+                
+            input("list done")
+                
+                
+
+            wildcard = ".*"
+            suffix = ship['type']
+            pattern = rf"EXP_{wildcard}{suffix}"
+            matching_keys = [key for key in ship_pool.keys() if re.match(pattern, key) and "NAME" not in key]
+
+            pattern = r'\d+LC'  # Matches one or more digits followed by "LC"
+
+            lc_temp_list = [[],[],[],[],[]]
+            offset = 0
+            for i in range(len(matching_keys)):
+
+                match = re.search(pattern, matching_keys[i - offset])
+                if match:
+                    number = int(match.group()[:-2])
+
+                    temp = matching_keys.pop(i - offset)
+
+                    lc_temp_list[number].append(temp)
+                    offset += 1
+            
+            if req_lc > 0:
+                for i in range(1, req_lc):
+                    for ship_type in lc_temp_list[i]:
+                        matching_keys.insert(0, ship_type)
+
+                for i in range(4, req_lc-1, -1):
+                    for ship_type in lc_temp_list[i]:
+                        matching_keys.insert(0, ship_type)
+
+            pattern = r'\d+DC'  # Matches one or more digits followed by "DC"
+
+            dc_temp_list = [[],[],[],[],[]]
+            offset = 0
+            for i in range(len(matching_keys)):
+                match = re.search(pattern, matching_keys[i - offset])
+                if match:
+                    number = int(match.group()[:-2])
+
+                    temp = matching_keys.pop(i - offset)
+
+                    dc_temp_list[number].append(temp)
+                    offset += 1
+            
+            if req_dc > 0 or req_dc_carrier > 0:
+                for i in range(1, min(req_dc,5), 1):
+                    for ship_type in dc_temp_list[i]:
+                        matching_keys.insert(0, ship_type)
+
+                for i in range(4, max(req_dc-1, 0), -1):
+                    for ship_type in dc_temp_list[i]:
+                        matching_keys.insert(0, ship_type)
+            else:
+                for i in range(1, 5):
+                    for ship_type in dc_temp_list[i]:
+                        matching_keys.append(ship_type)
+
+            if req_lc <= 0:
+                for i in range(1, 5):
+                    for ship_type in lc_temp_list[i]:
+                        matching_keys.append(ship_type)
+
+            Log.log_debug(f"fleet_switcher_core: matching_keys = {matching_keys}")
+
+            success = False
+            for ship_type in matching_keys:
+
+                Log.log_debug(f"fleet_switcher_core: searching for {ship_type}")
+                Log.log_debug(f"len = {len(ship_pool[ship_type])}")
+                if len(ship_pool[ship_type]) > 0:
+
+                    ship_id.append(ship_pool[ship_type].pop(0))
+
+                    pattern = r'\d+LC'  # Matches one or more digits followed by "LC"
+                    match = re.search(pattern, ship_type)
+                    if match:
+                        number = int(match.group()[:-2])
+                        req_lc -= number
+
+                    pattern = r'\d+DC'  # Matches one or more digits followed by "DC"
+                    match = re.search(pattern, ship_type)
+                    if match:
+                        number = int(match.group()[:-2])
+                        req_dc -= number
+                        req_dc_carrier -= 1
+
+                    success = True
+                    break
+            
+            if success == False: 
+                #Cannot find a valid ship
+                Log.log_debug(f"fleet_switcher_core: assign ship failed for {fleet_list}")
+                return -1, ship_pool
+
+        return ship_id, ship_pool
+
+    def _get_next_exp_fleet_id(self, fleet_id):
+        while 1:
+            fleet_id+=1
+            if fleet_id == 2:
+                cur_fleet = cfg.config.expedition.fleet_2
+            elif fleet_id == 3:
+                cur_fleet = cfg.config.expedition.fleet_3
+            elif fleet_id == 4:
+                cur_fleet = cfg.config.expedition.fleet_4
+            else:
+                break
+
+            if cur_fleet != []:
+                break
+        return fleet_id
+
+    def _get_exp_ship_requirement_from_composition(self, composition):
+        """
+            Convert the string composition (ex. "5DD, 1NA") to 
+            fleetShipType (ex. [2, 2, 2, 2, 2, 0]
+            numbers above is the "stype" of ships (0 for NA is defined by XV, not offical kancolle)
+            which is the "api_name" under "api_mst_stype" in kancolle api
+            
+            return: list of ShipTypeEnum
+        """
+        fleetShipType = []
+
+        for type in composition.split(","):
+            count = int(type[:1])  # Extract the count from the substring
+            item_type = type[1:]  # Extract the type from the substring
+
+            stype = 0
+            for stype in range(0, ShipTypeEnum(0).count):
+                if ShipTypeEnum(stype).name == item_type:
+                    break
+            
+            for _ in range(count):
+                fleetShipType.append(ShipTypeEnum(stype))
+
+        return fleetShipType
+            
+            
 
 fleets = FleetCore()
