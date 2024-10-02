@@ -187,7 +187,6 @@ class Noro6(object):
         
         #read string in self.map["manager"] as json
         fleetInfo = json.loads(self.map["manager"])["fleetInfo"]
-        print(fleetInfo)
         
         if fleetInfo is None:
             return 0
@@ -226,7 +225,7 @@ class Noro6(object):
         return count
     
     def print_status(self):
-        print(f"map: {self.map['name']}")
-        print(f"fleet: {self.fleet}") if self.fleet is not None else None
-        print(f"ship: {self.ship}") if self.ship is not None else None
-        print(f"item: {self.item}") if self.item is not None else None
+        Log.log_debug(f"map: {self.map['name']}")
+        Log.log_debug(f"fleet: {self.fleet}") if self.fleet is not None else None
+        Log.log_debug(f"ship: {self.ship}") if self.ship is not None else None
+        Log.log_debug(f"item: {self.item}") if self.item is not None else None
