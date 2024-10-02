@@ -148,8 +148,6 @@ class ShipSwitcherCore(object):
 
         ship_list = self._local_ships_sorted_by_levels
         
-        print(ship_list)
-
         for i in range(len(ship_list)):
             if ship_list[i].production_id == local_id:
                 return i
