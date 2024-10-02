@@ -85,7 +85,7 @@ class Kcauto(object):
                 exp.expedition.get_expedition_ranking()
 
                 if cfg.config.expedition.fleet_preset == "auto":
-                    if not fsw.fleet_switcher.assign_exp_ship():
+                    if not flt.fleets.assign_exp_ship():
                         exp.expedition.enabled = False
                         Log.log_error(f"Failed to assign ships for self balance expedition, disable expedition module.")
                         return False
