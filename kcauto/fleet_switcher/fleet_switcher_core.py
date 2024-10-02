@@ -148,12 +148,12 @@ class FleetSwitcherCore(object):
                 ship_id(dict): the ship to use for the specified exp
                     (ex: [14,15,62,2,1,73]
             Note:
-                This function should handle the wildcard("XX") type,
-                so that the output here should not contain any "XX"
+                This function should handle the wildcard("NA") type,
+                so that the output here should not contain any "NA"
         """
         ship_id = []
         for ship in fleet_list:
-            if ship['type'] == 'XX':
+            if ship['type'] == 'NA':
                 #@todo: apply the wildcard handling
                 ship['type'] = 'DD'
 
@@ -270,13 +270,13 @@ class FleetSwitcherCore(object):
 
     def _get_fleet_ship_type_from_composition(self, composition):
         """
-            Convert the string composition (ex. "5DD, 1XX") to 
+            Convert the string composition (ex. "5DD, 1NA") to 
             fleetShipType (ex. [{'type': 'DD', 'id': None}, 
                             {'type': 'DD', 'id': None}, 
                             {'type': 'DD', 'id': None}, 
                             {'type': 'DD', 'id': None}, 
                             {'type': 'DD', 'id': None}, 
-                            {'type': 'XX', 'id': None}])
+                            {'type': 'NA', 'id': None}])
         """
         fleetShipType = []
 
