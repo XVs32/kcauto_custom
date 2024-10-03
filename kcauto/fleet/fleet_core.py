@@ -202,10 +202,11 @@ class FleetCore(object):
                         exp_pool.pop(ship.production_id)
                         
         self.fleets[self.EXP_POOL_KEY] = {}
+        for stype in range(0, ShipTypeEnum(0).count):
+            self.fleets[self.EXP_POOL_KEY][ShipTypeEnum(stype)] = [] 
+            
         for ship_id in exp_pool:
             ship = shp.ships.get_ship_from_production_id(ship_id)
-            if ship.ship_type not in self.fleets[self.EXP_POOL_KEY]:
-                self.fleets[self.EXP_POOL_KEY][ship.ship_type] = [] 
             
             #if this ship is not locked, do not add to exp pool
             if ship.locked == False:
@@ -277,7 +278,7 @@ class FleetCore(object):
             else:
 
                 #Save the fleetShipId
-                self.custom_presets["exp"][fleet_id] = fleet_ship_id_list
+                self.fleets[self.EXP_POOL_KEY][fleet_id] = fleet_ship_id_list
                 exp.expedition.exp_for_fleet[fleet_id] = exp_rank["id"]
 
                 fleet_id = self._get_next_exp_fleet_id(fleet_id)
@@ -285,6 +286,11 @@ class FleetCore(object):
             if fleet_id > 4:
                 #assign for all fleets success
                 break
+        
+        print(self.fleets[self.EXP_POOL_KEY][2])    
+        print(self.fleets[self.EXP_POOL_KEY][3])    
+        print(self.fleets[self.EXP_POOL_KEY][4])    
+        input("puase")
             
         if fleet_id > 4:
             #assign for all fleets successed
@@ -317,7 +323,10 @@ class FleetCore(object):
         TYPE_NA = 0
         TYPE_DD = 2
         
-        ship_id = []
+        CATEGORY_DRUM = 30
+        CATEGORY_LC = 24
+        
+        assign_fleet = []
         for ship_enum in fleet_list:
             if ship_enum == ShipTypeEnum(TYPE_NA):
                 #@todo: apply the wildcard handling
@@ -325,107 +334,39 @@ class FleetCore(object):
                 
             print("ship_enum")
             print(ship_enum)
+            
+            ship = None
             for ship in ship_pool[ship_enum]:
-                print(ship)
-                
-            input("list done")
-                
-                
-
-            wildcard = ".*"
-            suffix = ship['type']
-            pattern = rf"EXP_{wildcard}{suffix}"
-            matching_keys = [key for key in ship_pool.keys() if re.match(pattern, key) and "NAME" not in key]
-
-            pattern = r'\d+LC'  # Matches one or more digits followed by "LC"
-
-            lc_temp_list = [[],[],[],[],[]]
-            offset = 0
-            for i in range(len(matching_keys)):
-
-                match = re.search(pattern, matching_keys[i - offset])
-                if match:
-                    number = int(match.group()[:-2])
-
-                    temp = matching_keys.pop(i - offset)
-
-                    lc_temp_list[number].append(temp)
-                    offset += 1
-            
-            if req_lc > 0:
-                for i in range(1, req_lc):
-                    for ship_type in lc_temp_list[i]:
-                        matching_keys.insert(0, ship_type)
-
-                for i in range(4, req_lc-1, -1):
-                    for ship_type in lc_temp_list[i]:
-                        matching_keys.insert(0, ship_type)
-
-            pattern = r'\d+DC'  # Matches one or more digits followed by "DC"
-
-            dc_temp_list = [[],[],[],[],[]]
-            offset = 0
-            for i in range(len(matching_keys)):
-                match = re.search(pattern, matching_keys[i - offset])
-                if match:
-                    number = int(match.group()[:-2])
-
-                    temp = matching_keys.pop(i - offset)
-
-                    dc_temp_list[number].append(temp)
-                    offset += 1
-            
-            if req_dc > 0 or req_dc_carrier > 0:
-                for i in range(1, min(req_dc,5), 1):
-                    for ship_type in dc_temp_list[i]:
-                        matching_keys.insert(0, ship_type)
-
-                for i in range(4, max(req_dc-1, 0), -1):
-                    for ship_type in dc_temp_list[i]:
-                        matching_keys.insert(0, ship_type)
-            else:
-                for i in range(1, 5):
-                    for ship_type in dc_temp_list[i]:
-                        matching_keys.append(ship_type)
-
-            if req_lc <= 0:
-                for i in range(1, 5):
-                    for ship_type in lc_temp_list[i]:
-                        matching_keys.append(ship_type)
-
-            Log.log_debug(f"fleet_switcher_core: matching_keys = {matching_keys}")
-
-            success = False
-            for ship_type in matching_keys:
-
-                Log.log_debug(f"fleet_switcher_core: searching for {ship_type}")
-                Log.log_debug(f"len = {len(ship_pool[ship_type])}")
-                if len(ship_pool[ship_type]) > 0:
-
-                    ship_id.append(ship_pool[ship_type].pop(0))
-
-                    pattern = r'\d+LC'  # Matches one or more digits followed by "LC"
-                    match = re.search(pattern, ship_type)
-                    if match:
-                        number = int(match.group()[:-2])
-                        req_lc -= number
-
-                    pattern = r'\d+DC'  # Matches one or more digits followed by "DC"
-                    match = re.search(pattern, ship_type)
-                    if match:
-                        number = int(match.group()[:-2])
-                        req_dc -= number
+                if (req_dc > 0 or req_dc_carrier > 0):
+                    if equ.equipment.is_available_category(ship, CATEGORY_DRUM):
+                        req_dc -= 2
                         req_dc_carrier -= 1
-
-                    success = True
-                    break
+                        
+                        #@todo set the equipment here too
+                        
+                        break
+                elif req_lc > 0:
+                    if equ.equipment.is_available_category(ship, CATEGORY_LC):
+                        req_lc -= 3
+                        
+                        #@todo set the equipment here too
+                        
+                        break
+                else:
+                    if not equ.equipment.is_available_category(ship, CATEGORY_DRUM) \
+                        and not equ.equipment.is_available_category(ship, CATEGORY_LC):
+                        break
             
-            if success == False: 
+            if ship == None:
                 #Cannot find a valid ship
                 Log.log_debug(f"fleet_switcher_core: assign ship failed for {fleet_list}")
                 return -1, ship_pool
-
-        return ship_id, ship_pool
+            else:
+                assign_fleet.append(ship)
+                ship_pool[ship_enum].remove(ship)
+                Log.log_debug(f"fleet_switcher_core: assign ship {ship} for {fleet_list}")
+                
+        return assign_fleet, ship_pool
 
     def _get_next_exp_fleet_id(self, fleet_id):
         while 1:
