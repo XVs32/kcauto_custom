@@ -416,7 +416,7 @@ class EquipmentCore(object):
             Log.log_debug(key)
             Log.log_debug(self.equipment['raw'][key])
             if      int(key[12:]) in self.reinforce_general_category \
-                and self._is_available_category(ship, int(key[12:])):
+                and self.is_available_category(ship, int(key[12:])):
                 equipment_list = equipment_list + self.equipment['raw'][key]
             else:
                 # see if this category has any special reinforce equipment
@@ -496,7 +496,7 @@ class EquipmentCore(object):
 
         return output_list
 
-    def _is_available_category(self, target_ship, category_id):
+    def is_available_category(self, target_ship, category_id):
 
         # If this ship has a special available equipment category
         ship_id = target_ship.api_id
