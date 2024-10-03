@@ -18,6 +18,7 @@ from fleet.fleet import Fleet
 class EquipmentCore(object):
 
     equipment = {}
+    equipment_exp = {}  #contain all equipments which does not exist in noro6 config
     reinforce_general_category = {}
     reinforce_special = {}
     ship_type = []
@@ -46,8 +47,56 @@ class EquipmentCore(object):
         except FileNotFoundError:
             Log.log_debug("Equipment data not found, use empty list instead")
             JsonData.dump_json(self.equipment["id"], 'data|temp|equipment_list.json')
+    
+    def fill_with_equipment(self, ship, equipment, count):
+        """
+            method to fill a ship with one type of equipment
             
-    def _noro6_to_kcauto(self, file_path):
+            arg:
+                ship (Ship): ship instance
+                equipment (int): equipment type id
+            
+            output a kcauto format ship equipment list
+        """
+        
+        ret = {}
+        ret[ship.production_id] = []
+        
+        i=0
+        count = min(count, ship.slot_num)
+        
+        for i in range(6):
+            if count > 0:
+                temp_equipment = self._get_production_id(self.equipment_exp, equipment)
+                if temp_equipment == []:
+                    ret[ship.production_id] = None
+                    return
+                ret[ship.production_id].append(temp_equipment[0])
+                self._remove_from_pool(equipment_id=temp_equipment[0], equipment_pool=False, equipment_exp_pool=True)
+                count -= 1
+            else:
+                ret[ship.production_id].append(-1)
+            
+        ret[ship.production_id].append(ship.slot_ex)
+        
+        return ret
+            
+    def _remove_from_pool(self, equipment_id, equipment_pool = True, equipment_exp_pool = False):
+        
+        if equipment_pool == True:
+            for equipment in self.equipment["id"]:
+                if equipment["api_id"] == equipment_id:
+                    self.equipment["id"].remove(equipment)
+                    break
+                
+        if equipment_exp_pool == True:
+            for equipment in self.equipment_exp:
+                if equipment["api_id"] == equipment_id:
+                    self.equipment_exp.remove(equipment)
+                    break
+            
+            
+    def noro6_to_kcauto(self, file_path):
         """
             method to load the noro6 equipment list
             convert it to kcauto format and save it to a json file
@@ -56,6 +105,7 @@ class EquipmentCore(object):
         """
         
         equipment_bak = self.equipment["id"].copy()
+        self.equipment_exp = self.equipment["id"].copy()
         
         ret = {}
         noro6 = Noro6(file_path)
@@ -79,10 +129,8 @@ class EquipmentCore(object):
                         )
                         
                         #remove this equipment from equipment pool
-                        for equipment in self.equipment["id"]:
-                            if equipment["api_id"] == this_equipment["api_id"]:
-                                self.equipment["id"].remove(equipment)
-                                break
+                        self._remove_from_pool(equipment_id=this_equipment["api_id"], equipment_exp_pool=True)
+                        
                     #padding to 6 equipment slot with -1
                     for k in range(noro6.get_equipment_count() + 1, 7):
                         ret[preset["name"]][ship.production_id].append(-1)
@@ -113,13 +161,19 @@ class EquipmentCore(object):
             noro6_equipment (dict): noro6 equipment data
             output (int) : equipment production id
         """
-        production_id_list = self._get_production_id(noro6_equipment["i"])
+        production_id_list = self._get_production_id(self.equipment["id"], noro6_equipment["i"])
        
+        is_any_match = False
         temp_equipment = []
         for id in production_id_list:
             for equipment in self.equipment["id"]:
                 if equipment["api_id"] == id:
+                    is_any_match = True
                     temp_equipment.append(equipment)
+                    
+        if is_any_match == False:
+            Log.log_error("can't find any match equipment")
+            return None
         
         for i in range(len(temp_equipment)-1,-1,-1):
             
@@ -480,13 +534,13 @@ class EquipmentCore(object):
         Log.log_warn(f"Cannot find production_id:{production_id} in equipment list, performing sortie to update")
         return None
 
-    def _get_production_id(self, name_id):
+    def _get_production_id(self, equipment_pool, name_id):
         """method to convert equipment name id to equipment production id list"""
         
         is_any_match = False
         output_list = []
 
-        for id in self.equipment["id"]:
+        for id in equipment_pool:
             if id["api_slotitem_id"] == name_id:
                 output_list.append(id["api_id"])
                 is_any_match = True

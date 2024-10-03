@@ -29,6 +29,7 @@ class Ship(object):
     sort_id = None
     ship_type = None    #stype api
     ship_family = None  #ctype api
+    slot_num = None
     production_id = None     #The production code of a ship
     level = None
     hp = None
@@ -53,6 +54,7 @@ class Ship(object):
         self.name_jp = static_data['api_name']
         self.ship_type = ShipTypeEnum(static_data['api_stype'])
         self.ship_family = static_data['api_ctype']
+        self.slot_num = static_data['api_slot_num']
         self.ammo_max = static_data['api_bull_max']
         self.fuel_max = static_data['api_fuel_max']
 
