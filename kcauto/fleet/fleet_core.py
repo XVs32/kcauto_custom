@@ -328,8 +328,6 @@ class FleetCore(object):
                 so that the output here should not contain any "NA"
         """
         
-        print(ship_pool)
-        
         TYPE_NA = 0
         TYPE_DD = 2
         
@@ -349,46 +347,108 @@ class FleetCore(object):
             print("ship_enum")
             print(ship_enum)
             
+            has_match_ship = False 
             ship = None
-            for ship in ship_pool[ship_enum]:
-                if (req_dc > 0 or req_dc_carrier > 0):
-                    if equ.equipment.is_available_category(ship, CATEGORY_DRUM):
-                        #@todo optimize req_dc usage
-                        req_dc -= 2
-                        req_dc_carrier -= 1
                         
-                        temp_equipment_list = equ.equipment.fill_with_equipment(ship, NAME_ID_DRUM, 2)
-                        
-                        if temp_equipment_list != {}:
-                            equipment_list = {**equipment_list, **temp_equipment_list}
-                            break
-                        else:
-                            Log.log_debug(f"fleet_switcher_core: assign drum failed for {fleet_list}")
-                            return -2, ship_pool, equipment_list
-                            
-                        
-                elif req_lc > 0:
+            if req_lc > 0:
+                print("//////////////////////")
+                print("hit lc ship")
+                print("//////////////////////")
+                for ship in ship_pool[ship_enum]:
                     if equ.equipment.is_available_category(ship, CATEGORY_LC):
-                        #@todo optimize req_lc usage
-                        req_lc -= 2
+                        
+                        #@todo if the ship is kinu kai 2, she has +1 lc
+                        
+                        lc_count = min(req_lc, ship.slot_num)
+                        req_lc -= lc_count
+                        print("lc_count")
+                        print(lc_count)
+                        print("req_lc")
+                        print(req_lc)
                          
-                        temp_equipment_list = equ.equipment.fill_with_equipment(ship, NAME_ID_LC, 2)
+                        temp_equipment_list = equ.equipment.fill_with_equipment(ship, NAME_ID_LC, lc_count)
                         
                         if temp_equipment_list != {}:
                             equipment_list = {**equipment_list, **temp_equipment_list}
+                            has_match_ship = True
                             break
                         else:
                             Log.log_debug(f"fleet_switcher_core: assign LC failed for {fleet_list}")
+                            input("error")
                             return -3, ship_pool, equipment_list
+            
+            elif (req_dc > 0 or req_dc_carrier > 0):
+                print("//////////////////////")
+                print("hit dc ship")
+                print("//////////////////////")
+                for ship in ship_pool[ship_enum]:
+                    if equ.equipment.is_available_category(ship, CATEGORY_DRUM)\
+                        and not equ.equipment.is_available_category(ship, CATEGORY_LC):
+                            
+                        req_dc_carrier = max(req_dc_carrier, 1) #make it at least one dc carrier needed, for easier math
                         
-                else:
+                        dc_count = min(req_dc - req_dc_carrier + 1 , ship.slot_num)
+                        temp_equipment_list = equ.equipment.fill_with_equipment(ship, NAME_ID_DRUM, dc_count)
+                        
+                        req_dc -= dc_count
+                        req_dc_carrier -= 1
+                        
+                        if temp_equipment_list != {}:
+                            equipment_list = {**equipment_list, **temp_equipment_list}
+                            has_match_ship = True
+                            break
+                        else:
+                            Log.log_debug(f"fleet_switcher_core: assign drum failed for {fleet_list}")
+                            input("error")
+                            return -2, ship_pool, equipment_list
+                        
+                if has_match_ship == False:
+                    for ship in ship_pool[ship_enum]:
+                        if equ.equipment.is_available_category(ship, CATEGORY_DRUM):
+                            dc_count = min(req_dc, ship.slot_num)
+                            temp_equipment_list = equ.equipment.fill_with_equipment(ship, NAME_ID_DRUM, dc_count)
+                            
+                            req_dc -= dc_count
+                            req_dc_carrier -= 1
+                            
+                            if temp_equipment_list != {}:
+                                equipment_list = {**equipment_list, **temp_equipment_list}
+                                has_match_ship = True
+                                break
+    
+                            else:
+                                Log.log_debug(f"fleet_switcher_core: assign drum failed for {fleet_list}")
+                                input("error")
+                                return -2, ship_pool, equipment_list
+           
+            if has_match_ship == False:
+                print("//////////////////////")
+                print("hit normal ship")
+                print("//////////////////////")
+                for ship in ship_pool[ship_enum]:
+                    
+                    print(ship)
                     if not equ.equipment.is_available_category(ship, CATEGORY_DRUM) \
                         and not equ.equipment.is_available_category(ship, CATEGORY_LC):
+                        has_match_ship = True
                         break
+                    
+                if has_match_ship == False and len(ship_pool[ship_enum]) > 0:
+                    for ship in ship_pool[ship_enum]:
+                        if not equ.equipment.is_available_category(ship, CATEGORY_LC):
+                            has_match_ship = True
+                            break
+                    
+                if has_match_ship == False and len(ship_pool[ship_enum]) > 0:
+                    ship = ship_pool[ship_enum][0]
+                    has_match_ship = True
+                    break
+                print("//////////////////////")
             
-            if ship == None:
+            if has_match_ship == False:
                 #Cannot find a valid ship
                 Log.log_debug(f"fleet_switcher_core: assign ship failed for {fleet_list}")
+                input("error")
                 return -1, ship_pool, equipment_list
             else:
                 assign_fleet.append(ship)
