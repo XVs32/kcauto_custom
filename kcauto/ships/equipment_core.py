@@ -375,6 +375,7 @@ class EquipmentCore(object):
         nav.navigate.to('refresh_home')
 
         target_config = self.custom_equipment[map_name]
+        Log.log_debug("load_equipment target_config")
         Log.log_debug(target_config)
 
         load_ship_id = []
@@ -452,8 +453,7 @@ class EquipmentCore(object):
 
 
             start_id += fleet_size
-            
-            return True
+        return True
 
     def get_reinforce_equipment_list(self, local_id):
 
