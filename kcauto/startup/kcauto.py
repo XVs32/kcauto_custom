@@ -326,7 +326,8 @@ class Kcauto(object):
             return -1
         """
 
-        fsw.fleet_switcher.switch_fleet(context)
+        if not fsw.fleet_switcher.switch_fleet(context):
+            Log.log_error(f"Failed to switch ships for {context}.")
         self.handle_back_to_home(True)
         return 0
     
