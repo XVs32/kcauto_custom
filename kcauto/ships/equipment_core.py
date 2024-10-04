@@ -65,7 +65,7 @@ class EquipmentCore(object):
         i=0
         count = min(count, ship.slot_num)
         
-        for i in range(6):
+        for i in range(5):
             if count > 0:
                 temp_equipment = self._get_production_id(self.equipment_exp, equipment)
                 if temp_equipment == []:
@@ -253,7 +253,7 @@ class EquipmentCore(object):
             #self.equipment_list_update()
             pass
 
-        self.load_equipment(map_name)
+        return self.load_equipment(map_name)
 
 
 
@@ -406,7 +406,7 @@ class EquipmentCore(object):
                 )
             if not fsw.fleet_switcher.switch_to_costom_fleet(1, temp_fleet):
                 Log.log_error("kcauto failed to load the selected ship, exiting...")
-                break
+                return False
 
             nav.navigate.to('equipment')
 
@@ -441,7 +441,7 @@ class EquipmentCore(object):
                             ssw.ship_switcher.current_page = 1
                     except ValueError:
                         Log.log_error(f"Cannot find equipment {equipment_id}, did you scrapped it?")
-                        continue
+                        return False
 
                     ssw.ship_switcher.select_replacement_row(row_idx=row_id, mode= "equipment")
 
@@ -452,6 +452,8 @@ class EquipmentCore(object):
 
 
             start_id += fleet_size
+            
+            return True
 
     def get_reinforce_equipment_list(self, local_id):
 
