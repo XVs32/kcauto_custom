@@ -168,7 +168,7 @@ class FleetCore(object):
         if self.is_custom_fleet_loaded == False:
             self.is_custom_fleet_loaded = True
         else:
-            Log.log_debug("Custom fleets are already loaded")
+            Log.log_debug("Custom fleets setting is already loaded")
             return
         
         # read every .json file under config/noro6 folder
