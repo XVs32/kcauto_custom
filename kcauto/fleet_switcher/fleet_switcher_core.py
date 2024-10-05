@@ -415,21 +415,24 @@ class FleetSwitcherCore(object):
                     if flag == False:
                         return False
 
-                    print("flt.fleets.fleets[exp.expedition.exp_for_fleet[fleet_id]]")
-                    print(flt.fleets.fleets[exp.expedition.exp_for_fleet[fleet_id]])
-                    
                     if not self.switch_to_costom_equipment(exp.expedition.exp_for_fleet[fleet_id]):
-                        input("???")
+                        Log.log_error("Failed to switch equipment for expedition fleet.")
                         exit(1)
+ 
+                nav.navigate.to('refresh_home')
+                self.goto()
+                for fleet_id in range(2,5):
+
+                    if fleet_id > 4:
+                        break
+                    
+                    flag = False
+                    for fleet in exp.expedition.fleets_at_base:
+                        if fleet.fleet_id == fleet_id:
+                            flag = True
+                            break
+                    if flag == False:
                         return False
-                    
-                    nav.navigate.to('refresh_home')
-                    self.goto()
-                    
-                    print("flt.fleets.fleets[exp.expedition.exp_for_fleet[fleet_id]]")
-                    print(flt.fleets.fleets[exp.expedition.exp_for_fleet[fleet_id]])
-                    
-                    input("stop for costom fleet 2")
                     
                     temp = {}
                     temp[fleet_id] = flt.fleets.fleets[exp.expedition.exp_for_fleet[fleet_id]]
