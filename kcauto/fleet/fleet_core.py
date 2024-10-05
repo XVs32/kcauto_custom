@@ -15,6 +15,8 @@ import os
 import copy
 class FleetCore(object):
     
+    EMPTY = None
+     
     ACTIVE_FLEET_KEY = "active_fleet"
     EXP_POOL_KEY = "exp_pool"
     
@@ -32,7 +34,7 @@ class FleetCore(object):
         self.fleets[self.ACTIVE_FLEET_KEY][2] = Fleet(2, FleetEnum.EXPEDITION, False)
         self.fleets[self.ACTIVE_FLEET_KEY][3] = Fleet(3, FleetEnum.EXPEDITION, False)
         self.fleets[self.ACTIVE_FLEET_KEY][4] = Fleet(4, FleetEnum.EXPEDITION, False)
-        self.fleets[self.EXP_POOL_KEY] = {}
+        self.fleets[self.EXP_POOL_KEY] = self.EMPTY
 
     def update_fleets(self, data):
         
@@ -189,6 +191,10 @@ class FleetCore(object):
             output: (list of ship ids)
         """
         
+        if self.fleets[self.EXP_POOL_KEY] != self.EMPTY:
+            Log.log_debug("Exp pool is already loaded")
+            return 
+        
         self.fleets[self.EXP_POOL_KEY] = {}
         exp_pool = shp.ships.ship_pool.copy() 
         
@@ -285,7 +291,11 @@ class FleetCore(object):
             else:
 
                 #Save the fleetShipId
-                self.fleets[self.EXP_POOL_KEY][fleet_id] = fleet_ship_id_list
+                self.fleets[exp_rank["id"]] = Fleet(2, FleetEnum.EXPEDITION, False)
+                
+                self.fleets[exp_rank["id"]].ship_data = fleet_ship_id_list
+ 
+                
                 equ.equipment.custom_equipment[exp_rank["id"]] = exp_equipment_id_list
                 exp.expedition.exp_for_fleet[fleet_id] = exp_rank["id"]
 
@@ -295,12 +305,11 @@ class FleetCore(object):
                 #assign for all fleets success
                 break
         
-        print(self.fleets[self.EXP_POOL_KEY][2])    
-        print(self.fleets[self.EXP_POOL_KEY][3])    
-        print(self.fleets[self.EXP_POOL_KEY][4])    
+        print(self.fleets[exp.expedition.exp_for_fleet[2]])    
+        print(self.fleets[exp.expedition.exp_for_fleet[3]])    
+        print(self.fleets[exp.expedition.exp_for_fleet[4]])    
         
         print(equ.equipment.custom_equipment)
-        input("puase")
             
         if fleet_id > 4:
             #assign for all fleets successed
@@ -361,10 +370,6 @@ class FleetCore(object):
                         
                         lc_count = min(req_lc, ship.slot_num)
                         req_lc -= lc_count
-                        print("lc_count")
-                        print(lc_count)
-                        print("req_lc")
-                        print(req_lc)
                          
                         temp_equipment_list = equ.equipment.fill_with_equipment(ship, NAME_ID_LC, lc_count)
                         
@@ -374,7 +379,6 @@ class FleetCore(object):
                             break
                         else:
                             Log.log_debug(f"fleet_switcher_core: assign LC failed for {fleet_list}")
-                            input("error")
                             return -3, ship_pool, equipment_list
             
             elif (req_dc > 0 or req_dc_carrier > 0):
@@ -399,7 +403,6 @@ class FleetCore(object):
                             break
                         else:
                             Log.log_debug(f"fleet_switcher_core: assign drum failed for {fleet_list}")
-                            input("error")
                             return -2, ship_pool, equipment_list
                         
                 if has_match_ship == False:
@@ -418,7 +421,6 @@ class FleetCore(object):
     
                             else:
                                 Log.log_debug(f"fleet_switcher_core: assign drum failed for {fleet_list}")
-                                input("error")
                                 return -2, ship_pool, equipment_list
            
             if has_match_ship == False:
@@ -448,7 +450,6 @@ class FleetCore(object):
             if has_match_ship == False:
                 #Cannot find a valid ship
                 Log.log_debug(f"fleet_switcher_core: assign ship failed for {fleet_list}")
-                input("error")
                 return -1, ship_pool, equipment_list
             else:
                 assign_fleet.append(ship)

@@ -389,7 +389,9 @@ class FleetSwitcherCore(object):
                     #if not self.switch_to_costom_equipment(combat_fleet_id, equipment_list):
                     self.switch_to_costom_equipment(equipment_key)
                     
+                    nav.navigate.to('refresh_home')
                     self.goto()
+                    input("stop for costom fleet 1")
                         
                     if not self.switch_to_costom_fleet(combat_fleet_id, fleet_list):
                         return False
@@ -405,9 +407,6 @@ class FleetSwitcherCore(object):
                     if fleet_id > 4:
                         break
                     
-                    if not fleet_id in self.custom_presets["exp"]:
-                        continue
-                    
                     flag = False
                     for fleet in exp.expedition.fleets_at_base:
                         if fleet.fleet_id == fleet_id:
@@ -416,7 +415,25 @@ class FleetSwitcherCore(object):
                     if flag == False:
                         return False
 
-                    if not self.switch_to_costom_fleet(fleet_id, self.custom_presets["exp"][fleet_id]):
+                    print("flt.fleets.fleets[exp.expedition.exp_for_fleet[fleet_id]]")
+                    print(flt.fleets.fleets[exp.expedition.exp_for_fleet[fleet_id]])
+                    
+                    if not self.switch_to_costom_equipment(exp.expedition.exp_for_fleet[fleet_id]):
+                        input("???")
+                        exit(1)
+                        return False
+                    
+                    nav.navigate.to('refresh_home')
+                    self.goto()
+                    
+                    print("flt.fleets.fleets[exp.expedition.exp_for_fleet[fleet_id]]")
+                    print(flt.fleets.fleets[exp.expedition.exp_for_fleet[fleet_id]])
+                    
+                    input("stop for costom fleet 2")
+                    
+                    temp = {}
+                    temp[fleet_id] = flt.fleets.fleets[exp.expedition.exp_for_fleet[fleet_id]]
+                    if not self.switch_to_costom_fleet(fleet_id, temp):
                         return False
 
             elif context == 'factory_develop':
@@ -477,6 +494,9 @@ class FleetSwitcherCore(object):
             fleet_id(int): fleet to switch, index starts from 1
             ship_list(fleetcore_obj): ships to use
         """
+        
+        print("point 1")
+        
         EMPTY = -1
         retry = 0
 
@@ -526,8 +546,7 @@ class FleetSwitcherCore(object):
         return True
     
     def switch_to_costom_equipment(self, map_name):
-        equ.equipment.load_loaded_equipment(map_name)
-        pass
+        return equ.equipment.load_loaded_equipment(map_name)
 
     def _scroll_preset_list(self, target_clicks):
         Log.log_debug(f"Scrolling to target preset ({target_clicks} clicks).")
