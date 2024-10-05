@@ -273,13 +273,6 @@ class EquipmentCore(object):
 
         target_config = self.custom_equipment[map_name]
             
-        Log.log_debug("target_config1")
-        Log.log_debug(target_config)
-        
-        Log.log_debug("self.equipment[loaded]")
-        Log.log_debug(self.equipment["loaded"])
-        
-        
         unload_ship_id = []
 
         for ship_id in self.equipment["loaded"]:
