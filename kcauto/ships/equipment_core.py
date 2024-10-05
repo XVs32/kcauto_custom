@@ -182,7 +182,10 @@ class EquipmentCore(object):
             if temp_equipment[i]["api_level"] == noro6_equipment["r"]:
                 return temp_equipment[i]
             
-        print("can't find exact same equ")
+        if len(temp_equipment) == 0:
+            Log.log_error("can't find any match equipment")
+            return None
+        
         #sort by the absolute value of difference between api_lv and rf
         temp_equipment.sort(key=lambda x: abs(x["api_level"] - noro6_equipment["r"]))
         #@todo send warring, can't find exact same equipment
@@ -246,8 +249,6 @@ class EquipmentCore(object):
             method to load the equipment ref from json file
         """
         
-        print("load in")
-        
         if not self.unload_equipment(map_name):
             #@todo if no equipment is unloaded, load/upload whatever to update the equipment list
             #self.equipment_list_update()
@@ -309,15 +310,12 @@ class EquipmentCore(object):
 
         #@todo temp element repeat fix
         unload_ship_id = list(set(unload_ship_id))
-        print("unload_ship_id")
-        print(unload_ship_id)
         
         start_id = 0
         while len(unload_ship_id) > start_id:
             fsw.fleet_switcher.goto()
 
             fleet_size = min(6, len(unload_ship_id) - start_id)
-            print("start unload equ")
             
             temp_fleet = {}
             temp_fleet[1]=(Fleet("unload_equipment", FleetEnum.COMBAT, False))

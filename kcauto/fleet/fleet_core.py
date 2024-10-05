@@ -38,7 +38,6 @@ class FleetCore(object):
 
     def update_fleets(self, data):
         
-        print("Updating fleet data from API.") 
         fleets_in_data = []
         for fleet_data in data:
             fleet_id = fleet_data['api_id']
@@ -267,10 +266,6 @@ class FleetCore(object):
             
             exp_ship_requirement = self._get_exp_ship_requirement_from_composition(exp.expedition.exp_data[exp_rank["id"] - 1]["reqComposition"])
             
-            print("/////////////////////////////////////")
-            print(exp_rank["id"])
-            print(exp_ship_requirement)
-
             fleet_ship_id_list, exp_ship_pool, exp_equipment_id_list = self._assign_ship( \
                 exp_ship_requirement, \
                 exp_ship_pool,
@@ -305,12 +300,6 @@ class FleetCore(object):
                 #assign for all fleets success
                 break
         
-        print(self.fleets[exp.expedition.exp_for_fleet[2]])    
-        print(self.fleets[exp.expedition.exp_for_fleet[3]])    
-        print(self.fleets[exp.expedition.exp_for_fleet[4]])    
-        
-        print(equ.equipment.custom_equipment)
-            
         if fleet_id > 4:
             #assign for all fleets successed
             Log.log_success(f"auto mode asigned ship for exp{exp.expedition.exp_for_fleet[2:]}")
@@ -353,16 +342,10 @@ class FleetCore(object):
                 #@todo: apply the wildcard handling
                 ship_enum = ShipTypeEnum(TYPE_DD) 
                 
-            print("ship_enum")
-            print(ship_enum)
-            
             has_match_ship = False 
             ship = None
                         
             if req_lc > 0:
-                print("//////////////////////")
-                print("hit lc ship")
-                print("//////////////////////")
                 for ship in ship_pool[ship_enum]:
                     if equ.equipment.is_available_category(ship, CATEGORY_LC):
                         
@@ -382,9 +365,6 @@ class FleetCore(object):
                             return -3, ship_pool, equipment_list
             
             elif (req_dc > 0 or req_dc_carrier > 0):
-                print("//////////////////////")
-                print("hit dc ship")
-                print("//////////////////////")
                 for ship in ship_pool[ship_enum]:
                     if equ.equipment.is_available_category(ship, CATEGORY_DRUM)\
                         and not equ.equipment.is_available_category(ship, CATEGORY_LC):
@@ -424,12 +404,8 @@ class FleetCore(object):
                                 return -2, ship_pool, equipment_list
            
             if has_match_ship == False:
-                print("//////////////////////")
-                print("hit normal ship")
-                print("//////////////////////")
                 for ship in ship_pool[ship_enum]:
                     
-                    print(ship)
                     if not equ.equipment.is_available_category(ship, CATEGORY_DRUM) \
                         and not equ.equipment.is_available_category(ship, CATEGORY_LC):
                         has_match_ship = True
@@ -445,7 +421,6 @@ class FleetCore(object):
                     ship = ship_pool[ship_enum][0]
                     has_match_ship = True
                     break
-                print("//////////////////////")
             
             if has_match_ship == False:
                 #Cannot find a valid ship
