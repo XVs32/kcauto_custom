@@ -391,7 +391,6 @@ class FleetSwitcherCore(object):
                     
                     nav.navigate.to('refresh_home')
                     self.goto()
-                    input("stop for costom fleet 1")
                         
                     if not self.switch_to_costom_fleet(combat_fleet_id, fleet_list):
                         return False
@@ -497,8 +496,6 @@ class FleetSwitcherCore(object):
             fleet_id(int): fleet to switch, index starts from 1
             ship_list(fleetcore_obj): ships to use
         """
-        
-        print("point 1")
         
         EMPTY = -1
         retry = 0
