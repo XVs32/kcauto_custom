@@ -401,19 +401,15 @@ class FleetSwitcherCore(object):
             elif context == "expedition":
                 Log.log_msg(f"Switching to Exp Preset.")
 
+                if len(exp.expedition.fleets_at_base) < 3:
+                    Log.log_error("Not all expedition fleets at base.")
+                    return False
+                    
                 for fleet_id in range(2,5):
 
                     if fleet_id > 4:
                         break
                     
-                    flag = False
-                    for fleet in exp.expedition.fleets_at_base:
-                        if fleet.fleet_id == fleet_id:
-                            flag = True
-                            break
-                    if flag == False:
-                        return False
-
                     if not self.switch_to_costom_equipment(exp.expedition.exp_for_fleet[fleet_id]):
                         Log.log_error("Failed to switch equipment for expedition fleet.")
                         exit(1)

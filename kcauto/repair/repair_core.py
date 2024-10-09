@@ -233,6 +233,8 @@ class RepairCore(object):
     def fleets_need_repair(self):
         if cfg.config.combat.enabled:
             for fleet in flt.fleets.combat_fleets:
+                if fleet.under_repair:
+                    return False
                 if fleet.needs_repair:
                     return True
         return False
