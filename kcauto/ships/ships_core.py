@@ -29,9 +29,20 @@ class ShipsCore(object):
         Log.log_debug("Updating ship library data.")
         self.ship_library = data
         
-    def get_ship_static_data(self,api_sortno):
+    def get_ship_static_data(self,api_sortno, api_id = None):
+        
+        search_key = "api_sortno"
+        id = api_sortno
+        
+        if api_id != None:
+            id = api_id
+            search_key = "api_id"
+        
         for ship in self.ship_library:
-            if ship['api_sortno'] == api_sortno:
+            if search_key not in ship:
+                continue
+            
+            if ship[search_key] == id:
                 return ship
 
     def load_wctf_names(self, force_update=False):

@@ -19,6 +19,7 @@ class FleetCore(object):
      
     ACTIVE_FLEET_KEY = "active_fleet"
     EXP_POOL_KEY = "exp_pool"
+    PVP_FLEET_KEY = "pvp_fleet"
     
     fleets = {}
     
@@ -35,6 +36,7 @@ class FleetCore(object):
         self.fleets[self.ACTIVE_FLEET_KEY][3] = Fleet(3, FleetEnum.EXPEDITION, False)
         self.fleets[self.ACTIVE_FLEET_KEY][4] = Fleet(4, FleetEnum.EXPEDITION, False)
         self.fleets[self.EXP_POOL_KEY] = self.EMPTY
+        self.fleets[self.PVP_FLEET_KEY] = self.EMPTY
 
     def update_fleets(self, data):
         
@@ -198,7 +200,7 @@ class FleetCore(object):
         exp_pool = shp.ships.ship_pool.copy() 
         
         for key in self.fleets:
-            if key == self.ACTIVE_FLEET_KEY or key == self.EXP_POOL_KEY:
+            if key == self.ACTIVE_FLEET_KEY or key == self.EXP_POOL_KEY or key == self.PVP_FLEET_KEY:
                 continue
             
             for fleet_id in self.fleets[key]:
@@ -420,16 +422,15 @@ class FleetCore(object):
                 if has_match_ship == False and len(ship_pool[ship_enum]) > 0:
                     ship = ship_pool[ship_enum][0]
                     has_match_ship = True
-                    break
             
             if has_match_ship == False:
                 #Cannot find a valid ship
-                Log.log_debug(f"fleet_switcher_core: assign ship failed for {fleet_list}")
+                Log.log_debug(f"fleet_core: assign ship failed for {fleet_list}")
                 return -1, ship_pool, equipment_list
             else:
                 assign_fleet.append(ship)
                 ship_pool[ship_enum].remove(ship)
-                Log.log_debug(f"fleet_switcher_core: assign ship {ship} for {fleet_list}")
+                Log.log_debug(f"fleet_core: assign ship {ship} for {fleet_list}")
                 
         return assign_fleet, ship_pool, equipment_list
 

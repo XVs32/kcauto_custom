@@ -91,7 +91,7 @@ class Kcauto(object):
                         return False
 
             if exp.expedition.is_fleetswitch_needed():
-                if self._run_fleetswitch_logic('expedition') == -2:
+                if self._run_fleetswitch_logic('expedition') != 0:
                     exp.expedition.timer.set(15*60)
                     Log.log_warn(f"Failed to switch ships for self balance expedition, disable expedition module for 15 mins.")
                     return False
@@ -167,6 +167,12 @@ class Kcauto(object):
             return False
 
         if pvp.pvp.time_to_pvp():
+            
+            pvp.pvp.goto()
+            if not pvp.pvp.pvp_available():
+                return False
+            nav.navigate.to('home')
+            
             self.find_kancolle()
             self.run_quest_logic('pvp')
             nav.navigate.to('home')
@@ -328,6 +334,7 @@ class Kcauto(object):
 
         if not fsw.fleet_switcher.switch_fleet(context):
             Log.log_error(f"Failed to switch ships for {context}.")
+            return -1
         self.handle_back_to_home(True)
         return 0
     

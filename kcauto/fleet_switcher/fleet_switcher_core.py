@@ -305,71 +305,6 @@ class FleetSwitcherCore(object):
             preset_id = AUTO_PRESET
         return preset_id
 
-    def require_fleetswitch(self, context):
-        preset_id = self._get_next_preset_id(context)
-        if preset_id is None:
-            return False
-
-        if preset_id in self.presets:
-            if self.presets[preset_id] == flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][1].ship_ids:
-                Log.log_debug("Preset Fleet is already loaded.")
-                return False
-
-        elif preset_id == AUTO_PRESET:
-            if context == 'combat':
-                
-                #check if equipment preset exist<=temp disable for noro relate dev
-                #equ.equipment.get_fleet_equipment(1)
-                
-                if not (cfg.config.combat.sortie_map.value in flt.fleets.fleets):
-                    Log.log_warn(f"Custom fleet not found for {cfg.config.combat.sortie_map.value}")
-                    return False
-                for id in flt.fleets.combat_fleets_id:
-                    if flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][id].ship_ids != flt.fleets.fleets[cfg.config.combat.sortie_map.value][id].ship_ids:
-                        return True
-                    
-                Log.log_debug("Custom preset Fleet is already loaded.")
-                return False
-            elif context == "expedition":
-
-                switch_flag = False
-
-                fleet_id = 1
-                fleet_id = self._get_next_exp_fleet_id(fleet_id)
-                while fleet_id < 5:
-                    if flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][fleet_id].ship_ids == \
-                        self.custom_presets["exp"][fleet_id]:
-                        Log.log_msg(f"preset for fleet {fleet_id} is already loaded.")
-                    else:
-                        Log.log_msg(f"attempt to load fleet {fleet_id}'s preset.")
-                        switch_flag = True
-                    fleet_id = self._get_next_exp_fleet_id(fleet_id)
-                
-                return switch_flag
-
-            elif context == 'factory_develop':
-                if cfg.config.factory.develop_secretary == 0:
-                    Log.log_warn("Develop secretary is not specified.")
-                    return False
-                if flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][1].ship_ids[0] == cfg.config.factory.develop_secretary:
-                    Log.log_debug("Develop secretary is already loaded.")
-                    return False
-                else:
-                    Log.log_msg("Need to switch to develop secretary.")
-            elif context == 'factory_build':
-                if cfg.config.factory.build_secretary == 0:
-                    Log.log_warn("Build secretary is not specified.")
-                    return False
-                if flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][1].ship_ids[0] == cfg.config.factory.build_secretary:
-                    Log.log_debug("Build secretary is already loaded.")
-                    return False
-                else:
-                    Log.log_msg("Need to switch to build secretary.")
-        else:
-            Log.log_msg(f"Need to switch to Fleet Preset {preset_id}.")
-
-        return True
-
     def goto(self):
         ssw.ship_switcher.goto()
 
@@ -398,6 +333,21 @@ class FleetSwitcherCore(object):
                 """Check if next combat possible, since new ship is switched in"""
                 """Refresh home to update ship list"""
                 com.combat.set_next_sortie_time(override=True)
+                
+            elif context == "pvp":
+                Log.log_msg(f"Switching to PvP Preset.")
+
+                fleet_list = self._get_fleet_preset("C-pvp")
+                equipment_key = self._get_equipment_preset("C-pvp")
+                
+                self.switch_to_costom_equipment(equipment_key)
+                    
+                nav.navigate.to('refresh_home')
+                self.goto()
+                        
+                if not self.switch_to_costom_fleet(1, fleet_list):
+                    return False
+
             elif context == "expedition":
                 Log.log_msg(f"Switching to Exp Preset.")
 
