@@ -74,8 +74,12 @@ class Noro6(object):
         
         if self.map["name"][0] == 'B':
             return FleetEnum.COMBAT
+        elif self.map["name"][0] == 'C':
+            return FleetEnum.COMBAT
         elif self.map["name"][0] == 'D':
             return FleetEnum.EXPEDITION
+        else:
+            return FleetEnum.COMBAT
 
     def get_fleet(self, fleet_id):
         """

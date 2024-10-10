@@ -433,7 +433,7 @@ class EquipmentCore(object):
                             ssw.ship_switcher.current_page = 1
                     except ValueError:
                         Log.log_error(f"Cannot find equipment {equipment_id}, did you scrapped it?")
-                        return False
+                        exit(1)
 
                     ssw.ship_switcher.select_replacement_row(row_idx=row_id, mode= "equipment")
 
