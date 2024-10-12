@@ -32,6 +32,7 @@ class ExpeditionCore(CoreBase):
     TYPE_PRIORITY = [""]
     cur_exp = [0,0,0,0]
     timer = None
+    auto_assign_done = False
 
     def __init__(self):
         """
@@ -42,12 +43,10 @@ class ExpeditionCore(CoreBase):
         self.exp_data = JsonData.load_json('data|expedition|expedition.json')
 
     def is_fleetswitch_needed(self):
-        flag = False
-        if cfg.config.expedition.fleet_preset == "auto":
-            flag = True
-        return flag
-        
-        
+        if cfg.config.expedition.fleet_preset == "auto" and self.auto_assign_done == False:
+            return True 
+        else:
+            return False 
 
    # With a normal function
     def cmp(self, item):

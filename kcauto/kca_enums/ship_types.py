@@ -14,8 +14,10 @@ class ShipTypeEnum(EnumBase):
     BB = 9
     BBV = 10
     CV = 11
+    SD = 12 #Super Dreadnoughts, unuse at the moment
     SS = 13
     SSV = 14
+    EAO = 15 #enemy AO
     AV = 16
     LHA = 17
     CVB = 18
@@ -35,3 +37,7 @@ class ShipTypeEnum(EnumBase):
     @property
     def id(self):
         return self.value
+    
+    @property
+    def count(self):
+        return 23
