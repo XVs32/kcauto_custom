@@ -260,9 +260,6 @@ class QuestCore(CoreBase):
             list(self._get_types_from_quests(self.relevant_quests)),
             key=lambda quest_type: self.QUEST_TYPE_WEIGHTS[quest_type])
         
-        #get current running quest count
-        self._to_tab("active")
-        
         remain_quest_slot = self.max_quests - len(self.visible_quests)
 
         for quest_type in quest_types:
@@ -343,7 +340,8 @@ class QuestCore(CoreBase):
                 else:
                     for key in sortie_dict:
                         for i in range(0, sortie_dict[key]):
-                            sortie_list.append(key+"-"+next_quest)
+                            #sortie_list.append(key+"-"+next_quest)
+                            sortie_list.append(next_quest +"-"+ key)
 
                 com.combat.set_sortie_queue(sortie_list)
 
@@ -406,8 +404,9 @@ class QuestCore(CoreBase):
                         & set(q.enemy_context)):
                     continue
             if q.map_context:
-                #The current combat map(ex. 3-5) without quest suffix(ex. 3-5-Bw4)
-                current_combat_map = MapEnum(cfg.config.combat.sortie_map.world_and_map)
+                #The current combat map(ex. 3-5) without quest suffix(ex. 3-5-Bw4
+                
+                current_combat_map = MapEnum("B-" + cfg.config.combat.sortie_map.without_quest)
                 if cfg.config.combat.sortie_map not in q.map_context and current_combat_map not in q.map_context:
                     continue
             if q.expedition_context:

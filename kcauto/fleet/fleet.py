@@ -2,12 +2,15 @@ from datetime import datetime
 
 import config.config_core as cfg
 import ships.ships_core as shp
+from ships.ship import Ship
 import util.kca as kca_u
 from kca_enums.damage_states import DamageStateEnum
 from kca_enums.fatigue_states import FatigueStateEnum
+from kca_enums.fleet import FleetEnum
 from constants import VISUAL_DAMAGE, FLEET_NUMBER_ICON
 from util.kc_time import KCTime
 from util.logger import Log
+import repair.repair_core as rep
 
 
 class Fleet(object):
@@ -21,12 +24,16 @@ class Fleet(object):
     visual_health = []
 
     def __init__(self, fleet_id, fleet_type, enabled=True):
+        Log.log_debug(f"Fleet {fleet_id} with type {fleet_type} init.")
         self.fleet_id = fleet_id
         self.enabled = enabled
         self.fleet_type = fleet_type
 
     def update_ship_data(self):
-        self.ship_data = shp.ships.get_local_ships(self.ship_ids)
+        ship_ids = self.ship_ids
+        self.ship_data = []
+        for id in ship_ids:
+            self.ship_data.append(shp.ships.get_ship_from_production_id(id))
 
     def select(self):
         Log.log_debug(f"Selecting fleet {self.fleet_id}.")
@@ -46,9 +53,11 @@ class Fleet(object):
 
     @fleet_type.setter
     def fleet_type(self, value):
-        if self.fleet_id == 1 and value != 'combat':
+        Log.log_debug(f"value {value}.")
+        
+        if self.fleet_id == 1 and value != FleetEnum.COMBAT:
             raise ValueError("Fleet 1 can only be a combat fleet.")
-        if value not in ('combat', 'expedition'):
+        if value not in (FleetEnum.COMBAT, FleetEnum.EXPEDITION):
             raise ValueError("Invalid value for fleet type.")
         self._fleet_type = value
 
@@ -65,10 +74,12 @@ class Fleet(object):
             Log.log_success(f"Fleet {self.fleet_id} activated.")
         elif value is False and print_log:
             Log.log_success(f"Fleet {self.fleet_id} deactivated.")
+            """
             self._at_base = True
             self._ships = []
             self._return_time = None
             self.ship_data = []
+            """
         self._enabled = value
 
     @property
@@ -82,6 +93,8 @@ class Fleet(object):
         print_log = True if value != self._enabled else False
         if value is True and print_log:
             Log.log_msg(f"Fleet {self.fleet_id} has arrived at base!")
+            
+            ship : Ship
             for ship in self.ship_data:
                 ship.needs_resupply = True
         elif value is False and print_log:
@@ -90,14 +103,13 @@ class Fleet(object):
 
     @property
     def ship_ids(self):
-        return self._ship_ids
-
-    @ship_ids.setter
-    def ship_ids(self, value):
-        if type(value) is not list:
-            raise TypeError("Not a list!")
-        self._ship_ids = [ship_id for ship_id in value if ship_id > -1]
-        self.update_ship_data()
+        
+        ret = []
+        
+        for ship in self.ship_data:
+            ret.append(ship.production_id)
+        
+        return ret
 
     @property
     def return_time(self):
@@ -143,8 +155,10 @@ class Fleet(object):
 
     @property
     def under_repair(self):
+        #@todo : ask from repair module, not ship
+        
         for ship in self.ship_data:
-            if ship.under_repair:
+            if ship.production_id in rep.repair.ships_under_repair:
                 return True
         return False
 
@@ -257,7 +271,7 @@ class Fleet(object):
         return
 
     def __str__(self):
-        if self.fleet_type == 'combat':
+        if self.fleet_type == FleetEnum.COMBAT:
             return self.combat_fleet_status
         else:
             return self.expedition_fleet_status

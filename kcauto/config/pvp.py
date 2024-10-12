@@ -1,6 +1,7 @@
 from config.config_base import ConfigBase
 from kca_enums.fleet_modes import CombinedFleetModeEnum
 from constants import MAX_FLEET_PRESETS
+from constants import AUTO_PRESET
 
 
 class ConfigPvP(ConfigBase):
@@ -37,6 +38,8 @@ class ConfigPvP(ConfigBase):
     def fleet_preset(self, value):
         if not value:
             self._fleet_preset = None
+        elif value == "auto":
+            self._fleet_preset = AUTO_PRESET
         else:
             if not 0 < value <= MAX_FLEET_PRESETS:
                 raise ValueError("Invalid value specified for fleet preset")

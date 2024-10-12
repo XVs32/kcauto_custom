@@ -90,7 +90,8 @@ class RepairCore(object):
         idx_of_combat_ships = {}
         idx_of_passive_ships = {}
         for idx, ship in enumerate(repair_list):
-            if ship.damage is DamageStateEnum.REPAIRING:
+            
+            if ship.production_id in self.ships_under_repair:
                 continue
             elif ship in flt.fleets.combat_ships:
                 if ship.damage >= cfg.config.combat.repair_limit:
@@ -100,11 +101,11 @@ class RepairCore(object):
                     if ship not in flt.fleets.active_ships:
                         idx_of_passive_ships[idx] = ship
 
-        if len(idx_of_combat_ships) + len(idx_of_passive_ships) == 0:
-            Log.log_debug("No combat or passive ships to repair.")
-            return False
 
         while self.can_conduct_repairs:
+            if len(idx_of_combat_ships) + len(idx_of_passive_ships) == 0:
+                Log.log_debug("No combat or passive ships to repair.")
+                return False
             Log.log_debug(
                 f"Combat repair index: {idx_of_combat_ships.keys()}")
             Log.log_debug(
@@ -170,7 +171,7 @@ class RepairCore(object):
         page = (idx // 10) + 1 if idx > 9 else 1
         Log.log_msg(f"Selecting lvl{ship.level} {ship.name} (pg{page}#{idx}).")
         if page > 1:
-            tot_pages = shp.ships.current_ship_count // 10
+            tot_pages = shp.ships.ship_count // 10
             list_control_region = Region(
                 kca_u.kca.game_x + 610, kca_u.kca.game_y + 660, 490, 45)
             nav.navigate_list.to_page(
@@ -179,7 +180,7 @@ class RepairCore(object):
             self.current_repair_list_page = page
         repair_list_region = Region(
             kca_u.kca.game_x + 596,
-            kca_u.kca.game_y + 194 + (idx % 10 * 46),
+            kca_u.kca.game_y + 187 + (idx % 10 * 48),
             500, 31)
         kca_u.kca.click(repair_list_region)
         kca_u.kca.r['top'].hover()
@@ -225,13 +226,15 @@ class RepairCore(object):
     @property
     def _local_ships_sorted_by_repair(self):
         return sorted(
-            [s for s in shp.ships.local_ships if s.hp_p < 1],
-            key=lambda s: (s.hp_p, s.sort_id, s.local_id))
+            [shp.ships.ship_pool[s] for s in shp.ships.ship_pool],
+            key=lambda ship: (ship.hp_p, ship.sort_id, ship.production_id))
 
     @property
     def fleets_need_repair(self):
         if cfg.config.combat.enabled:
             for fleet in flt.fleets.combat_fleets:
+                if fleet.under_repair:
+                    return False
                 if fleet.needs_repair:
                     return True
         return False
@@ -239,11 +242,10 @@ class RepairCore(object):
     @property
     def ships_need_repair(self):
         if cfg.config.passive_repair.enabled:
-            for ship in shp.ships.local_ships:
-                if ship.damage >= cfg.config.passive_repair.repair_threshold:
-                    if ship not in flt.fleets.active_ships:
+            for id in shp.ships.ship_pool:
+                if shp.ships.ship_pool[id].damage >= cfg.config.passive_repair.repair_threshold:
+                    if shp.ships.ship_pool[id] not in flt.fleets.active_ships:
                         return True
         return False
-
 
 repair = RepairCore()
