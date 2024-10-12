@@ -25,6 +25,8 @@ class Kcauto(object):
     """
     end_loop_at_port = False
     is_first_print_fleet = True
+    
+    skip_one_repair = False
 
     def __init__(self):
         kca_u.kca.hook_chrome()
@@ -95,6 +97,8 @@ class Kcauto(object):
                     exp.expedition.timer.set(15*60)
                     Log.log_warn(f"Failed to switch ships for self balance expedition, disable expedition module for 15 mins.")
                     return False
+                else:
+                    exp.expedition.auto_assign_done = True
 
             exp.expedition.goto()
             exp.expedition.send_expeditions()
@@ -272,14 +276,16 @@ class Kcauto(object):
         #apply for combat queue, assume map_data is up-to-date
         self.run_quest_logic('combat', fast_check = not was_sortie_queue_empty, force= was_sortie_queue_empty)
 
+        port_api_update = False 
         if self._run_fleetswitch_logic('combat') == 0:
-            #update port api, for should_and_able_to_sortie
-            nav.navigate.to('refresh_home')
-
+            port_api_update = True
+            
+        self.run_repair_logic(back_to_home=port_api_update)
+        self.skip_one_repair = True
+        
         if com.combat.should_and_able_to_sortie(ignore_supply=True):
 
             self.run_resupply_logic()
-
             com.combat.goto()
 
             if com.combat.conduct_sortie():
@@ -304,6 +310,11 @@ class Kcauto(object):
             sts.stats.set_print_loop_end_stats()
 
     def run_repair_logic(self, back_to_home=False):
+        
+        if self.skip_one_repair == True:
+            self.skip_one_repair = False
+            return
+        
         if rep.repair.can_conduct_repairs:
             self.find_kancolle()
             rep.repair.goto()
@@ -312,6 +323,9 @@ class Kcauto(object):
             if not back_to_home:
                 self.end_loop_at_port = True
             sts.stats.set_print_loop_end_stats()
+        else:
+            self.handle_back_to_home(back_to_home)
+            
 
     def _run_fleetswitch_logic(self, context):
 
