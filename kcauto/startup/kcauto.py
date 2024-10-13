@@ -178,21 +178,17 @@ class Kcauto(object):
             nav.navigate.to('home')
             
             self.find_kancolle()
-            self.run_quest_logic('pvp')
-            nav.navigate.to('home')
+            self.run_quest_logic('pvp', back_to_home=True)
             self._run_fleetswitch_logic('pvp')
-            self.run_resupply_logic(back_to_home=True)
-            sts.stats.set_print_loop_end_stats()
         else:
             return False
 
-        pvp.pvp.goto()
         while pvp.pvp.pvp_available():
+            pvp.pvp.goto()
             pvp.pvp.conduct_pvp()
             self.run_resupply_logic(back_to_home=True)
             self.run_quest_logic('pvp', fast_check=True, back_to_home=True)
-            if pvp.pvp.pvp_available():
-                pvp.pvp.goto()
+            
         sts.stats.set_print_loop_end_stats()
         return True
 
