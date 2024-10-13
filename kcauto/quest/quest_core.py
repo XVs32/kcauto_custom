@@ -147,7 +147,8 @@ class QuestCore(CoreBase):
             kca_u.kca.wait('left', 'quest|filter_tab_active_active.png')
             api.api.update_from_api({KCSAPIEnum.QUEST_LIST}) #update visible_quests
         else:
-            #@todo click back to page 1 button
+            kca_u.kca.click_existing(
+                'lower', 'global|page_first.png', pad=PAGE_NAV)
             pass
         
         quest_offset = 0
