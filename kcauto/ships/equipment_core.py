@@ -363,7 +363,7 @@ class EquipmentCore(object):
         EMPTY_a = [-1,-1,-1,-1,-1,0]
         EMPTY_b = [-1,-1,-1,-1,-1,-1]
 
-        nav.navigate.to('refresh_home')
+        nav.navigate.to('home')
 
         target_config = self.custom_equipment[map_name]
         Log.log_debug("load_equipment target_config")
