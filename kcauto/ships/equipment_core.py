@@ -432,7 +432,7 @@ class EquipmentCore(object):
                             row_id = self.get_reinforce_equipment_list(load_ship_id[start_id + i]).index(equipment_id)
                             ssw.ship_switcher.current_page = 1
                     except ValueError:
-                        Log.log_error(f"Cannot find equipment {equipment_id}, did you scrapped it?")
+                        Log.log_error(f"Cannot find equipment name id:{self._get_name_id(equipment_id)} production id:{equipment_id}, did you scrapped it?")
                         exit(1)
 
                     ssw.ship_switcher.select_replacement_row(row_idx=row_id, mode= "equipment")
