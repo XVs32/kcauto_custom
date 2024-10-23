@@ -174,13 +174,11 @@ class FleetCore(object):
             Log.log_debug("Custom fleets setting is already loaded")
             return
         
-        # read every .json file under config/noro6 folder
-        NORO6_CONFIG = 'configs/noro6/noro6'
         
         #merge custom fleets data into fleet core
-        self.fleets = {**self.fleets, **self._noro6_to_kcauto(NORO6_CONFIG)}
+        self.fleets = {**self.fleets, **self._noro6_to_kcauto()}
         
-        equ.equipment.custom_equipment = equ.equipment.noro6_to_kcauto(NORO6_CONFIG)
+        equ.equipment.custom_equipment = equ.equipment.noro6_to_kcauto()
         
     def load_custom_exp_pool(self):
         """
@@ -227,14 +225,14 @@ class FleetCore(object):
             
         return 
             
-    def _noro6_to_kcauto(self, file_path):
+    def _noro6_to_kcauto(self):
         """
             method to convert noro6 preset to kcauto preset
             output: (kcauto preset) 
         """
         
         ret = {}
-        noro6 = Noro6(file_path)
+        noro6 = Noro6()
  
         for preset in noro6.presets:
             noro6.get_map(preset["name"])

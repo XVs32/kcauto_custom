@@ -9,7 +9,7 @@ from util.lzstring import LZString
 
 class Noro6(object):
     
-    NORO6_FOLDER = 'configs/noro6'
+    NORO6_CONFIG = 'configs/noro6/noro6'
     
     data = None
     
@@ -19,7 +19,7 @@ class Noro6(object):
     ship = None
     item = None
 
-    def __init__(self, filepath=None):
+    def __init__(self, filepath=NORO6_CONFIG):
         
         if filepath is not None:
             
