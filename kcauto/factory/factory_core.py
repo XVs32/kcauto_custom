@@ -99,7 +99,7 @@ class FactoryCore(object):
             
             kca_u.kca.r["order_confirm_region"].click()
             kca_u.kca.wait('lower_right_corner', 'global|next_alt.png', 20)
-            while not kca_u.kca.exists('lower_right_corner', 'nav|side_menu_home.png'):
+            while not kca_u.kca.exists('left', 'nav|side_menu_home.png'):
                 Log.log_debug("In develop result")
                 kca_u.kca.r['shipgirl'].click()
                 kca_u.kca.r['top'].hover()
@@ -147,7 +147,7 @@ class FactoryCore(object):
                         self.enabled = False
                         return False
                     
-                    while kca_u.kca.exists('lower_right_corner', 'global|next_alt.png'):
+                    while not kca_u.kca.exists('left', 'nav|side_menu_home.png'):
                         kca_u.kca.sleep()
                         kca_u.kca.r['shipgirl'].click()
                         kca_u.kca.r['top'].hover()
