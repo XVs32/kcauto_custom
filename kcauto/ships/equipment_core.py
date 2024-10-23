@@ -96,7 +96,7 @@ class EquipmentCore(object):
                     break
             
             
-    def noro6_to_kcauto(self, file_path):
+    def noro6_to_kcauto(self):
         """
             method to load the noro6 equipment list
             convert it to kcauto format and save it to a json file
@@ -108,7 +108,7 @@ class EquipmentCore(object):
         self.equipment_exp = self.equipment["id"].copy()
         
         ret = {}
-        noro6 = Noro6(file_path)
+        noro6 = Noro6()
  
         for preset in noro6.presets:
             noro6.get_map(preset["name"])
