@@ -4,6 +4,7 @@ from constants import VISUAL_DAMAGE, FLEET_NUMBER_ICON
 from util.logger import Log
 import json
 from util.json_data import JsonData
+from kca_enums.maps import MapEnum
 
 from util.lzstring import LZString
 
@@ -61,7 +62,34 @@ class Noro6(object):
                 return preset
             
         IndexError(f"can't find map {name} in noro6")
-            
+        
+    def get_config_name_list(self):
+        """
+        method to get the config list from noro6 config
+        Returns:
+        config_name_list (string list) : ex. ['B-1-1', 'B-1-2', 'By6-1-2',......,'B-7-4', 'C-pvp']
+        """
+        ret = []
+        for preset in self.presets:
+            ret.append(preset["name"])
+        
+        return ret
+    
+    def get_map_variant(self):
+        """
+        method to get all map variant
+        Returns:
+        list of map_enum
+        """
+        ret = [] 
+        name_list = self.get_config_name_list()
+        
+        for map_name in name_list:
+            if map_name[0] == 'B':
+                map = MapEnum(map_name)
+                if map.is_map_variant():
+                    ret.append(map)
+        return ret
             
     def get_preset_type(self):
         """
