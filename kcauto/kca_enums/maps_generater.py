@@ -23,9 +23,24 @@ for file in os.listdir("../../data/combat"):
         with open("../../data/combat/" + file, "r") as map_json:
             #read file
             data = json.load(map_json)
+            
             #get the map name
-            for node in data["nodes"]:
+            
+            nodes = []
+            DISTINATION = 1
+            NODE_NAME_MAX_LEN = 4
+            for key in data["edges"]:
+                
+                #if not a node
+                if len( data["edges"][key][DISTINATION]) > NODE_NAME_MAX_LEN:
+                    continue
+                
+                nodes.append(data["edges"][key][DISTINATION])
                 #write the following code to the file
+                
+            nodes = list(set(nodes))
+            
+            for node in nodes:
                 f.write("    W"+ str(world) + "_" + str(stage)  + "_" + node + "=" +  "\"B-" + str(world) + "-" + str(stage) + "-" + node + "\"\n")
 
 #write the following code to the file
