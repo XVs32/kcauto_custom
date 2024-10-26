@@ -3,6 +3,8 @@ import curses
 import cui.util as util
 from cui.macro import *
 
+from fleet.noro6 import Noro6 
+
 DISABLE = 0
 AUTO = 1
 NORMAL = 2
@@ -17,8 +19,10 @@ preset_list = {DISABLE:["disable", "akashi mode"], NORMAL:["disable", "auto", "1
 
 def pop_up_menu(stdscr, panel, cur_mode, sortie_map):
 
-    global world_list
-
+    global world_list, map_list
+    
+    mode_list = Noro6().get_variant("B-2-2")
+    
     x_center, y_center = util.get_center_str_location(panel, "SORTIE MODE")
     panel.addstr(0, x_center, "SORTIE MODE", curses.color_pair(LOG))
 
@@ -98,7 +102,6 @@ def pop_up_menu(stdscr, panel, cur_mode, sortie_map):
 
         map_or_world = WORLD
 
-        global world_list, map_list
         for i in range(1, len(world_list) - 1):
             if world_list[i] == sortie_map.split('-')[0]:
                 world_id = i

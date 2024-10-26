@@ -61,7 +61,20 @@ class Noro6(object):
                 return preset
             
         IndexError(f"can't find map {name} in noro6")
-            
+        
+    def get_variant(self, map_name):
+        """
+            method to get all variant under a map
+            map_name(str): map name
+            Returns:
+                list: list of variant name
+        """
+        ret = []
+        for preset in self.presets:
+            if preset["name"] != map_name and preset["name"][:preset["name"].rfind("-")] == map_name:
+                ret.append(preset["name"])
+                
+        return ret
             
     def get_preset_type(self):
         """
