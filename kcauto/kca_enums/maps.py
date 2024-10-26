@@ -559,7 +559,6 @@ class MapEnum(EnumBase):
 
     W1_1_Bw1 = "Bw1-1-1"
     W1_5_Bw1 = "Bw1-1-5"
-    W5_2_C = "B-5-2-C"
     W5_2_C_Bw1 = "Bw1-5-2-C"
 
     W2_5_Bm1 = "Bm1-2-5"
