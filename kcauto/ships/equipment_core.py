@@ -249,14 +249,8 @@ class EquipmentCore(object):
             method to load the equipment ref from json file
         """
         
-        if not self.unload_equipment(map_name):
-            #@todo if no equipment is unloaded, load/upload whatever to update the equipment list
-            #self.equipment_list_update()
-            pass
-
+        self.unload_equipment(map_name)
         return self.load_equipment(map_name)
-
-
 
     def unload_equipment(self, map_name):
         """
@@ -300,9 +294,16 @@ class EquipmentCore(object):
                         if euipment in target_equipments:
                             unload_ship_id.append(ship_id)
                             any_unload = True
+                            break
 
         #@todo temp element repeat fix
-        unload_ship_id = list(set(unload_ship_id))
+        if any_unload == True:
+            unload_ship_id = list(set(unload_ship_id))
+        else:
+            
+            for ship_id in self.equipment["loaded"]:
+                if len(self.equipment["loaded"][ship_id]):
+                    unload_ship_id = [ship_id]
         
         start_id = 0
         while len(unload_ship_id) > start_id:
