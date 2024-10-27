@@ -9,7 +9,7 @@ from util.lzstring import LZString
 
 class Noro6(object):
     
-    NORO6_FOLDER = 'configs/noro6'
+    NORO6_CONFIG = 'configs/noro6/noro6'
     
     data = None
     
@@ -19,7 +19,9 @@ class Noro6(object):
     ship = None
     item = None
 
-    def __init__(self, filepath=None):
+    def __init__(self, filepath=NORO6_CONFIG):
+        
+        self.presets = []
         
         if filepath is not None:
             
@@ -61,7 +63,20 @@ class Noro6(object):
                 return preset
             
         IndexError(f"can't find map {name} in noro6")
-            
+        
+    def get_variant(self, map_name):
+        """
+            method to get all variant under a map
+            map_name(str): map name
+            Returns:
+                list: list of variant name
+        """
+        ret = []
+        for preset in self.presets:
+            if preset["name"] == map_name or preset["name"][:preset["name"].rfind("-")] == map_name:
+                ret.append(preset["name"])
+                
+        return ret
             
     def get_preset_type(self):
         """

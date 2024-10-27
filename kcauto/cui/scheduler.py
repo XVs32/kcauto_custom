@@ -10,8 +10,6 @@ item_list = ["END TIME", "SORTIE COUNT"]
 
 def pop_up_menu(stdscr, panel, timestamp, sortie_max_count):
 
-    global world_list
-
     cur_item = item_list[0]
 
     x_center, y_center = util.get_center_str_location(panel, "SCHEDULER")

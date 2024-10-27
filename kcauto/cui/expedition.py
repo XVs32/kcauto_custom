@@ -53,7 +53,13 @@ def pop_up_menu(stdscr, panel, active_expset):
 
     active_preset = None
 
-    if active_expset != "auto":
+    if active_expset == "auto":
+        active_preset = "auto"
+    
+    elif active_expset == "disable":
+        active_preset = "disable"
+    
+    else:
         x_center, y_center = util.get_center_str_location(panel, "AUTO FLEET ASSIGN?")
         panel.addstr(0, x_center, "AUTO FLEET ASSIGN?", curses.color_pair(LOG))
 
@@ -81,8 +87,6 @@ def pop_up_menu(stdscr, panel, active_expset):
             elif key == KEY_ENTER:
                 active_preset = fleet_mode[cur_mode]
                 break
-    else:
-        active_preset = "auto"
         
     return active_expset, active_preset
 
