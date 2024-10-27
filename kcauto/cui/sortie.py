@@ -152,7 +152,6 @@ def pop_up_menu(stdscr, panel, cur_mode, sortie_map):
             
         variant_list = []  
         variant_list = Noro6().get_variant("B-" + world_list[world_id] + '-' + map_list[map_id]) 
-        print(variant_list)
         
         VARIANT_MAP_SECTION_LEN = 4
         map_variant = []
