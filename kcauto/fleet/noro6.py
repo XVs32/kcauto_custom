@@ -21,6 +21,8 @@ class Noro6(object):
 
     def __init__(self, filepath=NORO6_CONFIG):
         
+        self.presets = []
+        
         if filepath is not None:
             
             with open(filepath, 'r') as file:
@@ -71,7 +73,7 @@ class Noro6(object):
         """
         ret = []
         for preset in self.presets:
-            if preset["name"] != map_name and preset["name"][:preset["name"].rfind("-")] == map_name:
+            if preset["name"] == map_name or preset["name"][:preset["name"].rfind("-")] == map_name:
                 ret.append(preset["name"])
                 
         return ret
