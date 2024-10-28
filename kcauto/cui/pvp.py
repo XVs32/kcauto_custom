@@ -29,11 +29,13 @@ def pop_up_menu(stdscr, panel, preset_id):
                 preset = "auto"
             else:
                 preset = str(i-LIST_OFFSET)
+                
+            x_center, y_center = util.get_center_str_location(panel, preset)
 
             if i == preset_id:
-                panel.addstr(i + 1, 1, preset, curses.color_pair(LOG_GREEN))
+                panel.addstr(i + y_center - 2, x_center, preset, curses.color_pair(LOG_GREEN))
             else:
-                panel.addstr(i + 1, 1, preset, curses.color_pair(LOG))
+                panel.addstr(i + y_center - 2, x_center, preset, curses.color_pair(LOG))
         
         panel.refresh()
 

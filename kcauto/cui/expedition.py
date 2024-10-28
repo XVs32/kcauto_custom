@@ -27,12 +27,14 @@ def pop_up_menu(stdscr, panel, active_expset):
             active_id = i
 
     while 1:
+        row_count = len(expedition_set)
         for i, expset in enumerate(expedition_set):
+            x_center, y_center = util.get_center_str_location(panel, expset)
             if i == active_id:
                 active_expset = expset
-                panel.addstr(i + 1, 1, expset, curses.color_pair(LOG_GREEN))
+                panel.addstr(i + y_center - int(row_count/2), x_center, expset, curses.color_pair(LOG_GREEN))
             else:
-                panel.addstr(i + 1, 1, expset, curses.color_pair(LOG))
+                panel.addstr(i + y_center - int(row_count/2), x_center, expset, curses.color_pair(LOG))
 
         panel.refresh()
 
