@@ -243,6 +243,11 @@ class ApiWrapper(object):
 
     def _process_require_info(self, data):
         try:
+            JsonData.dump_json(data['api_data']['api_slot_item'], 'data|temp|equipment_list.json')
+        except KeyError:
+            Log.log_debug("No equipment found in API response.")
+            
+        try:
             exp_prov_resupply = data['api_data']['api_extra_supply'][0] == 1
             res.resupply.exp_provisional_enabled = exp_prov_resupply
         except KeyError:
