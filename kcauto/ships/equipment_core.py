@@ -175,7 +175,7 @@ class EquipmentCore(object):
             Log.log_error("can't find any match equipment")
             return None
         
-        for i in range(len(temp_equipment)-1,-1,-1):
+        for i in range(len(temp_equipment)):
             
             #@todo handle "api_alv"/"l" (plane exp level)
             #if "api_alv" in temp_equipment[i] and "l" in noro6_equipment:
@@ -296,8 +296,8 @@ class EquipmentCore(object):
                             any_unload = True
                             break
 
-        #@todo temp element repeat fix
         if any_unload == True:
+            #@todo temp element repeat fix
             unload_ship_id = list(set(unload_ship_id))
         else:
             
