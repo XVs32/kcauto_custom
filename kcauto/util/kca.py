@@ -10,8 +10,6 @@ from datetime import datetime, timedelta
 from pyvisauto import Region, FindFailed, ImageMatch
 from random import randint, uniform
 from time import sleep
-import numpy as np
-import time
 
 import api.api_core as api
 import args.args_core as arg
@@ -769,58 +767,20 @@ class Kca(object):
         #self.visual_hook.Input.synthesizeTapGesture(x= x + offset_x , y=y + offset_y)
         self.visual_hook.Input.dispatchMouseEvent(type = "mousePressed", x= x + offset_x , y=y + offset_y, clickCount = 1, button = "left")
         self.visual_hook.Input.dispatchMouseEvent(type = "mouseReleased", x= x + offset_x , y=y + offset_y, clickCount = 1, button = "left")
-        
-        self.last_x = x + offset_x
-        self.last_y = y + offset_y
 
-    last_x = 0
-    last_y = 0
     def _chrome_driver_hover_method(self, r):
         """hover method used in Chrome Driver interaction mode.
 
         Args:
             r (Region, Match): Region/Match region to hover 
         """
-        
+
         offset_x = randint(0, r.w)
         offset_y = randint(0, r.h)
-        
-        start_x, start_y = self.last_x, self.last_y
-        end_x, end_y = r.x - self.css_x + offset_x, r.y - self.css_y + offset_y
-        
-        # Number of intermediate steps
-        num_steps = 100
-        step_delay = 0.01
+        x = r.x - self.css_x
+        y = r.y - self.css_y
 
-        # Generate random control points to form a Bézier curve
-        control_x1 = start_x + np.random.randint(-100, 100)
-        control_y1 = start_y + np.random.randint(-100, 100)
-        control_x2 = end_x + np.random.randint(-100, 100)
-        control_y2 = end_y + np.random.randint(-100, 100)
-        
-        # Calculate Bézier curve points
-        t_values = np.linspace(0, 1, num_steps)
-        points = [
-            (
-                (1 - t) ** 3 * start_x + 3 * (1 - t) ** 2 * t * control_x1 + 3 * (1 - t) * t ** 2 * control_x2 + t ** 3 * end_x,
-                (1 - t) ** 3 * start_y + 3 * (1 - t) ** 2 * t * control_y1 + 3 * (1 - t) * t ** 2 * control_y2 + t ** 3 * end_y,
-            )
-            for t in t_values
-        ]
-        
-        # Move along the path
-        for (x, y) in points:
-            x += np.random.normal(0, 1)  # Small random noise for human-like movement
-            y += np.random.normal(0, 1)
-
-            self.visual_hook.Input.dispatchMouseEvent(type = "mouseMoved", x=int(x) , y=int(y))
-            
-            time.sleep(step_delay * np.random.uniform(0.5, 1.5))  # Random delay for speed variation
-            
-        
-        self.last_x = end_x
-        self.last_y = end_y
-
+        self.visual_hook.Input.dispatchMouseEvent(type = "mouseMoved", x= x + offset_x , y=y + offset_y)
 
     def cdt_init(self, host="localhost", target = "visual"):
         """method to hook this python program to chrome browser, cdt stands for ChromeDevTools
