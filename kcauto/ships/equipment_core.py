@@ -300,10 +300,27 @@ class EquipmentCore(object):
             #@todo temp element repeat fix
             unload_ship_id = list(set(unload_ship_id))
         else:
-            
+            needed_load = False
             for ship_id in self.equipment["loaded"]:
-                if len(self.equipment["loaded"][ship_id]):
-                    unload_ship_id = [ship_id]
+                try:
+                    if      target_config[ship_id] == EMPTY_a\
+                        or  target_config[ship_id] == EMPTY_b:
+                        #nothing to load
+                        continue
+
+                    if self.equipment["loaded"][ship_id] != target_config[ship_id]:
+                        Log.log_error(f'ship {ship_id} currently has {self.equipment["loaded"][ship_id]}, target is {target_config[ship_id]}')
+                        needed_load = True
+                        break
+                        
+                except KeyError:
+                    pass
+
+            if needed_load == True: 
+                #unload a ship to update equipment list
+                for ship_id in self.equipment["loaded"]:
+                    if len(self.equipment["loaded"][ship_id]) > 0:
+                        unload_ship_id = [ship_id]
         
         start_id = 0
         while len(unload_ship_id) > start_id:
