@@ -99,7 +99,8 @@ class PvPCore(CoreBase):
             if ship['api_id'] == -1:
                 break
             ship_count += 1
-            data = shp.ships.get_ship_from_api_id(ship['api_ship_id'])
+            
+            data = shp.ships.create_ship(shp.ships.get_ship_static_data(api_sortno=0, api_id=ship['api_ship_id']))
 
             if data.ship_type in (ShipTypeEnum.SS, ShipTypeEnum.SSV):
                 sub_count += 1

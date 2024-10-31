@@ -77,7 +77,7 @@ class QuestCore(CoreBase):
             return True
 
     def update_quest_data(self, data):
-        self.cur_page = data.get('api_disp_page', 0)
+        #self.cur_page = data.get('api_disp_page', 0)
         
         """Deleted by XVs32"""
         """self.tot_page = data.get('api_page_count', 0)"""
@@ -120,6 +120,17 @@ class QuestCore(CoreBase):
                 break
             return_string += f", {q['api_no']} (state:{q['api_state']})"
         return return_string
+    
+    def _to_tab(self, tab_name):
+        Log.log_msg(f"Navigating to {tab_name} quests tab.")
+        if kca_u.kca.click_existing(
+            'left', f'quest|filter_tab_{tab_name}.png') == True:
+            kca_u.kca.wait(
+                'left', f'quest|filter_tab_{tab_name}_active.png')
+            api.api.update_from_api({KCSAPIEnum.QUEST_LIST}) #update visible_quests
+        else:
+            Log.log_error(f"Cannot find {tab_name} quests tab.")
+            exit(1)
 
     def _turn_in_quests(self, context):
         Log.log_msg(
@@ -133,11 +144,15 @@ class QuestCore(CoreBase):
         Log.log_msg("Navigating to active quests tab.")
         
         if kca_u.kca.click_existing('left', 'quest|filter_tab_active.png') == True:
-            kca_u.kca.wait(
-                'left', 'quest|filter_tab_active_active.png', NEAR_EXACT)
+            kca_u.kca.wait('left', 'quest|filter_tab_active_active.png')
             api.api.update_from_api({KCSAPIEnum.QUEST_LIST}) #update visible_quests
+        else:
+            kca_u.kca.click_existing(
+                'lower', 'global|page_first.png', pad=PAGE_NAV)
+            pass
         
         quest_offset = 0
+        self.cur_page = 0
         
         while 1:
             for idx, quest in enumerate(self.visible_quests):
@@ -245,22 +260,17 @@ class QuestCore(CoreBase):
         quest_types = sorted(
             list(self._get_types_from_quests(self.relevant_quests)),
             key=lambda quest_type: self.QUEST_TYPE_WEIGHTS[quest_type])
+        
+        remain_quest_slot = self.max_quests - len(self.visible_quests)
 
         for quest_type in quest_types:
-            Log.log_msg(f"Navigating to {quest_type} quests tab.")
-            if kca_u.kca.click_existing(
-                'left', f'quest|filter_tab_{quest_type}.png') == True:
-                kca_u.kca.wait(
-                    'left', f'quest|filter_tab_{quest_type}_active.png',
-                    NEAR_EXACT)
-                api.api.update_from_api({KCSAPIEnum.QUEST_LIST}) #update visible_quests
-            else:
-                Log.log_error(f"Cannot find {quest_type} quests tab.")
-                exit(1)
+            self._to_tab(quest_type)
             
             self.cur_page = 0
-
-            while 1:
+            count = 0
+            while count < 100:
+                Log.log_debug(f"count {count}")
+                Log.log_debug(f"cur_page {self.cur_page}, tot_page {self.tot_page}.")
                 for idx, quest in enumerate(self.visible_quests):
                     if quest == -1:
                         break
@@ -269,7 +279,7 @@ class QuestCore(CoreBase):
                         continue
 
                     quest_i = self.quest_library[quest['api_no']]
-                    Log.log_debug(f"Checking quset {quest_i.name}.")
+                    Log.log_debug(f"Checking quset {quest['api_no']}:{quest_i.name}.")
                     
                     if (    (self.cur_page+1)*5 - idx > 0 
                         and (self.cur_page+1)*5 - idx < 6):
@@ -278,6 +288,7 @@ class QuestCore(CoreBase):
                             self._click_quest_idx(idx - self.cur_page*5)
                             self._track_quest(quest_i)
                             sts.stats.quest.quests_activated += 1
+                            remain_quest_slot -= 1
                         elif (quest_i not in self.relevant_quests 
                               and quest['api_state'] == 2
                               and quest_i.name in cfg.config.quest.quests):
@@ -285,13 +296,21 @@ class QuestCore(CoreBase):
                             self._click_quest_idx(idx - self.cur_page*5)
                             self._untrack_quest(quest_i)
                             sts.stats.quest.quests_deactivated += 1
+                            remain_quest_slot += 1
                 
-                if self.cur_page < self.tot_page:
+                if self.cur_page < self.tot_page :
                     kca_u.kca.click_existing(
                         'lower_right', 'global|page_next.png', pad=PAGE_NAV)
                     self.cur_page += 1
+                elif remain_quest_slot <= 0:
+                    return
                 else:
                     break
+                
+                count += 1
+            if count == 100:
+                Log.log_error("Infinite loop detected, aborting.")
+                exit(1)
 
     def _auto_sortie_map_select(self):
 
@@ -322,7 +341,8 @@ class QuestCore(CoreBase):
                 else:
                     for key in sortie_dict:
                         for i in range(0, sortie_dict[key]):
-                            sortie_list.append(key+"-"+next_quest)
+                            #sortie_list.append(key+"-"+next_quest)
+                            sortie_list.append(next_quest +"-"+ key)
 
                 com.combat.set_sortie_queue(sortie_list)
 
@@ -385,8 +405,9 @@ class QuestCore(CoreBase):
                         & set(q.enemy_context)):
                     continue
             if q.map_context:
-                #The current combat map(ex. 3-5) without quest suffix(ex. 3-5-Bw4)
-                current_combat_map = MapEnum(cfg.config.combat.sortie_map.world_and_map)
+                #The current combat map(ex. 3-5) without quest suffix(ex. 3-5-Bw4
+                
+                current_combat_map = MapEnum("B-" + cfg.config.combat.sortie_map.without_quest)
                 if cfg.config.combat.sortie_map not in q.map_context and current_combat_map not in q.map_context:
                     continue
             if q.expedition_context:

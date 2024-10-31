@@ -1,0 +1,39 @@
+@startuml noro6
+
+-> fleet_switcher: sortie_map_<quest>
+activate fleet_switcher
+
+fleet_switcher -> fleet_switcher: noro6_fleet = get_noro6_fleet
+
+fleet_switcher -> fleet_switcher: production_ids = []
+loop each ship in noro6_fleet
+    fleet_switcher -> fleet_switcher: target_ship = min(port[ship] with == id && >= level) 
+    fleet_switcher -> fleet_switcher: production_ids.append(target_ship[production_id])
+end
+
+fleet_switcher -> ship_switch_module: load_fleet(production_ids)
+
+
+deactivate fleet_switcher
+activate ship_switch_module
+ship_switch_module -> fleet_switcher 
+deactivate ship_switch_module
+
+activate fleet_switcher
+fleet_switcher -> fleet_switcher: noro6_fleet = get_noro6_fleet
+fleet_switcher -> fleet_switcher: production_ids = []
+loop each ship in noro6_fleet
+    loop each equipment in ship
+        fleet_switcher -> fleet_switcher: target_equipment = min(port[equipment] with == id && >= level)
+        fleet_switcher -> fleet_switcher: production_ids.append(target_equipment[production_id])
+    end
+end
+fleet_switcher -> equipment_module: load_equipment(production_ids)
+deactivate fleet_switcher
+activate equipment_module
+equipment_module -> fleet_switcher 
+deactivate equipment_module
+
+@enduml
+
+

@@ -3,6 +3,8 @@ import curses
 import cui.util as util
 from cui.macro import *
 
+from fleet.noro6 import Noro6 
+
 DISABLE = 0
 AUTO = 1
 NORMAL = 2
@@ -10,15 +12,16 @@ NORMAL = 2
 MAP = -1
 WORLD = 1
 
-world_list = {0:"", 1:"1", 2:"2", 3:"3", 4:"4", 5:"5", 6:"6", 7:"7", 8:"E", 9:""}
-map_list = {0:"", 1:"1", 2:"2", 3:"3", 4:"4", 5:"5", 6:"6", 7:"7", 8:""}
+world_list = ["", "1", "2", "3", "4", "5", "6", "7", "E", ""]
+map_list = ["", "1", "2", "3", "4", "5", "6", "7", ""]
+map_variant = []
 mode_list = ["disable(akashi mode)", "auto", "normal"]
 preset_list = {DISABLE:["disable", "akashi mode"], NORMAL:["disable", "auto", "1", "2", "3"]}
 
 def pop_up_menu(stdscr, panel, cur_mode, sortie_map):
 
-    global world_list
-
+    global world_list, map_list
+    
     x_center, y_center = util.get_center_str_location(panel, "SORTIE MODE")
     panel.addstr(0, x_center, "SORTIE MODE", curses.color_pair(LOG))
 
@@ -98,7 +101,6 @@ def pop_up_menu(stdscr, panel, cur_mode, sortie_map):
 
         map_or_world = WORLD
 
-        global world_list, map_list
         for i in range(1, len(world_list) - 1):
             if world_list[i] == sortie_map.split('-')[0]:
                 world_id = i
@@ -147,9 +149,63 @@ def pop_up_menu(stdscr, panel, cur_mode, sortie_map):
                 map_or_world = WORLD
             elif key == KEY_ENTER:
                 break
+            
+        variant_list = []  
+        variant_list = Noro6().get_variant("B-" + world_list[world_id] + '-' + map_list[map_id]) 
+        
+        VARIANT_MAP_SECTION_LEN = 4
+        map_variant = []
+        map_variant.append("")
+        is_variant_exist = False
+        for variant in variant_list:
+            if len(variant.split("-")) == VARIANT_MAP_SECTION_LEN:
+                map_variant.append(variant.split("-")[VARIANT_MAP_SECTION_LEN-1])
+                is_variant_exist = True
+            else:
+                map_variant.append("Null")
+        map_variant.append("")
+                
+        if is_variant_exist == True:
+            x_center, y_center = util.get_center_str_location(panel, "MAP VARIANT")
+            panel.addstr(0, x_center, "MAP VARIANT", curses.color_pair(LOG))
 
+            variant_id = 1
 
-        sortie_map = world_list[world_id] + '-' + map_list[map_id]
+            while 1:
+                x_center, y_center = util.get_center_str_location(panel, "XXXX")
+                
+                panel.addstr(y_center - 1, x_center, "    ", curses.color_pair(LOG))
+                panel.addstr(y_center + 0, x_center, "    ", curses.color_pair(LOG_GREEN_ACTIVE))
+                panel.addstr(y_center + 1, x_center, "    ", curses.color_pair(LOG))
+                
+                panel.refresh()
+                
+                panel.addstr(y_center - 1, x_center, map_variant[variant_id-1], curses.color_pair(LOG))
+                panel.addstr(y_center + 0, x_center, map_variant[variant_id]  , curses.color_pair(LOG_GREEN_ACTIVE))
+                panel.addstr(y_center + 1, x_center, map_variant[variant_id+1], curses.color_pair(LOG))
+                
+                panel.refresh()
+
+                # Wait for next input
+                key = stdscr.getch()
+                if key == curses.KEY_DOWN or key == ord('j'):
+                    if variant_id < len(map_variant) - 2:
+                        variant_id += 1
+                elif key == curses.KEY_UP or key == ord('k'):
+                    if variant_id > 1:
+                        variant_id -= 1
+                elif key == KEY_ENTER:
+                    break
+            
+            if map_variant[variant_id] == "Null":
+                map_variant[variant_id] = ""
+            else:
+                map_variant[variant_id] = "-" + map_variant[variant_id]
+                
+        
+            sortie_map = world_list[world_id] + '-' + map_list[map_id] + map_variant[variant_id]
+        else:
+            sortie_map = world_list[world_id] + '-' + map_list[map_id]
 
         panel.clear()
         panel.border()

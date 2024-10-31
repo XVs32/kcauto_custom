@@ -60,6 +60,9 @@ class Navigate(object):
                 Log.log_error("Nav module could not figure out current location.")
                 raise FindFailed()
 
+            kca_u.kca.hover('top')
+            kca_u.kca.sleep()
+            
             if current_location.name == 'home':
                 # Starting from home screen
                 if destination == 'home':

@@ -243,6 +243,11 @@ class ApiWrapper(object):
 
     def _process_require_info(self, data):
         try:
+            JsonData.dump_json(data['api_data']['api_slot_item'], 'data|temp|equipment_list.json')
+        except KeyError:
+            Log.log_debug("No equipment found in API response.")
+            
+        try:
             exp_prov_resupply = data['api_data']['api_extra_supply'][0] == 1
             res.resupply.exp_provisional_enabled = exp_prov_resupply
         except KeyError:
@@ -257,8 +262,12 @@ class ApiWrapper(object):
 
         try:
             ship_data = data['api_data']['api_ship']
-            shp.ships.update_local_ships(ship_data)
+            shp.ships.update_ship_pool(ship_data)
             equ.equipment.get_loaded_equipment(ship_data)
+            JsonData.dump_json(ship_data, 'data|temp|local_ship.json')
+            flt.fleets.load_custom_fleets()
+            flt.fleets.load_custom_exp_pool()
+            
             
         except KeyError:
             Log.log_debug("No ship data found in API response.")
@@ -355,7 +364,7 @@ class ApiWrapper(object):
     def _process_battle_deck(self, data):
         try:
             deck_data = data['api_data']['api_ship_data']
-            shp.ships.update_local_ships(deck_data)
+            shp.ships.update_ship_pool(deck_data)
             for fleet in flt.fleets.combat_fleets:
                 fleet.update_ship_data()
         except KeyError:

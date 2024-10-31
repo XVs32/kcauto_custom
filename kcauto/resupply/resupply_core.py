@@ -58,8 +58,8 @@ class ResupplyCore(object):
 
     def _get_fleets_to_resupply(self):
         fleets_to_resupply = []
-        for fleet_id in flt.fleets.fleets:
-            fleet = flt.fleets.fleets[fleet_id]
+        for fleet_id in flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY]:
+            fleet = flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][fleet_id]
             if fleet.enabled and fleet.needs_resupply:
                 fleets_to_resupply.append(fleet)
         return fleets_to_resupply

@@ -120,7 +120,7 @@ class CombatCore(CoreBase):
         for map_data in data:
             api_id = map_data['api_id']
             if api_id < 400:
-                map_enum = MapEnum(f"{str(api_id)[0]}-{str(api_id)[1]}")
+                map_enum = MapEnum(f"B-{str(api_id)[0]}-{str(api_id)[1]}")
 
                 self.available_maps[map_enum.world_and_map] = {
                     'enum': map_enum,
@@ -137,7 +137,7 @@ class CombatCore(CoreBase):
                 if event_map_id_start is None:
                     event_map_id_start = api_id
                 event_map_delta = api_id - event_map_id_start + 1
-                map_enum = MapEnum(f"E-{event_map_delta}")
+                map_enum = MapEnum(f"B-E-{event_map_delta}")
 
                 self.available_maps[map_enum.world_and_map] = {
                     'enum': map_enum,
@@ -155,14 +155,14 @@ class CombatCore(CoreBase):
         if not self.enabled or not self.time_to_sortie:
             return False
         if cfg.config.combat.port_check:
-            if shp.ships.current_ship_count == shp.ships.max_ship_count:
+            if shp.ships.ship_count == shp.ships.max_ship_count:
                 Log.log_msg("Port is full.")
                 self.set_next_sortie_time(15)
                 return False
         if cfg.config.combat.sortie_map == MapEnum.auto_map_selete: #No map available in auto sortie map select mode
                 return False
         if cfg.config.combat.sortie_map.world == 'E':
-            if shp.ships.current_ship_count >= shp.ships.max_ship_count - 5:
+            if shp.ships.ship_count >= shp.ships.max_ship_count - 5:
                 Log.log_warn("Port is too full for event map.")
                 self.set_next_sortie_time(15)
                 return False
@@ -731,7 +731,10 @@ class CombatCore(CoreBase):
                 self.map_cleared = True
         if 'api_get_ship' in data:
             dropped_ship_id = data['api_get_ship']['api_ship_id']
-            ship = shp.ships.get_ship_from_api_id(dropped_ship_id)
+            # Add temp empty local static data ship to ship pool, 
+            # data will be updated when back to port
+            ship = shp.ships.create_ship(
+                static_data = shp.ships.get_ship_static_data(dropped_ship_id))
             self.rescued_ships.append(ship)
             Log.log_success(f"Rescued {ship.name} (#{ship.sortno}).")
             sts.stats.combat.ships_rescued += 1

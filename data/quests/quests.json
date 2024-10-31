@@ -2,344 +2,787 @@
   "Bd1": {
     "id": 201,
     "type": "daily",
-    "intervals": [1, 0, 0],
-    "recommended_map": ["1-1"]
+    "intervals": [
+      1,
+      0,
+      0
+    ],
+    "recommended_map": [
+      "B-1-1"
+    ]
   },
   "Bd2": {
     "id": 216,
     "type": "daily",
-    "intervals": [1, 0, 0],
-    "recommended_map": ["1-1"]
+    "intervals": [
+      1,
+      0,
+      0
+    ],
+    "recommended_map": [
+      "B-1-1"
+    ]
   },
   "Bd3": {
     "id": 210,
     "type": "daily",
-    "intervals": [5, 0, 0],
-    "recommended_map": ["1-1"]
+    "intervals": [
+      5,
+      0,
+      0
+    ],
+    "recommended_map": [
+      "B-1-1"
+    ]
   },
   "Bd4": {
     "id": 211,
     "type": "other",
-    "intervals": [2, 0, 0],
-    "enemy_context": ["carriers"],
-    "recommended_map": ["2-1"]
+    "intervals": [
+      2,
+      0,
+      0
+    ],
+    "enemy_context": [
+      "carriers"
+    ],
+    "recommended_map": [
+      "B-2-1"
+    ]
   },
   "Bd5": {
     "id": 218,
     "type": "daily",
-    "intervals": [2, 0, 0],
-    "enemy_context": ["transports"],
-    "recommended_map": ["2-2-A"]
+    "intervals": [
+      2,
+      0,
+      0
+    ],
+    "enemy_context": [
+      "transports"
+    ],
+    "recommended_map": [
+      "B-2-2-A"
+    ]
   },
   "Bd6": {
     "id": 212,
     "type": "other",
-    "intervals": [2, 0, 0],
-    "enemy_context": ["transports"],
-    "recommended_map": ["2-2-A"]
+    "intervals": [
+      2,
+      0,
+      0
+    ],
+    "enemy_context": [
+      "transports"
+    ],
+    "recommended_map": [
+      "B-2-2-A"
+    ]
   },
   "Bd7": {
     "id": 226,
     "type": "daily",
-    "intervals": [5, 0, 0],
-    "map_context": ["2-1", "2-2", "2-3", "2-4", "2-5"],
-    "recommended_map": ["2-1"]
+    "intervals": [
+      5,
+      0,
+      0
+    ],
+    "map_context": [
+      "B-2-1",
+      "B-2-2",
+      "B-2-3",
+      "B-2-4",
+      "B-2-5"
+    ],
+    "recommended_map": [
+      "B-2-1"
+    ]
   },
   "Bd8": {
     "id": 230,
     "type": "daily",
-    "intervals": [2, 0, 0],
-    "enemy_context": ["subs"],
-    "recommended_map": ["1-5"]
+    "intervals": [
+      2,
+      0,
+      0
+    ],
+    "enemy_context": [
+      "subs"
+    ],
+    "recommended_map": [
+      "B-1-5"
+    ]
   },
   "Bw1": {
     "id": 214,
     "type": "weekly",
-    "intervals": [12, 0, 0],
-    "recommended_map": ["1-1"]
+    "intervals": [
+      12,
+      0,
+      0
+    ],
+    "recommended_map": [
+      "B-1-1"
+    ]
   },
   "Bw2": {
     "id": 220,
     "type": "weekly",
-    "intervals": [5, 0, 0],
-    "enemy_context": ["carriers"],
-    "recommended_map": ["2-1"]
+    "intervals": [
+      5,
+      0,
+      0
+    ],
+    "enemy_context": [
+      "carriers"
+    ],
+    "recommended_map": [
+      "B-2-1"
+    ]
   },
   "Bw3": {
     "id": 213,
     "type": "weekly",
-    "intervals": [5, 0, 0],
-    "enemy_context": ["transports"],
-    "recommended_map": ["2-2-A"]
+    "intervals": [
+      5,
+      0,
+      0
+    ],
+    "enemy_context": [
+      "transports"
+    ],
+    "recommended_map": [
+      "B-2-2-A"
+    ]
   },
   "Bw4": {
     "id": 221,
     "type": "weekly",
-    "intervals": [10, 0, 0],
-    "enemy_context": ["transports"],
-    "recommended_map": ["2-2-A"]
+    "intervals": [
+      10,
+      0,
+      0
+    ],
+    "enemy_context": [
+      "transports"
+    ],
+    "recommended_map": [
+      "B-2-2-A"
+    ]
   },
   "Bw5": {
     "id": 228,
     "type": "weekly",
-    "intervals": [5, 0, 0],
-    "enemy_context": ["subs"],
-    "recommended_map": ["1-5"]
+    "intervals": [
+      5,
+      0,
+      0
+    ],
+    "enemy_context": [
+      "subs"
+    ],
+    "recommended_map": [
+      "B-1-5"
+    ]
   },
   "Bw6": {
     "id": 229,
     "type": "weekly",
-    "intervals": [12, 0, 0],
-    "map_context": ["4-1", "4-2", "4-3", "4-4", "4-5"],
-    "recommended_map": ["4-1"]
+    "intervals": [
+      12,
+      0,
+      0
+    ],
+    "map_context": [
+      "B-4-1",
+      "B-4-2",
+      "B-4-3",
+      "B-4-4",
+      "B-4-5"
+    ],
+    "recommended_map": [
+      "B-4-1"
+    ]
   },
   "Bw7": {
     "id": 241,
     "type": "weekly",
-    "intervals": [5, 0, 0],
-    "map_context": ["3-3", "3-4", "3-5"],
-    "recommended_map": ["3-3"]
+    "intervals": [
+      5,
+      0,
+      0
+    ],
+    "map_context": [
+      "B-3-3",
+      "B-3-4",
+      "B-3-5"
+    ],
+    "recommended_map": [
+      "B-3-3"
+    ]
   },
   "Bw8": {
     "id": 242,
     "type": "weekly",
-    "intervals": [1, 0, 0],
-    "map_context": ["4-4"],
-    "recommended_map": ["4-4"]
+    "intervals": [
+      1,
+      0,
+      0
+    ],
+    "map_context": [
+      "B-4-4"
+    ],
+    "recommended_map": [
+      "B-4-4"
+    ]
   },
   "Bw9": {
     "id": 243,
     "type": "weekly",
-    "intervals": [2, 0, 0],
-    "map_context": ["5-2"],
-    "recommended_map": ["5-2"]
+    "intervals": [
+      2,
+      0,
+      0
+    ],
+    "map_context": [
+      "B-5-2"
+    ],
+    "recommended_map": [
+      "B-5-2"
+    ]
   },
   "Bw10": {
     "id": 261,
     "type": "weekly",
-    "intervals": [3, 0, 0],
-    "map_context": ["1-5"],
-    "recommended_map": ["1-5"]
+    "intervals": [
+      3,
+      0,
+      0
+    ],
+    "map_context": [
+      "B-1-5"
+    ],
+    "recommended_map": [
+      "B-1-5"
+    ]
   },
   "Bm1": {
     "id": 249,
     "type": "monthly",
-    "map_context": ["2-5-Bm1"],
-    "recommended_map": ["2-5-Bm1"]
+    "map_context": [
+      "Bm1-2-5"
+    ],
+    "recommended_map": [
+      "Bm1-2-5"
+    ]
   },
   "Bm2": {
     "id": 256,
     "type": "monthly",
-    "intervals": [1, 0, 0],
-    "map_context": ["6-1"],
-    "recommended_map": ["6-1"]
+    "intervals": [
+      1,
+      0,
+      0
+    ],
+    "map_context": [
+      "B-6-1"
+    ],
+    "recommended_map": [
+      "B-6-1"
+    ]
   },
   "Bm3": {
     "id": 257,
     "type": "monthly",
-    "map_context": ["1-4-Bm3"],
-    "recommended_map": ["1-4-Bm3"]
+    "map_context": [
+      "Bm3-1-4"
+    ],
+    "recommended_map": [
+      "Bm3-1-4"
+    ]
   },
   "Bm4": {
     "id": 259,
     "type": "monthly",
-    "map_context": ["5-1-Bm4"],
-    "recommended_map": ["5-1-Bm4"]
+    "map_context": [
+      "Bm4-5-1"
+    ],
+    "recommended_map": [
+      "Bm4-5-1"
+    ]
   },
   "Bm5": {
     "id": 265,
     "type": "monthly",
-    "intervals": [5, 0, 0],
-    "map_context": ["1-5"],
-    "recommended_map": ["1-5"]
+    "intervals": [
+      5,
+      0,
+      0
+    ],
+    "map_context": [
+      "B-1-5"
+    ],
+    "recommended_map": [
+      "B-1-5"
+    ]
   },
   "Bm6": {
     "id": 264,
     "type": "monthly",
-    "map_context": ["4-2-Bm6"],
-    "recommended_map": ["4-2-Bm6"]
+    "map_context": [
+      "Bm6-4-2"
+    ],
+    "recommended_map": [
+      "Bm6-4-2"
+    ]
   },
   "Bm7": {
     "id": 266,
     "type": "monthly",
-    "map_context": ["2-5-Bm7"],
-    "recommended_map": ["2-5-Bm7"]
+    "map_context": [
+      "Bm7-2-5"
+    ],
+    "recommended_map": [
+      "Bm7-2-5"
+    ]
   },
   "Bm8": {
     "id": 280,
     "type": "monthly",
-    "map_context": ["1-2-Bm8", "1-3-Bm8", "1-4-Bm8", "2-1-Bm8"],
-    "recommended_map": ["1-2-Bm8", "1-3-Bm8", "1-4-Bm8", "2-1-Bm8"]
+    "map_context": [
+      "Bm8-1-2",
+      "Bm8-1-3",
+      "Bm8-1-4",
+      "Bm8-2-1"
+    ],
+    "recommended_map": [
+      "Bm8-1-2",
+      "Bm8-1-3",
+      "Bm8-1-4",
+      "Bm8-2-1"
+    ]
   },
   "Bq1": {
     "id": 822,
     "type": "other",
-    "map_context": ["2-4"],
-    "recommended_map": ["2-4"]
+    "map_context": [
+      "B-2-4"
+    ],
+    "recommended_map": [
+      "B-2-4"
+    ]
   },
   "Bq2": {
     "id": 854,
     "type": "other",
-    "map_context": ["2-4", "6-1", "6-3", "6-4"],
-    "recommended_map": ["2-4", "6-1", "6-3", "6-4"]
+    "map_context": [
+      "B-2-4",
+      "B-6-1",
+      "B-6-3",
+      "B-6-4"
+    ],
+    "recommended_map": [
+      "B-2-4",
+      "B-6-1",
+      "B-6-3",
+      "B-6-4"
+    ]
   },
   "Bq3": {
     "id": 861,
     "type": "other",
-    "map_context": ["1-6-Bq3"],
-    "recommended_map": ["1-6-Bq3"]
+    "map_context": [
+      "Bq3-1-6"
+    ],
+    "recommended_map": [
+      "Bq3-1-6"
+    ]
   },
   "Bq4": {
     "id": 862,
     "type": "other",
-    "map_context": ["6-3-Bq4"],
-    "recommended_map": ["6-3-Bq4"]
+    "map_context": [
+      "Bq4-6-3"
+    ],
+    "recommended_map": [
+      "Bq4-6-3"
+    ]
   },
   "Bq5": {
     "id": 873,
     "type": "other",
-    "map_context": ["3-1-Bq5", "3-2-Bq5", "3-3-Bq5"],
-    "recommended_map": ["3-3-Bq5", "3-1-Bq5", "3-2-Bq5"]
+    "map_context": [
+      "Bq5-3-1",
+      "Bq5-3-2",
+      "Bq5-3-3"
+    ],
+    "recommended_map": [
+      "Bq5-3-3",
+      "Bq5-3-1",
+      "Bq5-3-2"
+    ]
   },
   "Bq6": {
     "id": 875,
     "type": "other",
-    "map_context": ["5-4-Bq6"],
-    "recommended_map": ["5-4-Bq6"]
+    "map_context": [
+      "Bq6-5-4"
+    ],
+    "recommended_map": [
+      "Bq6-5-4"
+    ]
   },
   "Bq7": {
     "id": 888,
     "type": "other",
-    "map_context": ["5-1-Bq7", "5-3-Bq7", "5-4-Bq7"],
-    "recommended_map": ["5-1-Bq7", "5-3-Bq7", "5-4-Bq7"]
+    "map_context": [
+      "Bq7-5-1",
+      "Bq7-5-3",
+      "Bq7-5-4"
+    ],
+    "recommended_map": [
+      "Bq7-5-1",
+      "Bq7-5-3",
+      "Bq7-5-4"
+    ]
   },
   "Bq8": {
     "id": 893,
     "type": "other",
-    "map_context": ["1-5", "7-1", "7-2"],
-    "recommended_map": ["7-2-G", "7-2-G", "7-2-G", "7-2-M", "7-2-M", "7-2-M", "7-1", "7-1", "7-1", "1-5", "1-5", "1-5"]
+    "map_context": [
+      "B-1-5",
+      "B-7-1",
+      "B-7-2",
+      "B-7-2-G",
+      "B-7-2-M"
+    ],
+    "recommended_map": [
+      "B-7-2-G",
+      "B-7-2-G",
+      "B-7-2-G",
+      "B-7-2-M",
+      "B-7-2-M",
+      "B-7-2-M",
+      "B-7-1",
+      "B-7-1",
+      "B-7-1",
+      "B-1-5",
+      "B-1-5",
+      "B-1-5"
+    ]
   },
   "Bq9": {
     "id": 894,
     "type": "other",
-    "map_context": ["1-3-Bq9", "1-4-Bq9", "2-1-Bq9", "2-2-Bq9", "2-3-Bq9"],
-    "recommended_map": ["1-3-Bq9", "1-4-Bq9", "2-1-Bq9", "2-2-Bq9", "2-3-Bq9"]
+    "map_context": [
+      "Bq9-1-3",
+      "Bq9-1-4",
+      "Bq9-2-1",
+      "Bq9-2-2",
+      "Bq9-2-3"
+    ],
+    "recommended_map": [
+      "Bq9-1-3",
+      "Bq9-1-4",
+      "Bq9-2-1",
+      "Bq9-2-2",
+      "Bq9-2-3"
+    ]
   },
   "Bq10": {
     "id": 872,
     "type": "other",
-    "map_context": ["5-5", "6-2", "6-5", "7-2"],
-    "recommended_map": ["5-5", "6-2", "6-5", "7-2-M"]
+    "map_context": [
+      "B-5-5",
+      "B-6-2",
+      "B-6-5",
+      "B-7-2",
+      "B-7-2-M"
+    ],
+    "recommended_map": [
+      "B-5-5",
+      "B-6-2",
+      "B-6-5",
+      "B-7-2-M"
+    ]
   },
   "Bq11": {
     "id": 284,
     "type": "other",
-    "map_context": ["1-4-Bq11", "2-1-Bq11", "2-2-Bq11", "2-3-Bq11"],
-    "recommended_map": ["1-4-Bq11", "2-1-Bq11", "2-2-Bq11", "2-3-Bq11"]
+    "map_context": [
+      "Bq11-1-4",
+      "Bq11-2-1",
+      "Bq11-2-2",
+      "Bq11-2-3"
+    ],
+    "recommended_map": [
+      "Bq11-1-4",
+      "Bq11-2-1",
+      "Bq11-2-2",
+      "Bq11-2-3"
+    ]
   },
   "Bq12": {
     "id": 845,
     "type": "other",
-    "map_context": ["4-1", "4-2", "4-3", "4-4", "4-5"],
-    "recommended_map": ["4-1", "4-2", "4-3", "4-4", "4-5"]
+    "map_context": [
+      "B-4-1",
+      "B-4-2",
+      "B-4-3",
+      "B-4-4",
+      "B-4-5"
+    ],
+    "recommended_map": [
+      "B-4-1",
+      "B-4-2",
+      "B-4-3",
+      "B-4-4",
+      "B-4-5"
+    ]
   },
   "Bq13": {
     "id": 903,
     "type": "other",
-    "map_context": ["5-1", "5-4", "6-4", "6-5"],
-    "recommended_map": ["5-1", "5-4", "6-4", "6-5"]
+    "map_context": [
+      "B-5-1",
+      "B-5-4",
+      "B-6-4",
+      "B-6-5"
+    ],
+    "recommended_map": [
+      "B-5-1",
+      "B-5-4",
+      "B-6-4",
+      "B-6-5"
+    ]
   },
   "By1": {
     "id": 904,
     "type": "other",
-    "map_context": ["2-5", "3-4", "4-5", "5-3"],
-    "recommended_map": ["2-5", "3-4", "4-5", "5-3"]
+    "map_context": [
+      "B-2-5",
+      "B-3-4",
+      "B-4-5",
+      "B-5-3"
+    ],
+    "recommended_map": [
+      "B-2-5",
+      "B-3-4",
+      "B-4-5",
+      "B-5-3"
+    ]
   },
   "By2": {
     "id": 905,
     "type": "other",
-    "map_context": ["1-1", "1-2", "1-3", "1-5", "1-6"],
-    "recommended_map": ["1-1", "1-2", "1-3", "1-5", "1-6"]
+    "map_context": [
+      "B-1-1",
+      "B-1-2",
+      "B-1-3",
+      "B-1-5",
+      "B-1-6"
+    ],
+    "recommended_map": [
+      "B-1-1",
+      "B-1-2",
+      "B-1-3",
+      "B-1-5",
+      "B-1-6"
+    ]
   },
   "By3": {
     "id": 912,
     "type": "other",
-    "map_context": ["1-3", "2-1", "2-2", "2-3", "1-6"],
-    "recommended_map": ["1-3", "2-1", "2-2", "2-3", "1-6"]
+    "map_context": [
+      "B-1-3",
+      "B-2-1",
+      "B-2-2",
+      "B-2-3",
+      "B-1-6"
+    ],
+    "recommended_map": [
+      "B-1-3",
+      "B-2-1",
+      "B-2-2",
+      "B-2-3",
+      "B-1-6"
+    ]
   },
   "By4": {
     "id": 914,
     "type": "other",
-    "map_context": ["4-1", "4-2", "4-3", "4-4"],
-    "recommended_map": ["4-1", "4-2", "4-3", "4-4"]
+    "map_context": [
+      "B-4-1",
+      "B-4-2",
+      "B-4-3",
+      "B-4-4"
+    ],
+    "recommended_map": [
+      "B-4-1",
+      "B-4-2",
+      "B-4-3",
+      "B-4-4"
+    ]
   },
   "By5": {
     "id": 928,
     "type": "other",
-    "map_context": ["7-2", "7-3", "4-2"],
-    "recommended_map": ["7-2-M", "7-3-P", "4-2"]
+    "map_context": [
+      "B-7-2",
+      "B-7-2-M",
+      "B-7-3-P",
+      "B-7-3",
+      "B-4-2"
+    ],
+    "recommended_map": [
+      "B-7-2-M",
+      "B-7-3-P",
+      "B-4-2"
+    ]
   },
   "By6": {
     "id": 944,
     "type": "other",
-    "map_context": ["1-2", "1-3", "1-4"],
-    "recommended_map": ["1-2", "1-3", "1-4"]
+    "map_context": [
+      "B-1-2",
+      "B-1-3",
+      "B-1-4"
+    ],
+    "recommended_map": [
+      "B-1-2",
+      "B-1-3",
+      "B-1-4"
+    ]
   },
   "By7": {
     "id": 945,
     "type": "other",
-    "map_context": ["1-5", "2-1", "1-6"],
-    "recommended_map": ["1-5", "2-1", "1-6"]
+    "map_context": [
+      "B-1-5",
+      "B-2-1",
+      "B-1-6"
+    ],
+    "recommended_map": [
+      "B-1-5",
+      "B-2-1",
+      "B-1-6"
+    ]
   },
   "By8": {
     "id": 946,
     "type": "other",
-    "map_context": ["2-2", "2-3", "2-4"],
-    "recommended_map": ["2-2", "2-3", "2-4"]
+    "map_context": [
+      "B-2-2",
+      "B-2-3",
+      "B-2-4"
+    ],
+    "recommended_map": [
+      "B-2-2",
+      "B-2-3",
+      "B-2-4"
+    ]
   },
   "By9": {
     "id": 947,
     "type": "other",
-    "map_context": ["3-1", "3-3", "3-4", "3-5"],
-    "recommended_map": ["3-1", "3-3", "3-4", "3-5"]
+    "map_context": [
+      "B-3-1",
+      "B-3-3",
+      "B-3-4",
+      "B-3-5"
+    ],
+    "recommended_map": [
+      "B-3-1",
+      "B-3-3",
+      "B-3-4",
+      "B-3-5"
+    ]
   },
   "By10": {
     "id": 948,
     "type": "other",
-    "map_context": ["5-2", "5-5", "6-4", "6-5"],
-    "recommended_map": ["5-2", "5-5", "6-4", "6-5"]
+    "map_context": [
+      "B-5-2",
+      "B-5-5",
+      "B-6-4",
+      "B-6-5"
+    ],
+    "recommended_map": [
+      "B-5-2",
+      "B-5-5",
+      "B-6-4",
+      "B-6-5"
+    ]
   },
   "By11": {
     "id": 973,
     "type": "other",
-    "map_context": ["3-1", "3-3", "4-3", "7-3", "7-3-P"],
-    "recommended_map": ["3-1", "3-3", "4-3", "7-3-P"]
+    "map_context": [
+      "B-3-1",
+      "B-3-3",
+      "B-4-3",
+      "B-7-3",
+      "B-7-3-P"
+    ],
+    "recommended_map": [
+      "B-3-1",
+      "B-3-3",
+      "B-4-3",
+      "B-7-3-P"
+    ]
   },
   "By12": {
     "id": 975,
     "type": "other",
-    "map_context": ["1-5", "2-3", "3-2", "5-3"],
-    "recommended_map": ["1-5", "2-3", "3-2", "5-3"]
+    "map_context": [
+      "B-1-5",
+      "B-2-3",
+      "B-3-2",
+      "B-5-3"
+    ],
+    "recommended_map": [
+      "B-1-5",
+      "B-2-3",
+      "B-3-2",
+      "B-5-3"
+    ]
   },
   "C2": {
     "id": 303,
     "type": "daily",
-    "intervals": [0, 1, 0]
+    "intervals": [
+      0,
+      1,
+      0
+    ]
   },
   "C3": {
     "id": 304,
     "type": "daily",
-    "intervals": [0, 1, 0]
+    "intervals": [
+      0,
+      1,
+      0
+    ]
   },
   "C4": {
     "id": 302,
     "type": "weekly",
-    "intervals": [0, 5, 0]
+    "intervals": [
+      0,
+      5,
+      0
+    ]
   },
   "C8": {
     "id": 311,
     "type": "monthly",
-    "intervals": [0, 5, 0]
+    "intervals": [
+      0,
+      5,
+      0
+    ]
   },
   "C16": {
     "id": 318,
@@ -352,69 +795,130 @@
   "D2": {
     "id": 402,
     "type": "daily",
-    "intervals": [0, 0, 1]
+    "intervals": [
+      0,
+      0,
+      1
+    ]
   },
   "D3": {
     "id": 403,
     "type": "daily",
-    "intervals": [0, 0, 5]
+    "intervals": [
+      0,
+      0,
+      5
+    ]
   },
   "D4": {
     "id": 404,
     "type": "weekly",
-    "intervals": [0, 0, 10]
+    "intervals": [
+      0,
+      0,
+      10
+    ]
   },
   "D9": {
     "id": 410,
     "type": "weekly",
-    "intervals": [0, 0, 1],
-    "expedition_context": [37, 38]
+    "intervals": [
+      0,
+      0,
+      1
+    ],
+    "expedition_context": [
+      37,
+      38
+    ]
   },
   "D11": {
     "id": 411,
     "type": "weekly",
-    "intervals": [0, 0, 7],
-    "expedition_context": [37, 38]
+    "intervals": [
+      0,
+      0,
+      7
+    ],
+    "expedition_context": [
+      37,
+      38
+    ]
   },
   "D22": {
     "id": 424,
     "type": "monthly",
-    "intervals": [0, 0, 5],
-    "expedition_context": [5]
+    "intervals": [
+      0,
+      0,
+      5
+    ],
+    "expedition_context": [
+      5
+    ]
   },
   "D24": {
     "id": 426,
     "type": "other",
-    "expedition_context": [3, 4, 5, 10]
+    "expedition_context": [
+      3,
+      4,
+      5,
+      10
+    ]
   },
   "E3": {
     "id": 503,
     "type": "daily",
-    "intervals": [5, 0, 0]
+    "intervals": [
+      5,
+      0,
+      0
+    ]
   },
   "E4": {
     "id": 504,
     "type": "daily",
-    "intervals": [15, 15, 15]
+    "intervals": [
+      15,
+      15,
+      15
+    ]
   },
   "F5": {
     "id": 605,
     "type": "daily",
-    "intervals": [0, 0, 0]
+    "intervals": [
+      0,
+      0,
+      0
+    ]
   },
   "F6": {
     "id": 606,
     "type": "daily",
-    "intervals": [0, 0, 0]
+    "intervals": [
+      0,
+      0,
+      0
+    ]
   },
   "F7": {
     "id": 607,
     "type": "daily",
-    "intervals": [0, 0, 0]
+    "intervals": [
+      0,
+      0,
+      0
+    ]
   },
   "F8": {
     "id": 608,
     "type": "daily",
-    "intervals": [0, 0, 0]
+    "intervals": [
+      0,
+      0,
+      0
+    ]
   }
 }
