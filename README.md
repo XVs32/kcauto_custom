@@ -1,7 +1,7 @@
 # kcauto_custom
 
-### ***Latest download(2024/2/15)*** [***here***](https://github.com/XVs32/kcauto_custom/releases/tag/v2.2.0) 
-### ***E1 map data pack(2024/3/07)*** [***here***](https://github.com/XVs32/kcauto_custom/releases/tag/event_map_pack)  **(A big shout out to [Synexcu](https://github.com/Synexcu), the author of this data pack)**
+### ***Latest download(2024/3/11)*** [***here***](https://github.com/XVs32/kcauto_custom/releases/tag/v2.2.1) 
+### ***E1～E4 map data pack(2024/4/02)*** [***here***](https://github.com/XVs32/kcauto_custom/releases/tag/event_map_pack)  **(A big shout out to [Synexcu](https://github.com/Synexcu), the author of this data pack)**
 
 
 **[kcauto_custom](https://github.com/XVs32/kcauto_custom)** is a linux customized version of an archived project [kcauto](https://github.com/perryhuynh/kcauto) that includes additional features and functionality.  

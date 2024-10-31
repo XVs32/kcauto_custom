@@ -1,14 +1,27 @@
 from datetime import timedelta
 
-import repair.repair_core as rep
-import ships.ships_core as shp
 from kca_enums.damage_states import DamageStateEnum
 from kca_enums.fatigue_states import FatigueStateEnum
 from kca_enums.ship_types import ShipTypeEnum
 from util.kc_time import KCTime
+from ships.equipment import equipment
 
 
 class Ship(object):
+    
+    EMPTY_LOCAL_DATA = {
+        'api_id': 0,
+        'api_lv':0,
+        'api_nowhp':0,
+        'api_maxhp':0,
+        'api_bull':0,
+        'api_fuel':0,
+        'api_cond':0,
+        'api_locked':False,
+        'api_ndock_time':0,
+        'api_slot_ex':0
+    }
+    
     _name = None
     _name_jp = None
     api_id = None       #ship name id
@@ -16,7 +29,8 @@ class Ship(object):
     sort_id = None
     ship_type = None    #stype api
     ship_family = None  #ctype api
-    local_id = None     #The production code of a ship
+    slot_num = None
+    production_id = None     #The production code of a ship
     level = None
     hp = None
     hp_max = None
@@ -27,37 +41,36 @@ class Ship(object):
     morale = None
     locked = None
     ndock_time_ms = None
+    slot_ex = None
+    
+    equipments :equipment = []
 
-    def __init__(self, ship_id, id_type='api_id', local_data=None):
-        for ship in shp.ships.ship_library:
-            match_id = None
-            if id_type == 'api_id':
-                match_id = ship['api_id']
-            elif id_type == 'sortno':
-                match_id = ship['api_sortno']
+    def __init__(self, static_data, local_data, equipments = None):
+        
+        self.api_id = static_data['api_id']
+        self.sortno = static_data['api_sortno']
+        self.sort_id = static_data['api_sort_id']
+        self.name = static_data['api_name']
+        self.name_jp = static_data['api_name']
+        self.ship_type = ShipTypeEnum(static_data['api_stype'])
+        self.ship_family = static_data['api_ctype']
+        self.slot_num = static_data['api_slot_num']
+        self.ammo_max = static_data['api_bull_max']
+        self.fuel_max = static_data['api_fuel_max']
 
-            if match_id == ship_id:
-                self.api_id = ship['api_id']
-                self.sortno = ship['api_sortno']
-                self.sort_id = ship['api_sort_id']
-                self.name = ship['api_name']
-                self.name_jp = ship['api_name']
-                self.ship_type = ShipTypeEnum(ship['api_stype'])
-                self.ship_family = ship['api_ctype']
-                self.ammo_max = ship['api_bull_max']
-                self.fuel_max = ship['api_fuel_max']
-                break
-
-        if local_data:
-            self.local_id = local_data['api_id']
-            self.level = local_data['api_lv']
-            self.hp = local_data['api_nowhp']
-            self.hp_max = local_data['api_maxhp']
-            self.ammo = local_data['api_bull']
-            self.fuel = local_data['api_fuel']
-            self.morale = local_data['api_cond']
-            self.locked = local_data['api_locked'] == 1
-            self.ndock_time_ms = local_data['api_ndock_time']
+        self.production_id = local_data['api_id']
+        self.level = local_data['api_lv']
+        self.hp = local_data['api_nowhp']
+        self.hp_max = local_data['api_maxhp']
+        self.ammo = local_data['api_bull']
+        self.fuel = local_data['api_fuel']
+        self.morale = local_data['api_cond']
+        self.locked = local_data['api_locked'] == 1
+        self.ndock_time_ms = local_data['api_ndock_time']
+        self.slot_ex = local_data['api_slot_ex']
+        
+            
+        self.equipments = equipments
 
     @property
     def name(self):
@@ -65,12 +78,6 @@ class Ship(object):
 
     @name.setter
     def name(self, value):
-        if self.api_id in shp.ships.name_db:
-            name_db_entry = shp.ships.name_db[self.api_id]
-            if name_db_entry['non_jp']:
-                value = name_db_entry['non_jp']
-            elif name_db_entry['jp']:
-                value = name_db_entry['jp']
         self._name = value
 
     @property
@@ -78,9 +85,7 @@ class Ship(object):
         return self._name_jp
     @name_jp.setter
     def name_jp(self, value):
-        if self.api_id in shp.ships.name_db:
-            name_db_entry = shp.ships.name_db[self.api_id]
-            self._name_jp = name_db_entry['jp']
+        self._name_jp = value
 
 
     @property
@@ -91,8 +96,6 @@ class Ship(object):
     def damage(self):
         if self.hp == -1:
             return DamageStateEnum.RETREATED
-        elif self.local_id in rep.repair.ships_under_repair:
-            return DamageStateEnum.REPAIRING
         else:
             return DamageStateEnum.get_damage_state_from_hp_percent(self.hp_p)
 
@@ -124,12 +127,6 @@ class Ship(object):
             self.fuel = self.fuel_max
 
     @property
-    def under_repair(self):
-        if self.damage is DamageStateEnum.REPAIRING:
-            return True
-        return False
-
-    @property
     def repair_time_delta(self):
         if type(self.ndock_time_ms) is int:
             return KCTime.seconds_to_timedelta(self.ndock_time_ms // 1000)
@@ -141,7 +138,7 @@ class Ship(object):
     def __repr__(self):
         return (
             f"{self.name} (#{self.sortno}:{self.api_id}:{self.sort_id}) / "
-            f"{self.ship_type.name} lvl{self.level} ({self.local_id}) / "
+            f"{self.ship_type.name} lvl{self.level} ({self.production_id}) / "
             f"HP:{self.hp}/{self.hp_max} ({self.hp_p:.3n}:"
             f"{self.damage.name}) / "
             f"F:{self.fuel}/{self.fuel_max} / "

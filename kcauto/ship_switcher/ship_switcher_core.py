@@ -76,7 +76,7 @@ class ShipSwitcherCore(object):
                 """End the switching process since the slots after this slot are empty"""
                 break
 
-            self.switch_slot_by_id(switch_info["slot_id"], switch_info["ship"].local_id)
+            self.switch_slot_by_id(switch_info["slot_id"], switch_info["ship"].production_id)
 
             """self._select_switch_button(switch_info["slot_id"])
             kca_u.kca.sleep(2)
@@ -147,9 +147,9 @@ class ShipSwitcherCore(object):
     def _get_ship_idx_by_local_id(self, local_id = 0):
 
         ship_list = self._local_ships_sorted_by_levels
-
+        
         for i in range(len(ship_list)):
-            if ship_list[i].local_id == local_id:
+            if ship_list[i].production_id == local_id:
                 return i
 
         raise ValueError("Can not find the specified ship")
@@ -240,7 +240,7 @@ class ShipSwitcherCore(object):
         """tot_pages = (shp.ships.current_ship_count - 1) // 10 + 1"""
         """Which is a bit cleaner and faster"""
         if mode == "ship":
-            tot_pages = (shp.ships.current_ship_count -1) // 10 + 1
+            tot_pages = (shp.ships.ship_count -1) // 10 + 1
         elif mode == "equipment":
             tot_pages = (len(equ.equipment.equipment['free']) -1) // 10 + 1
 
@@ -301,9 +301,12 @@ class ShipSwitcherCore(object):
 
     @property
     def _local_ships_sorted_by_levels(self):
-        temp_list = sorted(
-            [s for s in shp.ships.local_ships],
-            key=lambda s: (s.sort_id, s.local_id))
+        
+        temp_list = [value for key, value in sorted(shp.ships.ship_pool.items(), key=lambda item: (item[1].sort_id, item[1].production_id ))]
+
+        #temp_list = sorted(
+        #    [shp.ships.ship_pool[s] for s in shp.ships.ship_pool],
+        #    key=lambda s: (shp.ships.ship_pool[s].sort_id, shp.ships.ship_pool[s].production_id))
         temp_list = sorted(
             [s for s in temp_list],
             key=lambda s: s.level, reverse=True)
@@ -313,8 +316,7 @@ class ShipSwitcherCore(object):
     @property
     def _local_ships_sorted_by_class(self):
         return sorted(
-            [s for s in shp.ships.local_ships],
-            key=lambda s: (s.sort_id, s.local_id))
-
+            [shp.ships.ship_pool[s] for s in shp.ships.ship_pool],
+            key=lambda ship: (ship.sort_id, ship.production_id))
 
 ship_switcher = ShipSwitcherCore()
