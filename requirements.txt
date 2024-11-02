@@ -5,6 +5,7 @@
 # use "pip install windows-curses" for windows system
 
 tk
+pyscreeze==0.1.28
 click==6.7
 matplotlib==3.1.2
 numpy==1.17.4
