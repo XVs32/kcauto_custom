@@ -26,12 +26,12 @@ def init():
     global config
     # open the file for reading
     try:
-        with open('configs/config_cui.json') as f:
+        with open('configs/config_cui.json', encoding='utf-8') as f:
             # Load configuration file values
             config = json.load(f)
         f.close()
     except FileNotFoundError:
-        with open('data/config/config_cui_template.json') as f:
+        with open('data/config/config_cui_template.json', encoding='utf-8') as f:
             # Load configuration file values
             config = json.load(f)
         f.close()

@@ -25,7 +25,7 @@ class Noro6(object):
         
         if filepath is not None:
             
-            with open(filepath, 'r') as file:
+            with open(filepath, 'r', encoding='utf-8') as file:
                 compressed = file.read()
 
             decompressed = LZString.decompressFromUTF16(compressed)
