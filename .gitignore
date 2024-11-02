@@ -55,3 +55,4 @@ venv.bak/
 !data/config/*.json
 !data/config/*/*.json
 !data/temp/gimmick.json
+!log/01-11-1995-00-00-00.log
