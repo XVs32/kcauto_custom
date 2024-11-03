@@ -1,6 +1,6 @@
 # kcauto_custom
 
-### ***Latest download(2024/3/11)*** [***here***](https://github.com/XVs32/kcauto_custom/releases/tag/v2.2.1) 
+### ***Latest download(2024/11/3)*** [***here***](https://github.com/XVs32/kcauto_custom/releases/tag/v3.0.0) 
 ### ***E1～E4 map data pack(2024/4/02)*** [***here***](https://github.com/XVs32/kcauto_custom/releases/tag/event_map_pack)  **(A big shout out to [Synexcu](https://github.com/Synexcu), the author of this data pack)**
 
 
@@ -41,7 +41,8 @@ This tool is designed to help users automate repetitive tasks such as Expedition
 * CUI(Character User Interface) for daily use cases
 * Akashi repair Module &mdash; Repair ships with akashi
 * Factory Module &mdash; Runs daily develop and ship building 
-* More fleet presets &mdash; Unlimited fleet presets that you can define in a config file
+* More fleet presets &mdash; Unlimited fleet presets that you can define in Noro6
+* Equipment Switcher module &mdash; automatic switching of equipment presets for PvP, combat and expedition
 * Sortie mdoe: Auto &mdash; Automatically complete daily/weekly/monthly quest (KC3 is needed)
 * Expedition mode: Auto &mdash; Self balance expedition with auto ship switch
 * Support for 7-4, events
