@@ -1,7 +1,7 @@
 
 
 #open/create file called test.py
-f = open("maps.py", "w")
+f = open("maps.py", "w", encoding='utf-8')
 
 f.write('\n\
 from kca_enums.enum_base import EnumBase\n\
@@ -20,7 +20,7 @@ for file in os.listdir("../../data/combat"):
         
         f.write("    W"+ str(world) + "_" + str(stage) + "=" +  "\"B-" + str(world) + "-" + str(stage) + "\"\n")
         #open file
-        with open("../../data/combat/" + file, "r") as map_json:
+        with open("../../data/combat/" + file, "r", encoding='utf-8') as map_json:
             #read file
             data = json.load(map_json)
             
