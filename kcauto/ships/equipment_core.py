@@ -319,8 +319,10 @@ class EquipmentCore(object):
             if needed_load == True: 
                 #unload a ship to update equipment list
                 for ship_id in self.equipment["loaded"]:
-                    if len(self.equipment["loaded"][ship_id]) > 0:
+                    if self.equipment["loaded"][ship_id] != EMPTY_a\
+                    and self.equipment["loaded"][ship_id] != EMPTY_b:
                         unload_ship_id = [ship_id]
+                        break
         
         start_id = 0
         while len(unload_ship_id) > start_id:
