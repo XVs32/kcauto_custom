@@ -394,7 +394,8 @@ class FleetSwitcherCore(object):
 
                 ssw.ship_switcher.current_page = 1
                 ssw.ship_switcher.switch_slot_by_id(1,cfg.config.factory.build_secretary)
-
+        elif preset_id == None:
+            Log.log_debug(f"Fleet switch disabled")
         else:
             Log.log_msg(f"Switching to Fleet Preset {preset_id}.")
             if preset_id not in self.presets:
