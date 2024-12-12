@@ -38,7 +38,7 @@ class FactoryCore(object):
         self.disable_timer = time.time()
 
     def disable_time_up(self):
-        return time.time() > self.disable_timer + (15 * 60)
+        return time.time() > self.disable_timer + (60 * 60)
 
     def develop_logic(self, count):
         self.goto()
