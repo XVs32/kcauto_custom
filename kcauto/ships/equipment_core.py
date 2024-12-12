@@ -14,6 +14,7 @@ from util.logger import Log
 from util.wctf import WhoCallsTheFleetData
 from fleet.noro6 import Noro6 
 from fleet.fleet import Fleet
+from random import randrange
 
 class EquipmentCore(object):
 
@@ -205,52 +206,6 @@ class EquipmentCore(object):
             self.equipment["loaded"][ship['api_id']] = ship["api_slot"]
             self.equipment["loaded"][ship['api_id']].append(ship["api_slot_ex"])
 
-    def save_fleet_equipment(self, fleet_id):
-        """
-            method to read the loaded equipment list of a fleet
-
-            fleet_id (dict) : fleet id, starts from 1
-        """
-        
-        print (flt.fleets.fleets[fleet_id].ship_ids)
-        
-        equipment_list = {}
-        
-        for ship_id in flt.fleets.fleets[fleet_id].ship_ids:
-            equipment_list[ship_id] = self.equipment["loaded"][ship_id]
-            
-        
-        dt_string = datetime.now().strftime("%d-%m-%Y-%H-%M-%S")
-        JsonData.dump_json(equipment_list, 'data|equipment|' + dt_string + '.json')
-            
-        Log.log_success(f"Equipment list saved at data/equipment/{dt_string}.json")
-        
-        
-        Log.log_error(f"this function is temp disabled.") 
-        exit(1)
-            
-
-    def save_loaded_equipment(self):
-        """
-            method to save the loaded equipment list to a json file
-        """
-        
-        nav.navigate.to('refresh_home')
-
-        dt_string = datetime.now().strftime("%d-%m-%Y-%H-%M-%S")
-        JsonData.dump_json(self.equipment["loaded"], 'data|equipment|' + dt_string + '.json')
-
-        Log.log_success(f"Equipment list saved at data/equipment/{dt_string}.json")
-
-        exit(0)
-
-    def load_loaded_equipment(self, map_name):
-        """
-            method to load the equipment ref from json file
-        """
-        
-        self.unload_equipment(map_name)
-        return self.load_equipment(map_name)
 
     def unload_equipment(self, map_name):
         """
@@ -296,11 +251,11 @@ class EquipmentCore(object):
                             any_unload = True
                             break
 
+        needed_load = False
         if any_unload == True:
             #@todo temp element repeat fix
             unload_ship_id = list(set(unload_ship_id))
         else:
-            needed_load = False
             for ship_id in self.equipment["loaded"]:
                 try:
                     if      target_config[ship_id] == EMPTY_a\
@@ -317,30 +272,27 @@ class EquipmentCore(object):
                     pass
 
             if needed_load == True: 
-                #unload a ship to update equipment list
-                for ship_id in self.equipment["loaded"]:
-                    if self.equipment["loaded"][ship_id] != EMPTY_a\
-                    and self.equipment["loaded"][ship_id] != EMPTY_b:
-                        unload_ship_id = [ship_id]
-                        break
+                #let the current secretary ship load and unload a whatever equipment
+                unload_ship_id = [flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][1].ship_ids[0]]
         
         start_id = 0
         while len(unload_ship_id) > start_id:
-            fsw.fleet_switcher.goto()
-
+            
             fleet_size = min(6, len(unload_ship_id) - start_id)
             
-            temp_fleet = {}
-            temp_fleet[1]=(Fleet("unload_equipment", FleetEnum.COMBAT, False))
-            temp_fleet[1].ship_data = []
-            for i in range(0, fleet_size):
-                temp_fleet[1].ship_data.append(
-                    shp.ships.get_ship_from_production_id(unload_ship_id[start_id + i])
-                )
-            if not fsw.fleet_switcher.switch_to_costom_fleet(1, temp_fleet):
-                Log.log_error("kcauto failed to load the selected ship, exiting...")
-                break
-
+            if needed_load == False:
+                fsw.fleet_switcher.goto()
+                
+                temp_fleet = {}
+                temp_fleet[1]=(Fleet("unload_equipment", FleetEnum.COMBAT, False))
+                temp_fleet[1].ship_data = []
+                for i in range(0, fleet_size):
+                    temp_fleet[1].ship_data.append(
+                        shp.ships.get_ship_from_production_id(unload_ship_id[start_id + i])
+                    )
+                if not fsw.fleet_switcher.switch_to_costom_fleet(1, temp_fleet):
+                    Log.log_error("kcauto failed to load the selected ship, exiting...")
+                    break
 
             nav.navigate.to('equipment')
 
@@ -348,6 +300,18 @@ class EquipmentCore(object):
             
                 Log.log_debug(f"unload the {i+1} ship")
                 kca_u.kca.click('ship_'+ str(i + 1)) 
+                
+                if needed_load == True:
+                    #unload a ship to update equipment list
+                    Log.log_error("Load and unload a whatever equipment to update equipment api")
+                    kca_u.kca.click('1_slot_equipment') 
+                    
+                    ssw.ship_switcher.select_replacement_row(row_idx=randrange(10), mode= "equipment")
+
+                    kca_u.kca.click_existing(
+                        'lower_right', 'shipswitcher|shiplist_shipswitch_button.png')
+                    kca_u.kca.wait('lower', 'shipswitcher|equipment_panel.png')
+                    api_result = api.api.update_from_api({KCSAPIEnum.FREE_EQUIPMENT}, need_all=True, timeout=30)
                 
                 while True:
                     if kca_u.kca.exists('equipment_panel', 'shipswitcher|1_slot_ship.png'):
@@ -383,7 +347,7 @@ class EquipmentCore(object):
 
         return any_unload
 
-    def load_equipment(self, map_name):
+    def load_equipment(self, fleet_id, fleet, map_name):
 
         EMPTY_a = [-1,-1,-1,-1,-1,0]
         EMPTY_b = [-1,-1,-1,-1,-1,-1]
@@ -394,8 +358,8 @@ class EquipmentCore(object):
         Log.log_debug("load_equipment target_config")
         Log.log_debug(target_config)
 
-        load_ship_id = []
-
+        load_ship_id = fleet
+        """
         for ship_id in self.equipment["loaded"]:
             try:
                 if      target_config[ship_id] == EMPTY_a\
@@ -408,67 +372,68 @@ class EquipmentCore(object):
                     load_ship_id.append(ship_id)
             except KeyError:
                 pass
+        """
 
-        start_id = 0
-        while len(load_ship_id) > start_id:
-            fsw.fleet_switcher.goto()
+        fleet_size = len(load_ship_id)
+        nav.navigate.to('equipment')
+        
+        
+        kca_u.kca.wait("left", f"nav|side_menu_equipment_active.png")
+        while True:
+            Log.log_error(f"click on fleet {fleet_id}")
+            kca_u.kca.click_existing("upper_left", f"fleet|fleet_{fleet_id}.png")
+            if  kca_u.kca.exists("upper_left", f"fleet|fleet_{fleet_id}_active.png"):
+                break
+            kca_u.kca.sleep(1)
+        Log.log_error(f"switched to {fleet_id}")
+        
+            
+        for i in range(fleet_size):
 
-            fleet_size = min(6, len(load_ship_id) - start_id)
-            temp_fleet = {}
-            temp_fleet[1]=(Fleet("load_equipment", FleetEnum.COMBAT, False))
-            temp_fleet[1].ship_data = []
-            for i in range(0, fleet_size):
-                temp_fleet[1].ship_data.append(
-                    shp.ships.get_ship_from_production_id(load_ship_id[start_id + i])
-                )
-            if not fsw.fleet_switcher.switch_to_costom_fleet(1, temp_fleet):
-                Log.log_error("kcauto failed to load the selected ship, exiting...")
-                return False
+            if load_ship_id[i] not in target_config:
+                continue
+            elif self.equipment["loaded"][load_ship_id[i]] == target_config[load_ship_id[i]]:
+                Log.log_error(f"equipment for ship {load_ship_id[i]} is already loaded")
+                continue
+            
+            Log.log_debug(f"load the {i+1} ship")
+            kca_u.kca.click('ship_'+ str(i + 1)) 
 
-            nav.navigate.to('equipment')
+            ssw.ship_switcher.current_page = 1
+            for slot in range(1,7):
 
-            for i in range(fleet_size):
+                equipment_id = target_config[load_ship_id[i]][slot - 1]
+                if equipment_id == -1 or equipment_id == 0:
+                    continue
 
-                Log.log_debug(f"unload the {i+1} ship")
-                kca_u.kca.click('ship_'+ str(i + 1)) 
+                if slot < 6:
+                    kca_u.kca.click(str(slot) + '_slot_equipment') 
 
-                ssw.ship_switcher.current_page = 1
-                for slot in range(1,7):
+                    if slot == 1:
+                        kca_u.kca.click_existing('upper_right', 'shipswitcher|equipment_sort_arrow.png')
+                        kca_u.kca.click('equipment_sort_all')
+                    
+                    kca_u.kca.wait('upper_right', 'shipswitcher|equipment_sort_all.png')
+                else:
+                    kca_u.kca.click('reinforce_slot_equipment') 
 
-                    equipment_id = target_config[load_ship_id[start_id + i]][slot - 1]
-                    if equipment_id == -1 or equipment_id == 0:
-                        continue
-
+                try:
                     if slot < 6:
-                        kca_u.kca.click(str(slot) + '_slot_equipment') 
-
-                        if slot == 1:
-                            kca_u.kca.click_existing('upper_right', 'shipswitcher|equipment_sort_arrow.png')
-                            kca_u.kca.click('equipment_sort_all')
-                        
-                        kca_u.kca.wait('upper_right', 'shipswitcher|equipment_sort_all.png')
+                        row_id = self.equipment["free"].index(equipment_id)
                     else:
-                        kca_u.kca.click('reinforce_slot_equipment') 
+                        row_id = self.get_reinforce_equipment_list(load_ship_id[i]).index(equipment_id)
+                        ssw.ship_switcher.current_page = 1
+                except ValueError:
+                    Log.log_error(f"Cannot find equipment name id:{self._get_name_id(equipment_id)} production id:{equipment_id}, did you scrapped it?")
+                    exit(1)
 
-                    try:
-                        if slot < 6:
-                            row_id = self.equipment["free"].index(equipment_id)
-                        else:
-                            row_id = self.get_reinforce_equipment_list(load_ship_id[start_id + i]).index(equipment_id)
-                            ssw.ship_switcher.current_page = 1
-                    except ValueError:
-                        Log.log_error(f"Cannot find equipment name id:{self._get_name_id(equipment_id)} production id:{equipment_id}, did you scrapped it?")
-                        exit(1)
+                ssw.ship_switcher.select_replacement_row(row_idx=row_id, mode= "equipment")
 
-                    ssw.ship_switcher.select_replacement_row(row_idx=row_id, mode= "equipment")
+                kca_u.kca.click_existing(
+                    'lower_right', 'shipswitcher|shiplist_shipswitch_button.png')
+                kca_u.kca.wait('lower', 'shipswitcher|equipment_panel.png')
+                api_result = api.api.update_from_api({KCSAPIEnum.FREE_EQUIPMENT}, need_all=True, timeout=30)
 
-                    kca_u.kca.click_existing(
-                        'lower_right', 'shipswitcher|shiplist_shipswitch_button.png')
-                    kca_u.kca.wait('lower', 'shipswitcher|equipment_panel.png')
-                    api_result = api.api.update_from_api({KCSAPIEnum.FREE_EQUIPMENT}, need_all=True, timeout=30)
-
-
-            start_id += fleet_size
         return True
 
     def get_reinforce_equipment_list(self, local_id):
