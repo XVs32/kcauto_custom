@@ -144,7 +144,7 @@ class NavigateList(object):
     OFFSET = {
         'repair': (0, 0),
         'shipcomp': (17, -4),
-        'equipment': (-4, -4)
+        'equipment': (-3, -4)
     }
 
     @classmethod
