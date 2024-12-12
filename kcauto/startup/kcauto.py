@@ -138,7 +138,7 @@ class Kcauto(object):
                 self.run_quest_logic('factory', fast_check=True, back_to_home=True, force=True)
                 nav.navigate.to('home')
             else:
-                # disable module for 15 mins
+                # disable module for 60 mins
                 fty.factory.set_timer()
 
         if "F7" in qst.quest.next_check_intervals.keys():
