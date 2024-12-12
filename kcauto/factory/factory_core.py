@@ -107,6 +107,17 @@ class FactoryCore(object):
                 kca_u.kca.sleep()
 
         return True
+    
+    def any_build_slot_available():
+        """return false if both slots are occupied"""
+        if  kca_u.kca.exists("build_slot_1_stat_region",
+                            "factory|build_progressing.png")\
+            and \
+            kca_u.kca.exists("build_slot_2_stat_region",
+                            "factory|build_progressing.png"):
+            return False
+        else:
+            return True
 
     def build(self, oil, ammo, steel, bauxite, count):
         """Place the build order"""
@@ -115,12 +126,7 @@ class FactoryCore(object):
         while count > 0:
 
             kca_u.kca.sleep(1)
-            """return false if both slots are occupied"""
-            if  kca_u.kca.exists("build_slot_1_stat_region",
-                                "factory|build_progressing.png")\
-                and \
-                kca_u.kca.exists("build_slot_2_stat_region",
-                                "factory|build_progressing.png"):
+            if self.any_build_slot_available() == False:
                 return False
 
             build_slot_stat = {1:"build_slot_1_stat_region",
