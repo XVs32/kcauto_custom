@@ -241,19 +241,19 @@ class NavigateList(object):
             y_start = kca_u.kca.game_y + 675 + offset[1]
             Region(x_start, y_start, 16, 15).click()
         elif target == 'next':
-            x_start = kca_u.kca.game_x + 735 + (4 * 53) + (50*1) + offset[0]
+            x_start = kca_u.kca.game_x + 735 + (215) + (50*1) + offset[0]
             y_start = kca_u.kca.game_y + 675 + offset[1]
             Region(x_start, y_start, 16, 15).click()
         elif target == 'last':
-            x_start = kca_u.kca.game_x + 735 + (4 * 53) + (50*2) + offset[0]
+            x_start = kca_u.kca.game_x + 735 + (215) + (50*2) + offset[0]
             y_start = kca_u.kca.game_y + 675 + offset[1]
             Region(x_start, y_start, 16, 15).click()
         elif 1 <= target <= 5:
             zero_target = target - 1
-            x_start = kca_u.kca.game_x + 735 + (zero_target * 53) + offset[0]
+            x_start = kca_u.kca.game_x + 739 + (zero_target * 53) + offset[0]
             y_start = kca_u.kca.game_y + 675 + offset[1]
 
-            Region(x_start, y_start, 16, 15).click()
+            Region(x_start, y_start, 10, 15).click()
         kca_u.kca.sleep(0.5)
 
 
