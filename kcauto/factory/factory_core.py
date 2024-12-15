@@ -108,7 +108,7 @@ class FactoryCore(object):
 
         return True
     
-    def any_build_slot_available():
+    def any_build_slot_available(self):
         """return false if both slots are occupied"""
         if  kca_u.kca.exists("build_slot_1_stat_region",
                             "factory|build_progressing.png")\
