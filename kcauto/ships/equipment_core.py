@@ -293,7 +293,7 @@ class EquipmentCore(object):
                 if not fsw.fleet_switcher.switch_to_costom_fleet(1, temp_fleet):
                     Log.log_error("kcauto failed to load the selected ship, exiting...")
                     break
-
+                
             nav.navigate.to('equipment')
 
             for i in range(fleet_size):
@@ -314,6 +314,7 @@ class EquipmentCore(object):
                     api_result = api.api.update_from_api({KCSAPIEnum.FREE_EQUIPMENT}, need_all=True, timeout=30)
                 
                 while True:
+                    
                     if kca_u.kca.exists('equipment_panel', 'shipswitcher|1_slot_ship.png'):
                         Log.log_debug(f"1 slot ship")
                         kca_u.kca.click('1_slot_unload_equipment')
@@ -329,7 +330,7 @@ class EquipmentCore(object):
                     else: 
                         Log.log_debug(f"5 slot ship")
                         kca_u.kca.click('5_slot_unload_equipment') 
-
+                        
                     kca_u.kca.wait('lower', 'shipswitcher|equipment_panel.png')
                     
                     if self.equipment["loaded"][unload_ship_id[start_id + i]][-1] > 0:
@@ -338,14 +339,38 @@ class EquipmentCore(object):
 
                     kca_u.kca.wait('lower', 'shipswitcher|equipment_panel.png')
                     
-                    api_result = api.api.update_from_api({KCSAPIEnum.FREE_EQUIPMENT}, need_all=True, timeout=5)
+                    api_result = api.api.update_from_api({KCSAPIEnum.FREE_EQUIPMENT}, need_all=True)
                     if api_result != {}:
                         break
-                    Log.log_debug(f"catched, not receiving equipment update api")
+                    else:
+                        Log.log_error(f"Something goes wrong, skipping this round...")
+                        
+                        retry = 10
+                        while not kca_u.kca.exists('left', 'nav|side_menu_home.png'):
+                            kca_u.kca.click_existing('bottom_right', 'shipswitcher|equipment_cancel_reinforce.png', cached=True)
+                            
+                            if retry > 0:
+                                retry -=1
+                                kca_u.sleep(1)
+                            else:
+                                Log.log_error(f"kcauto can not figure out where it is, exiting...")
+                                exit()
+                        #skiping unload for this ship  <= usually it is already unloaded, but api didn't update due to network delay
+                        break
                     
             start_id += fleet_size
 
         return any_unload
+    
+    def unload_ship(self, fleet_id, ship_id):
+        """
+        unload a ship in the specified fleet, assume nav in equipment page already
+            input: 
+                fleet_id: int, starts from 1
+                ship_id: int, ship production id
+        """
+        
+        
 
     def load_equipment(self, fleet_id, fleet, map_name):
 

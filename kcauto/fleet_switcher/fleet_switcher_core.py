@@ -490,6 +490,8 @@ class FleetSwitcherCore(object):
         
         Log.log_error("unload_equipment done")
         
+        nav.navigate.to('home')
+        
         self.goto()
         
         EMPTY = -1
