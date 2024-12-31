@@ -38,7 +38,7 @@ class Log(ABC):
                 date_time_str = filename[:-4]  # Remove the '.log' extension
 
                 # Define the format of the date and time in the filename
-                date_time_format = "%d-%m-%Y-%H-%M-%S"
+                date_time_format = "%Y-%m-%d-%H-%M-%S"
 
                 # Parse the date and time string into a datetime object
                 date_time_obj = datetime.strptime(date_time_str, date_time_format)
