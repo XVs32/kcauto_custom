@@ -48,7 +48,7 @@ class Log(ABC):
                     os.remove(os.path.join(directory, filename))
 
         # dd/mm/YY H:M:S
-        dt_string = datetime.now().strftime("%d-%m-%Y-%H-%M-%S")
+        dt_string = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
         cls.log_file = open( "log/" + dt_string + ".log", "w", encoding='utf-8')
 
     @staticmethod
