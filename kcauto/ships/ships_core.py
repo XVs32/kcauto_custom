@@ -65,6 +65,10 @@ class ShipsCore(object):
 
     def get_ship_from_production_id(self, ship_id):
         
+        if ship_id not in self.ship_pool:
+            Log.log_error(f"Ship #{ship_id} not found in port.")
+            return None
+        
         return self.ship_pool[ship_id]
 
     def create_ship(self, static_data, local_data = Ship.EMPTY_LOCAL_DATA):
@@ -76,7 +80,11 @@ class ShipsCore(object):
             input: noro6 ship info
             output: kcauto ship obj
         """
-        
-        return self.get_ship_from_production_id(noro_ship["un"])
+        ret = self.get_ship_from_production_id(noro_ship["un"])
+        if ret == None:
+            Log.log_error(f"Ship {self.get_ship_static_data(None, api_id=noro_ship['i'])['api_name']} #{noro_ship['i']} not found in ship pool, exiting...")
+            exit()
+            
+        return ret
 
 ships = ShipsCore()

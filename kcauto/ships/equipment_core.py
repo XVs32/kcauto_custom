@@ -125,6 +125,11 @@ class EquipmentCore(object):
                     for j in range(1, noro6.get_equipment_count() + 1 ):
                         
                         this_equipment = self._get_equipment_from_noro6_equipment(noro6.get_equipment(j))
+                        
+                        if this_equipment == None:
+                            Log.log_error(f"Failed finding equipment for {preset['name']}, exit...")
+                            exit(0)
+                        
                         ret[preset["name"]][ship.production_id].append(
                             this_equipment["api_id"]
                         )
