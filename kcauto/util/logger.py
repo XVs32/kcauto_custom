@@ -113,7 +113,6 @@ class Log(ABC):
         Args:
             msg (str): log message.
         """
-        print(f"sys.stdout encoding: {sys.stdout.encoding}")
         
         print(
             f"{cls.CLR_ERROR}{cls._log_format(msg)}{cls.CLR_END}",
