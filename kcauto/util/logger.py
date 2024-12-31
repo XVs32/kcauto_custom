@@ -41,13 +41,16 @@ class Log(ABC):
                 date_time_format = "%Y-%m-%d-%H-%M-%S"
 
                 # Parse the date and time string into a datetime object
-                date_time_obj = datetime.strptime(date_time_str, date_time_format)
-
-                # Check if date_time_obj is one month or older
-                if date_time_obj <= one_month_ago :
+                
+                try:
+                    date_time_obj = datetime.strptime(date_time_str, date_time_format)
+                    # Check if date_time_obj is one month or older
+                    if date_time_obj <= one_month_ago :
+                        os.remove(os.path.join(directory, filename))
+                except ValueError:
                     os.remove(os.path.join(directory, filename))
 
-        # dd/mm/YY H:M:S
+        # YY/mm/dd H:M:S
         dt_string = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
         cls.log_file = open( "log/" + dt_string + ".log", "w", encoding='utf-8')
 
