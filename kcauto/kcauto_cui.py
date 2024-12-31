@@ -1,4 +1,5 @@
 import sys,os
+import io
 import signal
 import curses
 import json
@@ -23,6 +24,9 @@ config = None
 active_exp_preset = 'active'
 
 def init():
+    
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+    
     global config
     # open the file for reading
     try:
