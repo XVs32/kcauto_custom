@@ -83,7 +83,6 @@ class ShipsCore(object):
         ret = self.get_ship_from_production_id(noro_ship["un"])
         if ret == None:
             Log.log_error(f"Ship {self.get_ship_static_data(None, api_id=noro_ship['i'])['api_name']} #{noro_ship['i']} not found in ship pool, exiting...")
-            exit()
             
         return ret
 

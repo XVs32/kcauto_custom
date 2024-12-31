@@ -120,6 +120,9 @@ class EquipmentCore(object):
                 
                 for i in range(1, noro6.get_ship_count() + 1 ):
                     ship = shp.ships.get_ship_from_noro6_ship(noro6.get_ship(i))
+                    if ship == None:
+                        Log.log_error(f'Something goes wrong when setting up Noro6 {preset["name"]} equipment, exiting...')
+                        exit()
                     ret[preset["name"]][ship.production_id] = []
                     
                     for j in range(1, noro6.get_equipment_count() + 1 ):
