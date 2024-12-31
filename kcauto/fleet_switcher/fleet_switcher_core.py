@@ -483,9 +483,6 @@ class FleetSwitcherCore(object):
             ship_list(fleetcore_obj): ships to use
         """
         
-        Log.log_error(f"fleet_id:{fleet_id}, fleet:{costom_fleet}, equipment_key:{equipment_key}")
-        
-        
         equ.equipment.unload_equipment(equipment_key)
         
         Log.log_error("unload_equipment done")
