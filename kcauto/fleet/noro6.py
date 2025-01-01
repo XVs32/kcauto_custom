@@ -136,9 +136,11 @@ class Noro6(object):
             ret : the dict of the ship or None if not found
         """
         if self.fleet is None:
+            Log.log_error("fleet is none, ship not found in noro6")
             return None
 
         if len(self.fleet["ships"]) < ship_id:
+            Log.log_error(f"fleet size: {self.fleet['ships']} is small than {ship_id}")
             return None
 
         self.item = None

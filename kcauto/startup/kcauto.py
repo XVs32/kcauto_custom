@@ -130,16 +130,20 @@ class Kcauto(object):
 
         if "F6" in qst.quest.next_check_intervals.keys():
             anything_is_done = True
-
-            self._run_fleetswitch_logic('factory_build')
-
             fty.factory.goto()
-            if fty.factory.build_logic(1) == True:
-                self.run_quest_logic('factory', fast_check=True, back_to_home=True, force=True)
-                nav.navigate.to('home')
-            else:
-                # disable module for 15 mins
+            if fty.factory.any_build_slot_available() == False:
+                #slot not ready yet
                 fty.factory.set_timer()
+            else:
+                self._run_fleetswitch_logic('factory_build')
+
+                fty.factory.goto()
+                if fty.factory.build_logic(1) == True:
+                    self.run_quest_logic('factory', fast_check=True, back_to_home=True, force=True)
+                    nav.navigate.to('home')
+                else:
+                    # disable module for 60 mins
+                    fty.factory.set_timer()
 
         if "F7" in qst.quest.next_check_intervals.keys():
             anything_is_done = True
@@ -154,16 +158,20 @@ class Kcauto(object):
         if "F8" in qst.quest.next_check_intervals.keys():
             anything_is_done = True
 
-            self._run_fleetswitch_logic('factory_build')
+            if fty.factory.any_build_slot_available() == False:
+                #slot not ready yet
+                fty.factory.set_timer()
+            else:
+                self._run_fleetswitch_logic('factory_build')
 
-            fty.factory.goto()
-            """If F8 is already 80% done, one more build could finish the quest"""
-            """Therefore, no if == True here"""
-            fty.factory.build_logic(3)
-            self.run_quest_logic('factory', fast_check=True, back_to_home=True, force=True)
-            nav.navigate.to('home')
-            #always disable module for 15 mins
-            fty.factory.set_timer()
+                fty.factory.goto()
+                """If F8 is already 80% done, one more build could finish the quest"""
+                """Therefore, no if == True here"""
+                fty.factory.build_logic(3)
+                self.run_quest_logic('factory', fast_check=True, back_to_home=True, force=True)
+                nav.navigate.to('home')
+                #always disable module for 60 mins
+                fty.factory.set_timer()
 
         if anything_is_done == False:
             """Daily factory process done, disable from now"""
