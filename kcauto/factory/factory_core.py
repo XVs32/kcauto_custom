@@ -38,7 +38,7 @@ class FactoryCore(object):
         self.disable_timer = time.time()
 
     def disable_time_up(self):
-        return time.time() > self.disable_timer + (15 * 60)
+        return time.time() > self.disable_timer + (60 * 60)
 
     def develop_logic(self, count):
         self.goto()
@@ -107,6 +107,17 @@ class FactoryCore(object):
                 kca_u.kca.sleep()
 
         return True
+    
+    def any_build_slot_available(self):
+        """return false if both slots are occupied"""
+        if  kca_u.kca.exists("build_slot_1_stat_region",
+                            "factory|build_progressing.png")\
+            and \
+            kca_u.kca.exists("build_slot_2_stat_region",
+                            "factory|build_progressing.png"):
+            return False
+        else:
+            return True
 
     def build(self, oil, ammo, steel, bauxite, count):
         """Place the build order"""
@@ -115,12 +126,7 @@ class FactoryCore(object):
         while count > 0:
 
             kca_u.kca.sleep(1)
-            """return false if both slots are occupied"""
-            if  kca_u.kca.exists("build_slot_1_stat_region",
-                                "factory|build_progressing.png")\
-                and \
-                kca_u.kca.exists("build_slot_2_stat_region",
-                                "factory|build_progressing.png"):
+            if self.any_build_slot_available() == False:
                 return False
 
             build_slot_stat = {1:"build_slot_1_stat_region",

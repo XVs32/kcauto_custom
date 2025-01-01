@@ -54,49 +54,68 @@ def print_log(panel, string):
     # Refresh the screen and wait for user input
     panel.refresh()
 
-
 def run_external_program(panel):
     # Start the external program and redirect its output
     global process
     
     if platform == "linux" or platform == "linux2":
         filename = "kcauto.bin"
-        decode = "unicode_escape"
         if os.path.isfile(filename):
-            process = subprocess.Popen(['./kcauto.bin', '--cli', '--cfg', 'config_cui'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            process = subprocess.Popen(
+                ['./kcauto.bin', '--cli', '--cfg', 'config_cui'],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,  # Enable text mode
+                encoding='utf-8'  # Ensure UTF-8 decoding
+            )
             time.sleep(1)
-            print_log(panel, "Starting from " + filename + "\n")
+            print_log(panel, f"Starting from {filename}\n")
         else:
-            process = subprocess.Popen(['python3.7', 'kcauto', '--cli', '--cfg', 'config_cui'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            process = subprocess.Popen(
+                ['python3.7', 'kcauto', '--cli', '--cfg', 'config_cui'],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,  # Enable text mode
+                encoding='utf-8'  # Ensure UTF-8 decoding
+            )
             time.sleep(1)
-            print_log(panel, filename + " does not exist\n")
-            print_log(panel, "Start kcauto in python instead\n")
+            print_log(panel, f"{filename} does not exist\n")
+            print_log(panel, "Start kcauto in Python instead\n")
             
     elif platform == "darwin" or platform == "win32": 
         filename = "kcauto.exe"
-        decode = "windows-1252"
         if os.path.isfile(filename):
-            process = subprocess.Popen(['kcauto.exe', '--cli', '--cfg', 'config_cui'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            process = subprocess.Popen(
+                ['kcauto.exe', '--cli', '--cfg', 'config_cui'],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,  # Enable text mode
+                encoding='utf-8'  # Ensure UTF-8 decoding
+            )
             time.sleep(1)
-            print_log(panel, "Starting from " + filename + "\n")
+            print_log(panel, f"Starting from {filename}\n")
         else:
-            process = subprocess.Popen(['python', 'kcauto', '--cli', '--cfg', 'config_cui'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            process = subprocess.Popen(
+                ['python', 'kcauto', '--cli', '--cfg', 'config_cui'],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,  # Enable text mode
+                encoding='utf-8'  # Ensure UTF-8 decoding
+            )
             time.sleep(1)
-            print_log(panel, filename + " does not exist\n")
-            print_log(panel, "Start kcauto in python instead\n")
+            print_log(panel, f"{filename} does not exist\n")
+            print_log(panel, "Start kcauto in Python instead\n")
     else:
-        TypeError("Non support OS.")
+        raise TypeError("Non-supported OS.")
     
     global pop_up_lock
     # Read and write the output to the desired panel
-    output = []
     while process.poll() is None:
-        output.append(process.stdout.readline().decode(encoding = decode, errors="ignore"))
-        if pop_up_lock == False:
-            for line in output:
-                print_log(panel, line)
-            output = []
+        output = process.stdout.readline().strip()  # Read line and remove extra whitespace
+        if output:  # Only process non-empty lines
+            print_log(panel, f"{output}\n")
 
+    # Final log after the process ends
     print_log(panel, "kcauto ended\n")
 
 def signal_handler(signal = None, frame = None):

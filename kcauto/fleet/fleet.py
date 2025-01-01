@@ -10,7 +10,6 @@ from kca_enums.fleet import FleetEnum
 from constants import VISUAL_DAMAGE, FLEET_NUMBER_ICON
 from util.kc_time import KCTime
 from util.logger import Log
-import repair.repair_core as rep
 
 
 class Fleet(object):
@@ -155,7 +154,7 @@ class Fleet(object):
 
     @property
     def under_repair(self):
-        #@todo : ask from repair module, not ship
+        import repair.repair_core as rep
         
         for ship in self.ship_data:
             if ship.production_id in rep.repair.ships_under_repair:

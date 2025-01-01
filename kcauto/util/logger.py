@@ -4,6 +4,7 @@ from datetime import datetime
 from dateutil.relativedelta import relativedelta
 import os
 import sys
+import io
 
 import args.args_core as arg
 
@@ -20,8 +21,8 @@ class Log(ABC):
     @classmethod
     def init(cls):
 
-        #force using utf-8
-        sys.stdout.reconfigure(encoding='utf-8')
+        # Force stdout to use UTF-8
+        sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
         # Specify the directory path
         directory = 'log'
@@ -37,17 +38,20 @@ class Log(ABC):
                 date_time_str = filename[:-4]  # Remove the '.log' extension
 
                 # Define the format of the date and time in the filename
-                date_time_format = "%d-%m-%Y-%H-%M-%S"
+                date_time_format = "%Y-%m-%d-%H-%M-%S"
 
                 # Parse the date and time string into a datetime object
-                date_time_obj = datetime.strptime(date_time_str, date_time_format)
-
-                # Check if date_time_obj is one month or older
-                if date_time_obj <= one_month_ago :
+                
+                try:
+                    date_time_obj = datetime.strptime(date_time_str, date_time_format)
+                    # Check if date_time_obj is one month or older
+                    if date_time_obj <= one_month_ago :
+                        os.remove(os.path.join(directory, filename))
+                except ValueError:
                     os.remove(os.path.join(directory, filename))
 
-        # dd/mm/YY H:M:S
-        dt_string = datetime.now().strftime("%d-%m-%Y-%H-%M-%S")
+        # YY/mm/dd H:M:S
+        dt_string = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
         cls.log_file = open( "log/" + dt_string + ".log", "w", encoding='utf-8')
 
     @staticmethod
@@ -112,6 +116,7 @@ class Log(ABC):
         Args:
             msg (str): log message.
         """
+        
         print(
             f"{cls.CLR_ERROR}{cls._log_format(msg)}{cls.CLR_END}",
             flush=True)

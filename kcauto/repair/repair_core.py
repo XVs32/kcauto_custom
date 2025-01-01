@@ -7,6 +7,7 @@ import config.config_core as cfg
 import fleet.fleet_core as flt
 import nav.nav as nav
 import ships.ships_core as shp
+import ships.equipment_core as equ 
 import stats.stats_core as sts
 import util.kca as kca_u
 from kca_enums.damage_states import DamageStateEnum
@@ -21,6 +22,10 @@ class RepairCore(object):
     docks_count = 0
     docks_available_count = 0
     current_repair_list_page = 1
+    
+    BUCKET_NOT_USED = 0
+    BUCKET_USED = 1
+    UNLOAD_NEEDED = 2
 
     def __init__(self):
         pass
@@ -113,27 +118,40 @@ class RepairCore(object):
 
             idx, ship, context = self._select_idx_and_ship(
                 idx_of_combat_ships, idx_of_passive_ships)
-            self._select_dock()
-            self._check_repair_sort()
-            self._select_ship(idx, ship)
-            bucketed = self._start_repair(ship, context)
-            if idx in idx_of_combat_ships:
-                com.combat.set_next_sortie_time(
-                    idx_of_combat_ships[idx].repair_time_delta)
-                del idx_of_combat_ships[idx]
-            elif idx in idx_of_passive_ships:
-                del idx_of_passive_ships[idx]
+            
+            status = None 
+            while True:
+                self._select_dock()
+                self._check_repair_sort()
+                self._select_ship(idx, ship)
+                
+                if status == self.UNLOAD_NEEDED:
+                    equ.equipment.unload_ship(ship.production_id)
+                    status = self._start_repair(ship, "force")
+                else:
+                    status = self._start_repair(ship, context)
+                    
+                if status == self.UNLOAD_NEEDED:
+                    continue
+                
+                if idx in idx_of_combat_ships:
+                    com.combat.set_next_sortie_time(
+                        idx_of_combat_ships[idx].repair_time_delta)
+                    del idx_of_combat_ships[idx]
+                elif idx in idx_of_passive_ships:
+                    del idx_of_passive_ships[idx]
 
-            if bucketed:
-                ship.repair()
-                idx_of_combat_ships = self._shift_idx_list_based_on_idx(
-                    idx_of_combat_ships, idx)
-                idx_of_passive_ships = self._shift_idx_list_based_on_idx(
-                    idx_of_passive_ships, idx)
-                sts.stats.repair.buckets_used += 1
+                if status == self.BUCKET_USED:
+                    ship.repair()
+                    idx_of_combat_ships = self._shift_idx_list_based_on_idx(
+                        idx_of_combat_ships, idx)
+                    idx_of_passive_ships = self._shift_idx_list_based_on_idx(
+                        idx_of_passive_ships, idx)
+                    sts.stats.repair.buckets_used += 1
 
-            kca_u.kca.wait('left', 'nav|side_menu_home.png')
-            kca_u.kca.sleep(0.5)
+                kca_u.kca.wait('left', 'nav|side_menu_home.png')
+                kca_u.kca.sleep(0.5)
+                break
 
     def _select_idx_and_ship(self, idx_of_combat_ships, idx_of_passive_ships):
         if len(idx_of_combat_ships) > 0:
@@ -187,7 +205,7 @@ class RepairCore(object):
         kca_u.kca.wait('right', 'repair|repair_confirm_1.png')
 
     def _start_repair(self, ship, context):
-        bucketed = False
+        status = self.BUCKET_NOT_USED
         Log.log_msg(
             "Ship repair time of "
             f"{KCTime.timedelta_to_str(ship.repair_time_delta)}.")
@@ -195,7 +213,11 @@ class RepairCore(object):
             Log.log_msg("Using bucket to repair.")
             kca_u.kca.click_existing(
                 'right', 'repair|bucket_switch.png', cached=True)
-            bucketed = True
+            status = self.BUCKET_USED
+        elif context == 'force':
+            status = self.UNLOAD_NEEDED 
+            return status
+            
         kca_u.kca.click_existing(
             'right', 'repair|repair_confirm_1.png', cached=True)
         kca_u.kca.r['top'].hover()
@@ -205,7 +227,7 @@ class RepairCore(object):
         sts.stats.repair.repairs_done += 1
         if context == 'passive':
             sts.stats.repair.passive_repairs_done += 1
-        return bucketed
+        return status
 
     def _ship_needs_bucket(self, ship):
         repair_timelimit = timedelta(
