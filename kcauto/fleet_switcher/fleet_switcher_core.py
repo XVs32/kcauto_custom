@@ -485,7 +485,7 @@ class FleetSwitcherCore(object):
         
         equ.equipment.unload_equipment(equipment_key)
         
-        Log.log_error("unload_equipment done")
+        Log.log_success("unload_equipment done")
         
         nav.navigate.to('home')
         
@@ -537,10 +537,10 @@ class FleetSwitcherCore(object):
             else:
                 break
             
-        Log.log_error("load fleet done")
+        Log.log_success("load fleet done")
             
         equ.equipment.load_equipment(fleet_id, costom_fleet[fleet_id].ship_ids, equipment_key)    
-        Log.log_error("load equipment done")
+        Log.log_success("load equipment done")
         
         return True
     
