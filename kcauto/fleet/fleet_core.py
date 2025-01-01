@@ -243,9 +243,14 @@ class FleetCore(object):
                 
                 ret[preset["name"]][fleet_id].ship_data = []
                 for i in range(1, noro6.get_ship_count() + 1 ):
-                    ret[preset["name"]][fleet_id].ship_data.append(
-                        shp.ships.get_ship_from_noro6_ship(noro6.get_ship(i))
-                    )
+                    
+                    ship = shp.ships.get_ship_from_noro6_ship(noro6.get_ship(i))
+                    if ship == None:
+                        Log.log_error(f'Something goes wrong when setting up Noro6 {preset["name"]} fleet, exiting...')
+                        exit()
+                    
+                    else:
+                        ret[preset["name"]][fleet_id].ship_data.append(ship)
                     
         return ret 
     

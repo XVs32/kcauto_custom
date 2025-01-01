@@ -321,13 +321,9 @@ class FleetSwitcherCore(object):
                 equipment_key = self._get_equipment_preset(cfg.config.combat.sortie_map.value)
                 
                 for combat_fleet_id in flt.fleets.combat_fleets_id:
-                    #if not self.switch_to_costom_equipment(combat_fleet_id, equipment_list):
-                    self.switch_to_costom_equipment(equipment_key)
                     
-                    nav.navigate.to('refresh_home')
-                    self.goto()
                         
-                    if not self.switch_to_costom_fleet(combat_fleet_id, fleet_list):
+                    if not self.switch_to_costom_fleet_with_equipment(combat_fleet_id, fleet_list, equipment_key):
                         return False
 
                 """Check if next combat possible, since new ship is switched in"""
@@ -340,12 +336,8 @@ class FleetSwitcherCore(object):
                 fleet_list = self._get_fleet_preset("C-pvp")
                 equipment_key = self._get_equipment_preset("C-pvp")
                 
-                self.switch_to_costom_equipment(equipment_key)
-                    
-                nav.navigate.to('refresh_home')
-                self.goto()
                         
-                if not self.switch_to_costom_fleet(1, fleet_list):
+                if not self.switch_to_costom_fleet_with_equipment(1, fleet_list, equipment_key):
                     return False
 
             elif context == "expedition":
@@ -360,16 +352,6 @@ class FleetSwitcherCore(object):
                     if fleet_id > 4:
                         break
                     
-                    if not self.switch_to_costom_equipment(exp.expedition.exp_for_fleet[fleet_id]):
-                        Log.log_error("Failed to switch equipment for expedition fleet.")
-                        exit(1)
- 
-                nav.navigate.to('refresh_home')
-                self.goto()
-                for fleet_id in range(2,5):
-
-                    if fleet_id > 4:
-                        break
                     
                     flag = False
                     for fleet in exp.expedition.fleets_at_base:
@@ -381,7 +363,7 @@ class FleetSwitcherCore(object):
                     
                     temp = {}
                     temp[fleet_id] = flt.fleets.fleets[exp.expedition.exp_for_fleet[fleet_id]]
-                    if not self.switch_to_costom_fleet(fleet_id, temp):
+                    if not self.switch_to_costom_fleet_with_equipment(fleet_id, temp, exp.expedition.exp_for_fleet[fleet_id]):
                         return False
 
             elif context == 'factory_develop':
@@ -489,12 +471,79 @@ class FleetSwitcherCore(object):
                 continue
             else:
                 break
+        
+        return True
+        
+        
+    def switch_to_costom_fleet_with_equipment(self, fleet_id, costom_fleet, equipment_key):
+        """
+            method to switch the ship in {fleet_id} to ships defined in {ship_list}
+
+            fleet_id(int): fleet to switch, index starts from 1
+            ship_list(fleetcore_obj): ships to use
+        """
+        
+        equ.equipment.unload_equipment(equipment_key)
+        
+        Log.log_error("unload_equipment done")
+        
+        nav.navigate.to('home')
+        
+        self.goto()
+        
+        EMPTY = -1
+        retry = 0
+
+        while True:
             
+            flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][fleet_id].select()
+            
+            empty_slot_count = 0
+
+            size = max(len(flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][fleet_id].ship_ids), len(costom_fleet[fleet_id].ship_ids))
+
+            any_vaild_switch = False
+            retry = False
+            for i in range(1,size + 1):
+                if i > len(costom_fleet[fleet_id].ship_ids):
+                    id = EMPTY #remove this slot
+                else:
+                    id = costom_fleet[fleet_id].ship_ids[i-1]
+
+                if i <= len(flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][fleet_id].ship_ids) and \
+                    id == flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][fleet_id].ship_ids[i-1]:
+                    Log.log_debug("Ship loaded already")
+                    continue
+
+                if not ssw.ship_switcher.switch_slot_by_id(i-empty_slot_count,id):
+                    #fleet data update
+                    if any_vaild_switch == True:
+                        Log.log_msg(f"retrying...")
+                        nav.navigate.to('home')
+                        self.goto()
+                        retry = True 
+                        break
+                    else:
+                        return False
+                    
+                else:
+                    any_vaild_switch = True
+                    
+                if id == EMPTY:
+                    empty_slot_count += 1
+
+            if retry == True:
+                continue
+            else:
+                break
+            
+        Log.log_error("load fleet done")
+            
+        equ.equipment.load_equipment(fleet_id, costom_fleet[fleet_id].ship_ids, equipment_key)    
+        Log.log_error("load equipment done")
+        
         return True
     
-    def switch_to_costom_equipment(self, map_name):
-        return equ.equipment.load_loaded_equipment(map_name)
-
     def _scroll_preset_list(self, target_clicks):
         Log.log_debug(f"Scrolling to target preset ({target_clicks} clicks).")
         clicks = 0
