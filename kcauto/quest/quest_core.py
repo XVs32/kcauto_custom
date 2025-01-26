@@ -362,21 +362,26 @@ class QuestCore(CoreBase):
             
         elif mode == self.EXPEDITION:
             
-            Log.log_error(f'test 1')
             next_quest = self._find_next_quests(self.EXPEDITION)
             
-            Log.log_error(f'test 2')
             if next_quest != None:
 
-                Log.log_error(f'test 3')
                 """Read quest progress""" 
                 exp_dict = kca_u.kca.get_quest_count(next_quest)
-                Log.log_error(f'test 4')
                 
                 if exp_dict == None:
                     Log.log_warn(f"Cannot get quest progress from kc3, kcauto_custom fail to select corresponding expedition")
                 else:
+                    
+                    exp_list = []
+                    for key in exp_dict:
+                        exp_list.append(ExpeditionEnum(exp.expedition.get_exp_api_id_from_id(key)))
                     Log.log_error(f'exp_dict: {exp_dict}')
+                    Log.log_error(f'exp_list: {exp_list}')
+                    
+                    exp.expedition.cut_expedition_queue(exp_list)
+                    
+                    print(exp.expedition.exp_rank)
                     input()
                 
 

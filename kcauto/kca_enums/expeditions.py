@@ -24,11 +24,17 @@ class ExpeditionEnum(EnumBase):
 
     @property
     def world(self):
-        return self.name.split('_')[0][1]
+        if len(self.name.split("_"))<2:
+            return ""
+        else:
+            return self.name.split('_')[0][1]
 
     @property
     def expedition(self):
-        return self.name.split('_')[1]
+        if len(self.name.split("_"))<2:
+            return ""
+        else:
+            return self.name.split('_')[1]
 
     @property
     def duration(self):

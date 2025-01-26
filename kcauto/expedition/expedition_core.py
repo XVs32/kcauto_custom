@@ -123,6 +123,37 @@ class ExpeditionCore(CoreBase):
 
             for id in cfg.config.expedition.all_expeditions:
                 self.exp_rank.append({"id":int(id.value), "score":0})
+                
+    def cut_expedition_queue(self, exp_list):
+        
+        #cut queue for normal exp first (those exist in exp_rank already)
+        for prior_exp in exp_list:
+            for exp in self.exp_rank:
+                if exp["id"] == prior_exp.value:
+                    #move this exp to first of queue
+                    self.exp_rank.remove(exp)
+                    self.exp_rank.insert(0, exp)
+                    self.exp_rank[0]["score"] = self.exp_rank[1]["score"]+1
+                    exp_list.remove(prior_exp)
+                
+        #cut queue for noro6 exp
+        for prior_exp in exp_list:
+            self.exp_rank.insert(0, {"id":prior_exp.value, "score":self.exp_rank[0]["score"]+1})
+            
+    def get_exp_api_id_from_id(self, exp_id):
+        """
+        Args:
+            exp_id (int): the name of the expedition
+
+        Returns:
+            _type_: the id of the expedition
+        """
+        for exp in ExpeditionEnum:
+            if exp.expedition == exp_id:
+                return exp
+            
+        Log.log_error(f"Expedition {exp_id} not found")
+        return -1
 
     @property
     def available_expeditions(self):
