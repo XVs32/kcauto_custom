@@ -82,15 +82,18 @@ class Kcauto(object):
 
         if exp.expedition.fleets_are_ready:
 
-            if exp.expedition.exp_for_fleet == []:
+            if cfg.config.expedition.fleet_preset == "auto" and exp.expedition.exp_for_fleet == []:
 
                 exp.expedition.get_expedition_ranking()
+                
+                if com.combat.enabled == False and pvp.pvp.enabled == False:
+                    self.run_quest_logic('auto_expedition')
+                    
 
-                if cfg.config.expedition.fleet_preset == "auto":
-                    if not flt.fleets.assign_exp_ship():
-                        exp.expedition.enabled = False
-                        Log.log_error(f"Failed to assign ships for self balance expedition, disable expedition module.")
-                        return False
+                if not flt.fleets.assign_exp_ship():
+                    exp.expedition.enabled = False
+                    Log.log_error(f"Failed to assign ships for self balance expedition, disable expedition module.")
+                    return False
                     
             if res.resupply.exp_provisional_enabled != True:
                 self.run_resupply_logic()

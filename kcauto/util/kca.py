@@ -865,7 +865,8 @@ class Kca(object):
         #Log.log_debug(f"kac.dom:{dom}")
 
         quest_tree_dom = dom("ul#questBox_rootFlow.questTree")
-        #Log.log_debug(f"kac.quest_tree_dom:{quest_tree_dom}")
+        Log.log_debug(f"kac.quest_tree_dom:{quest_tree_dom}")
+        
 
         i = 0
         while True:
@@ -882,8 +883,12 @@ class Kca(object):
                 action_raw_line = action_raw.split('\n')
                 action = {}
 
-                if quest_name[0] != "B":
-                    return None
+                if quest_name[0] == "D":
+                    for line in action_raw_line:
+                        line = line.replace(' ', '/')
+                        count = int(line.split("/")[1]) - int(line.split("/")[0])
+                        map_name = line.split("/")[-1]
+                        action[map_name] = count
                 elif quest_name == "Bw1":
                     action_raw_line[3] = action_raw_line[3].replace(' ', '/')
                     s_count =           int(action_raw_line[3].split("/")[1]) - int(action_raw_line[3].split("/")[0])

@@ -867,6 +867,121 @@
       10
     ]
   },
+  "Dm1": {
+    "id": 424,
+    "type": "monthly",
+    "intervals": [
+      0,
+      0,
+      5
+    ],
+    "expedition_context": [
+      5
+    ]
+  },
+  "Dq1": {
+    "id": 426,
+    "type": "other",
+    "expedition_context": [
+      3,
+      4,
+      5,
+      10
+    ]
+  },
+  "Dq2": {
+    "id": 428,
+    "type": "other",
+    "expedition_context": [
+      4,
+      101,
+      102
+    ]
+  },
+  "Dy1": {
+    "id": 434,
+    "type": "other",
+    "expedition_context": [
+      3,
+      5,
+      9,
+      101,
+      102
+    ]
+  },
+  "Dy2": {
+    "id": 436,
+    "type": "other",
+    "expedition_context": [
+      1,
+      2,
+      3,
+      4,
+      10
+    ]
+  },
+  "Dy3": {
+    "id": 437,
+    "type": "other",
+    "expedition_context": [
+      4,
+      104,
+      105,
+      110
+    ]
+  },
+  "Dy4": {
+    "id": 438,
+    "type": "other",
+    "expedition_context": [
+      4,
+      9,
+      100,
+      114
+    ]
+  },
+  "Dy5": {
+    "id": 439,
+    "type": "other",
+    "expedition_context": [
+      5,
+      11,
+      100,
+      110
+    ]
+  },
+  "Dy6": {
+    "id": 440,
+    "type": "other",
+    "expedition_context": [
+      5,
+      40,
+      41,
+      46,
+      142
+    ]
+  },
+  "Dy7": {
+    "id": 442,
+    "type": "other",
+    "expedition_context": [
+      29,
+      30,
+      131,
+      133
+    ]
+  },
+  "Dy8": {
+    "id": 444,
+    "type": "other",
+    "expedition_context": [
+      5,
+      9,
+      11,
+      12,
+      110
+    ]
+  },
   "E3": {
     "id": 503,
     "type": "daily",
