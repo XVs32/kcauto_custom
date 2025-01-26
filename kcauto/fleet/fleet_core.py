@@ -256,8 +256,6 @@ class FleetCore(object):
     
     def assign_exp_ship(self):
 
-        FLEET_ID_OFFSET = 2
-
         exp_ship_pool = copy.deepcopy(self.fleets[self.EXP_POOL_KEY]) 
 
         exp.expedition.exp_for_fleet = [None, None, None, None, None]

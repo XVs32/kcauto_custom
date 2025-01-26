@@ -1,9 +1,6 @@
 from pyvisauto import Region
 from random import choice
 from sys import exit
-import re
-import copy
-import shutil
 
 import config.config_core as cfg
 import combat.combat_core as com
@@ -14,11 +11,9 @@ import util.kca as kca_u
 from util.logger import Log
 import ship_switcher.ship_switcher_core as ssw
 import ships.equipment_core as equ 
-from util.json_data import JsonData
 from constants import AUTO_PRESET
 
 class FleetSwitcherCore(object):
-    AUTO = 0
     max_presets = 0
     presets = {}
     next_combat_preset = None
@@ -31,48 +26,6 @@ class FleetSwitcherCore(object):
     def __init__(self):
         self._set_next_combat_preset()
 
-    def _load_ship_pool(self):
-        """
-            method to load the setting in ship_pool.json
-        """
-        # open the file for reading
-        try:
-            ship_pool = JsonData.load_json('configs|ship_pool.json')
-        except FileNotFoundError:
-            ship_pool = JsonData.load_json('data|config|ship_pool.json')
-            shutil.copyfile('data/config/ship_pool.json', 'configs/ship_pool.json')
-        return ship_pool
-
-       
-
-    def _get_fleet_ship_id(self, fleet_ship_type, ship_pool):
-        """
-            Method to get the ship id list from ship type and ship pool
-
-            input: 
-                fleet_ship_type: The fleet list
-                    ex: [{'type': 'DD', 'id': 0}, 
-                            {'type': 'DD', 'id': 1}, 
-                            {'type': 'DD', 'id': 2}, 
-                            {'type': 'DD', 'id': 3}, 
-                            {'type': 'DD', 'id': 4}, 
-                            {'type': 'DD', 'id': 5}]
-                ship_pool(dict): The pool of ship to use
-                    ex. {"DD":[10,20,30], "CL":[41,42,43]}
-            
-            output:
-                ship_list[]: The ship id list converted from ship type and ship pool
-                    ex: [15, 27, 2, 93, 3, 7]
-        """
-        ship_list = []
-        for i in range(0,len(fleet_ship_type)):
-            ship_type = fleet_ship_type[i]['type']
-            ship_order = fleet_ship_type[i]['id']
-            ship_id = ship_pool[ship_type][ship_order]
-            ship_list.append(ship_id)
-
-        return ship_list
-
     def update_fleetpreset_data(self, data):
         # print("update_fleetpreset_data")
         self.presets = {}
@@ -82,213 +35,6 @@ class FleetSwitcherCore(object):
                 ship_id for ship_id in data['api_deck'][preset_id]['api_ship']
                 if ship_id > -1]
 
-    def assign_exp_ship(self):
-
-        FLEET_ID_OFFSET = 2
-
-        ship_pool = self._load_ship_pool()
-
-        self.custom_presets["exp"] = {}
-        exp.expedition.exp_for_fleet = [None, None, None, None, None]
-        fleet_id = 1
-        fleet_id = self._get_next_exp_fleet_id(fleet_id)
-        for exp_rank in exp.expedition.exp_rank:
-
-            ship_pool_bak = copy.deepcopy(ship_pool)
-
-
-            fleetShipId, ship_pool = self._assign_ship( \
-                self.exp_fleet_ship_type[exp_rank["id"]], \
-                ship_pool,
-                exp.expedition.exp_data[exp_rank["id"] - 1]["reqDrum"],
-                exp.expedition.exp_data[exp_rank["id"] - 1]["reqDrumCarriers"],
-                4)
-
-            if fleetShipId == -1:
-                #failed to assign ships for this exp, restore the ship pool
-                Log.log_debug(f"ship_pool restore")
-                ship_pool = ship_pool_bak 
-            else:
-
-                #Save the fleetShipId
-                self.custom_presets["exp"][fleet_id] = fleetShipId
-                exp.expedition.exp_for_fleet[fleet_id] = exp_rank["id"]
-
-                fleet_id = self._get_next_exp_fleet_id(fleet_id)
-
-            if fleet_id > 4:
-                #assign for all fleets success
-                break
-            
-        if fleet_id > 4:
-            #assign for all fleets successed
-            Log.log_success(f"auto mode asigned ship for exp{exp.expedition.exp_for_fleet[2:]}")
-            return True
-        else:
-            #some assign failed
-            return False
-
-    def _assign_ship(self, fleet_list, ship_pool, req_dc=0, req_dc_carrier=0, req_lc=4):
-        """
-            Method to assign the ship with the given fleet_list and ship_pool
-
-            input: 
-                fleet_list: The ship type 
-                    ex. [{'type': 'DD', 'id': 0}, 
-                            {'type': 'DD', 'id': 1}, 
-                            {'type': 'DD', 'id': 2}, 
-                            {'type': 'DD', 'id': 3}, 
-                            {'type': 'DD', 'id': 4}, 
-                            {'type': 'DD', 'id': 5}]
-                ship_pool(dict): The pool of ship to use
-                    ex. {"DD":[10,20,30], "CL":[41,42,43]}
-            
-            output:
-                -1: failed to assign a valid fleet
-                ship_id(dict): the ship to use for the specified exp
-                    (ex: [14,15,62,2,1,73]
-            Note:
-                This function should handle the wildcard("NA") type,
-                so that the output here should not contain any "NA"
-        """
-        ship_id = []
-        for ship in fleet_list:
-            if ship['type'] == 'NA':
-                #@todo: apply the wildcard handling
-                ship['type'] = 'DD'
-
-            wildcard = ".*"
-            suffix = ship['type']
-            pattern = rf"EXP_{wildcard}{suffix}"
-            matching_keys = [key for key in ship_pool.keys() if re.match(pattern, key) and "NAME" not in key]
-
-            pattern = r'\d+LC'  # Matches one or more digits followed by "LC"
-
-            lc_temp_list = [[],[],[],[],[]]
-            offset = 0
-            for i in range(len(matching_keys)):
-
-                match = re.search(pattern, matching_keys[i - offset])
-                if match:
-                    number = int(match.group()[:-2])
-
-                    temp = matching_keys.pop(i - offset)
-
-                    lc_temp_list[number].append(temp)
-                    offset += 1
-            
-            if req_lc > 0:
-                for i in range(1, req_lc):
-                    for ship_type in lc_temp_list[i]:
-                        matching_keys.insert(0, ship_type)
-
-                for i in range(4, req_lc-1, -1):
-                    for ship_type in lc_temp_list[i]:
-                        matching_keys.insert(0, ship_type)
-
-            pattern = r'\d+DC'  # Matches one or more digits followed by "DC"
-
-            dc_temp_list = [[],[],[],[],[]]
-            offset = 0
-            for i in range(len(matching_keys)):
-                match = re.search(pattern, matching_keys[i - offset])
-                if match:
-                    number = int(match.group()[:-2])
-
-                    temp = matching_keys.pop(i - offset)
-
-                    dc_temp_list[number].append(temp)
-                    offset += 1
-            
-            if req_dc > 0 or req_dc_carrier > 0:
-                for i in range(1, min(req_dc,5), 1):
-                    for ship_type in dc_temp_list[i]:
-                        matching_keys.insert(0, ship_type)
-
-                for i in range(4, max(req_dc-1, 0), -1):
-                    for ship_type in dc_temp_list[i]:
-                        matching_keys.insert(0, ship_type)
-            else:
-                for i in range(1, 5):
-                    for ship_type in dc_temp_list[i]:
-                        matching_keys.append(ship_type)
-
-            if req_lc <= 0:
-                for i in range(1, 5):
-                    for ship_type in lc_temp_list[i]:
-                        matching_keys.append(ship_type)
-
-            Log.log_debug(f"fleet_switcher_core: matching_keys = {matching_keys}")
-
-            success = False
-            for ship_type in matching_keys:
-
-                Log.log_debug(f"fleet_switcher_core: searching for {ship_type}")
-                Log.log_debug(f"len = {len(ship_pool[ship_type])}")
-                if len(ship_pool[ship_type]) > 0:
-
-                    ship_id.append(ship_pool[ship_type].pop(0))
-
-                    pattern = r'\d+LC'  # Matches one or more digits followed by "LC"
-                    match = re.search(pattern, ship_type)
-                    if match:
-                        number = int(match.group()[:-2])
-                        req_lc -= number
-
-                    pattern = r'\d+DC'  # Matches one or more digits followed by "DC"
-                    match = re.search(pattern, ship_type)
-                    if match:
-                        number = int(match.group()[:-2])
-                        req_dc -= number
-                        req_dc_carrier -= 1
-
-                    success = True
-                    break
-            
-            if success == False: 
-                #Cannot find a valid ship
-                Log.log_debug(f"fleet_switcher_core: assign ship failed for {fleet_list}")
-                return -1, ship_pool
-
-        return ship_id, ship_pool
-
-    def _get_next_exp_fleet_id(self, fleet_id):
-        while 1:
-            fleet_id+=1
-            if fleet_id == 2:
-                cur_fleet = cfg.config.expedition.fleet_2
-            elif fleet_id == 3:
-                cur_fleet = cfg.config.expedition.fleet_3
-            elif fleet_id == 4:
-                cur_fleet = cfg.config.expedition.fleet_4
-            else:
-                break
-
-            if cur_fleet != []:
-                break
-        return fleet_id
-
-    def _get_fleet_ship_type_from_composition(self, composition):
-        """
-            Convert the string composition (ex. "5DD, 1NA") to 
-            fleetShipType (ex. [{'type': 'DD', 'id': None}, 
-                            {'type': 'DD', 'id': None}, 
-                            {'type': 'DD', 'id': None}, 
-                            {'type': 'DD', 'id': None}, 
-                            {'type': 'DD', 'id': None}, 
-                            {'type': 'NA', 'id': None}])
-        """
-        fleetShipType = []
-
-        for type in composition.split(","):
-            count = int(type[:1])  # Extract the count from the substring
-            item_type = type[1:]  # Extract the type from the substring
-
-            for _ in range(count):
-                fleetShipType.append({"type": item_type, "id": None})
-
-        return fleetShipType
- 
     def _set_next_combat_preset(self):
         if len(cfg.config.combat.fleet_presets) > 0:
             self.next_combat_preset = choice(cfg.config.combat.fleet_presets)

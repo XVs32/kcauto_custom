@@ -376,16 +376,11 @@ class QuestCore(CoreBase):
                     exp_list = []
                     for key in exp_dict:
                         exp_list.append(ExpeditionEnum(exp.expedition.get_exp_api_id_from_id(key)))
-                    Log.log_error(f'exp_dict: {exp_dict}')
-                    Log.log_error(f'exp_list: {exp_list}')
+                    Log.log_debug(f'exp_list: {exp_list}')
                     
                     exp.expedition.cut_expedition_queue(exp_list)
                     
-                    print(exp.expedition.exp_rank)
-                    input()
-                
-
-            
+                    Log.log_debug(f'exp_rank: {exp.expedition.exp_rank}')
 
     def _get_sortie_map_from_quest(self, quest):
         Log.log_debug(f"self.quest_to_sortie_maps = {self.quest_to_sortie_maps}")
