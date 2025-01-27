@@ -41,6 +41,21 @@ class ExpeditionCore(CoreBase):
         super().__init__()
         self.timer = Timer()
         self.exp_data = JsonData.load_json('data|expedition|expedition.json')
+        
+    def get_expedition_static_data(self, id):
+        """read expedition data from json file
+
+        Args:
+            id (int): api id of target expedition
+
+        Returns:
+            dict: expedition static data, check data|expedition|expedition.json
+        """
+        
+        for exp in self.exp_data:
+            if exp["id"] == id:
+                return exp
+        return None
 
     def is_fleetswitch_needed(self):
         if cfg.config.expedition.fleet_preset == "auto" and self.auto_assign_done == False:
@@ -140,7 +155,7 @@ class ExpeditionCore(CoreBase):
         for prior_exp in exp_list:
             self.exp_rank.insert(0, {"id":prior_exp.value, "score":self.exp_rank[0]["score"]+1})
             
-    def get_exp_api_id_from_id(self, exp_id):
+    def get_exp_enum_from_id(self, exp_id):
         """
         Args:
             exp_id (int): the name of the expedition
