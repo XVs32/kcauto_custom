@@ -369,13 +369,17 @@ class QuestCore(CoreBase):
                 """Read quest progress""" 
                 exp_dict = kca_u.kca.get_quest_count(next_quest)
                 
+                Log.log_debug(f'exp_dict {exp_dict}')
+                
                 if exp_dict == None:
                     Log.log_warn(f"Cannot get quest progress from kc3, kcauto_custom fail to select corresponding expedition")
                 else:
                     
                     exp_list = []
                     for key in exp_dict:
-                        exp_list.append(ExpeditionEnum(exp.expedition.get_exp_api_id_from_id(key)))
+                        if exp_dict[key] == 0:
+                            continue
+                        exp_list.append(ExpeditionEnum(exp.expedition.get_exp_enum_from_id(key)))
                     Log.log_debug(f'exp_list: {exp_list}')
                     
                     exp.expedition.cut_expedition_queue(exp_list)
