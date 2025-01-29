@@ -239,23 +239,34 @@ class FleetCore(object):
         noro6 = Noro6()
  
         for preset in noro6.presets:
+            
             noro6.get_map(preset["name"])
-            ret[preset["name"]] = {}
-            for fleet_id in range(1, noro6.get_fleet_count() + 1 ):
-                noro6.get_fleet(fleet_id)
-                ret[preset["name"]][fleet_id] = Fleet(fleet_id, noro6.get_preset_type(), False)
+            
+            Log.log_error(f'current config {preset["name"]}')
+            
+            fleet_type = noro6.get_preset_type()
+            if fleet_type == FleetEnum.EXPEDITION:
+                preset_name = exp.expedition.get_exp_enum_from_name(preset["name"].split("-")[-1])
+                Log.log_error(f'hit {preset_name}')
+            else:
+                preset_name = preset["name"]
                 
-                ret[preset["name"]][fleet_id].ship_data = []
-                for i in range(1, noro6.get_ship_count() + 1 ):
+            ret[preset_name] = {}
+                
+            for fleet_id in range(0, noro6.get_fleet_count()):
+                noro6.get_fleet(fleet_id)
+                
+                ret[preset_name][fleet_id] = Fleet(fleet_id + fleet_type.value, fleet_type, False)
+                ret[preset_name][fleet_id].ship_data = []
                     
+                for i in range(1, noro6.get_ship_count() + 1 ):
                     ship = shp.ships.get_ship_from_noro6_ship(noro6.get_ship(i))
                     if ship == None:
                         Log.log_error(f'Something goes wrong when setting up Noro6 {preset["name"]} fleet, exiting...')
                         exit()
-                    
                     else:
-                        ret[preset["name"]][fleet_id].ship_data.append(ship)
-                    
+                        ret[preset_name][fleet_id].ship_data.append(ship)
+                        
         return ret 
     
     def assign_exp_ship(self):
@@ -302,12 +313,14 @@ class FleetCore(object):
                 else:
 
                     #Save the fleetShipId
-                    MORK_FLEET_ID = -1
-                    self.fleets[exp_rank["id"]] = Fleet(MORK_FLEET_ID, FleetEnum.EXPEDITION, False)
-                    self.fleets[exp_rank["id"]].ship_data = fleet_ship_id_list
+                    MORK_FLEET_ID = 2
+                    DEFAULT_FLEET_ID = 1
+                    self.fleets[ExpeditionEnum(exp_rank["id"])] = {}
+                    self.fleets[ExpeditionEnum(exp_rank["id"])][DEFAULT_FLEET_ID] = Fleet(MORK_FLEET_ID, FleetEnum.EXPEDITION, False)
+                    self.fleets[ExpeditionEnum(exp_rank["id"])][DEFAULT_FLEET_ID].ship_data = fleet_ship_id_list
     
-                    equ.equipment.custom_equipment[exp_rank["id"]] = exp_equipment_id_list
-                    exp.expedition.exp_for_fleet[fleet_id] = exp_rank["id"]
+                    equ.equipment.custom_equipment[ExpeditionEnum(exp_rank["id"])] = exp_equipment_id_list
+                    exp.expedition.exp_for_fleet[fleet_id] = ExpeditionEnum(exp_rank["id"])
 
                     fleet_id = self._get_next_exp_fleet_id(fleet_id)
 
@@ -315,11 +328,13 @@ class FleetCore(object):
                 Log.log_error(f'in 1')
                 expEnum = ExpeditionEnum(exp_rank["id"])
                 
-                if expEnum.expedition in self.fleets:
-                    Log.log_error(f'in 2')
+                Log.log_error(f'expEnum: {expEnum}')
+                
+                if expEnum in self.fleets:
+                    Log.log_error(f'in 2  {expEnum.expedition}')
                     noro6_available = False
+                    exp.expedition.exp_for_fleet[fleet_id] = expEnum 
                     fleet_id = self._get_next_exp_fleet_id(fleet_id)
-                    exp.expedition.exp_for_fleet[fleet_id] = expEnum.expedition
                 
             if fleet_id > 4:
                 #assign for all fleets success
