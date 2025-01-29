@@ -379,7 +379,7 @@ class QuestCore(CoreBase):
                     for key in exp_dict:
                         if exp_dict[key] == 0:
                             continue
-                        exp_list.append(ExpeditionEnum(exp.expedition.get_exp_enum_from_id(key)))
+                        exp_list.append(ExpeditionEnum(exp.expedition.get_exp_enum_from_name(key)))
                     Log.log_debug(f'exp_list: {exp_list}')
                     
                     exp.expedition.cut_expedition_queue(exp_list)
