@@ -107,8 +107,9 @@ class FleetSwitcherCore(object):
                     if flag == False:
                         return False
                     
+                    DEFAULT_FLEET_ID = 1
                     temp = {}
-                    temp[fleet_id] = flt.fleets.fleets[exp.expedition.exp_for_fleet[fleet_id]]
+                    temp[fleet_id] = flt.fleets.fleets[exp.expedition.exp_for_fleet[fleet_id]][DEFAULT_FLEET_ID]
                     if not self.switch_to_costom_fleet_with_equipment(fleet_id, temp, exp.expedition.exp_for_fleet[fleet_id]):
                         return False
 
@@ -245,6 +246,13 @@ class FleetSwitcherCore(object):
             flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][fleet_id].select()
             
             empty_slot_count = 0
+            
+            Log.log_error(f'costom_fleet: {costom_fleet[fleet_id].ship_ids}')
+            Log.log_error(f'fleet_id: {fleet_id}')
+            
+            
+            Log.log_error(f'flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY]: {flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][fleet_id].ship_ids}')
+            Log.log_error(f'fleet_id: {fleet_id}')
 
             size = max(len(flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][fleet_id].ship_ids), len(costom_fleet[fleet_id].ship_ids))
 
