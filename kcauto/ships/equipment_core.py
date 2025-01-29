@@ -17,6 +17,11 @@ from fleet.fleet import Fleet
 from random import randrange
 
 class EquipmentCore(object):
+    
+    RAW = "raw"
+    LOADED = "loaded"
+    FREE = "free"
+    ID = "id"
 
     equipment = {}
     equipment_exp = {}  #contain all equipments which does not exist in noro6 config
@@ -28,12 +33,14 @@ class EquipmentCore(object):
     custom_equipment = {}
     
     is_custom_fleet_equipment_loaded = False
+    
+    
 
     def __init__(self):
-        self.equipment["raw"] = {}
-        self.equipment["loaded"] = {}
-        self.equipment["free"] = []
-        self.equipment["id"] = {}
+        self.equipment[self.RAW] = {}
+        self.equipment[self.LOADED] = {}
+        self.equipment[self.FREE] = []
+        self.equipment[self.ID] = []
 
         try:
             self.reinforce_general_category = JsonData.load_json('data|temp|reinforce_general_category.json')
@@ -44,10 +51,12 @@ class EquipmentCore(object):
             Log.log_error("Reinforce equipment data not found, please start kcauto from splash screen")
 
         try:
-            self.equipment["id"] = JsonData.load_json('data|temp|equipment_list.json')
+            self.equipment[self.ID] = JsonData.load_json('data|temp|equipment_list.json')
+            EMPTY_EQUIPMENT = {"api_id": 0, "api_slotitem_id": 0, "api_locked": 0, "api_level": 0}
+            self.equipment[self.ID].append(EMPTY_EQUIPMENT)
         except FileNotFoundError:
             Log.log_debug("Equipment data not found, use empty list instead")
-            JsonData.dump_json(self.equipment["id"], 'data|temp|equipment_list.json')
+            JsonData.dump_json(self.equipment[self.ID], 'data|temp|equipment_list.json')
     
     def fill_with_equipment(self, ship, equipment, count):
         """
@@ -85,9 +94,9 @@ class EquipmentCore(object):
     def _remove_from_pool(self, equipment_id, equipment_pool = True, equipment_exp_pool = False):
         
         if equipment_pool == True:
-            for equipment in self.equipment["id"]:
+            for equipment in self.equipment[self.ID]:
                 if equipment["api_id"] == equipment_id:
-                    self.equipment["id"].remove(equipment)
+                    self.equipment[self.ID].remove(equipment)
                     break
                 
         if equipment_exp_pool == True:
@@ -95,7 +104,6 @@ class EquipmentCore(object):
                 if equipment["api_id"] == equipment_id:
                     self.equipment_exp.remove(equipment)
                     break
-            
             
     def noro6_to_kcauto(self):
         """
@@ -105,15 +113,25 @@ class EquipmentCore(object):
             output (kcauto preset) :
         """
         
-        equipment_bak = self.equipment["id"].copy()
-        self.equipment_exp = self.equipment["id"].copy()
+        import expedition.expedition_core as exp
+        
+        equipment_bak = self.equipment[self.ID].copy()
+        self.equipment_exp = self.equipment[self.ID].copy()
         
         ret = {}
         noro6 = Noro6()
  
         for preset in noro6.presets:
             noro6.get_map(preset["name"])
-            ret[preset["name"]] = {}
+            
+            fleet_type = noro6.get_preset_type()
+            if fleet_type == FleetEnum.EXPEDITION:
+                preset_name = exp.expedition.get_exp_enum_from_name(preset["name"].split("-")[-1])
+                Log.log_error(f'hit {preset_name}')
+            else:
+                preset_name = preset["name"]
+                
+            ret[preset_name] = {}
            
             for fleet_id in range(1, noro6.get_fleet_count() + 1 ):
                 noro6.get_fleet(fleet_id)
@@ -121,9 +139,9 @@ class EquipmentCore(object):
                 for i in range(1, noro6.get_ship_count() + 1 ):
                     ship = shp.ships.get_ship_from_noro6_ship(noro6.get_ship(i))
                     if ship == None:
-                        Log.log_error(f'Something goes wrong when setting up Noro6 {preset["name"]} equipment, exiting...')
+                        Log.log_error(f'Something goes wrong when setting up Noro6 {preset_name} equipment, exiting...')
                         exit()
-                    ret[preset["name"]][ship.production_id] = []
+                    ret[preset_name][ship.production_id] = []
                     
                     for j in range(1, noro6.get_equipment_count() + 1 ):
                         
@@ -133,34 +151,33 @@ class EquipmentCore(object):
                             Log.log_error(f"Failed finding equipment for {preset['name']}, exit...")
                             exit(0)
                         
-                        ret[preset["name"]][ship.production_id].append(
+                        ret[preset_name][ship.production_id].append(
                             this_equipment["api_id"]
                         )
                         
                         #remove this equipment from equipment pool
-                        self._remove_from_pool(equipment_id=this_equipment["api_id"], equipment_exp_pool=True)
+                        if  this_equipment["api_id"] > 0:
+                            self._remove_from_pool(equipment_id=this_equipment["api_id"], equipment_exp_pool=True)
                         
                     #padding to 6 equipment slot with -1
                     for k in range(noro6.get_equipment_count() + 1, 7):
-                        ret[preset["name"]][ship.production_id].append(-1)
+                        ret[preset_name][ship.production_id].append(-1)
                    
                     
                     reinforce_equipment = noro6.get_reinforce_equipment()
                     if reinforce_equipment["i"] > 0:
                         this_equipment = self._get_equipment_from_noro6_equipment(reinforce_equipment)
-                        ret[preset["name"]][ship.production_id][6-1] = this_equipment["api_id"]
+                        ret[preset_name][ship.production_id][6-1] = this_equipment["api_id"]
                     
                         #remove this equipment from equipment pool
-                        for equipment in self.equipment["id"]:
-                            if equipment["api_id"] == this_equipment["api_id"]:
-                                self.equipment["id"].remove(equipment)
-                                break
+                        if  this_equipment["api_id"] > 0:
+                            self._remove_from_pool(equipment_id=this_equipment["api_id"], equipment_exp_pool=True)
                     else:
-                        ret[preset["name"]][ship.production_id][6-1] = reinforce_equipment["i"]
+                        ret[preset_name][ship.production_id][6-1] = reinforce_equipment["i"]
 
                         
                         
-            self.equipment["id"] = equipment_bak.copy()                    
+            self.equipment[self.ID] = equipment_bak.copy()                    
                 
         return ret 
     
@@ -170,12 +187,12 @@ class EquipmentCore(object):
             noro6_equipment (dict): noro6 equipment data
             output (int) : equipment production id
         """
-        production_id_list = self._get_production_id(self.equipment["id"], noro6_equipment["i"])
-       
+        production_id_list = self._get_production_id(self.equipment[self.ID], noro6_equipment["i"])
+        
         is_any_match = False
         temp_equipment = []
         for id in production_id_list:
-            for equipment in self.equipment["id"]:
+            for equipment in self.equipment[self.ID]:
                 if equipment["api_id"] == id:
                     is_any_match = True
                     temp_equipment.append(equipment)
@@ -192,7 +209,9 @@ class EquipmentCore(object):
                 return temp_equipment[i]
             
         if len(temp_equipment) == 0:
+            
             Log.log_error("can't find any match equipment")
+            Log.log_error("here can't find any match equipment")
             return None
         
         #sort by the absolute value of difference between api_lv and rf
@@ -514,7 +533,7 @@ class EquipmentCore(object):
 
                 try:
                     if slot < 6:
-                        row_id = self.equipment["free"].index(equipment_id)
+                        row_id = self.equipment[self.FREE].index(equipment_id)
                     else:
                         row_id = self.get_reinforce_equipment_list(load_ship_id[i]).index(equipment_id)
                         ssw.ship_switcher.current_page = 1
@@ -606,7 +625,7 @@ class EquipmentCore(object):
     def _get_name_id(self, production_id):
         """method to convert equipment production id to equipment name id"""
 
-        for id in self.equipment["id"]:
+        for id in self.equipment[self.ID]:
             if id["api_id"] == production_id:
                 return id["api_slotitem_id"]        
         Log.log_warn(f"Cannot find production_id:{production_id} in equipment list, performing sortie to update")
@@ -618,13 +637,18 @@ class EquipmentCore(object):
         is_any_match = False
         output_list = []
 
-        for id in equipment_pool:
-            if id["api_slotitem_id"] == name_id:
-                output_list.append(id["api_id"])
-                is_any_match = True
+        EMPTY = 0
+        if name_id != EMPTY:
+            for id in equipment_pool:
+                if id["api_slotitem_id"] == name_id:
+                    output_list.append(id["api_id"])
+                    is_any_match = True
 
-        if is_any_match != True:
-            Log.log_warn(f"Cannot find namd_id:{name_id} in equipment list, looks like you don't have any")
+            if is_any_match != True:
+                Log.log_warn(f"Cannot find namd_id:{name_id} in equipment list, looks like you don't have any")
+        else:
+            Log.log_debug("EMPTY equipment slot")
+            output_list = [0]
 
         return output_list
 
