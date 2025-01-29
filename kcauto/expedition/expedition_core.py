@@ -155,7 +155,7 @@ class ExpeditionCore(CoreBase):
         for prior_exp in exp_list:
             self.exp_rank.insert(0, {"id":prior_exp.value, "score":self.exp_rank[0]["score"]+1})
             
-    def get_exp_enum_from_id(self, exp_id):
+    def get_exp_enum_from_name(self, exp_id):
         """
         Args:
             exp_id (int): the name of the expedition
@@ -270,7 +270,7 @@ class ExpeditionCore(CoreBase):
             
             if any(s in cfg.config.expedition.expeditions_for_fleet(fleet.fleet_id)\
                 for s in (ExpeditionEnum.AUTO, ExpeditionEnum.ACTIVE, ExpeditionEnum.PASSIVE, ExpeditionEnum.OVERNIGHT)):
-                expedition = ExpeditionEnum(self.exp_for_fleet[fleet.fleet_id])
+                expedition = self.exp_for_fleet[fleet.fleet_id]
             else:
                 expedition = choice(
                     cfg.config.expedition.expeditions_for_fleet(
