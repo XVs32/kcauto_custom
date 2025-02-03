@@ -26,6 +26,7 @@ class ExpeditionCore(CoreBase):
     module_name = 'expedition'
     module_display_name = 'Expedition'
     available_expeditions_per_world = {}
+    exp_state = {}
     exp_data = None
     exp_rank = []
     exp_for_fleet = []
@@ -33,6 +34,7 @@ class ExpeditionCore(CoreBase):
     cur_exp = [0,0,0,0]
     timer = None
     auto_assign_done = False
+    prerequisite_table = {}
 
     def __init__(self):
         """
@@ -41,6 +43,7 @@ class ExpeditionCore(CoreBase):
         super().__init__()
         self.timer = Timer()
         self.exp_data = JsonData.load_json('data|expedition|expedition.json')
+        self.prerequisite_table = JsonData.load_json('data|expedition|expedition_unlock_table.json')
         
     def get_expedition_static_data(self, id):
         """read expedition data from json file
@@ -62,6 +65,21 @@ class ExpeditionCore(CoreBase):
             return True 
         else:
             return False 
+        
+    def get_prerequisite_expedition(self, exp_enum):
+        """
+        get the prerequisite expedition of the given expedition
+        
+        Args:
+            exp_enum(expeditionEnum): current exp
+        """
+        ret = []
+        if str(exp_enum.value) in self.prerequisite_table:
+            for prerequisite in self.prerequisite_table[str(exp_enum.value)]:
+                ret.append(ExpeditionEnum(prerequisite))
+            return ret
+        else:
+            return [ExpeditionEnum(exp_enum.value-1) ]
 
    # With a normal function
     def cmp(self, item):
@@ -100,7 +118,6 @@ class ExpeditionCore(CoreBase):
                 max_time = OVERNIGHT_TIME_INTERVAL
 
 
-
             fuel_weight = max(MAX_RESOURCE - sts.stats.rsc.fuel, 0)
             ammo_weight = max(MAX_RESOURCE - sts.stats.rsc.ammo, 0)
             steel_weight = max(MAX_RESOURCE - sts.stats.rsc.steel, 0)
@@ -128,9 +145,7 @@ class ExpeditionCore(CoreBase):
                 #else:
                     #Passive mode
                     #score /= PASSIVE_TIME_INTERVAL #Does not affect ranking
-                
                 self.exp_rank.append({"id":id, "score":score})
-
             self.exp_rank.sort(key=self.cmp, reverse=True)
 
         else:
@@ -138,6 +153,53 @@ class ExpeditionCore(CoreBase):
 
             for id in cfg.config.expedition.all_expeditions:
                 self.exp_rank.append({"id":int(id.value), "score":0})
+
+    def prerequisite_handling(self):
+        
+        NEW = 0
+        NOT_CLEARED = 1
+        CLEARED = 2
+        
+        Log.log_error(f'available expeditions {self.available_expeditions}')
+        
+        flag = True
+        while flag == True:
+            flag = False
+            for exp in self.exp_rank:
+                
+                if ExpeditionEnum(exp["id"]) not in self.available_expeditions:
+                    Log.log_error(f'expEnum not available {exp}')
+                    self.exp_rank.remove(exp)
+                    Log.log_error(f'expEnum after remove{exp}')
+                    for prerequisite in self.get_prerequisite_expedition(ExpeditionEnum(exp["id"])):
+                            
+                        if prerequisite in self.available_expeditions:
+                            if self.exp_state[prerequisite.value] == NEW or self.exp_state[prerequisite.value] == NOT_CLEARED:
+                                Log.log_error(f'exp {prerequisite} is in {self.exp_state[prerequisite.value]} state, adding into prerequisite')
+                                self.exp_rank.append({"id":prerequisite.value, "score":exp["score"]})
+                            elif self.exp_state[prerequisite.value] == CLEARED:
+                                Log.log_error(f'exp {prerequisite} cleared already, not adding into prerequisite')
+                                pass
+                            else:
+                                Log.log_error(f"unknown expedition state {self.exp_state[prerequisite.value]}")
+                                exit(0)
+                        else:
+                            self.exp_rank.append({"id":prerequisite.value, "score":exp["score"]})
+                            Log.log_error(f'exp {prerequisite} is not available, but adding into prerequisite, handle next round')
+                            flag = True
+                            
+                if flag == True:
+                    #run next round immediately
+                    break
+        
+            self.exp_rank.sort(key=self.cmp, reverse=True)
+            #remove duplicate, keep the element with higher score
+            temp = []
+            for exp in self.exp_rank:
+                if exp["id"] not in temp:
+                    temp.append(exp["id"])
+                else:
+                    self.exp_rank.remove(exp)
                 
     def cut_expedition_queue(self, exp_list):
         
@@ -150,6 +212,7 @@ class ExpeditionCore(CoreBase):
                     self.exp_rank.insert(0, exp)
                     self.exp_rank[0]["score"] = self.exp_rank[1]["score"]+1
                     exp_list.remove(prior_exp)
+                    break
                 
         #cut queue for noro6 exp
         for prior_exp in exp_list:
@@ -177,11 +240,15 @@ class ExpeditionCore(CoreBase):
     @available_expeditions.setter
     def available_expeditions(self, value):
         available_expeditions = []
+        exp_state = {}
         for exped in value:
             exped_id = exped['api_mission_id']
             if ExpeditionEnum.contains_value(exped_id):
                 available_expeditions.append(ExpeditionEnum(exped_id))
+                exp_state[exped_id] = exped['api_state']
+            
         self._available_expeditions = available_expeditions
+        self.exp_state = exp_state
 
     def populate_available_expeditions_per_world(self):
         self.available_expeditions_per_world = {}
