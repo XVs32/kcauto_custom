@@ -843,13 +843,26 @@ class Kca(object):
         self.find_kancolle()
 
         return
+    
+    def get_quest_dom(self):
+        """ method to get the raw quest info form KC3.
 
-    def get_quest_count(self, target_quest_name):
+        Return:
+            raw html text of KC3 quest page
+        """
+        
+        self.reload_kc3_strategy_page(subpage = "#flowchart")
+
+        dom = PyQuery(self.html, parser='html')
+
+        quest_tree_dom = dom("ul#questBox_rootFlow.questTree")
+        Log.log_debug(f"kac.quest_tree_dom:{quest_tree_dom}")
+        
+        return quest_tree_dom
+        
+    def get_quest_count(self, target_quest_name, quest_dom=None):
         """ method to get the remaining action needed for the specified quest.
             For example, the remaining sorties needed for quest Bm3 could be {1-4:1, 3-5:0}
-
-        Note:
-            Expect reload_kc3_strategy_page() is excuted
 
         Args:
             target_quest_name (string): The quest to check. (ex. "Bm3")
@@ -858,15 +871,16 @@ class Kca(object):
             dict with key of quest name, and value of remaining actions needed.
             return None if quest is not combat type.
         """
-
-        self.reload_kc3_strategy_page(subpage = "#flowchart")
-
-        dom = PyQuery(self.html, parser='html')
-        #Log.log_debug(f"kac.dom:{dom}")
-
-        quest_tree_dom = dom("ul#questBox_rootFlow.questTree")
-        Log.log_debug(f"kac.quest_tree_dom:{quest_tree_dom}")
         
+        if quest_dom == None:
+            self.reload_kc3_strategy_page(subpage = "#flowchart")
+
+            dom = PyQuery(self.html, parser='html')
+
+            quest_tree_dom = dom("ul#questBox_rootFlow.questTree")
+            Log.log_debug(f"kac.quest_tree_dom:{quest_tree_dom}")
+        else:
+            quest_tree_dom = quest_dom
 
         i = 0
         while True:
