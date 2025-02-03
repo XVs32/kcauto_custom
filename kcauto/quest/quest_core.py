@@ -250,9 +250,33 @@ class QuestCore(CoreBase):
                     if quest_id == visable_quest['api_no']:
                         return quest
         return None
+ 
+    def _get_quests_rank_list(self, mode):
+        """Method to get quests in a list sorted by priority
+
+            Input: mode(MACRO): self.SORTIE/self.EXPEDITION
+            
+            Return:
+                quest(list): The list of quest(ex. ["Bd1","Bd2"])
+        """
         
-
-
+        if mode == self.SORTIE:
+            self.relevant_quests = self._get_quest_in_config(["combat"]) #quest from config
+        elif mode == self.EXPEDITION:
+            self.relevant_quests = self._get_quest_in_config(["expedition"]) #quest from config
+            
+        ret = []
+        
+        for quest in self.quest_priority_library:
+            if quest in self.relevant_quests:
+                for visable_quest in self.visible_quests:
+                    if visable_quest['api_state'] == 3: # This quest is done
+                        continue
+                    quest_id = self.quest_library[quest].quest_id
+                    if quest_id == visable_quest['api_no']:
+                        ret.append(quest)
+        return ret 
+    
     def _toggle_quests(self, context):
         """Method that active quest to work on
 
@@ -362,12 +386,15 @@ class QuestCore(CoreBase):
             
         elif mode == self.EXPEDITION:
             
-            next_quest = self._find_next_quests(self.EXPEDITION)
+            quest_list = self._get_quests_rank_list(self.EXPEDITION)
             
-            if next_quest != None:
-
+            quest_dom = kca_u.kca.get_quest_dom()
+            
+            for next_quest in reversed(quest_list):
+                Log.log_debug(f"next_quest = {next_quest}")
+            
                 """Read quest progress""" 
-                exp_dict = kca_u.kca.get_quest_count(next_quest)
+                exp_dict = kca_u.kca.get_quest_count(quest_dom=quest_dom, target_quest_name= next_quest)
                 
                 Log.log_debug(f'exp_dict {exp_dict}')
                 
