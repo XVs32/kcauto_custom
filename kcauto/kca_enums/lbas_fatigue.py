@@ -5,9 +5,9 @@ from kca_enums.enum_base import EnumBase
 
 @total_ordering
 class LBASFatigueEnum(EnumBase):
-    HEAVY_FATIGUE = 3
-    MEDIUM_FATIGUE = 2
-    NO_FATIGUE = 1
+    HEAVY_FATIGUE = 2
+    MEDIUM_FATIGUE = 1
+    NO_FATIGUE = 0
 
     def display_name(self):
         return self.name.replace('_', ' ').title()
