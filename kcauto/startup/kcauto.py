@@ -83,11 +83,17 @@ class Kcauto(object):
         if exp.expedition.fleets_are_ready:
 
             if cfg.config.expedition.fleet_preset == "auto" and exp.expedition.exp_for_fleet == []:
-
+                
+                #get available expedition list from api
+                exp.expedition.goto()
                 exp.expedition.get_expedition_ranking()
                 
                 if com.combat.enabled == False and pvp.pvp.enabled == False:
                     self.run_quest_logic('auto_expedition')
+                    
+                exp.expedition.prerequisite_handling()
+                
+                Log.log_error(f'done exp rank: {exp.expedition.exp_rank}')
 
                 if not flt.fleets.assign_exp_ship():
                     exp.expedition.enabled = False
