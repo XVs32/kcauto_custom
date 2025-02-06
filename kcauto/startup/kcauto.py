@@ -82,15 +82,23 @@ class Kcauto(object):
 
         if exp.expedition.fleets_are_ready:
 
-            if exp.expedition.exp_for_fleet == []:
-
+            if cfg.config.expedition.fleet_preset == "auto" and exp.expedition.exp_for_fleet == []:
+                
+                #get available expedition list from api
+                exp.expedition.goto()
                 exp.expedition.get_expedition_ranking()
+                
+                if com.combat.enabled == False and pvp.pvp.enabled == False:
+                    self.run_quest_logic('auto_expedition')
+                    
+                exp.expedition.prerequisite_handling()
+                
+                Log.log_msg(f'Expedition rank: {exp.expedition.exp_rank}')
 
-                if cfg.config.expedition.fleet_preset == "auto":
-                    if not flt.fleets.assign_exp_ship():
-                        exp.expedition.enabled = False
-                        Log.log_error(f"Failed to assign ships for self balance expedition, disable expedition module.")
-                        return False
+                if not flt.fleets.assign_exp_ship():
+                    exp.expedition.enabled = False
+                    Log.log_error(f"Failed to assign ships for self balance expedition, disable expedition module.")
+                    return False
                     
             if res.resupply.exp_provisional_enabled != True:
                 self.run_resupply_logic()
@@ -335,23 +343,6 @@ class Kcauto(object):
             
 
     def _run_fleetswitch_logic(self, context):
-
-        """
-        switch_needed = False
-
-        while fsw.fleet_switcher.require_fleetswitch(context):
-            switch_needed = True
-            
-            if not fsw.fleet_switcher.switch_fleet(context):
-                self.handle_back_to_home(True)
-                return -2
-            self.handle_back_to_home(True)
-            
-        if switch_needed:
-            return 0
-        else:
-            return -1
-        """
 
         if not fsw.fleet_switcher.switch_fleet(context):
             Log.log_error(f"Failed to switch ships for {context}.")
