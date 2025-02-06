@@ -242,12 +242,10 @@ class FleetCore(object):
             
             noro6.get_map(preset["name"])
             
-            Log.log_error(f'current config {preset["name"]}')
             
             fleet_type = noro6.get_preset_type()
             if fleet_type == FleetEnum.EXPEDITION:
                 preset_name = exp.expedition.get_exp_enum_from_name(preset["name"].split("-")[-1])
-                Log.log_error(f'hit {preset_name}')
             else:
                 preset_name = preset["name"]
                 
@@ -286,7 +284,7 @@ class FleetCore(object):
             
             if  exp_static_data != None :
 
-                Log.log_error(f'exp id: {exp_static_data["id"]}')
+                Log.log_debug(f'exp id: {exp_static_data["id"]}')
                 
                 exp_ship_pool_bak = copy.deepcopy(exp_ship_pool)
                 exp_equipment_pool_bak = copy.deepcopy(equ.equipment.equipment_exp)
@@ -325,13 +323,10 @@ class FleetCore(object):
                     fleet_id = self._get_next_exp_fleet_id(fleet_id)
 
             elif noro6_available == True :
-                Log.log_error(f'in 1')
                 expEnum = ExpeditionEnum(exp_rank["id"])
                 
-                Log.log_error(f'expEnum: {expEnum}')
-                
                 if expEnum in self.fleets:
-                    Log.log_error(f'in 2  {expEnum.expedition}')
+                    Log.log_msg(f'Use Noro6 for {expEnum.expedition}')
                     noro6_available = False
                     exp.expedition.exp_for_fleet[fleet_id] = expEnum 
                     fleet_id = self._get_next_exp_fleet_id(fleet_id)
@@ -340,9 +335,6 @@ class FleetCore(object):
                 #assign for all fleets success
                 break
             
-        
-        Log.log_error(f'last fleet id: {fleet_id}')
-        Log.log_error(f'exp_for_fleet: {exp.expedition.exp_for_fleet}')
         
         if fleet_id > 4:
             #assign for all fleets successed

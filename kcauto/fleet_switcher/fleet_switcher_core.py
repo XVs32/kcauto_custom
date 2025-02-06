@@ -247,13 +247,6 @@ class FleetSwitcherCore(object):
             
             empty_slot_count = 0
             
-            Log.log_error(f'costom_fleet: {costom_fleet[fleet_id].ship_ids}')
-            Log.log_error(f'fleet_id: {fleet_id}')
-            
-            
-            Log.log_error(f'flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY]: {flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][fleet_id].ship_ids}')
-            Log.log_error(f'fleet_id: {fleet_id}')
-
             size = max(len(flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][fleet_id].ship_ids), len(costom_fleet[fleet_id].ship_ids))
 
             any_vaild_switch = False

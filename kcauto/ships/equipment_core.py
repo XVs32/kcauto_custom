@@ -127,7 +127,6 @@ class EquipmentCore(object):
             fleet_type = noro6.get_preset_type()
             if fleet_type == FleetEnum.EXPEDITION:
                 preset_name = exp.expedition.get_exp_enum_from_name(preset["name"].split("-")[-1])
-                Log.log_error(f'hit {preset_name}')
             else:
                 preset_name = preset["name"]
                 

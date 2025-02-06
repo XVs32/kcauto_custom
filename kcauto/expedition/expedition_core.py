@@ -160,32 +160,29 @@ class ExpeditionCore(CoreBase):
         NOT_CLEARED = 1
         CLEARED = 2
         
-        Log.log_error(f'available expeditions {self.available_expeditions}')
-        
         flag = True
         while flag == True:
             flag = False
             for exp in self.exp_rank:
                 
                 if ExpeditionEnum(exp["id"]) not in self.available_expeditions:
-                    Log.log_error(f'expEnum not available {exp}')
+                    Log.log_debug(f'expEnum not available {exp}')
                     self.exp_rank.remove(exp)
-                    Log.log_error(f'expEnum after remove{exp}')
                     for prerequisite in self.get_prerequisite_expedition(ExpeditionEnum(exp["id"])):
                             
                         if prerequisite in self.available_expeditions:
                             if self.exp_state[prerequisite.value] == NEW or self.exp_state[prerequisite.value] == NOT_CLEARED:
-                                Log.log_error(f'exp {prerequisite} is in {self.exp_state[prerequisite.value]} state, adding into prerequisite')
+                                Log.log_debug(f'exp {prerequisite} is in {self.exp_state[prerequisite.value]} state, adding into prerequisite')
                                 self.exp_rank.append({"id":prerequisite.value, "score":exp["score"]})
                             elif self.exp_state[prerequisite.value] == CLEARED:
-                                Log.log_error(f'exp {prerequisite} cleared already, not adding into prerequisite')
+                                Log.log_debug(f'exp {prerequisite} cleared already, not adding into prerequisite')
                                 pass
                             else:
-                                Log.log_error(f"unknown expedition state {self.exp_state[prerequisite.value]}")
+                                Log.log_debug(f"unknown expedition state {self.exp_state[prerequisite.value]}")
                                 exit(0)
                         else:
                             self.exp_rank.append({"id":prerequisite.value, "score":exp["score"]})
-                            Log.log_error(f'exp {prerequisite} is not available, but adding into prerequisite, handle next round')
+                            Log.log_debug(f'exp {prerequisite} is not available, but adding into prerequisite, handle next round')
                             flag = True
                             
                 if flag == True:
