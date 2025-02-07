@@ -15,20 +15,26 @@ class ExpeditionEnum(EnumBase):
     E3_17, E3_18, E3_19, E3_20, E3_21, E3_22, E3_23, E3_24 = 17, 18, 19, 20, 21, 22, 23, 24
 
     E4_25, E4_26, E4_27, E4_28, E4_29, E4_30, E4_31, E4_32 = 25, 26, 27, 28, 29, 30, 31, 32
-    E3_D1, E3_D2, E3_D3 = 131, 132, 133 
+    E3_D1, E3_D2, E3_D3 = 131, 132, 133 #It is strange but D1: 131 is correct while A1: 100, check api api_mst_mission
     E5_33, E5_34, E5_35, E5_36, E5_37, E5_38, E5_39, E5_40 = 33, 34, 35, 36, 37, 38, 39, 40
-    E5_E1, E5_E2 = 141, 142
+    E5_E1, E5_E2 = 141, 142  
 
-    E7_41, E7_42, E7_43, E7_44 = 41, 42, 43, 44
+    E7_41, E7_42, E7_43, E7_44 , E7_45, E7_46= 41, 42, 43, 44, 45, 46
     EE_S1, EE_S2 = 301, 302
 
     @property
     def world(self):
-        return self.name.split('_')[0][1]
+        if len(self.name.split("_"))<2:
+            return ""
+        else:
+            return self.name.split('_')[0][1]
 
     @property
     def expedition(self):
-        return self.name.split('_')[1]
+        if len(self.name.split("_"))<2:
+            return ""
+        else:
+            return self.name.split('_')[1]
 
     @property
     def duration(self):
