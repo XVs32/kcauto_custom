@@ -23,6 +23,8 @@ from util.logger import Log
 
 class QuestCore(CoreBase):
     QUEST_TYPE_WEIGHTS = {'daily': 1, 'weekly': 2, 'monthly': 3, 'other': 4}
+    SORTIE = 1
+    EXPEDITION = 2
     module_name = 'quest'
     module_display_name = 'Quest'
     quest_reset_time = datetime.now()
@@ -106,7 +108,9 @@ class QuestCore(CoreBase):
 
         if fast_check == False or is_any_quest_turned_in == True:
             if context == "auto_sortie":
-                self._auto_sortie_map_select()
+                self._auto_map_select(self.SORTIE)
+            elif context == "auto_expedition":
+                self._auto_map_select(self.EXPEDITION)
             else:
                 self._toggle_quests(context)
         Log.log_msg(
@@ -225,14 +229,18 @@ class QuestCore(CoreBase):
         return quest_turned_in
     
     
-    def _find_next_sorties_quests(self):
+    def _find_next_quests(self, mode):
         """Method that finds the next sorties quest to work on
 
             Return:
                 quest(str): The name of quest(ex. "Bd1")
         """
-        self.relevant_quests = self._get_quest_in_config(["combat"]) #quest from config
-
+        
+        if mode == self.SORTIE:
+            self.relevant_quests = self._get_quest_in_config(["combat"]) #quest from config
+        elif mode == self.EXPEDITION:
+            self.relevant_quests = self._get_quest_in_config(["expedition"]) #quest from config
+        
         for quest in self.quest_priority_library:
             if quest in self.relevant_quests:
                 for visable_quest in self.visible_quests:
@@ -242,9 +250,33 @@ class QuestCore(CoreBase):
                     if quest_id == visable_quest['api_no']:
                         return quest
         return None
+ 
+    def _get_quests_rank_list(self, mode):
+        """Method to get quests in a list sorted by priority
+
+            Input: mode(MACRO): self.SORTIE/self.EXPEDITION
+            
+            Return:
+                quest(list): The list of quest(ex. ["Bd1","Bd2"])
+        """
         
-
-
+        if mode == self.SORTIE:
+            self.relevant_quests = self._get_quest_in_config(["combat"]) #quest from config
+        elif mode == self.EXPEDITION:
+            self.relevant_quests = self._get_quest_in_config(["expedition"]) #quest from config
+            
+        ret = []
+        
+        for quest in self.quest_priority_library:
+            if quest in self.relevant_quests:
+                for visable_quest in self.visible_quests:
+                    if visable_quest['api_state'] == 3: # This quest is done
+                        continue
+                    quest_id = self.quest_library[quest].quest_id
+                    if quest_id == visable_quest['api_no']:
+                        ret.append(quest)
+        return ret 
+    
     def _toggle_quests(self, context):
         """Method that active quest to work on
 
@@ -312,9 +344,12 @@ class QuestCore(CoreBase):
                 Log.log_error("Infinite loop detected, aborting.")
                 exit(1)
 
-    def _auto_sortie_map_select(self):
+    def _auto_map_select(self, mode):
 
-        """Auto select sortie map mode"""
+        """
+        Auto select sortie map mode
+        expect in quest page currently
+        """
 
         if kca_u.kca.click_existing(
             'left', f'quest|filter_tab_all.png') == True:
@@ -324,8 +359,8 @@ class QuestCore(CoreBase):
             api.api.update_from_api({KCSAPIEnum.QUEST_LIST}) #update visible_quests
             Log.log_msg(f"api update done in auto map select.")
 
-        if cfg.config.combat.sortie_map_read_only == MapEnum.auto_map_selete:
-            next_quest = self._find_next_sorties_quests()
+        if mode == self.SORTIE and cfg.config.combat.sortie_map_read_only == MapEnum.auto_map_selete:
+            next_quest = self._find_next_quests(self.SORTIE)
             Log.log_debug(f"next_quest = {next_quest}")
 
             if next_quest != None:
@@ -346,8 +381,37 @@ class QuestCore(CoreBase):
 
                 com.combat.set_sortie_queue(sortie_list)
 
-        Log.log_debug(f"_find_next_sorties_quests {self._find_next_sorties_quests()}.")
-        Log.log_debug(f"get_sortie_queue {com.combat.get_sortie_queue()}.")
+            Log.log_debug(f"_find_next_sorties_quests {self._find_next_quests(self.SORTIE)}.")
+            Log.log_debug(f"get_sortie_queue {com.combat.get_sortie_queue()}.")
+            
+        elif mode == self.EXPEDITION:
+            
+            quest_list = self._get_quests_rank_list(self.EXPEDITION)
+            
+            quest_dom = kca_u.kca.get_quest_dom()
+            
+            for next_quest in reversed(quest_list):
+                Log.log_debug(f"next_quest = {next_quest}")
+            
+                """Read quest progress""" 
+                exp_dict = kca_u.kca.get_quest_count(quest_dom=quest_dom, target_quest_name= next_quest)
+                
+                Log.log_debug(f'exp_dict {exp_dict}')
+                
+                if exp_dict == None:
+                    Log.log_warn(f"Cannot get quest progress from kc3, kcauto_custom fail to select corresponding expedition")
+                else:
+                    
+                    exp_list = []
+                    for key in exp_dict:
+                        if exp_dict[key] == 0:
+                            continue
+                        exp_list.append(ExpeditionEnum(exp.expedition.get_exp_enum_from_name(key)))
+                    Log.log_debug(f'exp_list: {exp_list}')
+                    
+                    exp.expedition.cut_expedition_queue(exp_list)
+                    
+                    Log.log_debug(f'exp_rank: {exp.expedition.exp_rank}')
 
     def _get_sortie_map_from_quest(self, quest):
         Log.log_debug(f"self.quest_to_sortie_maps = {self.quest_to_sortie_maps}")
@@ -366,7 +430,7 @@ class QuestCore(CoreBase):
                 quest_groups.append('C')
             elif type == "factory":
                 quest_groups.append('F')
-            elif type == "expedition":
+            elif type == "expedition" or type == "auto_expedition":
                 quest_groups.append('D')
             elif type != "reset":
                 raise ValueError("Invalid quest type specified:" + type)

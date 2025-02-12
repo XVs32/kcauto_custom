@@ -207,6 +207,7 @@ class Noro6(object):
             return 0
         
         #read string in self.map["manager"] as json
+        Log.log_debug(f'Loading {self.map}\'s config')
         fleetInfo = json.loads(self.map["manager"])["fleetInfo"]
         
         if fleetInfo is None:
