@@ -297,8 +297,9 @@ class ApiWrapper(object):
             Log.log_debug("No quest data found in API response.")
 
         try:
+            from kca_enums.expeditions import ExpeditionEnum
             for i in range(1, len(data['api_data']['api_deck_port'])):
-                exp.expedition.cur_exp[i] = data['api_data']['api_deck_port'][i]["api_mission"][1]
+                exp.expedition.cur_exp[i] = ExpeditionEnum(data['api_data']['api_deck_port'][i]["api_mission"][1])
         except KeyError:
             Log.log_debug("No exp data found in API response.")
 

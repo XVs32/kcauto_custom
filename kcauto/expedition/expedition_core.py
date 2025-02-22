@@ -31,7 +31,7 @@ class ExpeditionCore(CoreBase):
     exp_rank = []
     exp_for_fleet = []
     TYPE_PRIORITY = [""]
-    cur_exp = [0,0,0,0]
+    cur_exp = [ExpeditionEnum.NULL,ExpeditionEnum.NULL,ExpeditionEnum.NULL,ExpeditionEnum.NULL]
     timer = None
     auto_assign_done = False
     prerequisite_table = {}
@@ -45,7 +45,7 @@ class ExpeditionCore(CoreBase):
         self.exp_data = JsonData.load_json('data|expedition|expedition.json')
         self.prerequisite_table = JsonData.load_json('data|expedition|expedition_unlock_table.json')
         
-    def get_expedition_static_data(self, id):
+    def get_expedition_static_data(self, exp_enum):
         """read expedition data from json file
 
         Args:
@@ -56,9 +56,18 @@ class ExpeditionCore(CoreBase):
         """
         
         for exp in self.exp_data:
-            if exp["id"] == id:
+            if exp["id"] == exp_enum.value:
                 return exp
         return None
+    
+    def is_noro6_in_use(self):
+        for exp in self.cur_exp:
+            if self.is_noro6_exp(exp):
+                return True
+        return False
+    
+    def is_noro6_exp(self, exp_enum):
+        return self.get_expedition_static_data(exp_enum)==None
 
     def is_fleetswitch_needed(self):
         if cfg.config.expedition.fleet_preset == "auto" and self.auto_assign_done == False:
@@ -196,6 +205,12 @@ class ExpeditionCore(CoreBase):
                 if exp["id"] not in temp:
                     temp.append(exp["id"])
                 else:
+                    self.exp_rank.remove(exp)
+                    
+    def on_going_exp_handling(self):
+        for exp in self.exp_rank:
+            for on_going_exp in self.cur_exp:
+                if exp["id"] == on_going_exp.value:
                     self.exp_rank.remove(exp)
                 
     def cut_expedition_queue(self, exp_list):
