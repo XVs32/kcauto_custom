@@ -82,7 +82,7 @@ class Kcauto(object):
 
         if exp.expedition.fleets_are_ready:
 
-            if cfg.config.expedition.fleet_preset == "auto" and exp.expedition.exp_for_fleet == []:
+            if cfg.config.expedition.fleet_preset == "auto":
                 
                 #get available expedition list from api
                 exp.expedition.goto()
@@ -92,6 +92,7 @@ class Kcauto(object):
                     self.run_quest_logic('auto_expedition')
                     
                 exp.expedition.prerequisite_handling()
+                exp.expedition.on_going_exp_handling()
                 
                 Log.log_msg(f'Expedition rank: {exp.expedition.exp_rank}')
 
