@@ -277,28 +277,12 @@ class FleetCore(object):
         fleet_id = 1
         fleet_id = self._get_next_exp_fleet_id(fleet_id)
         
-        print("exp_ship_pool")
-        print(exp_ship_pool)
-        print("exp_ship_pool")
-        
         for i in range(len(exp.expedition.cur_exp)):
             if exp.expedition.cur_exp[i] != ExpeditionEnum.NULL:
-                
-                print("hit 1")
-                print(exp.expedition.cur_exp[i])
-                print(self.fleets[self.ACTIVE_FLEET_KEY][i+1].ship_data)
-                
                 for ongoing_ship in self.fleets[self.ACTIVE_FLEET_KEY][i+1].ship_data:
-                    print("ship")
-                    print(ongoing_ship)
-                    print(exp_ship_pool[ongoing_ship.ship_type])
                     for standby_ship in exp_ship_pool[ongoing_ship.ship_type] :
                         if standby_ship.production_id == ongoing_ship.production_id:
                             exp_ship_pool[ongoing_ship.ship_type].remove(standby_ship)
-                            print("hit 2")
-                            print(exp_ship_pool[ongoing_ship.ship_type])
-        
-        input()
         
         for exp_rank in exp.expedition.exp_rank:
             
