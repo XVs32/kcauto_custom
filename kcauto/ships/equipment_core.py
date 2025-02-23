@@ -22,9 +22,10 @@ class EquipmentCore(object):
     LOADED = "loaded"
     FREE = "free"
     ID = "id"
+    
+    NON_NORO6 = "NON_NORO6" #contain all equipments which does not exist in noro6 config
 
     equipment = {}
-    equipment_exp = {}  #contain all equipments which does not exist in noro6 config
     reinforce_general_category = {}
     reinforce_special = {}
     ship_type = []
@@ -38,9 +39,10 @@ class EquipmentCore(object):
 
     def __init__(self):
         self.equipment[self.RAW] = {}
-        self.equipment[self.LOADED] = {}
+        self.equipment[self.LOADED] = []
         self.equipment[self.FREE] = []
         self.equipment[self.ID] = []
+        self.equipment[self.NON_NORO6] = []
 
         try:
             self.reinforce_general_category = JsonData.load_json('data|temp|reinforce_general_category.json')
@@ -77,12 +79,12 @@ class EquipmentCore(object):
         
         for i in range(5):
             if count > 0:
-                temp_equipment = self._get_production_id(self.equipment_exp, equipment)
+                temp_equipment = self._get_production_id(self.equipment[self.NON_NORO6], equipment)
                 if temp_equipment == []:
                     ret[ship.production_id] = None
                     return
                 ret[ship.production_id].append(temp_equipment[0])
-                self._remove_from_pool(equipment_id=temp_equipment[0], equipment_pool=False, equipment_exp_pool=True)
+                self._remove_from_pool(equipment_id=temp_equipment[0], pool=self.NON_NORO6)
                 count -= 1
             else:
                 ret[ship.production_id].append(-1)
@@ -91,18 +93,17 @@ class EquipmentCore(object):
         
         return ret
             
-    def _remove_from_pool(self, equipment_id, equipment_pool = True, equipment_exp_pool = False):
+    def _remove_from_pool(self, equipment_id, pool = None):
         
-        if equipment_pool == True:
-            for equipment in self.equipment[self.ID]:
+        if pool == self.LOADED:
+            for equipment in self.equipment[self.LOADED]:
                 if equipment["api_id"] == equipment_id:
-                    self.equipment[self.ID].remove(equipment)
+                    self.equipment[self.LOADED].remove(equipment)
                     break
-                
-        if equipment_exp_pool == True:
-            for equipment in self.equipment_exp:
+        elif pool == self.NON_NORO6:
+            for equipment in self.equipment[self.NON_NORO6]:
                 if equipment["api_id"] == equipment_id:
-                    self.equipment_exp.remove(equipment)
+                    self.equipment[self.NON_NORO6].remove(equipment)
                     break
             
     def noro6_to_kcauto(self):
@@ -116,7 +117,7 @@ class EquipmentCore(object):
         import expedition.expedition_core as exp
         
         equipment_bak = self.equipment[self.ID].copy()
-        self.equipment_exp = self.equipment[self.ID].copy()
+        self.equipment[self.NON_NORO6] = self.equipment[self.ID].copy()
         
         ret = {}
         noro6 = Noro6()
@@ -156,13 +157,12 @@ class EquipmentCore(object):
                         
                         #remove this equipment from equipment pool
                         if  this_equipment["api_id"] > 0:
-                            self._remove_from_pool(equipment_id=this_equipment["api_id"], equipment_exp_pool=True)
+                            self._remove_from_pool(equipment_id=this_equipment["api_id"], pool=self.NON_NORO6)
                         
                     #padding to 6 equipment slot with -1
                     for k in range(noro6.get_equipment_count() + 1, 7):
                         ret[preset_name][ship.production_id].append(-1)
-                   
-                    
+                        
                     reinforce_equipment = noro6.get_reinforce_equipment()
                     if reinforce_equipment["i"] > 0:
                         this_equipment = self._get_equipment_from_noro6_equipment(reinforce_equipment)
@@ -170,12 +170,10 @@ class EquipmentCore(object):
                     
                         #remove this equipment from equipment pool
                         if  this_equipment["api_id"] > 0:
-                            self._remove_from_pool(equipment_id=this_equipment["api_id"], equipment_exp_pool=True)
+                            self._remove_from_pool(equipment_id=this_equipment["api_id"], pool=self.NON_NORO6)
                     else:
                         ret[preset_name][ship.production_id][6-1] = reinforce_equipment["i"]
 
-                        
-                        
             self.equipment[self.ID] = equipment_bak.copy()                    
                 
         return ret 

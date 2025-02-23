@@ -272,29 +272,29 @@ class FleetCore(object):
         noro6_available = True
 
         exp_ship_pool = copy.deepcopy(self.fleets[self.EXP_POOL_KEY]) 
+        non_noro6_equipment_readonly = copy.deepcopy(equ.equipment.equipment[equ.equipment.NON_NORO6])
 
         exp.expedition.exp_for_fleet = [None, None, None, None, None]
-        fleet_id = 1
-        fleet_id = self._get_next_exp_fleet_id(fleet_id)
+        fleet_id = self._get_next_exp_fleet_id()
         
         for i in range(len(exp.expedition.cur_exp)):
             if exp.expedition.cur_exp[i] != ExpeditionEnum.NULL:
                 for ongoing_ship in self.fleets[self.ACTIVE_FLEET_KEY][i+1].ship_data:
                     for standby_ship in exp_ship_pool[ongoing_ship.ship_type] :
                         if standby_ship.production_id == ongoing_ship.production_id:
+                            print(equ.equipment.equipment["loaded"][standby_ship.production_id])
+                            
                             exp_ship_pool[ongoing_ship.ship_type].remove(standby_ship)
+                            equ.equipment._remove_from_pool(equ.equipment.equipment["loaded"][standby_ship.production_id], pool=equ.equipment.NON_NORO6)
         
         for exp_rank in exp.expedition.exp_rank:
             
             exp_static_data = exp.expedition.get_expedition_static_data(ExpeditionEnum(exp_rank["id"]))
             
-            
             if  exp_static_data != None :
 
-                Log.log_debug(f'exp id: {exp_static_data["id"]}')
-                
                 exp_ship_pool_bak = copy.deepcopy(exp_ship_pool)
-                exp_equipment_pool_bak = copy.deepcopy(equ.equipment.equipment_exp)
+                non_noro6_equipment_pool_bak = copy.deepcopy(equ.equipment.equipment[equ.equipment.NON_NORO6])
                 
                 exp_ship_requirement = self._get_exp_ship_requirement_from_composition(exp_static_data["reqComposition"])
                 
@@ -309,12 +309,12 @@ class FleetCore(object):
                     #failed to assign ships for this exp, restore the ship pool
                     Log.log_debug(f"ship_pool and equipment_pool restore")
                     exp_ship_pool = exp_ship_pool_bak 
-                    equ.equipment.equipment_exp = exp_equipment_pool_bak
+                    equ.equipment.equipment[equ.equipment.NON_NORO6] = non_noro6_equipment_pool_bak
                 elif fleet_ship_id_list == self.ASSIGN_DRUM_FAILED or fleet_ship_id_list == self.ASSIGN_LC_FAILED:
                     #failed to assign equipment for this exp, restore the ship pool
                     Log.log_debug(f"ship_pool and equipment_pool restore")
                     exp_ship_pool = exp_ship_pool_bak 
-                    equ.equipment.equipment_exp = exp_equipment_pool_bak
+                    equ.equipment.equipment[equ.equipment.NON_NORO6] = non_noro6_equipment_pool_bak
                 else:
 
                     #Save the fleetShipId
@@ -342,9 +342,11 @@ class FleetCore(object):
                 #assign for all fleets success
                 break
             
-        
-        if fleet_id > 4:
-            #assign for all fleets successed
+        #restore the equipment pool for next assignment
+        equ.equipment.equipment[equ.equipment.NON_NORO6] = non_noro6_equipment_readonly
+            
+        if fleet_id == None:
+            #assign for all fleets success
             Log.log_success(f"auto mode asigned ship for exp{exp.expedition.exp_for_fleet[2:]}")
             return True
         else:
@@ -475,15 +477,25 @@ class FleetCore(object):
                 
         return assign_fleet, ship_pool, equipment_list
 
-    def _get_next_exp_fleet_id(self, fleet_id):
+    def _get_next_exp_fleet_id(self, fleet_id=-1):
         
-        flag = False 
+        START_UP = -1
+        
+        available_fleets = []
         for fleet in self.expedition_fleets:
-            if fleet.fleet_id == fleet_id:
+            if exp.expedition.cur_exp[fleet.fleet_id - 1] == ExpeditionEnum.NULL:
+                available_fleets.append(fleet)
+            
+        flag = False
+        for fleet in available_fleets:
+            if fleet_id == START_UP:
+                return fleet.fleet_id
+            
+            if fleet.fleet_id == fleet_id and len(available_fleets) > 1:
                 flag = True
             elif flag == True:
                 return fleet.fleet_id
-        
+            
         return None
 
     def _get_exp_ship_requirement_from_composition(self, composition):

@@ -446,17 +446,17 @@ class ApiWrapper(object):
 
 
     def _process_free_equipment_data(self, data):
-        equ.equipment.equipment['raw'] = {}
-        equ.equipment.equipment['free'] = []
+        equ.equipment.equipment[equ.equipment.RAW] = {}
+        equ.equipment.equipment[equ.equipment.FREE] = []
         try:
-            equ.equipment.equipment['raw'] = data['api_data']['api_slot_data']
-            keys = equ.equipment.equipment['raw'].keys()
+            equ.equipment.equipment[equ.equipment.RAW] = data['api_data']['api_slot_data']
+            keys = equ.equipment.equipment[equ.equipment.RAW].keys()
             sorted_keys = sorted(keys, key=lambda x: (len(x), x))
             for key in sorted_keys:
-                equ.equipment.equipment['free'] = equ.equipment.equipment['free'] + data['api_data']['api_slot_data'][key]
+                equ.equipment.equipment[equ.equipment.FREE] = equ.equipment.equipment[equ.equipment.FREE] + data['api_data']['api_slot_data'][key]
 
             Log.log_debug("equipment updated")
-            Log.log_debug(f"{equ.equipment.equipment['raw']}")
+            Log.log_debug(f"{equ.equipment.equipment[equ.equipment.RAW]}")
             
         except KeyError:
             Log.log_debug("No provisional equipment data found in API response")
