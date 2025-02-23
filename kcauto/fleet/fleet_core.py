@@ -275,17 +275,18 @@ class FleetCore(object):
         non_noro6_equipment_readonly = copy.deepcopy(equ.equipment.equipment[equ.equipment.NON_NORO6])
 
         exp.expedition.exp_for_fleet = [None, None, None, None, None]
-        fleet_id = self._get_next_exp_fleet_id()
+        fleet_id = self.get_next_exp_fleet_id()
         
         for i in range(len(exp.expedition.cur_exp)):
             if exp.expedition.cur_exp[i] != ExpeditionEnum.NULL:
                 for ongoing_ship in self.fleets[self.ACTIVE_FLEET_KEY][i+1].ship_data:
-                    for standby_ship in exp_ship_pool[ongoing_ship.ship_type] :
+                    for standby_ship in exp_ship_pool[ongoing_ship.ship_type][:] :
                         if standby_ship.production_id == ongoing_ship.production_id:
                             print(equ.equipment.equipment["loaded"][standby_ship.production_id])
                             
                             exp_ship_pool[ongoing_ship.ship_type].remove(standby_ship)
-                            equ.equipment._remove_from_pool(equ.equipment.equipment["loaded"][standby_ship.production_id], pool=equ.equipment.NON_NORO6)
+                            for equipment in equ.equipment.equipment["loaded"][standby_ship.production_id]:
+                                equ.equipment._remove_from_pool(equipment, pool=equ.equipment.NON_NORO6)
         
         for exp_rank in exp.expedition.exp_rank:
             
@@ -327,7 +328,7 @@ class FleetCore(object):
                     equ.equipment.custom_equipment[ExpeditionEnum(exp_rank["id"])] = exp_equipment_id_list
                     exp.expedition.exp_for_fleet[fleet_id] = ExpeditionEnum(exp_rank["id"])
 
-                    fleet_id = self._get_next_exp_fleet_id(fleet_id)
+                    fleet_id = self.get_next_exp_fleet_id(fleet_id)
 
             elif noro6_available == True :
                 expEnum = ExpeditionEnum(exp_rank["id"])
@@ -336,7 +337,7 @@ class FleetCore(object):
                     Log.log_msg(f'Use Noro6 for {expEnum.expedition}')
                     noro6_available = False
                     exp.expedition.exp_for_fleet[fleet_id] = expEnum 
-                    fleet_id = self._get_next_exp_fleet_id(fleet_id)
+                    fleet_id = self.get_next_exp_fleet_id(fleet_id)
                 
             if fleet_id == None:
                 #assign for all fleets success
@@ -477,7 +478,7 @@ class FleetCore(object):
                 
         return assign_fleet, ship_pool, equipment_list
 
-    def _get_next_exp_fleet_id(self, fleet_id=-1):
+    def get_next_exp_fleet_id(self, fleet_id=-1):
         
         START_UP = -1
         

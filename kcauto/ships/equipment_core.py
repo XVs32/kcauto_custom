@@ -95,6 +95,9 @@ class EquipmentCore(object):
             
     def _remove_from_pool(self, equipment_id, pool = None):
         
+        if equipment_id == -1 or equipment_id == 0:
+            return
+               
         if pool == self.LOADED:
             for equipment in self.equipment[self.LOADED]:
                 if equipment["api_id"] == equipment_id:

@@ -89,29 +89,15 @@ class FleetSwitcherCore(object):
             elif context == "expedition":
                 Log.log_msg(f"Switching to Exp Preset.")
 
-                if len(exp.expedition.fleets_at_base) < 3:
-                    Log.log_error("Not all expedition fleets at base.")
-                    return False
-                    
-                for fleet_id in range(2,5):
+                fleet_id = flt.fleets.get_next_exp_fleet_id()
+                while fleet_id != None:
 
-                    if fleet_id > 4:
-                        break
-                    
-                    
-                    flag = False
-                    for fleet in exp.expedition.fleets_at_base:
-                        if fleet.fleet_id == fleet_id:
-                            flag = True
-                            break
-                    if flag == False:
-                        return False
-                    
                     DEFAULT_FLEET_ID = 1
                     temp = {}
                     temp[fleet_id] = flt.fleets.fleets[exp.expedition.exp_for_fleet[fleet_id]][DEFAULT_FLEET_ID]
                     if not self.switch_to_costom_fleet_with_equipment(fleet_id, temp, exp.expedition.exp_for_fleet[fleet_id]):
                         return False
+                    fleet_id = flt.fleets.get_next_exp_fleet_id(fleet_id)
 
             elif context == 'factory_develop':
                 Log.log_msg(f"Switching to {cfg.config.factory.develop_secretary} for develop.")
