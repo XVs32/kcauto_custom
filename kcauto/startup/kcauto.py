@@ -100,9 +100,6 @@ class Kcauto(object):
                     exp.expedition.enabled = False
                     Log.log_error(f"Failed to assign ships for self balance expedition, disable expedition module.")
                     return False
-                    
-            if res.resupply.exp_provisional_enabled != True:
-                self.run_resupply_logic()
                  
             if exp.expedition.is_fleetswitch_needed():
                 if self._run_fleetswitch_logic('expedition') != 0:
@@ -112,6 +109,9 @@ class Kcauto(object):
                 else:
                     exp.expedition.auto_assign_done = True
 
+            if res.resupply.exp_provisional_enabled != True:
+                self.run_resupply_logic()
+                
             exp.expedition.goto()
             exp.expedition.send_expeditions()
             self.run_quest_logic('expedition')
