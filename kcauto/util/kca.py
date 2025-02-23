@@ -765,6 +765,7 @@ class Kca(object):
         y = r.y - self.css_y
 
         #self.visual_hook.Input.synthesizeTapGesture(x= x + offset_x , y=y + offset_y)
+        self.visual_hook.Input.dispatchMouseEvent(type = "mouseMoved", x= x + offset_x , y=y + offset_y)
         self.visual_hook.Input.dispatchMouseEvent(type = "mousePressed", x= x + offset_x , y=y + offset_y, clickCount = 1, button = "left")
         self.visual_hook.Input.dispatchMouseEvent(type = "mouseReleased", x= x + offset_x , y=y + offset_y, clickCount = 1, button = "left")
 
