@@ -277,9 +277,18 @@ class FleetCore(object):
         fleet_id = 1
         fleet_id = self._get_next_exp_fleet_id(fleet_id)
         
+        print("exp_ship_pool")
+        print(exp_ship_pool)
+        
+        for i in range(len(exp.expedition.cur_exp)):
+            if exp.expedition.cur_exp[i] != ExpeditionEnum.NULL:
+                print(self.fleets[self.ACTIVE_FLEET_KEY][i+1])
+        
+        input()
+        
         for exp_rank in exp.expedition.exp_rank:
             
-            exp_static_data = exp.expedition.get_expedition_static_data(exp_rank["id"])
+            exp_static_data = exp.expedition.get_expedition_static_data(ExpeditionEnum(exp_rank["id"]))
             
             
             if  exp_static_data != None :
@@ -469,20 +478,15 @@ class FleetCore(object):
         return assign_fleet, ship_pool, equipment_list
 
     def _get_next_exp_fleet_id(self, fleet_id):
-        while 1:
-            fleet_id+=1
-            if fleet_id == 2:
-                cur_fleet = cfg.config.expedition.fleet_2
-            elif fleet_id == 3:
-                cur_fleet = cfg.config.expedition.fleet_3
-            elif fleet_id == 4:
-                cur_fleet = cfg.config.expedition.fleet_4
-            else:
-                break
-
-            if cur_fleet != []:
-                break
-        return fleet_id
+        
+        flag = False 
+        for fleet in self.expedition_fleets:
+            if fleet.fleet_id == fleet_id:
+                flag = True
+            elif flag == True:
+                return fleet.fleet_id
+        
+        return None
 
     def _get_exp_ship_requirement_from_composition(self, composition):
         """
