@@ -33,7 +33,6 @@ class ExpeditionCore(CoreBase):
     TYPE_PRIORITY = [""]
     cur_exp = [ExpeditionEnum.NULL,ExpeditionEnum.NULL,ExpeditionEnum.NULL,ExpeditionEnum.NULL]
     timer = None
-    auto_assign_done = False
     prerequisite_table = {}
 
     def __init__(self):
@@ -70,7 +69,7 @@ class ExpeditionCore(CoreBase):
         return self.get_expedition_static_data(exp_enum)==None
 
     def is_fleetswitch_needed(self):
-        if cfg.config.expedition.fleet_preset == "auto" and self.auto_assign_done == False:
+        if cfg.config.expedition.fleet_preset == "auto":
             return True 
         else:
             return False 
@@ -126,12 +125,7 @@ class ExpeditionCore(CoreBase):
                 min_time = 0
                 max_time = OVERNIGHT_TIME_INTERVAL
 
-
-            fuel_weight = max(MAX_RESOURCE - sts.stats.rsc.fuel, 0)
-            ammo_weight = max(MAX_RESOURCE - sts.stats.rsc.ammo, 0)
-            steel_weight = max(MAX_RESOURCE - sts.stats.rsc.steel, 0)
-            bauxite_weight = max(MAX_RESOURCE - sts.stats.rsc.bauxite, 0)
-
+            DESIRE_BUCKET = 2000
             self.exp_rank = []
 
             for exp in self.exp_data:
@@ -140,21 +134,29 @@ class ExpeditionCore(CoreBase):
                     continue
 
                 id = exp["id"]
+                
+                avg_fill_rate = ((exp["fuel"] * sts.stats.rsc.fuel +\
+                        exp["ammo"]  * sts.stats.rsc.ammo  +\
+                        exp["steel"] * sts.stats.rsc.steel  +\
+                        exp["baux"]  * sts.stats.rsc.bauxite ) / MAX_RESOURCE +\
+                        exp["bucket"] * sts.stats.rsc.bucket / DESIRE_BUCKET) / 5
 
-                score =(exp["fuel"]  * fuel_weight +\
-                        exp["ammo"]  * ammo_weight +\
-                        exp["steel"] * steel_weight +\
-                        exp["baux"]  * bauxite_weight)
+                balace_score =  ((abs(exp["fuel"] * sts.stats.rsc.fuel) / MAX_RESOURCE - avg_fill_rate)+\
+                                (abs(exp["ammo"] * sts.stats.rsc.ammo) / MAX_RESOURCE - avg_fill_rate)+\
+                                (abs(exp["steel"] * sts.stats.rsc.steel) / MAX_RESOURCE - avg_fill_rate)+\
+                                (abs(exp["baux"] * sts.stats.rsc.bauxite) / MAX_RESOURCE - avg_fill_rate)+\
+                                (abs(exp["bucket"] * sts.stats.rsc.bucket) / DESIRE_BUCKET - avg_fill_rate))\
+                                * (-1)
                 
                 if (ExpeditionEnum.AUTO in cfg.config.expedition.all_expeditions\
                     and com.combat.enabled == True)\
                     or ExpeditionEnum.ACTIVE in cfg.config.expedition.all_expeditions:
                     #Active mode
-                    score /= exp["time"]
+                    balace_score /= exp["time"]
                 #else:
                     #Passive mode
                     #score /= PASSIVE_TIME_INTERVAL #Does not affect ranking
-                self.exp_rank.append({"id":id, "score":score})
+                self.exp_rank.append({"id":id, "score":balace_score})
             self.exp_rank.sort(key=self.cmp, reverse=True)
 
         else:
