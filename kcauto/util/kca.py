@@ -766,8 +766,11 @@ class Kca(object):
 
         #self.visual_hook.Input.synthesizeTapGesture(x= x + offset_x , y=y + offset_y)
         self.visual_hook.Input.dispatchMouseEvent(type = "mouseMoved", x= x + offset_x , y=y + offset_y)
+        self.sleep()
         self.visual_hook.Input.dispatchMouseEvent(type = "mousePressed", x= x + offset_x , y=y + offset_y, clickCount = 1, button = "left")
+        self.sleep()
         self.visual_hook.Input.dispatchMouseEvent(type = "mouseReleased", x= x + offset_x , y=y + offset_y, clickCount = 1, button = "left")
+        self.sleep()
 
     def _chrome_driver_hover_method(self, r):
         """hover method used in Chrome Driver interaction mode.
