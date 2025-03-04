@@ -106,8 +106,6 @@ class Kcauto(object):
                     exp.expedition.timer.set(15*60)
                     Log.log_warn(f"Failed to switch ships for self balance expedition, disable expedition module for 15 mins.")
                     return False
-                else:
-                    exp.expedition.auto_assign_done = True
 
             if res.resupply.exp_provisional_enabled != True:
                 self.run_resupply_logic()

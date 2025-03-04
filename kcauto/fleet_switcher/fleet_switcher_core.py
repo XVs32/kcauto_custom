@@ -91,7 +91,6 @@ class FleetSwitcherCore(object):
 
                 fleet_id = flt.fleets.get_next_exp_fleet_id()
                 while fleet_id != None:
-
                     DEFAULT_FLEET_ID = 1
                     temp = {}
                     temp[fleet_id] = flt.fleets.fleets[exp.expedition.exp_for_fleet[fleet_id]][DEFAULT_FLEET_ID]
