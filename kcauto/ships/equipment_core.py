@@ -93,21 +93,15 @@ class EquipmentCore(object):
         
         return ret
             
-    def _remove_from_pool(self, equipment_id, pool = None):
+    def _remove_from_pool(self, equipment_id, pool):
         
         if equipment_id == -1 or equipment_id == 0:
             return
                
-        if pool == self.LOADED:
-            for equipment in self.equipment[self.LOADED]:
-                if equipment["api_id"] == equipment_id:
-                    self.equipment[self.LOADED].remove(equipment)
-                    break
-        elif pool == self.NON_NORO6:
-            for equipment in self.equipment[self.NON_NORO6]:
-                if equipment["api_id"] == equipment_id:
-                    self.equipment[self.NON_NORO6].remove(equipment)
-                    break
+        for equipment in self.equipment[pool]:
+            if equipment["api_id"] == equipment_id:
+                self.equipment[pool].remove(equipment)
+                break
             
     def noro6_to_kcauto(self):
         """
@@ -161,6 +155,7 @@ class EquipmentCore(object):
                         #remove this equipment from equipment pool
                         if  this_equipment["api_id"] > 0:
                             self._remove_from_pool(equipment_id=this_equipment["api_id"], pool=self.NON_NORO6)
+                            self._remove_from_pool(equipment_id=this_equipment["api_id"], pool=self.ID)
                         
                     #padding to 6 equipment slot with -1
                     for k in range(noro6.get_equipment_count() + 1, 7):
@@ -174,9 +169,11 @@ class EquipmentCore(object):
                         #remove this equipment from equipment pool
                         if  this_equipment["api_id"] > 0:
                             self._remove_from_pool(equipment_id=this_equipment["api_id"], pool=self.NON_NORO6)
+                            self._remove_from_pool(equipment_id=this_equipment["api_id"], pool=self.ID)
                     else:
                         ret[preset_name][ship.production_id][6-1] = reinforce_equipment["i"]
 
+            #restore equipment pool for next noro6 preset
             self.equipment[self.ID] = equipment_bak.copy()                    
                 
         return ret 
