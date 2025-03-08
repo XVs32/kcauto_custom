@@ -90,7 +90,7 @@ class FleetSwitcherCore(object):
                 Log.log_msg(f"Switching to Exp Preset.")
 
                 fleet_id = flt.fleets.get_next_exp_fleet_id()
-                while fleet_id != None:
+                while fleet_id != None and exp.expedition.exp_for_fleet[fleet_id] != None:
                     DEFAULT_FLEET_ID = 1
                     temp = {}
                     temp[fleet_id] = flt.fleets.fleets[exp.expedition.exp_for_fleet[fleet_id]][DEFAULT_FLEET_ID]
