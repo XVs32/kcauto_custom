@@ -135,19 +135,19 @@ class ExpeditionCore(CoreBase):
 
                 id = exp["id"]
                 
-                avg_fill_rate = ((exp["fuel"] * sts.stats.rsc.fuel +\
-                        exp["ammo"]  * sts.stats.rsc.ammo  +\
-                        exp["steel"] * sts.stats.rsc.steel  +\
-                        exp["baux"]  * sts.stats.rsc.bauxite ) / MAX_RESOURCE +\
-                        exp["bucket"] * sts.stats.rsc.bucket / DESIRE_BUCKET) / 5
+                avg_fill_rate = ((exp["fuel"] + sts.stats.rsc.fuel +\
+                        exp["ammo"]  + sts.stats.rsc.ammo  +\
+                        exp["steel"] + sts.stats.rsc.steel  +\
+                        exp["baux"]  + sts.stats.rsc.bauxite ) / MAX_RESOURCE +\
+                        (1 if exp["item"] == "bucket" else 0) + sts.stats.rsc.bucket / DESIRE_BUCKET) / 5
 
-                balace_score =  ((abs(exp["fuel"] * sts.stats.rsc.fuel) / MAX_RESOURCE - avg_fill_rate)+\
-                                (abs(exp["ammo"] * sts.stats.rsc.ammo) / MAX_RESOURCE - avg_fill_rate)+\
-                                (abs(exp["steel"] * sts.stats.rsc.steel) / MAX_RESOURCE - avg_fill_rate)+\
-                                (abs(exp["baux"] * sts.stats.rsc.bauxite) / MAX_RESOURCE - avg_fill_rate)+\
-                                (abs(exp["bucket"] * sts.stats.rsc.bucket) / DESIRE_BUCKET - avg_fill_rate))\
+                balace_score =  ((abs(exp["fuel"] + sts.stats.rsc.fuel) / MAX_RESOURCE - avg_fill_rate)+\
+                                (abs(exp["ammo"] + sts.stats.rsc.ammo) / MAX_RESOURCE - avg_fill_rate)+\
+                                (abs(exp["steel"] + sts.stats.rsc.steel) / MAX_RESOURCE - avg_fill_rate)+\
+                                (abs(exp["baux"] + sts.stats.rsc.bauxite) / MAX_RESOURCE - avg_fill_rate)+\
+                                (abs((1 if exp["item"] == "bucket" else 0) + sts.stats.rsc.bucket) / DESIRE_BUCKET - avg_fill_rate))\
                                 * (-1)
-                
+                                
                 if (ExpeditionEnum.AUTO in cfg.config.expedition.all_expeditions\
                     and com.combat.enabled == True)\
                     or ExpeditionEnum.ACTIVE in cfg.config.expedition.all_expeditions:
@@ -366,6 +366,10 @@ class ExpeditionCore(CoreBase):
                 expedition = choice(
                     cfg.config.expedition.expeditions_for_fleet(
                         fleet.fleet_id))
+                
+            if expedition not in self.available_expeditions:
+                continue
+            
             Log.log_msg(
                 f"Sending fleet {fleet.fleet_id} to expedition "
                 f"{expedition.expedition}.")
