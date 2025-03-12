@@ -197,8 +197,7 @@ class Fleet(object):
         return (
             f"Fleet {self.fleet_id} / "
             f"{self.weakest_state.display_name} fleet damage / "
-            f"{self.highest_fatigue.display_name} "
-            f"{self.ship_data}")
+            f"{self.highest_fatigue.display_name} ")
 
     @property
     def expedition_fleet_status(self):
@@ -211,8 +210,7 @@ class Fleet(object):
         return (
             f"Fleet {self.fleet_id} / "
             f"{'At base' if self.at_base else 'On expedition'}"
-            f"{return_time_string }"
-            f"{self.ship_data}")
+            f"{return_time_string }")
         
     @property
     def detailed_fleet_status(self):

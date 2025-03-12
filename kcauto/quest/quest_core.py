@@ -499,7 +499,7 @@ class QuestCore(CoreBase):
         api.api.update_from_api({KCSAPIEnum.QUEST_LIST}) #update visible_quests
 
     def _click_quest_idx(self, idx):
-        Log.log_msg(f"Clicking quest at position {idx}.")
+        Log.log_debug(f"Clicking quest at position {idx}.")
         
         quest_list_region = Region(
             kca_u.kca.game_x + 230, kca_u.kca.game_y + 173 + (idx * 102),
