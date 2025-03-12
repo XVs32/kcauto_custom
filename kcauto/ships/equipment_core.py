@@ -288,7 +288,6 @@ class EquipmentCore(object):
                         continue
 
                     if self.equipment["loaded"][ship_id] != target_config[ship_id]:
-                        Log.log_error(f'ship {ship_id} currently has {self.equipment["loaded"][ship_id]}, target is {target_config[ship_id]}')
                         needed_load = True
                         break
                         
