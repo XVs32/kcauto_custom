@@ -68,7 +68,7 @@ class Kca(object):
         api_tab = None
         api_tab_id = None
         for n, tab in enumerate(self.visual_hook.tabs):
-            if tab['url'] in VISUAL_URL:
+            if tab['url'] == VISUAL_URL:
                 visual_tab = n
                 visual_tab_id = tab['id']
                 self.visual_tab_id = visual_tab_id
@@ -796,6 +796,9 @@ class Kca(object):
                 9222.
             api (bool): api hook or not(default True)
         """
+        
+        
+        chrome = PyChromeDevTools.ChromeInterface(host="localhost", port=9222)
         port = cfg.config.general.chrome_dev_port
         if target == "api":
             self.api_hook = PyChromeDevTools.ChromeInterface(
