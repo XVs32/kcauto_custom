@@ -94,7 +94,7 @@ class Kcauto(object):
                 exp.expedition.prerequisite_handling()
                 exp.expedition.on_going_exp_handling()
                 
-                Log.log_msg(f'Expedition rank: {[expedition['id'] for expedition in exp.expedition.exp_rank]}')
+                Log.log_msg(f'Expedition rank: {[expedition["id"] for expedition in exp.expedition.exp_rank]}')
 
                 if not flt.fleets.assign_exp_ship():
                     exp.expedition.enabled = False
