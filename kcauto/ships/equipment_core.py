@@ -297,6 +297,7 @@ class EquipmentCore(object):
 
             if needed_load == True: 
                 #let the current secretary ship load and unload a whatever equipment
+                #@todo if the secretary ship is akashi, unload another idle ship
                 unload_ship_id = [flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][1].ship_ids[0]]
         
         start_id = 0
