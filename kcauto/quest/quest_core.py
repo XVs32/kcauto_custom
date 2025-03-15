@@ -475,9 +475,9 @@ class QuestCore(CoreBase):
                 if cfg.config.combat.sortie_map not in q.map_context and current_combat_map not in q.map_context:
                     continue
             if q.expedition_context:
-                if not ( set([ExpeditionEnum(exp.expedition.cur_exp[1]),
-                              ExpeditionEnum(exp.expedition.cur_exp[2]),
-                              ExpeditionEnum(exp.expedition.cur_exp[3])])
+                if not ( set([exp.expedition.cur_exp[1],
+                              exp.expedition.cur_exp[2],
+                              exp.expedition.cur_exp[3]])
                         & set(q.expedition_context)):
                     continue
             relevant_quests.append(q)
@@ -499,7 +499,7 @@ class QuestCore(CoreBase):
         api.api.update_from_api({KCSAPIEnum.QUEST_LIST}) #update visible_quests
 
     def _click_quest_idx(self, idx):
-        Log.log_msg(f"Clicking quest at position {idx}.")
+        Log.log_debug(f"Clicking quest at position {idx}.")
         
         quest_list_region = Region(
             kca_u.kca.game_x + 230, kca_u.kca.game_y + 173 + (idx * 102),
