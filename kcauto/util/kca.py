@@ -68,7 +68,7 @@ class Kca(object):
         api_tab = None
         api_tab_id = None
         for n, tab in enumerate(self.visual_hook.tabs):
-            if tab['url'] in VISUAL_URL:
+            if VISUAL_URL in tab['url']:
                 visual_tab = n
                 visual_tab_id = tab['id']
                 self.visual_tab_id = visual_tab_id
@@ -765,8 +765,12 @@ class Kca(object):
         y = r.y - self.css_y
 
         #self.visual_hook.Input.synthesizeTapGesture(x= x + offset_x , y=y + offset_y)
+        self.visual_hook.Input.dispatchMouseEvent(type = "mouseMoved", x= x + offset_x , y=y + offset_y)
+        self.sleep()
         self.visual_hook.Input.dispatchMouseEvent(type = "mousePressed", x= x + offset_x , y=y + offset_y, clickCount = 1, button = "left")
+        self.sleep()
         self.visual_hook.Input.dispatchMouseEvent(type = "mouseReleased", x= x + offset_x , y=y + offset_y, clickCount = 1, button = "left")
+        self.sleep()
 
     def _chrome_driver_hover_method(self, r):
         """hover method used in Chrome Driver interaction mode.
@@ -792,6 +796,9 @@ class Kca(object):
                 9222.
             api (bool): api hook or not(default True)
         """
+        
+        
+        chrome = PyChromeDevTools.ChromeInterface(host="localhost", port=9222)
         port = cfg.config.general.chrome_dev_port
         if target == "api":
             self.api_hook = PyChromeDevTools.ChromeInterface(

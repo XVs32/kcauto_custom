@@ -82,7 +82,7 @@ class Kcauto(object):
 
         if exp.expedition.fleets_are_ready:
 
-            if cfg.config.expedition.fleet_preset == "auto" and exp.expedition.exp_for_fleet == []:
+            if cfg.config.expedition.fleet_preset == "auto":
                 
                 #get available expedition list from api
                 exp.expedition.goto()
@@ -92,25 +92,24 @@ class Kcauto(object):
                     self.run_quest_logic('auto_expedition')
                     
                 exp.expedition.prerequisite_handling()
+                exp.expedition.on_going_exp_handling()
                 
-                Log.log_msg(f'Expedition rank: {exp.expedition.exp_rank}')
+                Log.log_msg(f'Expedition rank: {[expedition["id"] for expedition in exp.expedition.exp_rank]}')
 
                 if not flt.fleets.assign_exp_ship():
                     exp.expedition.enabled = False
                     Log.log_error(f"Failed to assign ships for self balance expedition, disable expedition module.")
                     return False
-                    
-            if res.resupply.exp_provisional_enabled != True:
-                self.run_resupply_logic()
                  
             if exp.expedition.is_fleetswitch_needed():
                 if self._run_fleetswitch_logic('expedition') != 0:
                     exp.expedition.timer.set(15*60)
                     Log.log_warn(f"Failed to switch ships for self balance expedition, disable expedition module for 15 mins.")
                     return False
-                else:
-                    exp.expedition.auto_assign_done = True
 
+            if res.resupply.exp_provisional_enabled != True:
+                self.run_resupply_logic()
+                
             exp.expedition.goto()
             exp.expedition.send_expeditions()
             self.run_quest_logic('expedition')
