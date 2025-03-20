@@ -1,9 +1,9 @@
 #! python3
+import os 
 import time
-import click
-from pynput import mouse
-from pynput.mouse import Listener
+from pynput import mouse, keyboard
 import string
+import json
 
 print('Press Ctrl-C to quit.')
 
@@ -12,15 +12,109 @@ upper_left_x = 0
 upper_left_y = 0
 click_count = 0
 
+mapData = {}
+nodeList = []
+nodeType = {}
+
 def init():
-    with Listener(on_click=on_click) as listener:
-        listener.join()
+    
+    global nodeType
+    nodeType["boss"] = False
+    nodeType["air"] = False
+    nodeType["sub"] = False
+    nodeType["select"] = False
+    
+    data = getKc3kaiEdges()
+    kc3WorldId = getLastEventWorldId(data)
+    
+    #print out the list of files
+    
+    mapList = getMapList(data, kc3WorldId)
+    for i, f in enumerate(mapList):
+        print('\t', i+1, f'E-{f.split("-")[-1]}')
+        
+    mapId = input(f'Choose the event map(1~{i+1}):')
+    
+    getNodeList(data, f'World {kc3WorldId}-{mapId}')
+        
+    global mapData
+    
+    mapData["world"] = "E"
+    mapData["subworld"] = int(mapId)
+    
+    mapData["enemy_context"] = {}
+    
+    
+    mapData["edges"] = data[f'World {kc3WorldId}-{mapId}']
+    
+    
+    print(f'Click upper left on map:')
+    
+    # Create listeners
+    keyboard_listener = keyboard.Listener(on_press=on_press)
+    mouse_listener = mouse.Listener(on_click=on_click)
+
+    # Start both listeners in separate threads
+    keyboard_listener.start()
+    mouse_listener.start()
+
+    # Keep the main thread running
+    keyboard_listener.join()
+    mouse_listener.join()
+
+
+def getKc3kaiEdges():
+    #read json file from kc3kai github
+    import requests
+    url = 'https://raw.githubusercontent.com/KC3Kai/KC3Kai/refs/heads/master/src/data/edges.json'
+    response = requests.get(url)
+    return response.json()
+        
+def getLastEventWorldId(data):
+   #read all keys from the json file
+    keys = data.keys()
+    
+    #all keys are in the format of "World 1-3", "World 60-3", etc.
+    #split the key by "-", and get the first part of the key
+    #then split the first part by " ", and get the second part of the key
+    #the second part is the world id
+    worldIds = set()
+    for key in keys:
+        worldIds.add(int(key.split("-")[0].split(" ")[1]))
+    #get the max world id
+    worldIds = list(worldIds)
+    worldIds.sort()
+    return str(worldIds[-1])
+
+def getMapList(data, worldId):
+    #return all keys that start with "World {worldId}-"
+    return [key for key in data.keys() if key.startswith(f'World {worldId}-')]
+
+def getNodeList(data, key):
+    
+    global nodeList
+    print(key)
+    nodeList = set()
+    
+    for edge in data[key]:
+        nodeList.add(data[key][edge][0])
+        nodeList.add(data[key][edge][1])
+        
+    #remove any values contains "start"
+    nodeList = [node for node in nodeList if "Start" not in node]
+    
+    nodeList = list(nodeList)
+    nodeList.sort()
+    
+    print(nodeList)
+    return nodeList
 
 def on_click(x, y, button, pressed):
 
     global upper_left_x
     global upper_left_y
     global click_count
+    global nodeList
 
     if pressed == False:
         return
@@ -30,14 +124,52 @@ def on_click(x, y, button, pressed):
         upper_left_y = y
         positionStr = 'Upper left X: ' + str(x).rjust(4) + ' Y: ' + str(y).rjust(4)
         print(positionStr)
-        print("\t\"" + string.ascii_uppercase[click_count] + "\": {")
+        if click_count < len(nodeList):
+            print(f'Click next node {nodeList[click_count]} on the map:')
+        else:
+            #save the data to a file
+            print(f'All nodes are clicked. Saving to file...')
+            print(mapData)
+            with open(f'../data/combat/E-{mapData["subworld"]}.json', 'w') as f:
+                json.dump(mapData, f, indent=4)
+            exit()
     else:
-        print("\t\t\"coords\": [" + str(x-upper_left_x).rjust(4) + ", " + str(y-upper_left_y).rjust(4) + "]")
-        print("},")
-        print("\t\"" + string.ascii_uppercase[click_count] + "\": {")
+        print(f'Node {nodeList[click_count-1]}: [{str(x-upper_left_x).rjust(4)}, {str(y-upper_left_y).rjust(4)}]')
+        print(f'Click next node {nodeList[click_count]} on the map:')
 
     click_count += 1
+    
     return
+
+#listen to keyboard interrupt
+def on_press(key):
+    global nodeType
+    if key == keyboard.KeyCode.from_char('b'):
+        nodeType["boss"] = not nodeType["boss"]
+        if nodeType["boss"]:
+            print("Next node is defined as the boss node")
+        else:
+            print("Boss node define is removed")
+    elif key == keyboard.KeyCode.from_char('a'):
+        nodeType["air"] = not nodeType["air"]
+        if nodeType["air"]:
+            print("Next node is defined as the air node")
+        else:
+            print("Air node define is removed")
+    elif key == keyboard.KeyCode.from_char('s'):
+        nodeType["sub"] = not nodeType["sub"]
+        if nodeType["sub"]:
+            print("Next node is defined as the sub node")
+        else:
+            print("Sub node define is removed")
+    elif key == keyboard.KeyCode.from_char('o'):
+        nodeType["select"] = not nodeType["select"]
+        if nodeType["select"]:
+            print("Next node is defined as the optional path node")
+        else:
+            print("Optional path node define is removed")
+
+    return 
 
 try:
     init()
