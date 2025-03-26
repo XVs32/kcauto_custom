@@ -7,7 +7,7 @@ import json
 
 print('Press Ctrl-C to quit.')
 
-first_click = True
+fileSaved = False
 upper_left_x = 0
 upper_left_y = 0
 click_count = 0
@@ -42,11 +42,16 @@ def init():
     mapData["world"] = "E"
     mapData["subworld"] = int(mapId)
     
-    mapData["enemy_context"] = {}
+    mapData["enemy_context"] = set()
     
+    mapData["enemy_context"].add("carriers")
+    mapData["enemy_context"].add("transports")
     
+    mapData["nodes"] = {}
     mapData["edges"] = data[f'World {kc3WorldId}-{mapId}']
     
+    mapData["panel"] = int(input(f'Choose the panel this event map is on(1~9), use 1 if you are not sure:'))
+    mapData["page"] = int(input(f'Choose the page this event map is on(1~9):'))
     
     print(f'Click upper left on map:')
     
@@ -124,18 +129,46 @@ def on_click(x, y, button, pressed):
         upper_left_y = y
         positionStr = 'Upper left X: ' + str(x).rjust(4) + ' Y: ' + str(y).rjust(4)
         print(positionStr)
+        print(f'Click next node {nodeList[click_count]} on the map:')
+    else:
+        
+        print(f'Node {nodeList[click_count-1]}: [{str(x-upper_left_x).rjust(4)}, {str(y-upper_left_y).rjust(4)}]')
+        
+        global mapData
+        mapData["nodes"][nodeList[click_count-1]]={}
+        mapData["nodes"][nodeList[click_count-1]]["coords"] = [x-upper_left_x, y-upper_left_y]
+        
+        mapData["nodes"][nodeList[click_count-1]]["types"] = []
+        if nodeType["boss"]:
+            mapData["nodes"][nodeList[click_count-1]]["types"].append("boss")
+            nodeType["boss"] = False
+        if nodeType["air"]:
+            mapData["nodes"][nodeList[click_count-1]]["types"].append("air")
+            nodeType["air"] = False
+        if nodeType["sub"]:
+            mapData["nodes"][nodeList[click_count-1]]["types"].append("sub")
+            mapData["enemy_context"].add("subs")
+            nodeType["sub"] = False
+        if nodeType["select"]:
+            mapData["nodes"][nodeList[click_count-1]]["types"].append("select")
+            nodeType["select"] = False
+            
+        if mapData["nodes"][nodeList[click_count-1]]["types"] == []:
+            mapData["nodes"][nodeList[click_count-1]].pop('types', None)
+        
+        
         if click_count < len(nodeList):
             print(f'Click next node {nodeList[click_count]} on the map:')
         else:
             #save the data to a file
+            mapData["enemy_context"] = list(mapData["enemy_context"])
+            
             print(f'All nodes are clicked. Saving to file...')
             print(mapData)
             with open(f'../data/combat/E-{mapData["subworld"]}.json', 'w') as f:
                 json.dump(mapData, f, indent=4)
-            exit()
-    else:
-        print(f'Node {nodeList[click_count-1]}: [{str(x-upper_left_x).rjust(4)}, {str(y-upper_left_y).rjust(4)}]')
-        print(f'Click next node {nodeList[click_count]} on the map:')
+            global fileSaved
+            fileSaved = True
 
     click_count += 1
     
@@ -173,7 +206,9 @@ def on_press(key):
 
 try:
     init()
-    while(1):
+    while(fileSaved == False):
         time.sleep(1)    
+    keyboard.Listener.stop()
+    mouse.Listener.stop()
 except KeyboardInterrupt:
     print('\n')
