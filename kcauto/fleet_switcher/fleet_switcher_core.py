@@ -68,6 +68,8 @@ class FleetSwitcherCore(object):
                 
                 for combat_fleet_id in flt.fleets.combat_fleets_id:
                     
+                    if combat_fleet_id == 3: 
+                        fleet_list[3] = fleet_list[1]
                         
                     if not self.switch_to_costom_fleet_with_equipment(combat_fleet_id, fleet_list, equipment_key):
                         return False
