@@ -4,6 +4,7 @@ from constants import VISUAL_DAMAGE, FLEET_NUMBER_ICON
 from util.logger import Log
 import json
 from util.json_data import JsonData
+from kca_enums.fleet_modes import FleetModeEnum
 
 from util.lzstring import LZString
 
@@ -124,6 +125,43 @@ class Noro6(object):
         
         self.fleet = fleetInfo["fleets"][fleet_id-1]
         return self.fleet
+
+    def get_fleet_mode(self):
+        """
+        method to get fleet mode
+        Args:
+        Returns:
+            ret : FleetModeEnum
+        """
+        #handle key not found error
+        
+        if "manager" not in self.map:
+            return None
+        if "fleetInfo" not in self.map["manager"]:
+            return None
+        #read string in self.map["manager"] as json
+        fleetInfo = json.loads(self.map["manager"])["fleetInfo"]
+        
+        if fleetInfo is None:
+            return 0
+        if "fleetType" not in fleetInfo:
+            return None
+        
+        self.get_fleet(1)
+        ship_count = self.get_ship_count()
+        if ship_count == 7:
+            return FleetModeEnum.STRIKE
+        if fleetInfo["fleetType"] == 0:
+            return FleetModeEnum.STANDARD
+        elif fleetInfo["fleetType"] == 1:
+            return FleetModeEnum.CTF
+        elif fleetInfo["fleetType"] == 2:
+            return FleetModeEnum.STF
+        elif fleetInfo["fleetType"] == 3:
+            return FleetModeEnum.TCF
+        else:
+            Log.log_error(f"Unknown fleet mode {fleetInfo['fleetType']}")
+            exit(1)
 
     def get_ship(self, ship_id):
         """
