@@ -206,11 +206,6 @@ class ConfigCombat(ConfigBase):
             raise ValueError("Invalid fleet mode specified.")
         fleet_mode = FleetModeEnum(value)
         if (
-                fleet_mode is not FleetModeEnum.STANDARD
-                and len(self.fleet_presets) > 0):
-            raise ValueError(
-                "Fleet mode must be standard for use with fleet presets.")
-        if (
                 self._config['combat.enabled']
                 and self._config['pvp.enabled']
                 and CombinedFleetModeEnum.contains_value(value)):
