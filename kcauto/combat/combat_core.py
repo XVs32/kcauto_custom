@@ -734,7 +734,7 @@ class CombatCore(CoreBase):
             # Add temp empty local static data ship to ship pool, 
             # data will be updated when back to port
             ship = shp.ships.create_ship(
-                static_data = shp.ships.get_ship_static_data(dropped_ship_id))
+                static_data = shp.ships.get_ship_static_data(None, api_id=dropped_ship_id))
             self.rescued_ships.append(ship)
             Log.log_success(f"Rescued {ship.name} (#{ship.sortno}).")
             sts.stats.combat.ships_rescued += 1
