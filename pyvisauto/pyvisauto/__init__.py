@@ -256,6 +256,26 @@ class ImageMatch(ABC):
 
         if self.click_callback:
             self.click_callback(self, x, y)
+            
+    def drag(self, pad=(0, 0, 0, 0)):
+        """Method to drag from A to B with random point within the region. If an
+        override_click_method exists, it will be used instead of the default
+        pyautogui moveTo and click methods. If a click_callback is specified,
+        it will be called after the click action.
+
+        Args:
+            pad (tuple, optional): Tuple specifying how to modify the valid
+                click area. Directions are ordered CSS-style (top, right,
+                bottom, left). Positive values expand the valid click area,
+                while negative values constrict it. Defaults to (0, 0, 0, 0).
+        """
+        x = randint(self.x - pad[3], self.x + self.w + pad[1])
+        y = randint(self.y - pad[0], self.y + self.h + pad[2])
+
+        pyautogui.dragTo(x, y, self.MOUSE_MOVE_SPEED, button='left')
+
+        if self.click_callback:
+            self.click_callback(self, x, y)
 
     def ocr(self, lang, config):
         """Method for running Optical Character Recognition (OCR) on the region
