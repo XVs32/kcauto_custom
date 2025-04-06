@@ -16,6 +16,9 @@ mapData = {}
 nodeList = []
 nodeType = {}
 
+keyboard_listener = None
+mouse_listener = None
+
 def init():
     
     global nodeType
@@ -55,6 +58,7 @@ def init():
     
     print(f'Click upper left on map:')
     
+    global keyboard_listener, mouse_listener
     # Create listeners
     keyboard_listener = keyboard.Listener(on_press=on_press)
     mouse_listener = mouse.Listener(on_click=on_click)
@@ -62,10 +66,6 @@ def init():
     # Start both listeners in separate threads
     keyboard_listener.start()
     mouse_listener.start()
-
-    # Keep the main thread running
-    keyboard_listener.join()
-    mouse_listener.join()
 
 
 def getKc3kaiEdges():
@@ -169,6 +169,12 @@ def on_click(x, y, button, pressed):
                 json.dump(mapData, f, indent=4)
             global fileSaved
             fileSaved = True
+            
+            global keyboard_listener, mouse_listener
+            keyboard_listener.stop()
+            mouse_listener.stop()
+            print(f'Press any button to exit...')
+
 
     click_count += 1
     
@@ -206,9 +212,17 @@ def on_press(key):
 
 try:
     init()
+    
     while(fileSaved == False):
         time.sleep(1)    
-    keyboard.Listener.stop()
-    mouse.Listener.stop()
+        
+    # Keep the main thread running
+    keyboard_listener.join()
+    mouse_listener.join()
+    print("Set and done, exiting.")
 except KeyboardInterrupt:
     print('\n')
+    if keyboard_listener:
+        keyboard_listener.stop()
+    if mouse_listener:
+        mouse_listener.stop()
