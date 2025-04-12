@@ -642,6 +642,33 @@ class Kca(object):
         match = r.wait(self._create_asset_path(asset), wait, similarity)
         self.click(match)
 
+    def drag(self, start_region, end_region, pad=(0, 0, 0, 0)):
+        """Helper method that clicks a passed in region. The pad parameter
+        allows for further tweaking of the valid click region.
+
+        Args:
+            region (Region, Match, str): Region/Match object or pre-defined
+                region key.
+            pad (tuple, optional): click region modifier. Defaults to
+                (0, 0, 0, 0).
+        """
+        self.sleep(0.5)
+
+        r_a = self._get_region(start_region)
+        r_b = self._get_region(end_region)
+        if (cfg.config.general.interaction_mode
+                is InteractionModeEnum.DIRECT_CONTROL):
+            r_a.hover()
+            self.sleep(0.5)
+            r_b.drag(pad=pad)
+            
+        elif (cfg.config.general.interaction_mode
+                is InteractionModeEnum.CHROME_DRIVER):
+            self._chrome_driver_drag_method(r_a, pad, r_b, pad)
+
+        self.sleep(0.5)
+
+
     def sleep(self, base=None, flex=None):
         """Helper method for sleeping the script. Adds in random variance to
         the time slept. If no parameters are passed the sleep length will be
@@ -771,6 +798,35 @@ class Kca(object):
         self.sleep()
         self.visual_hook.Input.dispatchMouseEvent(type = "mouseReleased", x= x + offset_x , y=y + offset_y, clickCount = 1, button = "left")
         self.sleep()
+
+    def _chrome_driver_drag_method(self, r_a, pad_a, r_b, pad_b):
+        """Click method used in Chrome Driver interaction mode.
+
+        Args:
+            r (Region, Match): Region/Match region to click
+            pad (tuple): padding parameter used to modify click coordinate
+        """
+
+        offset_x = randint(-pad_a[3], r_a.w + pad_a[1])
+        offset_y = randint(-pad_a[0], r_a.h + pad_a[2])
+        x = r_a.x - self.css_x
+        y = r_a.y - self.css_y
+
+        self.visual_hook.Input.dispatchMouseEvent(type = "mouseMoved", x= x + offset_x , y=y + offset_y)
+        self.sleep()
+        self.visual_hook.Input.dispatchMouseEvent(type = "mousePressed", x= x + offset_x , y=y + offset_y, clickCount = 1, button = "left")
+        self.sleep()
+        
+        offset_x = randint(-pad_b[3], r_b.w + pad_b[1])
+        offset_y = randint(-pad_b[0], r_b.h + pad_b[2])
+        x = r_b.x - self.css_x
+        y = r_b.y - self.css_y
+        
+        self.visual_hook.Input.dispatchMouseEvent(type = "mouseMoved", x= x + offset_x , y=y + offset_y)
+        self.sleep()
+        self.visual_hook.Input.dispatchMouseEvent(type = "mouseReleased", x= x + offset_x , y=y + offset_y, clickCount = 1, button = "left")
+        self.sleep()
+
 
     def _chrome_driver_hover_method(self, r):
         """hover method used in Chrome Driver interaction mode.
