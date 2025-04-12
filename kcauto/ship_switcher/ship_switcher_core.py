@@ -171,7 +171,17 @@ class ShipSwitcherCore(object):
         self.current_page = 1
         
     def _select_switch_button(self, slot_id):
+        
+        if slot_id == 7:
+            next_region = Region(
+                kca_u.kca.game_x + 668,
+                kca_u.kca.game_y + 650,
+                32, 32)
+            kca_u.kca.click(next_region)
+            slot_id = 5
+            
         zero_idx = slot_id - 1
+        
         slot_button_region = Region(
             kca_u.kca.game_x + 550 + ((zero_idx % 2) * 513),
             kca_u.kca.game_y + 295 + ((zero_idx // 2) * 168),

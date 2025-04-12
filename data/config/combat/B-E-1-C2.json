@@ -1,0 +1,6 @@
+{
+    "combat.repair_limit": 2,
+    "combat.node_selects": [
+        "A>B"
+    ]
+}

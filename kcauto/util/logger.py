@@ -76,7 +76,7 @@ class Log(ABC):
         print(
             f"{cls.CLR_MSG}{cls._log_format(msg)}{cls.CLR_END}",
             flush=True)
-        cls.log_file.write(cls._log_format(msg) + "\n")
+        cls.log_file.write(f'[INFO]{cls._log_format(msg)}\n')
         cls.log_file.flush()
         
 
@@ -91,7 +91,7 @@ class Log(ABC):
         print(
             f"{cls.CLR_SUCCESS}{cls._log_format(msg)}{cls.CLR_END}",
             flush=True)
-        cls.log_file.write(cls._log_format(msg) + "\n")
+        cls.log_file.write(f'[SUCCESS]{cls._log_format(msg)}\n')
         cls.log_file.flush()
 
     @classmethod
@@ -105,7 +105,7 @@ class Log(ABC):
         print(
             f"{cls.CLR_WARNING}{cls._log_format(msg)}{cls.CLR_END}",
             flush=True)
-        cls.log_file.write(cls._log_format(msg) + "\n")
+        cls.log_file.write(f'[WARNING]{cls._log_format(msg)}\n')
         cls.log_file.flush()
 
     @classmethod
@@ -120,7 +120,7 @@ class Log(ABC):
         print(
             f"{cls.CLR_ERROR}{cls._log_format(msg)}{cls.CLR_END}",
             flush=True)
-        cls.log_file.write(cls._log_format(msg) + "\n")
+        cls.log_file.write(f'[ERROR]{cls._log_format(msg)}\n')
         cls.log_file.flush()
 
     @classmethod
@@ -134,5 +134,5 @@ class Log(ABC):
         if arg.args.parsed_args.debug_output:
             print(cls._log_format(msg), flush=True)
 
-        cls.log_file.write(cls._log_format(msg) + "\n")
+        cls.log_file.write(f'[DEBUG]{cls._log_format(msg)}\n')
         cls.log_file.flush()
