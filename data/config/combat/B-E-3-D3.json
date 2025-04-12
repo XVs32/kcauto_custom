@@ -2,21 +2,17 @@
     "combat.repair_limit": 2,
     "combat.clear_stop": true,
     "combat.node_selects": [
-        "N>O"
+        "A>C",
+        "C>D"
     ],
-    "combat.node_smoke": [
-        "V"
-    ],
+    "combat.node_smoke": [],
     "combat.lbas_groups": [
         1,
-        2
-    ],
-    "combat.lbas_group_1_nodes": [
-        "W",
-        "W"
+        2,
+        3
     ],
     "combat.lbas_group_2_nodes": [
-        "W",
-        "W"
+        "D3",
+        "D3"
     ]
 }
