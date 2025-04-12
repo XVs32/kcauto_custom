@@ -34,15 +34,12 @@ class LBASCore(object):
         for group in data:
             Log.log_debug(f"group['api_area_id']:{group['api_area_id']}")
             Log.log_debug(f"sortie_map:{sortie_map}")
+            
+            #Pick the LBAS group that is in the same world as the sortie map
             if sortie_world == 'E' and group['api_area_id'] < 40:
                 continue
             elif sortie_world != 'E' and sortie_world != group['api_area_id']:
                 continue
-
-            if sortie_world == 'E':
-                sortie_map = sortie_map - 1
-                if sortie_map >0:
-                    continue
 
             group_id = group['api_rid']
             group_instance = self.groups[group_id]

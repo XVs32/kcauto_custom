@@ -72,7 +72,7 @@ def run_external_program(panel):
             print_log(panel, f"Starting from {filename}\n")
         else:
             process = subprocess.Popen(
-                ['python3.7', 'kcauto', '--cli', '--cfg', 'config_cui'],
+                ['python3', 'kcauto', '--cli', '--cfg', 'config_cui'],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 text=True,  # Enable text mode
