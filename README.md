@@ -1,6 +1,6 @@
 # kcauto_custom
 
-### ***Latest download(2025/2/16)*** [***here***](https://github.com/XVs32/kcauto_custom/releases/tag/v3.0.2) 
+### ***Latest download(2025/03/17)*** [***here***](https://github.com/XVs32/kcauto_custom/releases/tag/v3.0.3) 
 
 **[kcauto_custom](https://github.com/XVs32/kcauto_custom)** is a linux customized version of an archived project [kcauto](https://github.com/perryhuynh/kcauto) that includes additional features and functionality.  
 In comparison with **kcauto**, **kcauto_custom** is less flexible while being more automatic for easy daily use.  
@@ -39,12 +39,12 @@ This tool is designed to help users automate repetitive tasks such as Expedition
 * CUI(Character User Interface) for daily use cases
 * Akashi repair Module &mdash; Repair ships with akashi
 * Factory Module &mdash; Runs daily develop and ship building 
-* More fleet presets &mdash; Unlimited fleet presets that you can define in Noro6
+* Noro6 support &mdash; Plan your fleet and equipemtn setup in Noro6, kcauto_custom runs it for you
 * Equipment Switcher module &mdash; automatic switching of equipment presets for PvP, combat and expedition
 * Sortie mdoe: Auto &mdash; Automatically complete daily/weekly/monthly quest (KC3 is needed)
 * Expedition mode: Auto &mdash; Self balance expedition with auto ship switch
 * Support for 7-4, events
-* Bug fix(Fleet Switcher Module, interaction_mode, quest handling etc.)
+* Bug fix(Fleet Switcher Module, interaction_mode, quest handling, LBAS Module etc.)
 
 ## Wiki page
 ### [Setup guide](https://github.com/XVs32/kcauto_custom/wiki/Ch1:-Setup-guide)  

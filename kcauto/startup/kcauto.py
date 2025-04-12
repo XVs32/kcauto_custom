@@ -14,6 +14,7 @@ import scheduler.scheduler_core as sch
 import ship_switcher.ship_switcher_core as ssw
 import stats.stats_core as sts
 import util.kca as kca_u
+from fleet.noro6 import Noro6 
 from kca_enums.expeditions import ExpeditionEnum
 from util.logger import Log
 from kca_enums.maps import MapEnum
@@ -277,6 +278,11 @@ class Kcauto(object):
             #load default config
             default_json = cfg.config.load_json(COMBAT_CONFIG + "default.json")
             cfg.config.combat.config_override(default_json)
+            
+            #get combat.fleet_mode from Noro6 config
+            noro6 = Noro6()
+            noro6.get_map(cfg.config.combat.sortie_map.value)
+            cfg.config.combat.config_override({"combat.fleet_mode":noro6.get_fleet_mode().config_name})
 
             if os.path.isfile(COMBAT_CONFIG + cfg.config.combat.sortie_map.value + ".json"):
                 default_json = cfg.config.load_json(COMBAT_CONFIG + cfg.config.combat.sortie_map.value + ".json")

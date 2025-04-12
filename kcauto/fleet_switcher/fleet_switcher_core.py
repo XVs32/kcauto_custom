@@ -6,6 +6,7 @@ import config.config_core as cfg
 import combat.combat_core as com
 import expedition.expedition_core as exp
 import fleet.fleet_core as flt
+from kca_enums.fleet_modes import FleetModeEnum
 import nav.nav as nav
 import util.kca as kca_u
 from util.logger import Log
@@ -66,11 +67,50 @@ class FleetSwitcherCore(object):
                 fleet_list = self._get_fleet_preset(cfg.config.combat.sortie_map.value)
                 equipment_key = self._get_equipment_preset(cfg.config.combat.sortie_map.value)
                 
-                for combat_fleet_id in flt.fleets.combat_fleets_id:
+                #Avoiding load process of fleet 2, 3 messing up fleet 1
+                #Combat is a property, sort does not saved inside it
+                rev_fleet_id = flt.fleets.combat_fleets_id.copy()
+                rev_fleet_id.sort(reverse=True)
+                for combat_fleet_id in rev_fleet_id:
                     
-                        
+                    if combat_fleet_id == 3: 
+                        fleet_list[3] = fleet_list[1]
+                    
                     if not self.switch_to_costom_fleet_with_equipment(combat_fleet_id, fleet_list, equipment_key):
                         return False
+                    
+                nav.navigate.to('refresh_home')
+                
+                if cfg.config.combat.fleet_mode != flt.fleets.combined_flag:
+                    
+                    nav.navigate.to('fleetcomp')
+                    if flt.fleets.combined_flag == FleetModeEnum.CTF or \
+                        flt.fleets.combined_flag == FleetModeEnum.STF or \
+                        flt.fleets.combined_flag == FleetModeEnum.TCF:
+                        kca_u.kca.click_existing("upper_left", f'fleet|combine_cancel.png')
+                    
+                    if  cfg.config.combat.fleet_mode == FleetModeEnum.CTF or \
+                        cfg.config.combat.fleet_mode == FleetModeEnum.STF or \
+                        cfg.config.combat.fleet_mode == FleetModeEnum.TCF:
+                        Log.log_msg(f"Switching to {cfg.config.combat.fleet_mode.display_name} mode.")
+                        
+                        #merge fleet #2 to fleet #1
+                        flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][2].select()
+                        start_region = kca_u.kca.find(
+                            'top_submenu', f'fleet|fleet_2_active.png')
+                        end_region = kca_u.kca.find(
+                            'top_submenu', f'fleet|fleet_1.png')
+                        kca_u.kca.drag(start_region, end_region)
+                        
+                        if cfg.config.combat.fleet_mode == FleetModeEnum.CTF:
+                            kca_u.kca.click_existing("center", f'fleet|ctf.png') 
+                        elif cfg.config.combat.fleet_mode == FleetModeEnum.STF:
+                            kca_u.kca.click_existing("center", f'fleet|stf.png') 
+                        elif cfg.config.combat.fleet_mode == FleetModeEnum.TCF:
+                            kca_u.kca.click_existing("center", f'fleet|tcf.png')
+                            
+                        kca_u.kca.click_existing("lower", f'fleet|combine_fleet.png')
+                        
 
                 """Check if next combat possible, since new ship is switched in"""
                 """Refresh home to update ship list"""
