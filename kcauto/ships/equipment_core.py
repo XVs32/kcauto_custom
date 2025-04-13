@@ -1,4 +1,5 @@
 from datetime import datetime
+from pyvisauto import Region
 from sys import exit
 import api.api_core as api
 import fleet_switcher.fleet_switcher_core as fsw
@@ -508,7 +509,16 @@ class EquipmentCore(object):
                 continue
             
             Log.log_debug(f"load the {i+1} ship")
-            kca_u.kca.click('ship_'+ str(i + 1)) 
+            
+            if i+1 == 7:
+                next_region = Region(
+                    kca_u.kca.game_x + 262,
+                    kca_u.kca.game_y + 676,
+                    32, 25)
+                kca_u.kca.click(next_region)
+                kca_u.kca.click('ship_'+ str(6)) 
+            else:
+                kca_u.kca.click('ship_'+ str(i + 1))
 
             ssw.ship_switcher.current_page = 1
             for slot in range(1,7):

@@ -302,6 +302,22 @@ class ApiWrapper(object):
                 exp.expedition.cur_exp[i] = ExpeditionEnum(data['api_data']['api_deck_port'][i]["api_mission"][1])
         except KeyError:
             Log.log_debug("No exp data found in API response.")
+            
+        try:
+            from kca_enums.fleet_modes import FleetModeEnum
+            combined_flag = data['api_data']['api_combined_flag']
+            if combined_flag == 0:
+                flt.fleets.combined_flag = FleetModeEnum.STANDARD
+            elif combined_flag == 1:
+                flt.fleets.combined_flag = FleetModeEnum.CTF
+            elif combined_flag == 2:
+                flt.fleets.combined_flag = FleetModeEnum.STF
+            elif combined_flag == 3:
+                flt.fleets.combined_flag = FleetModeEnum.TCF
+        except KeyError:
+            Log.log_debug("No combine_flag data found in API response.")
+
+            
 
         try:
             gimmick = data['api_data']['api_event_object']['api_m_flag2']

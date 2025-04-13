@@ -28,6 +28,7 @@ class FleetCore(object):
     
     fleets = {}
     
+    combined_flag = None
     
     is_custom_fleet_loaded = False
 
