@@ -1,5 +1,6 @@
 from datetime import datetime
 from pyvisauto import Region
+import sys
 from sys import exit
 import api.api_core as api
 import fleet_switcher.fleet_switcher_core as fsw
@@ -9,6 +10,7 @@ import fleet.fleet_core as flt
 import nav.nav as nav
 from kca_enums.kcsapi_paths import KCSAPIEnum
 from kca_enums.fleet import FleetEnum
+from kca_enums.ship_types import ShipTypeEnum
 import util.kca as kca_u
 from util.json_data import JsonData
 from util.logger import Log
@@ -50,8 +52,9 @@ class EquipmentCore(object):
             self.reinforce_special = JsonData.load_json('data|temp|reinforce_special.json')
             self.ship_type = JsonData.load_json('data|temp|ship_type.json')
             self.equipment_special = JsonData.load_json('data|temp|equipment_ship_special.json')
-        except FileNotFoundError:
+        except FileNotFoundError as e:
             Log.log_error("Reinforce equipment data not found, please start kcauto from splash screen")
+            Log.log_error(e)
 
         try:
             self.equipment[self.ID] = JsonData.load_json('data|temp|equipment_list.json')
@@ -296,9 +299,12 @@ class EquipmentCore(object):
                     pass
 
             if needed_load == True: 
-                #let the current secretary ship load and unload a whatever equipment
-                #@todo if the secretary ship is akashi, unload another idle ship
-                unload_ship_id = [flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][1].ship_ids[0]]
+                #let a random idle ship load and unload a whatever equipment
+                unload_ship = flt.fleets.fleets[flt.fleets.IDLE_FLEET_KEY][randrange(len(flt.fleets.fleets[flt.fleets.IDLE_FLEET_KEY]))]
+                unload_ship_id = [unload_ship.production_id]
+                while unload_ship.ship_type == ShipTypeEnum.AR:
+                    unload_ship = flt.fleets.fleets[flt.fleets.IDLE_FLEET_KEY][randrange(len(flt.fleets.fleets[flt.fleets.IDLE_FLEET_KEY]))]
+                    unload_ship_id = [unload_ship.production_id]
         
         start_id = 0
         while len(unload_ship_id) > start_id:
@@ -564,6 +570,8 @@ class EquipmentCore(object):
 
         ship = shp.ships.get_ship_from_production_id(local_id)
         special_equipment_list = self.get_special_reinforce_equipment(ship) # sqecial equipment for this ship only
+        
+        Log.log_error(f'DEBUG: special_equipment_list:{special_equipment_list}')
 
         keys = self.equipment['raw'].keys()
         sorted_keys = sorted(keys, key=lambda x: (len(x), x))
@@ -582,11 +590,8 @@ class EquipmentCore(object):
                     name_id = self._get_name_id(production_id)
                     if name_id in special_equipment_list:
                         equipment_list.append(production_id)
-                        Log.log_debug("hit")
 
-
-        Log.log_debug("equipment_list")
-        Log.log_debug(equipment_list)
+        Log.log_error(f'equipment_lise:{equipment_list}')
 
         return equipment_list
 
