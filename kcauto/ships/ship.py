@@ -26,7 +26,7 @@ class Ship(object):
     _name_jp = None
     api_id = None       #ship name id
     sortno = None       #Id used in ship switcher, picture book id 
-    sort_id = None
+    sort_id = None      #Sorting Id
     ship_type = None    #stype api
     ship_family = None  #ctype api
     slot_num = None
