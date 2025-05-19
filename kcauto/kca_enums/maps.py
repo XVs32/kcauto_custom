@@ -881,7 +881,7 @@ class MapEnum(EnumBase):
     def without_quest(self):
         if self.value != "auto":
             #find the first "-"
-            return self.value[self.value.index("-")+1:]
+            return self.value[0] + self.value[self.value.index("-"):]
         else:
             return "auto"
         
