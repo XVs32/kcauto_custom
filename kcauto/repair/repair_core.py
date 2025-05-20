@@ -44,11 +44,10 @@ class RepairCore(object):
     @property
     def can_conduct_repairs(self):
         if self.docks_are_available:
-            if cfg.config.combat.enabled and self.fleets_need_repair:
+            if self.is_combat_repair_needed:
                 return True
-            if cfg.config.passive_repair.enabled and self.ships_need_repair:
-                if (
-                        cfg.config.passive_repair.slots_to_reserve
+            if self.is_passive_repair_needed:
+                if (    cfg.config.passive_repair.slots_to_reserve
                         >= self.docks_available_count):
                     return False
                 return True
@@ -252,7 +251,7 @@ class RepairCore(object):
             key=lambda ship: (ship.hp_p, ship.sort_id, ship.production_id))
 
     @property
-    def fleets_need_repair(self):
+    def is_combat_repair_needed(self):
         if cfg.config.combat.enabled:
             for fleet in flt.fleets.combat_fleets:
                 if fleet.under_repair:
@@ -262,9 +261,11 @@ class RepairCore(object):
         return False
 
     @property
-    def ships_need_repair(self):
+    def is_passive_repair_needed(self):
         if cfg.config.passive_repair.enabled:
             for id in shp.ships.ship_pool:
+                if shp.ships.ship_pool[id].production_id in self.ships_under_repair:
+                    continue
                 if shp.ships.ship_pool[id].damage >= cfg.config.passive_repair.repair_threshold:
                     if shp.ships.ship_pool[id] not in flt.fleets.active_ships:
                         return True
