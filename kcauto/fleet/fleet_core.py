@@ -307,7 +307,7 @@ class FleetCore(object):
     
     def assign_exp_ship(self):
         
-        noro6_available = True
+        noro6_available = not exp.expedition.is_noro6_in_use()
 
         exp_ship_pool = copy.deepcopy(self.fleets[self.EXP_POOL_KEY]) 
         non_noro6_equipment_readonly = copy.deepcopy(equ.equipment.equipment[equ.equipment.NON_NORO6])
