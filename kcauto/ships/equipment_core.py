@@ -571,8 +571,6 @@ class EquipmentCore(object):
         ship = shp.ships.get_ship_from_production_id(local_id)
         special_equipment_list = self.get_special_reinforce_equipment(ship) # sqecial equipment for this ship only
         
-        Log.log_error(f'DEBUG: special_equipment_list:{special_equipment_list}')
-
         keys = self.equipment['raw'].keys()
         sorted_keys = sorted(keys, key=lambda x: (len(x), x))
         Log.log_debug(sorted_keys)
@@ -590,8 +588,6 @@ class EquipmentCore(object):
                     name_id = self._get_name_id(production_id)
                     if name_id in special_equipment_list:
                         equipment_list.append(production_id)
-
-        Log.log_error(f'equipment_lise:{equipment_list}')
 
         return equipment_list
 

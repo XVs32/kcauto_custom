@@ -187,8 +187,6 @@ class FleetCore(object):
         
         equ.equipment.custom_equipment = equ.equipment.noro6_to_kcauto()
         
-        Log.log_error(f'DEBUG: {equ.equipment.custom_equipment["B-E-3-K2"]}')
-        
     def load_custom_exp_pool(self):
         """
             method to get the custom exp pool data
