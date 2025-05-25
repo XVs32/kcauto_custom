@@ -129,33 +129,38 @@ class ExpeditionCore(CoreBase):
             self.exp_rank = []
 
             for exp in self.exp_data:
-
-                if exp["time"] > max_time or exp["time"] < min_time:
-                    continue
-
-                id = exp["id"]
                 
-                avg_fill_rate = ((exp["fuel"] + sts.stats.rsc.fuel +\
-                        exp["ammo"]  + sts.stats.rsc.ammo  +\
-                        exp["steel"] + sts.stats.rsc.steel  +\
-                        exp["baux"]  + sts.stats.rsc.bauxite ) / MAX_RESOURCE +\
-                        (1 if exp["item"] == "bucket" else 0) + sts.stats.rsc.bucket / DESIRE_BUCKET) / 5
-
-                balace_score =  ((abs(exp["fuel"] + sts.stats.rsc.fuel) / MAX_RESOURCE - avg_fill_rate)+\
-                                (abs(exp["ammo"] + sts.stats.rsc.ammo) / MAX_RESOURCE - avg_fill_rate)+\
-                                (abs(exp["steel"] + sts.stats.rsc.steel) / MAX_RESOURCE - avg_fill_rate)+\
-                                (abs(exp["baux"] + sts.stats.rsc.bauxite) / MAX_RESOURCE - avg_fill_rate)+\
-                                (abs((1 if exp["item"] == "bucket" else 0) + sts.stats.rsc.bucket) / DESIRE_BUCKET - avg_fill_rate))\
-                                * (-1)
-                                
+                horuly_rsc = {}
                 if (ExpeditionEnum.AUTO in cfg.config.expedition.all_expeditions\
                     and com.combat.enabled == True)\
                     or ExpeditionEnum.ACTIVE in cfg.config.expedition.all_expeditions:
-                    #Active mode
-                    balace_score /= exp["time"]
-                #else:
-                    #Passive mode
-                    #score /= PASSIVE_TIME_INTERVAL #Does not affect ranking
+                    horuly_rsc["fuel"] = exp["fuel"] / exp["time"]
+                    horuly_rsc["ammo"] = exp["ammo"] / exp["time"]
+                    horuly_rsc["steel"] = exp["steel"] / exp["time"]
+                    horuly_rsc["baux"] = exp["baux"] / exp["time"]
+                    horuly_rsc["bucket"] = (1 if exp["item"] == "bucket" else 0) / exp["time"]
+                else:
+                    horuly_rsc["fuel"] = exp["fuel"] / max(exp["time"], PASSIVE_TIME_INTERVAL)
+                    horuly_rsc["ammo"] = exp["ammo"] / max(exp["time"], PASSIVE_TIME_INTERVAL)
+                    horuly_rsc["steel"] = exp["steel"] / max(exp["time"], PASSIVE_TIME_INTERVAL)
+                    horuly_rsc["baux"] = exp["baux"] / max(exp["time"], PASSIVE_TIME_INTERVAL)
+                    horuly_rsc["bucket"] = (1 if exp["item"] == "bucket" else 0) / max(exp["time"], PASSIVE_TIME_INTERVAL)
+
+                id = exp["id"]
+                
+                avg_fill_rate = ((horuly_rsc["fuel"] + sts.stats.rsc.fuel +\
+                        horuly_rsc["ammo"]  + sts.stats.rsc.ammo  +\
+                        horuly_rsc["steel"] + sts.stats.rsc.steel  +\
+                        horuly_rsc["baux"]  + sts.stats.rsc.bauxite ) / MAX_RESOURCE +\
+                        horuly_rsc["bucket"]+ sts.stats.rsc.bucket / DESIRE_BUCKET) / 5
+
+                balace_score =  ((abs(horuly_rsc["fuel"]   + sts.stats.rsc.fuel)   / MAX_RESOURCE - avg_fill_rate)+\
+                                 (abs(horuly_rsc["ammo"]   + sts.stats.rsc.ammo)   / MAX_RESOURCE - avg_fill_rate)+\
+                                 (abs(horuly_rsc["steel"]  + sts.stats.rsc.steel)  / MAX_RESOURCE - avg_fill_rate)+\
+                                 (abs(horuly_rsc["baux"]   + sts.stats.rsc.bauxite)/ MAX_RESOURCE - avg_fill_rate)+\
+                                 (abs(horuly_rsc["bucket"] + sts.stats.rsc.bucket) / DESIRE_BUCKET- avg_fill_rate))\
+                                * (-1)
+                                
                 self.exp_rank.append({"id":id, "score":balace_score})
             self.exp_rank.sort(key=self.cmp, reverse=True)
 
