@@ -387,7 +387,7 @@ class FleetCore(object):
             
         if fleet_id == None:
             #assign for all fleets success
-            Log.log_success(f"auto mode asigned ship for exp{exp.expedition.exp_for_fleet[2:]}")
+            Log.log_success(f"auto mode asigned ship for exp{[expedition.display_name if expedition != None else None for expedition in exp.expedition.exp_for_fleet[2:]]}")
             return True
         else:
             #some assign failed
