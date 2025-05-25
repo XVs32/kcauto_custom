@@ -62,7 +62,7 @@ class FleetSwitcherCore(object):
         if preset_id == AUTO_PRESET:
             
             if context == "combat":
-                Log.log_msg(f"Switching to Fleet Preset for {cfg.config.combat.sortie_map}.")
+                Log.log_msg(f"Switching to Fleet Preset for {cfg.config.combat.sortie_map.display_name}.")
 
                 fleet_list = self._get_fleet_preset(cfg.config.combat.sortie_map.value)
                 equipment_key = self._get_equipment_preset(cfg.config.combat.sortie_map.value)
