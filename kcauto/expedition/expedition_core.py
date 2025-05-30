@@ -17,6 +17,8 @@ from util.logger import Log
 from util.json_data import JsonData
 
 class ExpeditionCore(CoreBase):
+    EXP_ENUM = "exp_enum"
+    SCORE = "score"
     NUM_VISIBLE_EXPEDITONS = 8
     SUPPORT_EXPEDITIONS = [
         ExpeditionEnum.E5_33, ExpeditionEnum.E5_34, ExpeditionEnum.EE_S1,
@@ -61,6 +63,8 @@ class ExpeditionCore(CoreBase):
     
     def is_noro6_in_use(self):
         for exp in self.cur_exp:
+            if exp == ExpeditionEnum.NULL:
+                continue
             if self.is_noro6_exp(exp):
                 return True
         return False
@@ -91,7 +95,7 @@ class ExpeditionCore(CoreBase):
 
    # With a normal function
     def cmp(self, item):
-        return item["score"]
+        return item[self.SCORE]
 
     def get_expedition_ranking(self):
         
@@ -146,7 +150,7 @@ class ExpeditionCore(CoreBase):
                     horuly_rsc["baux"] = exp["baux"] / max(exp["time"], PASSIVE_TIME_INTERVAL)
                     horuly_rsc["bucket"] = (1 if exp["item"] == "bucket" else 0) / max(exp["time"], PASSIVE_TIME_INTERVAL)
 
-                id = exp["id"]
+                exp_enum = ExpeditionEnum(exp["id"])
                 
                 avg_fill_rate = ((horuly_rsc["fuel"] + sts.stats.rsc.fuel +\
                         horuly_rsc["ammo"]  + sts.stats.rsc.ammo  +\
@@ -161,14 +165,14 @@ class ExpeditionCore(CoreBase):
                                  (abs(horuly_rsc["bucket"] + sts.stats.rsc.bucket) / DESIRE_BUCKET- avg_fill_rate))\
                                 * (-1)
                                 
-                self.exp_rank.append({"id":id, "score":balace_score})
+                self.exp_rank.append({self.EXP_ENUM:exp_enum,self.SCORE:balace_score})
             self.exp_rank.sort(key=self.cmp, reverse=True)
 
         else:
             self.exp_rank = []
 
-            for id in cfg.config.expedition.all_expeditions:
-                self.exp_rank.append({"id":int(id.value), "score":0})
+            for exp_enum in cfg.config.expedition.all_expeditions:
+                self.exp_rank.append({self.EXP_ENUM:exp_enum,self.SCORE:0})
 
     def prerequisite_handling(self):
         
@@ -182,24 +186,26 @@ class ExpeditionCore(CoreBase):
             
             to_remove = set()  # Store IDs of elements to remove
             
-            for exp in self.exp_rank:
+            for exp_rank in self.exp_rank:
                 
-                if ExpeditionEnum(exp["id"]) not in self.available_expeditions:
-                    Log.log_debug(f'expEnum not available {exp}')
-                    to_remove.add(exp["id"])
-                    for prerequisite in self.get_prerequisite_expedition(ExpeditionEnum(exp["id"])):
+                if exp_rank[self.EXP_ENUM] not in self.available_expeditions:
+                    Log.log_debug(f'expEnum not available {exp_rank}')
+                    
+                    # Can not use dict in set, use ENUM instead
+                    to_remove.add(exp_rank[self.EXP_ENUM])
+                    for prerequisite in self.get_prerequisite_expedition(exp_rank[self.EXP_ENUM]):
                             
                         if prerequisite in self.available_expeditions:
                             if self.exp_state[prerequisite.value] in {NEW, NOT_CLEARED}:
                                 Log.log_debug(f'exp {prerequisite} is in {self.exp_state[prerequisite.value]} state, adding into prerequisite')
-                                self.exp_rank.append({"id":prerequisite.value, "score":exp["score"]})
+                                self.exp_rank.append({self.EXP_ENUM:prerequisite,self.SCORE:exp_rank[self.SCORE]})
                             elif self.exp_state[prerequisite.value] == CLEARED:
                                 Log.log_debug(f'exp {prerequisite} cleared already, not adding into prerequisite')
                             else:
                                 Log.log_debug(f"unknown expedition state {self.exp_state[prerequisite.value]}")
                                 exit(0)
                         else:
-                            self.exp_rank.append({"id":prerequisite.value, "score":exp["score"]})
+                            self.exp_rank.append({self.EXP_ENUM:prerequisite,self.SCORE:exp_rank[self.SCORE]})
                             Log.log_debug(f'exp {prerequisite} is not available, but adding into prerequisite, handle next round')
                             flag = True
                             
@@ -207,16 +213,16 @@ class ExpeditionCore(CoreBase):
                     #run next round immediately
                     break
             
-            self.exp_rank = [exp for exp in self.exp_rank if exp["id"] not in to_remove]
+            self.exp_rank = [exp for exp in self.exp_rank if exp[self.EXP_ENUM] not in to_remove]
             self.exp_rank.sort(key=self.cmp, reverse=True)
             #remove duplicate, keep the element with higher score
             
             seen = set()
-            self.exp_rank = [exp for exp in self.exp_rank if exp["id"] not in seen and not seen.add(exp["id"])]
+            self.exp_rank = [exp for exp in self.exp_rank if exp[self.EXP_ENUM] not in seen and not seen.add(exp[self.EXP_ENUM])]
                     
     def on_going_exp_handling(self):
         self.exp_rank = [exp for exp in self.exp_rank \
-            if exp["id"] not in {on_going_exp.value for on_going_exp in self.cur_exp}]
+            if exp[self.EXP_ENUM] not in {on_going_exp for on_going_exp in self.cur_exp}]
         return
 
     def cut_expedition_queue(self, exp_list):
@@ -227,7 +233,7 @@ class ExpeditionCore(CoreBase):
         #cut queue for normal exp first (those exist in exp_rank already)
         for prior_exp in exp_list:
             for exp in self.exp_rank:
-                if exp["id"] == prior_exp.value:
+                if exp[self.EXP_ENUM] == prior_exp:
                     
                     # Move this exp to first of queue
                     new_exp_rank.remove(exp)
@@ -235,7 +241,7 @@ class ExpeditionCore(CoreBase):
 
                     # Prevent index error by checking if there's a second element
                     if len(new_exp_rank) > 1:
-                        new_exp_rank[0]["score"] = new_exp_rank[1]["score"] + 1
+                        new_exp_rank[0][self.SCORE] = new_exp_rank[1][self.SCORE] + 1
 
                     remaining_exp_list.remove(prior_exp)  # Remove safely from a copied list
                     break  # Stop checking further for this `prior_exp`
@@ -243,7 +249,7 @@ class ExpeditionCore(CoreBase):
         # Process remaining expeditions that were not in `self.exp_rank`
         for prior_exp in remaining_exp_list:
             if new_exp_rank:
-                new_exp_rank.insert(0, {"id": prior_exp.value, "score": new_exp_rank[0]["score"] + 1})
+                new_exp_rank.insert(0, {self.EXP_ENUM: prior_exp, self.SCORE: new_exp_rank[0][self.SCORE] + 1})
 
         self.exp_rank = new_exp_rank
             

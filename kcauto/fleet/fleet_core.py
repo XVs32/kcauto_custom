@@ -322,9 +322,9 @@ class FleetCore(object):
                             for equipment in equ.equipment.equipment["loaded"][standby_ship.production_id]:
                                 equ.equipment._remove_from_pool(equipment, pool=equ.equipment.NON_NORO6)
         
-        for exp_rank in exp.expedition.exp_rank:
+        for exp_in_rank in exp.expedition.exp_rank:
             
-            exp_static_data = exp.expedition.get_expedition_static_data(ExpeditionEnum(exp_rank["id"]))
+            exp_static_data = exp.expedition.get_expedition_static_data(ExpeditionEnum(exp_in_rank[exp.expedition.EXP_ENUM]))
             
             if  exp_static_data != None :
 
@@ -355,17 +355,17 @@ class FleetCore(object):
                     #Save the fleetShipId
                     MORK_FLEET_ID = 2
                     DEFAULT_FLEET_ID = 1
-                    self.fleets[ExpeditionEnum(exp_rank["id"])] = {}
-                    self.fleets[ExpeditionEnum(exp_rank["id"])][DEFAULT_FLEET_ID] = Fleet(MORK_FLEET_ID, FleetEnum.EXPEDITION, False)
-                    self.fleets[ExpeditionEnum(exp_rank["id"])][DEFAULT_FLEET_ID].ship_data = fleet_ship_id_list
+                    self.fleets[exp_in_rank[exp.expedition.EXP_ENUM]] = {}
+                    self.fleets[exp_in_rank[exp.expedition.EXP_ENUM]][DEFAULT_FLEET_ID] = Fleet(MORK_FLEET_ID, FleetEnum.EXPEDITION, False)
+                    self.fleets[exp_in_rank[exp.expedition.EXP_ENUM]][DEFAULT_FLEET_ID].ship_data = fleet_ship_id_list
     
-                    equ.equipment.custom_equipment[ExpeditionEnum(exp_rank["id"])] = exp_equipment_id_list
-                    exp.expedition.exp_for_fleet[fleet_id] = ExpeditionEnum(exp_rank["id"])
+                    equ.equipment.custom_equipment[exp_in_rank[exp.expedition.EXP_ENUM]] = exp_equipment_id_list
+                    exp.expedition.exp_for_fleet[fleet_id] = exp_in_rank[exp.expedition.EXP_ENUM]
 
                     fleet_id = self.get_next_exp_fleet_id(fleet_id)
 
             elif noro6_available == True :
-                expEnum = ExpeditionEnum(exp_rank["id"])
+                expEnum = exp_in_rank[exp.expedition.EXP_ENUM]
                 
                 if expEnum in self.fleets:
                     Log.log_msg(f'Use Noro6 for {expEnum.expedition}')
