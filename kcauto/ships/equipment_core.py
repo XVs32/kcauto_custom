@@ -311,19 +311,18 @@ class EquipmentCore(object):
             
             fleet_size = min(6, len(unload_ship_id) - start_id)
             
-            if needed_load == False:
-                fsw.fleet_switcher.goto()
-                
-                temp_fleet = {}
-                temp_fleet[1]=(Fleet("unload_equipment", FleetEnum.COMBAT, False))
-                temp_fleet[1].ship_data = []
-                for i in range(0, fleet_size):
-                    temp_fleet[1].ship_data.append(
-                        shp.ships.get_ship_from_production_id(unload_ship_id[start_id + i])
-                    )
-                if not fsw.fleet_switcher.switch_to_costom_fleet(1, temp_fleet):
-                    Log.log_error("kcauto failed to load the selected ship, exiting...")
-                    break
+            fsw.fleet_switcher.goto()
+            
+            temp_fleet = {}
+            temp_fleet[1]=(Fleet("unload_equipment", FleetEnum.COMBAT, False))
+            temp_fleet[1].ship_data = []
+            for i in range(0, fleet_size):
+                temp_fleet[1].ship_data.append(
+                    shp.ships.get_ship_from_production_id(unload_ship_id[start_id + i])
+                )
+            if not fsw.fleet_switcher.switch_to_costom_fleet(1, temp_fleet):
+                Log.log_error("kcauto failed to load the selected ship, exiting...")
+                break
                 
             nav.navigate.to('equipment')
 
