@@ -32,7 +32,8 @@ class QuestCore(CoreBase):
     quest_id_to_name = {}
     quest_library = {}
     quest_priority_library = []
-    quest_to_sortie_maps = {}
+    quest_recommended_maps = {}
+    quest_default_expedition_maps = {}
     relevant_quests = []
     last_checked_context = 'reset'
     next_check_intervals = {}
@@ -55,7 +56,10 @@ class QuestCore(CoreBase):
             self.quest_library[quest_name] = quest
             self.quest_library[quest.quest_id] = quest
             self.quest_id_to_name[quest_data[quest_name]['id']] = quest_name
-            self.quest_to_sortie_maps[quest_name] = quest_data[quest_name].get('recommended_map','')
+            self.quest_recommended_maps[quest_name] = quest_data[quest_name].get('recommended_map','')
+            self.quest_default_expedition_maps[quest_name] = [ExpeditionEnum(exp) for exp in quest_data[quest_name].get('expedition_context',[])]
+            
+                        
 
     def _load_quest_priority(self):
         self.quest_priority_library = []
@@ -371,13 +375,13 @@ class QuestCore(CoreBase):
                 sortie_list = []
                 if sortie_dict == None:
                     Log.log_warn(f"Cannot get quest progress from kc3, use default in config file.")
-                    sortie_list = self._get_sortie_map_from_quest(next_quest)
+                    sortie_list = self._get_default_map_from_quest(next_quest)
                     Log.log_debug(f"sortie_list = {sortie_list}")
                 else:
-                    for key in sortie_dict:
-                        for i in range(0, sortie_dict[key]):
+                    for exp_enum in sortie_dict:
+                        for i in range(0, sortie_dict[exp_enum]):
                             #sortie_list.append(key+"-"+next_quest)
-                            sortie_list.append(next_quest +"-"+ key)
+                            sortie_list.append(next_quest +"-"+ exp_enum)
 
                 com.combat.set_sortie_queue(sortie_list)
 
@@ -399,23 +403,24 @@ class QuestCore(CoreBase):
                 Log.log_debug(f'exp_dict {exp_dict}')
                 
                 if exp_dict == None:
-                    Log.log_warn(f"Cannot get quest progress from kc3, kcauto_custom fail to select corresponding expedition")
+                    Log.log_warn(f"Cannot get quest progress from kc3, use default in config file.")
+                    exp_list = self.quest_default_expedition_maps[next_quest]
+                    if exp_list == []:
+                        Log.log_error(f"Cannot get quest info from kc3 and default config file, kcauto_custom fail to select corresponding expedition")
+                    else:
+                        exp.expedition.cut_expedition_queue(exp_list)
                 else:
-                    
                     exp_list = []
-                    for key in exp_dict:
-                        if exp_dict[key] == 0:
-                            continue
-                        exp_list.append(ExpeditionEnum(exp.expedition.get_exp_enum_from_name(key)))
+                    for exp_enum in exp_dict:
+                        exp_list.append(exp_enum)
                     Log.log_debug(f'exp_list: {exp_list}')
-                    
                     exp.expedition.cut_expedition_queue(exp_list)
-                    
-                    Log.log_debug(f'exp_rank: {exp.expedition.exp_rank}')
+                
+                Log.log_debug(f'exp_rank: {exp.expedition.exp_rank}')
 
-    def _get_sortie_map_from_quest(self, quest):
-        Log.log_debug(f"self.quest_to_sortie_maps = {self.quest_to_sortie_maps}")
-        return self.quest_to_sortie_maps[quest]
+    def _get_default_map_from_quest(self, quest):
+        Log.log_debug(f"self.quest_recommended_maps = {self.quest_recommended_maps}")
+        return self.quest_recommended_maps[quest]
 
     def _get_quest_in_config(self,type_list):
         """Method that get all quests name which is available in game and enabled in config"""
