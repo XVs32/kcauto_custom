@@ -235,7 +235,7 @@ class EquipmentCore(object):
             self.equipment["loaded"][ship['api_id']].append(ship["api_slot_ex"])
 
 
-    def unload_equipment(self, map_name):
+    def unload_map_required_equipment(self, map_name):
         """
             method to load the loaded equipment list from a json file
             file_name (str): equipment config json file
@@ -313,83 +313,105 @@ class EquipmentCore(object):
             
             fsw.fleet_switcher.goto()
             
+            TEMP_FLEET_ID = 1
             temp_fleet = {}
             temp_fleet[1]=(Fleet("unload_equipment", FleetEnum.COMBAT, False))
             temp_fleet[1].ship_data = []
             for i in range(0, fleet_size):
-                temp_fleet[1].ship_data.append(
+                temp_fleet[TEMP_FLEET_ID].ship_data.append(
                     shp.ships.get_ship_from_production_id(unload_ship_id[start_id + i])
                 )
-            if not fsw.fleet_switcher.switch_to_costom_fleet(1, temp_fleet):
+            if fsw.fleet_switcher.switch_to_costom_fleet(TEMP_FLEET_ID, temp_fleet):
+                nav.navigate.to('refresh_home')
+            else:
                 Log.log_error("kcauto failed to load the selected ship, exiting...")
                 break
                 
             nav.navigate.to('equipment')
 
-            for i in range(fleet_size):
-            
-                Log.log_debug(f"unload the {i+1} ship")
-                kca_u.kca.click('ship_'+ str(i + 1)) 
-                
-                if needed_load == True:
-                    #unload a ship to update equipment list
-                    kca_u.kca.click('1_slot_equipment') 
-                    
-                    ssw.ship_switcher.select_replacement_row(row_idx=randrange(10), mode= "equipment")
+            self.unload_fleet_equipment(fleet_id=TEMP_FLEET_ID, needed_load=needed_load)
 
-                    kca_u.kca.click_existing(
-                        'lower_right', 'shipswitcher|shiplist_shipswitch_button.png')
-                    kca_u.kca.wait('lower', 'shipswitcher|equipment_panel.png')
-                    api_result = api.api.update_from_api({KCSAPIEnum.FREE_EQUIPMENT}, need_all=True, timeout=30)
-                
-                while True:
-                    
-                    if kca_u.kca.exists('equipment_panel', 'shipswitcher|1_slot_ship.png'):
-                        Log.log_debug(f"1 slot ship")
-                        kca_u.kca.click('1_slot_unload_equipment')
-                    elif kca_u.kca.exists('equipment_panel', 'shipswitcher|2_slot_ship.png',cached=True):
-                        Log.log_debug(f"2 slot ship")
-                        kca_u.kca.click('2_slot_unload_equipment') 
-                    elif kca_u.kca.exists('equipment_panel', 'shipswitcher|3_slot_ship.png',cached=True):
-                        Log.log_debug(f"3 slot ship")
-                        kca_u.kca.click('3_slot_unload_equipment') 
-                    elif kca_u.kca.exists('equipment_panel', 'shipswitcher|4_slot_ship.png',cached=True):
-                        Log.log_debug(f"4 slot ship")
-                        kca_u.kca.click('4_slot_unload_equipment') 
-                    else: 
-                        Log.log_debug(f"5 slot ship")
-                        kca_u.kca.click('5_slot_unload_equipment') 
-                        
-                    kca_u.kca.wait('lower', 'shipswitcher|equipment_panel.png')
-                    
-                    if self.equipment["loaded"][unload_ship_id[start_id + i]][-1] > 0:
-                        Log.log_debug(f"reinforce slot ship")
-                        kca_u.kca.click('reinforce_slot_unload_equipment') 
-
-                    kca_u.kca.wait('lower', 'shipswitcher|equipment_panel.png')
-                    
-                    api_result = api.api.update_from_api({KCSAPIEnum.FREE_EQUIPMENT}, need_all=True)
-                    if api_result != {}:
-                        break
-                    else:
-                        Log.log_error(f"Something goes wrong, skipping this round...")
-                        
-                        retry = 10
-                        while not kca_u.kca.exists('left', 'nav|side_menu_home.png'):
-                            kca_u.kca.click_existing('bottom_right', 'shipswitcher|equipment_cancel_reinforce.png', cached=True)
-                            
-                            if retry > 0:
-                                retry -=1
-                                kca_u.sleep(1)
-                            else:
-                                Log.log_error(f"kcauto can not figure out where it is, exiting...")
-                                exit()
-                        #skiping unload for this ship  <= usually it is already unloaded, but api didn't update due to network delay
-                        break
-                    
             start_id += fleet_size
 
         return any_unload
+    
+    def unload_fleet_equipment(self, fleet_id, needed_load = False):
+        """
+        unload a fleet in the specified fleet, assume nav in equipment page already
+            input: fleet_id: int, starts from 1
+        """
+        
+        kca_u.kca.wait("left", f"nav|side_menu_equipment_active.png")
+        while True:
+            kca_u.kca.click_existing("upper_left", f"fleet|fleet_{fleet_id}.png")
+            if  kca_u.kca.exists("upper_left", f"fleet|fleet_{fleet_id}_active.png"):
+                break
+            kca_u.kca.sleep(1)
+            
+        Log.log_error(f"unload fleet info {flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][fleet_id].ship_ids} ")
+            
+        fleet_size = len(flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][fleet_id].ship_ids)
+        
+        for i in range(fleet_size):
+        
+            Log.log_debug(f"unload the {i+1} ship")
+            kca_u.kca.click('ship_'+ str(i + 1)) 
+            
+            if needed_load == True:
+                #unload a ship to update equipment list
+                kca_u.kca.click('1_slot_equipment') 
+                
+                ssw.ship_switcher.select_replacement_row(row_idx=randrange(10), mode= "equipment")
+
+                kca_u.kca.click_existing(
+                    'lower_right', 'shipswitcher|shiplist_shipswitch_button.png')
+                kca_u.kca.wait('lower', 'shipswitcher|equipment_panel.png')
+                api_result = api.api.update_from_api({KCSAPIEnum.FREE_EQUIPMENT}, need_all=True, timeout=30)
+            
+            while True:
+                
+                if kca_u.kca.exists('equipment_panel', 'shipswitcher|1_slot_ship.png'):
+                    Log.log_debug(f"1 slot ship")
+                    kca_u.kca.click('1_slot_unload_equipment')
+                elif kca_u.kca.exists('equipment_panel', 'shipswitcher|2_slot_ship.png',cached=True):
+                    Log.log_debug(f"2 slot ship")
+                    kca_u.kca.click('2_slot_unload_equipment') 
+                elif kca_u.kca.exists('equipment_panel', 'shipswitcher|3_slot_ship.png',cached=True):
+                    Log.log_debug(f"3 slot ship")
+                    kca_u.kca.click('3_slot_unload_equipment') 
+                elif kca_u.kca.exists('equipment_panel', 'shipswitcher|4_slot_ship.png',cached=True):
+                    Log.log_debug(f"4 slot ship")
+                    kca_u.kca.click('4_slot_unload_equipment') 
+                else: 
+                    Log.log_debug(f"5 slot ship")
+                    kca_u.kca.click('5_slot_unload_equipment') 
+                    
+                kca_u.kca.wait('lower', 'shipswitcher|equipment_panel.png')
+                
+                if self.equipment["loaded"][flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][fleet_id].ship_ids[i]][-1] > 0:
+                    Log.log_debug(f"reinforce slot ship")
+                    kca_u.kca.click('reinforce_slot_unload_equipment') 
+
+                kca_u.kca.wait('lower', 'shipswitcher|equipment_panel.png')
+                
+                api_result = api.api.update_from_api({KCSAPIEnum.FREE_EQUIPMENT}, need_all=True)
+                if api_result != {}:
+                    break
+                else:
+                    Log.log_error(f"Something goes wrong, skipping this round...")
+                    
+                    retry = 10
+                    while not kca_u.kca.exists('left', 'nav|side_menu_home.png'):
+                        kca_u.kca.click_existing('bottom_right', 'shipswitcher|equipment_cancel_reinforce.png', cached=True)
+                        
+                        if retry > 0:
+                            retry -=1
+                            kca_u.sleep(1)
+                        else:
+                            Log.log_error(f"kcauto can not figure out where it is, exiting...")
+                            exit()
+                    #skiping unload for this ship  <= usually it is already unloaded, but api didn't update due to network delay
+                    break
     
     def unload_ship(self, ship_id):
         """
@@ -478,24 +500,9 @@ class EquipmentCore(object):
         Log.log_debug(target_config)
 
         load_ship_id = fleet
-        """
-        for ship_id in self.equipment["loaded"]:
-            try:
-                if      target_config[ship_id] == EMPTY_a\
-                    or  target_config[ship_id] == EMPTY_b:
-                    #nothing to load
-                    continue
-
-                if self.equipment["loaded"][ship_id] != target_config[ship_id]:
-                    # at this point, every ship doesn't have the target equipment should get unloaded already
-                    load_ship_id.append(ship_id)
-            except KeyError:
-                pass
-        """
 
         fleet_size = len(load_ship_id)
         nav.navigate.to('equipment')
-        
         
         kca_u.kca.wait("left", f"nav|side_menu_equipment_active.png")
         while True:

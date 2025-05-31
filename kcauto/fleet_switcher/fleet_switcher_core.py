@@ -255,7 +255,7 @@ class FleetSwitcherCore(object):
             ship_list(fleetcore_obj): ships to use
         """
         
-        equ.equipment.unload_equipment(equipment_key)
+        equ.equipment.unload_map_required_equipment(equipment_key)
         
         Log.log_success("unload_equipment done")
         
