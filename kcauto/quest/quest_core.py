@@ -412,7 +412,8 @@ class QuestCore(CoreBase):
                 else:
                     exp_list = []
                     for exp_enum in exp_dict:
-                        exp_list.append(exp_enum)
+                        if exp_dict[exp_enum] > 0:
+                            exp_list.append(exp_enum)
                     Log.log_debug(f'exp_list: {exp_list}')
                     exp.expedition.cut_expedition_queue(exp_list)
                 
