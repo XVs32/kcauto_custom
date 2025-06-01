@@ -348,8 +348,6 @@ class EquipmentCore(object):
                 break
             kca_u.kca.sleep(1)
             
-        Log.log_error(f"unload fleet info {flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][fleet_id].ship_ids} ")
-            
         fleet_size = len(flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][fleet_id].ship_ids)
         
         for i in range(fleet_size):
