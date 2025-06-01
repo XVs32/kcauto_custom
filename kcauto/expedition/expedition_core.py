@@ -63,12 +63,14 @@ class ExpeditionCore(CoreBase):
     
     def is_noro6_in_use(self):
         import pvp.pvp_core as pvp
-        if com.combat.enabled == False and pvp.pvp.enabled == False:
-            for exp in self.cur_exp:
-                if exp == ExpeditionEnum.NULL:
-                    continue
-                if self.is_noro6_exp(exp):
-                    return True
+        if com.combat.enabled == True or pvp.pvp.enabled == True:
+            return True
+            
+        for exp in self.cur_exp:
+            if exp == ExpeditionEnum.NULL:
+                continue
+            if self.is_noro6_exp(exp):
+                return True
         
         return False
     
