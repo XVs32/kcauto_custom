@@ -89,8 +89,7 @@ class Kcauto(object):
                 exp.expedition.goto()
                 exp.expedition.get_expedition_ranking()
                 
-                if com.combat.enabled == False and pvp.pvp.enabled == False:
-                    self.run_quest_logic('auto_expedition')
+                self.run_quest_logic('auto_expedition')
                     
                 exp.expedition.prerequisite_handling()
                 exp.expedition.on_going_exp_handling()
