@@ -307,7 +307,7 @@ class FleetCore(object):
         
         noro6_available = not exp.expedition.is_noro6_in_use()
 
-        exp_ship_pool = copy.deepcopy(self.fleets[self.EXP_POOL_KEY]) 
+        exp_ship_pool = copy.deepcopy(self.fleets[self.EXP_POOL_KEY])
         non_noro6_equipment_readonly = copy.deepcopy(equ.equipment.equipment[equ.equipment.NON_NORO6])
 
         exp.expedition.exp_for_fleet = [None, None, None, None, None]
@@ -338,7 +338,9 @@ class FleetCore(object):
                     exp_ship_pool,
                     exp_static_data["reqDrum"],
                     exp_static_data["reqDrumCarriers"],
-                    4)
+                    4,
+                    exp_static_data["reqFlagLevel"],
+                    exp_static_data["reqCombinedLevel"])
 
                 if fleet_ship_id_list == self.ASSIGN_SHIP_FAILED :
                     #failed to assign ships for this exp, restore the ship pool
@@ -393,19 +395,19 @@ class FleetCore(object):
             #some assign failed
             return False
 
-    def _assign_ship(self, fleet_list, ship_pool, req_dc=0, req_dc_carrier=0, req_lc=4):
+    def _assign_ship(self, fleet_list, ship_pool, req_dc=0, req_dc_carrier=0, req_lc=4, req_lv_flag=0, req_lv_sum=0):
         """
             Method to assign the ship with the given fleet_list and ship_pool
 
             input: 
                 fleet_list: The list of ship type (shipTypeEnum)
                 ship_pool(dict): The pool of ship to use
-                    ex. {"DD":[10,20,30], "CL":[41,42,43]}
+                    ex. {"DD":[<list of ship() obj>], "CL":[<list of ship() obj>]}
             
             output:
                 -1: failed to assign a valid fleet
                 ship_id(dict): the ship to use for the specified exp
-                    (ex: [14,15,62,2,1,73]
+                    (ex: [])
             Note:
                 This function should handle the wildcard("NA") type,
                 so that the output here should not contain any "NA"
@@ -422,7 +424,20 @@ class FleetCore(object):
         
         equipment_list= {}
         assign_fleet = []
+        
+        flag_ship = True
+        pool_level_reverse = False
+        
         for ship_enum in fleet_list:
+            
+            if self._current_fleet_level_sum(assign_fleet) < req_lv_sum and pool_level_reverse == False:
+                #If the current fleet level sum is less than the required level sum, assign high level ship first
+                ship_pool[ship_enum].sort(key=lambda x: x.level, reverse=True)
+                pool_level_reverse = True
+            elif self._current_fleet_level_sum(assign_fleet) >= req_lv_sum and pool_level_reverse == True:
+                ship_pool[ship_enum].sort(key=lambda x: x.level)
+                pool_level_reverse = False
+            
             if ship_enum == ShipTypeEnum(TYPE_NA):
                 #@todo: apply the wildcard handling
                 ship_enum = ShipTypeEnum(TYPE_DD) 
@@ -431,7 +446,11 @@ class FleetCore(object):
             ship = None
                         
             if req_lc > 0:
+                
                 for ship in ship_pool[ship_enum]:
+                    if flag_ship == True and ship.level < req_lv_flag:
+                        continue
+                    
                     if equ.equipment.is_available_category(ship, CATEGORY_LC):
                         
                         #@todo if the ship is kinu kai 2, she has +1 lc
@@ -451,6 +470,10 @@ class FleetCore(object):
             
             elif (req_dc > 0 or req_dc_carrier > 0):
                 for ship in ship_pool[ship_enum]:
+                    
+                    if flag_ship == True and ship.level < req_lv_flag:
+                        continue
+                    
                     if equ.equipment.is_available_category(ship, CATEGORY_DRUM)\
                         and not equ.equipment.is_available_category(ship, CATEGORY_LC):
                             
@@ -472,6 +495,10 @@ class FleetCore(object):
                         
                 if has_match_ship == False:
                     for ship in ship_pool[ship_enum]:
+                        
+                        if flag_ship == True and ship.level < req_lv_flag:
+                            continue
+                        
                         if equ.equipment.is_available_category(ship, CATEGORY_DRUM):
                             dc_count = min(req_dc, ship.slot_num)
                             temp_equipment_list = equ.equipment.fill_with_equipment(ship, NAME_ID_DRUM, dc_count)
@@ -490,6 +517,9 @@ class FleetCore(object):
            
             if has_match_ship == False:
                 for ship in ship_pool[ship_enum]:
+                    
+                    if flag_ship == True and ship.level < req_lv_flag:
+                        continue
                     
                     if not equ.equipment.is_available_category(ship, CATEGORY_DRUM) \
                         and not equ.equipment.is_available_category(ship, CATEGORY_LC):
@@ -514,8 +544,20 @@ class FleetCore(object):
                 assign_fleet.append(ship)
                 ship_pool[ship_enum].remove(ship)
                 Log.log_debug(f"fleet_core: assign ship {ship} for {fleet_list}")
+            
+            flag_ship = False
+            
+        if self._current_fleet_level_sum(assign_fleet) < req_lv_sum:
+            Log.log_debug(f"fleet_core: assign ship failed for {fleet_list}, level sum is not enough")
+            return self.ASSIGN_SHIP_FAILED, ship_pool, equipment_list
                 
         return assign_fleet, ship_pool, equipment_list
+    
+    def _current_fleet_level_sum(self, fleet_list):
+        sum = 0
+        for ship in fleet_list:
+            sum += ship.level
+        return sum
 
     def get_next_exp_fleet_id(self, fleet_id=-1):
         
