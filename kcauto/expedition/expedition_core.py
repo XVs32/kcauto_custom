@@ -1,5 +1,6 @@
 from pyvisauto import Region
 from random import choice
+import math
 
 from constants import MAX_RESOURCE, PASSIVE_TIME_INTERVAL, OVERNIGHT_TIME_INTERVAL
 import api.api_core as api
@@ -109,30 +110,24 @@ class ExpeditionCore(CoreBase):
             or ExpeditionEnum.PASSIVE in cfg.config.expedition.all_expeditions\
             or ExpeditionEnum.OVERNIGHT in cfg.config.expedition.all_expeditions:
 
-            min_time = 0x7fffffff
-            max_time = 0x00000000
+            pooling_interval = 1
 
             if ExpeditionEnum.AUTO in cfg.config.expedition.all_expeditions:
                 if com.combat.enabled == False:
                     #Passive mode
-                    min_time = 0
-                    max_time = PASSIVE_TIME_INTERVAL
+                    pooling_interval = PASSIVE_TIME_INTERVAL
                 else:
                     #Active mode
-                    min_time = 0
-                    max_time = 0x7fffffff
+                    pooling_interval = 1
             elif ExpeditionEnum.ACTIVE in cfg.config.expedition.all_expeditions:
                 #Active mode
-                min_time = 0
-                max_time = 0x7fffffff
+                pooling_interval = 1
             elif ExpeditionEnum.PASSIVE in cfg.config.expedition.all_expeditions:
                 #Passive mode
-                min_time = 0
-                max_time = PASSIVE_TIME_INTERVAL
+                pooling_interval = PASSIVE_TIME_INTERVAL
             elif ExpeditionEnum.OVERNIGHT in cfg.config.expedition.all_expeditions:
                 #Active mode
-                min_time = 0
-                max_time = OVERNIGHT_TIME_INTERVAL
+                pooling_interval = OVERNIGHT_TIME_INTERVAL
 
             DESIRE_BUCKET = 2000
             self.exp_rank = []
@@ -140,20 +135,11 @@ class ExpeditionCore(CoreBase):
             for exp in self.exp_data:
                 
                 horuly_rsc = {}
-                if (ExpeditionEnum.AUTO in cfg.config.expedition.all_expeditions\
-                    and com.combat.enabled == True)\
-                    or ExpeditionEnum.ACTIVE in cfg.config.expedition.all_expeditions:
-                    horuly_rsc["fuel"] = exp["fuel"] / exp["time"]
-                    horuly_rsc["ammo"] = exp["ammo"] / exp["time"]
-                    horuly_rsc["steel"] = exp["steel"] / exp["time"]
-                    horuly_rsc["baux"] = exp["baux"] / exp["time"]
-                    horuly_rsc["bucket"] = (1 if exp["item"] == "bucket" else 0) / exp["time"]
-                else:
-                    horuly_rsc["fuel"] = exp["fuel"] / max(exp["time"], PASSIVE_TIME_INTERVAL)
-                    horuly_rsc["ammo"] = exp["ammo"] / max(exp["time"], PASSIVE_TIME_INTERVAL)
-                    horuly_rsc["steel"] = exp["steel"] / max(exp["time"], PASSIVE_TIME_INTERVAL)
-                    horuly_rsc["baux"] = exp["baux"] / max(exp["time"], PASSIVE_TIME_INTERVAL)
-                    horuly_rsc["bucket"] = (1 if exp["item"] == "bucket" else 0) / max(exp["time"], PASSIVE_TIME_INTERVAL)
+                horuly_rsc["fuel"] = exp["fuel"] / math.ceil(exp["time"] / pooling_interval) * pooling_interval 
+                horuly_rsc["ammo"] = exp["ammo"] / math.ceil(exp["time"] / pooling_interval) * pooling_interval 
+                horuly_rsc["steel"] = exp["steel"] / math.ceil(exp["time"] / pooling_interval) * pooling_interval 
+                horuly_rsc["baux"] = exp["baux"] / math.ceil(exp["time"] / pooling_interval) * pooling_interval 
+                horuly_rsc["bucket"] = (1 if exp["item"] == "bucket" else 0) / math.ceil(exp["time"] / pooling_interval) * pooling_interval 
 
                 exp_enum = ExpeditionEnum(exp["id"])
                 
