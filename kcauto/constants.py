@@ -44,3 +44,6 @@ WCTF_SUFFIX_URL = (
 
 # config_path
 COMBAT_CONFIG = 'data/config/combat/'
+
+EMPTY_EQUIPMENT_A = [-1,-1,-1,-1,-1,0]
+EMPTY_EQUIPMENT_B = [-1,-1,-1,-1,-1,-1]
