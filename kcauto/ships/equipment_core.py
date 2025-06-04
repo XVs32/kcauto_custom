@@ -18,6 +18,7 @@ from util.wctf import WhoCallsTheFleetData
 from fleet.noro6 import Noro6 
 from fleet.fleet import Fleet
 from random import randrange
+from constants import EMPTY_EQUIPMENT_A, EMPTY_EQUIPMENT_B
 
 class EquipmentCore(object):
     
@@ -64,13 +65,15 @@ class EquipmentCore(object):
             Log.log_debug("Equipment data not found, use empty list instead")
             JsonData.dump_json(self.equipment[self.ID], 'data|temp|equipment_list.json')
     
-    def fill_with_equipment(self, ship, equipment, count):
+    def fill_with_equipment(self, ship, equipment, count, sort_by_level = False):
         """
             method to fill a ship with one type of equipment
             
             arg:
                 ship (Ship): ship instance
-                equipment (int): equipment type id
+                equipment (int): equipment name id
+                count (int): how many equipment to fill
+                sort_by_level (bool): if True, use high level equipment first
             
             output a kcauto format ship equipment list
         """
@@ -243,9 +246,6 @@ class EquipmentCore(object):
         
         any_unload = False
 
-        EMPTY_a = [-1,-1,-1,-1,-1,0]
-        EMPTY_b = [-1,-1,-1,-1,-1,-1]
-
         nav.navigate.to('refresh_home')
 
         target_config = self.custom_equipment[map_name]
@@ -256,14 +256,14 @@ class EquipmentCore(object):
             
             if ship_id in target_config:
                 if self.equipment["loaded"][ship_id] != target_config[ship_id]\
-                    and self.equipment["loaded"][ship_id] != EMPTY_a\
-                    and self.equipment["loaded"][ship_id] != EMPTY_b:
+                    and self.equipment["loaded"][ship_id] != EMPTY_EQUIPMENT_A\
+                    and self.equipment["loaded"][ship_id] != EMPTY_EQUIPMENT_B:
                     unload_ship_id.append(ship_id)
                     any_unload = True
             else: #target_config does not care this ship, but we still have to strip it if it holds any equipment we care
                 
-                if  self.equipment["loaded"][ship_id] != EMPTY_a\
-                and self.equipment["loaded"][ship_id] != EMPTY_b:
+                if  self.equipment["loaded"][ship_id] != EMPTY_EQUIPMENT_A\
+                and self.equipment["loaded"][ship_id] != EMPTY_EQUIPMENT_B:
                     
                     target_equipments = set()
                     
@@ -286,8 +286,8 @@ class EquipmentCore(object):
         else:
             for ship_id in self.equipment["loaded"]:
                 try:
-                    if      target_config[ship_id] == EMPTY_a\
-                        or  target_config[ship_id] == EMPTY_b:
+                    if      target_config[ship_id] == EMPTY_EQUIPMENT_A\
+                        or  target_config[ship_id] == EMPTY_EQUIPMENT_B:
                         #nothing to load
                         continue
 
@@ -315,8 +315,8 @@ class EquipmentCore(object):
             
             TEMP_FLEET_ID = 1
             temp_fleet = {}
-            temp_fleet[1]=(Fleet("unload_equipment", FleetEnum.COMBAT, False))
-            temp_fleet[1].ship_data = []
+            temp_fleet[TEMP_FLEET_ID]=(Fleet("unload_equipment", FleetEnum.COMBAT, False))
+            temp_fleet[TEMP_FLEET_ID].ship_data = []
             for i in range(0, fleet_size):
                 temp_fleet[TEMP_FLEET_ID].ship_data.append(
                     shp.ships.get_ship_from_production_id(unload_ship_id[start_id + i])
