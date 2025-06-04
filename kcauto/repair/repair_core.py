@@ -5,6 +5,8 @@ import api.api_core as api
 import combat.combat_core as com
 import config.config_core as cfg
 import fleet.fleet_core as flt
+from fleet.fleet import Fleet
+import fleet_switcher.fleet_switcher_core as fsw
 import nav.nav as nav
 import ships.ships_core as shp
 import ships.equipment_core as equ 
@@ -12,8 +14,10 @@ import stats.stats_core as sts
 import util.kca as kca_u
 from kca_enums.damage_states import DamageStateEnum
 from kca_enums.kcsapi_paths import KCSAPIEnum
+from kca_enums.fleet import FleetEnum
 from util.kc_time import KCTime
 from util.logger import Log
+from constants import EMPTY_EQUIPMENT_A, EMPTY_EQUIPMENT_B
 
 
 class RepairCore(object):
@@ -93,6 +97,20 @@ class RepairCore(object):
         repair_list = self._local_ships_sorted_by_repair
         idx_of_combat_ships = {}
         idx_of_passive_ships = {}
+        
+        
+        TEMP_FLEET_ID = 1
+        idx_of_equipment_unload_ships = []
+        temp_fleet = {}
+        temp_fleet[1]=(Fleet("unload_equipment", FleetEnum.COMBAT, False))
+        temp_fleet[1].ship_data = []
+        
+        
+        TEMP_FLEET_ID = 1
+        temp_fleet = {}
+        temp_fleet[TEMP_FLEET_ID]=(Fleet("unload_equipment", FleetEnum.COMBAT, False))
+        temp_fleet[TEMP_FLEET_ID].ship_data = []
+            
         for idx, ship in enumerate(repair_list):
             
             if ship.production_id in self.ships_under_repair:
@@ -104,7 +122,19 @@ class RepairCore(object):
                 if ship.damage >= cfg.config.passive_repair.repair_threshold:
                     if ship not in flt.fleets.active_ships:
                         idx_of_passive_ships[idx] = ship
-
+                        Log.log_error(f' ship.equipment: {ship.equipment} ')
+                        if      ship.equipment != EMPTY_EQUIPMENT_A\
+                            and ship.equipment != EMPTY_EQUIPMENT_B:
+                            temp_fleet[TEMP_FLEET_ID].ship_data.append(ship)
+                        
+        if temp_fleet[TEMP_FLEET_ID].ship_data != []:
+            if fsw.fleet_switcher.switch_to_costom_fleet(TEMP_FLEET_ID, temp_fleet):
+                nav.navigate.to('refresh_home')
+                nav.navigate.to('equipment')
+                equ.equipment.unload_fleet_equipment(fleet_id=TEMP_FLEET_ID, needed_load=False)
+                self.goto()
+            else:
+                Log.log_error("kcauto failed to load the selected ship, exiting...")
 
         while self.can_conduct_repairs:
             if len(idx_of_combat_ships) + len(idx_of_passive_ships) == 0:
