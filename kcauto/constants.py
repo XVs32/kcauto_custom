@@ -45,5 +45,4 @@ WCTF_SUFFIX_URL = (
 # config_path
 COMBAT_CONFIG = 'data/config/combat/'
 
-EMPTY_EQUIPMENT_A = [-1,-1,-1,-1,-1,0]
-EMPTY_EQUIPMENT_B = [-1,-1,-1,-1,-1,-1]
+EMPTY_EQUIPMENT_API = {"api_id": -1, "api_sortno": -1, "api_name": "空装備", "api_type": [-1, -1, -1, -1, -1], "api_taik": -1, "api_souk": -1, "api_houg": -1, "api_raig": -1, "api_soku": -1, "api_baku": -1, "api_tyku": -1, "api_tais": -1, "api_atap": -1, "api_houm": -1, "api_raim": -1, "api_houk": -1, "api_raik": -1, "api_bakk": -1, "api_saku": -1, "api_sakb": -1, "api_luck": -1, "api_leng": -1, "api_rare": -1, "api_broken": [-1, -1, -1, -1], "api_usebull": "-1", "api_version": 2}
