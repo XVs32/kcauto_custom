@@ -2,6 +2,7 @@ import config.config_core as cfg
 from fleet.fleet import Fleet
 from fleet.noro6 import Noro6 
 import ships.ships_core as shp
+from ships.ship import Ship
 from kca_enums.fleet_modes import FleetModeEnum, CombinedFleetModeEnum
 from kca_enums.fleet import FleetEnum
 from kca_enums.ship_types import ShipTypeEnum
@@ -9,6 +10,7 @@ from util.kc_time import KCTime
 from util.logger import Log
 from util.json_data import JsonData
 import ships.equipment_core as equ 
+from ships.equipment import Equipment as eq
 import expedition.expedition_core as exp
 from kca_enums.expeditions import ExpeditionEnum
 
@@ -27,7 +29,7 @@ class FleetCore(object):
     ASSIGN_DRUM_FAILED = -2
     ASSIGN_LC_FAILED = -3
     
-    fleets = {}
+    fleets :dict[str, dict[int, Fleet]] = {}
     
     combined_flag = None
     
@@ -42,7 +44,7 @@ class FleetCore(object):
         self.fleets[self.ACTIVE_FLEET_KEY][2] = Fleet(2, FleetEnum.EXPEDITION, False)
         self.fleets[self.ACTIVE_FLEET_KEY][3] = Fleet(3, FleetEnum.EXPEDITION, False)
         self.fleets[self.ACTIVE_FLEET_KEY][4] = Fleet(4, FleetEnum.EXPEDITION, False)
-        self.fleets[self.EXP_POOL_KEY] = self.EMPTY
+        self.fleets[self.EXP_POOL_KEY] = self.EMPTY # the data structure is self.fleets[self.EXP_POOL_KEY][shipTypeEnum] = [ship1, ship2, ...]
         self.fleets[self.PVP_FLEET_KEY] = self.EMPTY
         self.fleets[self.IDLE_FLEET_KEY] = self.EMPTY
 
@@ -185,7 +187,6 @@ class FleetCore(object):
         #merge custom fleets data into fleet core
         self.fleets = {**self.fleets, **self._noro6_to_kcauto()}
         
-        equ.equipment.custom_equipment = equ.equipment.noro6_to_kcauto()
         
     def load_custom_exp_pool(self):
         """
@@ -272,6 +273,9 @@ class FleetCore(object):
             output: (kcauto preset) 
         """
         
+        equipment_bak = equ.equipment.equipment_pool[equ.equipment.ID].copy()
+        equ.equipment.equipment_pool[equ.equipment.NON_NORO6] = equ.equipment.equipment_pool[equ.equipment.ID].copy()
+        
         ret = {}
         noro6 = Noro6()
         
@@ -294,21 +298,62 @@ class FleetCore(object):
                 ret[preset_name][fleet_id].ship_data = []
                     
                 for i in range(1, noro6.get_ship_count() + 1 ):
-                    ship = shp.ships.get_ship_from_noro6_ship(noro6.get_ship(i))
+                    ship = copy.deepcopy(shp.ships.get_ship_from_noro6_ship(noro6.get_ship(i))) # avoid modifying ship data in ship_pool
                     if ship == None:
                         Log.log_error(f'Something goes wrong when setting up Noro6 {preset["name"]} fleet, exiting...')
                         exit()
-                    else:
-                        ret[preset_name][fleet_id].ship_data.append(ship)
+            
+                    ship.equipments = []
+                    
+                    for j in range(1, noro6.get_equipment_count() + 1 ):
                         
+                        this_equipment = equ.equipment._get_equipment_from_noro6_equipment(noro6.get_equipment(j))
+                        
+                        if this_equipment == None:
+                            Log.log_error(f"Failed finding equipment for {preset['name']}, exit...")
+                            exit(0)
+                        
+                        #check if this_equipment is eq obj
+                        if not isinstance(this_equipment, eq):
+                            Log.log_error(f"DEBUG1: hit")
+                            exit(0)
+                        ship.equipments.append(this_equipment)
+                        
+                        equ.equipment._remove_from_pool(this_equipment, pool=equ.equipment.NON_NORO6)
+                        equ.equipment._remove_from_pool(this_equipment, pool=equ.equipment.ID)
+                        
+                    reinforce_equipment = noro6.get_reinforce_equipment()
+                    if reinforce_equipment["i"] > 0:
+                        this_equipment = equ.equipment._get_equipment_from_noro6_equipment(reinforce_equipment)
+                        ship.slot_ex = this_equipment
+                    
+                        #remove this equipment from equipment pool
+                        if  this_equipment != None and this_equipment.model_id != None:
+                            equ.equipment._remove_from_pool(this_equipment, pool=equ.equipment.NON_NORO6)
+                            equ.equipment._remove_from_pool(this_equipment, pool=equ.equipment.ID)
+                    elif reinforce_equipment["i"] == 0:
+                        ship.slot_ex = None
+                    elif reinforce_equipment["i"] == -1:
+                        ship.slot_ex = eq()
+                    else:
+                        Log.log_error(f"Unknown reinforce equipment {reinforce_equipment}, exit...")
+                        exit(1)
+                        
+                    ret[preset_name][fleet_id].ship_data.append(ship)
+
+            #restore equipment pool for next noro6 preset
+            equ.equipment.equipment_pool[equ.equipment.ID] = equipment_bak.copy()                    
+               
         return ret 
+ 
     
     def assign_exp_ship(self):
         
         noro6_available = not exp.expedition.is_noro6_in_use()
 
         exp_ship_pool = copy.deepcopy(self.fleets[self.EXP_POOL_KEY])
-        non_noro6_equipment_readonly = copy.deepcopy(equ.equipment.equipment[equ.equipment.NON_NORO6])
+        
+        non_noro6_equipment_readonly = copy.deepcopy(equ.equipment.equipment_pool[equ.equipment.NON_NORO6])
 
         exp.expedition.exp_for_fleet = [None, None, None, None, None]
         fleet_id = self.get_next_exp_fleet_id()
@@ -319,7 +364,7 @@ class FleetCore(object):
                     for standby_ship in exp_ship_pool[ongoing_ship.ship_type][:] :
                         if standby_ship.production_id == ongoing_ship.production_id:
                             exp_ship_pool[ongoing_ship.ship_type].remove(standby_ship)
-                            for equipment in equ.equipment.equipment["loaded"][standby_ship.production_id]:
+                            for equipment in equ.equipment.equipment_pool["loaded"][standby_ship.production_id]:
                                 equ.equipment._remove_from_pool(equipment, pool=equ.equipment.NON_NORO6)
         
         for exp_in_rank in exp.expedition.exp_rank:
@@ -329,11 +374,11 @@ class FleetCore(object):
             if  exp_static_data != None :
 
                 exp_ship_pool_bak = copy.deepcopy(exp_ship_pool)
-                non_noro6_equipment_pool_bak = copy.deepcopy(equ.equipment.equipment[equ.equipment.NON_NORO6])
+                non_noro6_equipment_pool_bak = copy.deepcopy(equ.equipment.equipment_pool[equ.equipment.NON_NORO6])
                 
                 exp_ship_requirement = self._get_exp_ship_requirement_from_composition(exp_static_data["reqComposition"])
                 
-                fleet_ship_id_list, exp_ship_pool, exp_equipment_id_list = self._assign_ship( \
+                assigned_fleet, exp_ship_pool  = self._assign_ship( \
                     exp_ship_requirement, \
                     exp_ship_pool,
                     exp_static_data["reqDrum"],
@@ -342,26 +387,23 @@ class FleetCore(object):
                     exp_static_data["reqFlagLevel"],
                     exp_static_data["reqCombinedLevel"])
 
-                if fleet_ship_id_list == self.ASSIGN_SHIP_FAILED :
+                if assigned_fleet == self.ASSIGN_SHIP_FAILED :
                     #failed to assign ships for this exp, restore the ship pool
                     Log.log_debug(f"ship_pool and equipment_pool restore")
                     exp_ship_pool = exp_ship_pool_bak 
-                    equ.equipment.equipment[equ.equipment.NON_NORO6] = non_noro6_equipment_pool_bak
-                elif fleet_ship_id_list == self.ASSIGN_DRUM_FAILED or fleet_ship_id_list == self.ASSIGN_LC_FAILED:
+                    equ.equipment.equipment_pool[equ.equipment.NON_NORO6] = non_noro6_equipment_pool_bak
+                elif assigned_fleet == self.ASSIGN_DRUM_FAILED or assigned_fleet == self.ASSIGN_LC_FAILED:
                     #failed to assign equipment for this exp, restore the ship pool
                     Log.log_debug(f"ship_pool and equipment_pool restore")
                     exp_ship_pool = exp_ship_pool_bak 
-                    equ.equipment.equipment[equ.equipment.NON_NORO6] = non_noro6_equipment_pool_bak
+                    equ.equipment.equipment_pool[equ.equipment.NON_NORO6] = non_noro6_equipment_pool_bak
                 else:
 
                     #Save the fleetShipId
-                    MORK_FLEET_ID = 2
                     DEFAULT_FLEET_ID = 1
                     self.fleets[exp_in_rank[exp.expedition.EXP_ENUM]] = {}
-                    self.fleets[exp_in_rank[exp.expedition.EXP_ENUM]][DEFAULT_FLEET_ID] = Fleet(MORK_FLEET_ID, FleetEnum.EXPEDITION, False)
-                    self.fleets[exp_in_rank[exp.expedition.EXP_ENUM]][DEFAULT_FLEET_ID].ship_data = fleet_ship_id_list
+                    self.fleets[exp_in_rank[exp.expedition.EXP_ENUM]][DEFAULT_FLEET_ID] = assigned_fleet
     
-                    equ.equipment.custom_equipment[exp_in_rank[exp.expedition.EXP_ENUM]] = exp_equipment_id_list
                     exp.expedition.exp_for_fleet[fleet_id] = exp_in_rank[exp.expedition.EXP_ENUM]
 
                     fleet_id = self.get_next_exp_fleet_id(fleet_id)
@@ -385,7 +427,7 @@ class FleetCore(object):
                 break
             
         #restore the equipment pool for next assignment
-        equ.equipment.equipment[equ.equipment.NON_NORO6] = non_noro6_equipment_readonly
+        equ.equipment.equipment_pool[equ.equipment.NON_NORO6] = non_noro6_equipment_readonly
             
         if fleet_id == None:
             #assign for all fleets success
@@ -395,7 +437,7 @@ class FleetCore(object):
             #some assign failed
             return False
 
-    def _assign_ship(self, fleet_list, ship_pool, req_dc=0, req_dc_carrier=0, req_lc=4, req_lv_flag=0, req_lv_sum=0):
+    def _assign_ship(self, fleet_list : dict[ShipTypeEnum, list[Ship]], ship_pool : dict[ShipTypeEnum, list[Ship]], req_dc=0, req_dc_carrier=0, req_lc=4, req_lv_flag=0, req_lv_sum=0):
         """
             Method to assign the ship with the given fleet_list and ship_pool
 
@@ -422,19 +464,19 @@ class FleetCore(object):
         NAME_ID_DRUM = 75
         NAME_ID_LC = 68
         
-        equipment_list= {}
-        assign_fleet = []
+        MORK_FLEET_ID = 2
+        assign_fleet = Fleet(MORK_FLEET_ID, FleetEnum.EXPEDITION_PRESET, False)
         
         flag_ship = True
         pool_level_reverse = False
         
         for ship_enum in fleet_list:
             
-            if self._current_fleet_level_sum(assign_fleet) < req_lv_sum and pool_level_reverse == False:
+            if assign_fleet.sum_level < req_lv_sum and pool_level_reverse == False:
                 #If the current fleet level sum is less than the required level sum, assign high level ship first
                 ship_pool[ship_enum].sort(key=lambda x: x.level, reverse=True)
                 pool_level_reverse = True
-            elif self._current_fleet_level_sum(assign_fleet) >= req_lv_sum and pool_level_reverse == True:
+            elif assign_fleet.sum_level >= req_lv_sum and pool_level_reverse == True:
                 ship_pool[ship_enum].sort(key=lambda x: x.level)
                 pool_level_reverse = False
             
@@ -445,113 +487,96 @@ class FleetCore(object):
             has_match_ship = False 
             ship = None
                         
-            if req_lc > 0:
-                
-                for ship in ship_pool[ship_enum]:
-                    if flag_ship == True and ship.level < req_lv_flag:
-                        continue
-                    
+            for ship in ship_pool[ship_enum]:
+                if flag_ship == True and ship.level < req_lv_flag:
+                    continue
+                # Check if the ship could load LC first
+                if req_lc > 0:
                     if equ.equipment.is_available_category(ship, CATEGORY_LC):
                         
                         #@todo if the ship is kinu kai 2, she has +1 lc
                         
                         lc_count = min(req_lc, ship.slot_num)
-                        req_lc -= lc_count
                          
-                        temp_equipment_list = equ.equipment.fill_with_equipment(ship, NAME_ID_LC, lc_count)
+                        temp_ship = copy.deepcopy(ship)
+                        temp_ship.fill_with_equipment(NAME_ID_LC, lc_count)
                         
-                        if temp_equipment_list != {}:
-                            equipment_list = {**equipment_list, **temp_equipment_list}
+                        Log.log_error(f"DEBUG:temp_ship.equipments: {temp_ship.name}")
+                        Log.log_error(f"DEBUG:temp_ship.equipments: {temp_ship.equipments}")
+                        Log.log_error(f"DEBUG:temp_ship.equipments: {temp_ship.equipment_ids}")
+                        
+                        if temp_ship.equipments != []:
+                            req_lc -= lc_count
+                            if temp_ship.slot_ex != None:
+                                temp_ship.slot_ex = eq()
+                            assign_fleet.add_ship(temp_ship)
+                            ship_pool[ship_enum].remove(ship)
+                            Log.log_debug(f"fleet_core: assign ship {ship} for {fleet_list}")
                             has_match_ship = True
                             break
                         else:
                             Log.log_debug(f"fleet_switcher_core: assign LC failed for {fleet_list}")
-                            return self.ASSIGN_LC_FAILED, ship_pool, equipment_list
-            
-            elif (req_dc > 0 or req_dc_carrier > 0):
-                for ship in ship_pool[ship_enum]:
-                    
-                    if flag_ship == True and ship.level < req_lv_flag:
-                        continue
-                    
-                    if equ.equipment.is_available_category(ship, CATEGORY_DRUM)\
-                        and not equ.equipment.is_available_category(ship, CATEGORY_LC):
+                            return self.ASSIGN_LC_FAILED, ship_pool
+            if has_match_ship == True:
+                continue
+                        
+            for ship in ship_pool[ship_enum]:
+                if flag_ship == True and ship.level < req_lv_flag:
+                    continue
+                # Check if the ship could load drum, if she can't load LC  
+                if (req_dc > 0 or req_dc_carrier > 0):
+                    if equ.equipment.is_available_category(ship, CATEGORY_DRUM):
                             
                         req_dc_carrier = max(req_dc_carrier, 1) #make it at least one dc carrier needed, for easier math
                         
                         dc_count = min(req_dc - req_dc_carrier + 1 , ship.slot_num)
-                        temp_equipment_list = equ.equipment.fill_with_equipment(ship, NAME_ID_DRUM, dc_count)
                         
-                        req_dc -= dc_count
-                        req_dc_carrier -= 1
+                        temp_ship = copy.deepcopy(ship)
+                        temp_ship.fill_with_equipment(NAME_ID_DRUM, dc_count)
                         
-                        if temp_equipment_list != {}:
-                            equipment_list = {**equipment_list, **temp_equipment_list}
+                        if temp_ship.equipments != []:
+                            req_dc -= dc_count
+                            req_dc_carrier -= 1
+                            if temp_ship.slot_ex != None:
+                                temp_ship.slot_ex = eq()
+                            assign_fleet.add_ship(temp_ship)
+                            ship_pool[ship_enum].remove(ship)
+                            Log.log_debug(f"fleet_core: assign ship {ship} for {fleet_list}")
                             has_match_ship = True
                             break
                         else:
                             Log.log_debug(f"fleet_switcher_core: assign drum failed for {fleet_list}")
-                            return self.ASSIGN_DRUM_FAILED, ship_pool, equipment_list
-                        
-                if has_match_ship == False:
-                    for ship in ship_pool[ship_enum]:
-                        
-                        if flag_ship == True and ship.level < req_lv_flag:
-                            continue
-                        
-                        if equ.equipment.is_available_category(ship, CATEGORY_DRUM):
-                            dc_count = min(req_dc, ship.slot_num)
-                            temp_equipment_list = equ.equipment.fill_with_equipment(ship, NAME_ID_DRUM, dc_count)
-                            
-                            req_dc -= dc_count
-                            req_dc_carrier -= 1
-                            
-                            if temp_equipment_list != {}:
-                                equipment_list = {**equipment_list, **temp_equipment_list}
-                                has_match_ship = True
-                                break
-    
-                            else:
-                                Log.log_debug(f"fleet_switcher_core: assign drum failed for {fleet_list}")
-                                return self.ASSIGN_DRUM_FAILED, ship_pool, equipment_list
-           
-            if has_match_ship == False:
-                for ship in ship_pool[ship_enum]:
-                    
-                    if flag_ship == True and ship.level < req_lv_flag:
-                        continue
-                    
-                    if not equ.equipment.is_available_category(ship, CATEGORY_DRUM) \
-                        and not equ.equipment.is_available_category(ship, CATEGORY_LC):
-                        has_match_ship = True
-                        break
-                    
-                if has_match_ship == False and len(ship_pool[ship_enum]) > 0:
-                    for ship in ship_pool[ship_enum]:
-                        if not equ.equipment.is_available_category(ship, CATEGORY_LC):
-                            has_match_ship = True
-                            break
-                    
-                if has_match_ship == False and len(ship_pool[ship_enum]) > 0:
-                    ship = ship_pool[ship_enum][0]
-                    has_match_ship = True
+                            return self.ASSIGN_DRUM_FAILED, ship_pool
+            if has_match_ship == True:
+                continue
+            
+            #sadly in this case, no ship can load LC or drum, at least now we try to load whatever ship we can find
+            for ship in ship_pool[ship_enum]:
+                if flag_ship == True and ship.level < req_lv_flag:
+                    continue
+                
+                temp_ship = copy.deepcopy(ship)
+                temp_ship.equipments = []
+                if temp_ship.slot_ex != None:
+                    temp_ship.slot_ex = eq()
+                assign_fleet.add_ship(temp_ship)
+                ship_pool[ship_enum].remove(ship)
+                Log.log_debug(f"fleet_core: assign ship {ship} for {fleet_list}")
+                has_match_ship = True
+                break
             
             if has_match_ship == False:
                 #Cannot find a valid ship
                 Log.log_debug(f"fleet_core: assign ship failed for {fleet_list}")
-                return self.ASSIGN_SHIP_FAILED, ship_pool, equipment_list
-            else:
-                assign_fleet.append(ship)
-                ship_pool[ship_enum].remove(ship)
-                Log.log_debug(f"fleet_core: assign ship {ship} for {fleet_list}")
+                return self.ASSIGN_SHIP_FAILED, ship_pool
             
             flag_ship = False
             
-        if self._current_fleet_level_sum(assign_fleet) < req_lv_sum:
+        if assign_fleet.sum_level < req_lv_sum:
             Log.log_debug(f"fleet_core: assign ship failed for {fleet_list}, level sum is not enough")
-            return self.ASSIGN_SHIP_FAILED, ship_pool, equipment_list
+            return self.ASSIGN_SHIP_FAILED, ship_pool
                 
-        return assign_fleet, ship_pool, equipment_list
+        return assign_fleet, ship_pool
     
     def _current_fleet_level_sum(self, fleet_list):
         sum = 0
