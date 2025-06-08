@@ -17,10 +17,9 @@ class Fleet(object):
     _fleet_type = None
     _enabled = False
     _at_base = True
-    _ship_ids = []
     _return_time = None
     _expedition_id = None
-    ship_data = []
+    ship_data: list[Ship] = []
     visual_health = []
 
     def __init__(self, fleet_id, fleet_type, enabled=True):
@@ -28,6 +27,7 @@ class Fleet(object):
         self.fleet_id = fleet_id
         self.enabled = enabled
         self.fleet_type = fleet_type
+        self.ship_data: list[Ship] = []
 
     def update_ship_data(self):
         ship_ids = self.ship_ids
@@ -57,7 +57,7 @@ class Fleet(object):
         
         if self.fleet_id == 1 and value != FleetEnum.COMBAT:
             raise ValueError("Fleet 1 can only be a combat fleet.")
-        if value not in (FleetEnum.COMBAT, FleetEnum.EXPEDITION):
+        if value not in [e for e in FleetEnum]:
             raise ValueError("Invalid value for fleet type.")
         self._fleet_type = value
 
@@ -102,12 +102,22 @@ class Fleet(object):
         self._at_base = value
 
     @property
-    def ship_ids(self):
+    def ship_ids(self) -> list[int]:
         
         ret = []
         
         for ship in self.ship_data:
             ret.append(ship.production_id)
+        
+        return ret
+    
+    @property
+    def equipment_ids(self) -> list[int]:
+        
+        ret = []
+        
+        for ship in self.ship_data:
+            ret += ship.equipment_ids
         
         return ret
 
@@ -220,6 +230,43 @@ class Fleet(object):
                 f"{ship.name} ({ship.damage.display_name} damage)")
         return " : ".join(ship_strings)
 
+    @property
+    def size(self):
+        return len(self.ship_data)
+            
+    @property
+    def sum_level(self):
+        level_sum = 0
+        for ship in self.ship_data:
+            level_sum += ship.level
+        return level_sum
+            
+    @property
+    def flag_level(self):
+        if self.size == 0:
+            return 0
+        return self.ship_data[0].level
+    
+    def add_ship(self, ship):
+        if not isinstance(ship, Ship):
+            raise TypeError("ship must be an instance of Ship class.")
+        self.ship_data.append(ship)
+        return
+            
+    def remove_ship(self, ship):
+        for i, ship in enumerate(self.ship_data):
+            if ship.production_id == ship.production_id:
+                del self.ship_data[i]
+                Log.log_debug(f"Removed ship {ship.name} from fleet {self.fleet_id}.")
+                return
+        Log.log_debug(f"Ship {ship.name} not found in fleet {self.fleet_id}.")
+    
+    def get_ship_by_production_id(self, production_id):
+        for ship in self.ship_data:
+            if ship.production_id == production_id:
+                return ship
+        return None
+            
     def update_ship_hps(self, hps):
         for idx, ship in enumerate(self.ship_data):
             ship.hp = hps[idx]
