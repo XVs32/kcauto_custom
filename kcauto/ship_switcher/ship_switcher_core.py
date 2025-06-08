@@ -252,7 +252,7 @@ class ShipSwitcherCore(object):
         if mode == "ship":
             tot_pages = (shp.ships.ship_count -1) // 10 + 1
         elif mode == "equipment":
-            tot_pages = (len(equ.equipment.equipment['free']) -1) // 10 + 1
+            tot_pages = (len(equ.equipment.equipment_pool['free']) -1) // 10 + 1
 
         list_control_region = Region(
             kca_u.kca.game_x + 625, kca_u.kca.game_y + 655, 495, 45)
