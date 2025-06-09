@@ -364,7 +364,7 @@ class FleetCore(object):
                     for standby_ship in exp_ship_pool[ongoing_ship.ship_type][:] :
                         if standby_ship.production_id == ongoing_ship.production_id:
                             exp_ship_pool[ongoing_ship.ship_type].remove(standby_ship)
-                            for equipment in equ.equipment.equipment_pool["loaded"][standby_ship.production_id]:
+                            for equipment in ongoing_ship.equipments:
                                 equ.equipment._remove_from_pool(equipment, pool=equ.equipment.NON_NORO6)
         
         for exp_in_rank in exp.expedition.exp_rank:
@@ -500,10 +500,6 @@ class FleetCore(object):
                          
                         temp_ship = copy.deepcopy(ship)
                         temp_ship.fill_with_equipment(NAME_ID_LC, lc_count)
-                        
-                        Log.log_error(f"DEBUG:temp_ship.equipments: {temp_ship.name}")
-                        Log.log_error(f"DEBUG:temp_ship.equipments: {temp_ship.equipments}")
-                        Log.log_error(f"DEBUG:temp_ship.equipments: {temp_ship.equipment_ids}")
                         
                         if temp_ship.equipments != []:
                             req_lc -= lc_count
