@@ -68,8 +68,8 @@ class ShipsCore(object):
         
         return self.ship_pool[ship_id]
 
-    def create_ship(self, static_data, local_data = Ship.EMPTY_LOCAL_DATA, equipment = None):
-        return Ship(static_data, local_data, equipment)
+    def create_ship(self, static_data, local_data = Ship.EMPTY_LOCAL_DATA):
+        return Ship(static_data, local_data)
      
     def get_ship_from_noro6_ship(self, noro_ship):
         """
