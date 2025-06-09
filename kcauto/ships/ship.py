@@ -47,7 +47,7 @@ class Ship(object):
     
     equipments : list[Equipment] = []
 
-    def __init__(self, static_data, local_data, equipments = None):
+    def __init__(self, static_data, local_data : dict):
         
         self.api_id = static_data['api_id']
         self.sortno = static_data['api_sortno']
@@ -71,7 +71,7 @@ class Ship(object):
         self.ndock_time_ms = local_data['api_ndock_time']
         
         self.equipments = []
-        for equipment_production_id in local_data["api_slot"]:
+        for equipment_production_id in local_data.get("api_slot", []):
             if equipment_production_id > 0:
                 self.equipments.append(
                     equ.equipment.get_equipment_by_production_id(equ.equipment.equipment_pool[equ.equipment.ID], equipment_production_id))
@@ -180,9 +180,6 @@ class Ship(object):
         Returns a list of equipment production ids equipped on the ship.
         """
         ids = []
-        Log.log_error(f'DEBUG:self.equipments {self.equipments}')
-        Log.log_error(f'DEBUG:self.slot_ex {self.slot_ex}')
-        Log.log_error(f'DEBUG:self.name {self.name}')
         for equipment in self.equipments:
             if equipment.model_id > 0:
                 ids.append(equipment.production_id)
@@ -224,11 +221,7 @@ class Ship(object):
         temp_equipment = equ.equipment._get_match_equipment(equ.equipment.equipment_pool[equ.equipment.NON_NORO6], model_id)
         count = min(count, len(temp_equipment))
         
-        Log.log_error(f"DEBUG: temp_equipment {temp_equipment}")
-        
         self.equipments = temp_equipment[:count]
-        
-        Log.log_error(f"DEBUG: ship equipment {self.equipments}")
         
         for i in range(count):
             equ.equipment._remove_from_pool(target_equipment=temp_equipment[i], pool=equ.equipment.NON_NORO6)
