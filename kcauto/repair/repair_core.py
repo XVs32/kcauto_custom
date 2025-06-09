@@ -17,7 +17,6 @@ from kca_enums.kcsapi_paths import KCSAPIEnum
 from kca_enums.fleet import FleetEnum
 from util.kc_time import KCTime
 from util.logger import Log
-from constants import EMPTY_EQUIPMENT_A, EMPTY_EQUIPMENT_B
 
 
 class RepairCore(object):
@@ -98,14 +97,6 @@ class RepairCore(object):
         idx_of_combat_ships = {}
         idx_of_passive_ships = {}
         
-        
-        TEMP_FLEET_ID = 1
-        idx_of_equipment_unload_ships = []
-        temp_fleet = {}
-        temp_fleet[1]=(Fleet("unload_equipment", FleetEnum.COMBAT, False))
-        temp_fleet[1].ship_data = []
-        
-        
         TEMP_FLEET_ID = 1
         temp_fleet = {}
         temp_fleet[TEMP_FLEET_ID]=(Fleet("unload_equipment", FleetEnum.COMBAT, False))
@@ -122,16 +113,16 @@ class RepairCore(object):
                 if ship.damage >= cfg.config.passive_repair.repair_threshold:
                     if ship not in flt.fleets.active_ships:
                         idx_of_passive_ships[idx] = ship
-                        Log.log_error(f' ship.equipment: {ship.equipment} ')
-                        if      ship.equipment != EMPTY_EQUIPMENT_A\
-                            and ship.equipment != EMPTY_EQUIPMENT_B:
+                        Log.log_error(f' ship.equipment: {ship.equipment_ids} ')
+                        if ship.has_no_equipment() == False:
                             temp_fleet[TEMP_FLEET_ID].ship_data.append(ship)
                         
         if temp_fleet[TEMP_FLEET_ID].ship_data != []:
+            fsw.fleet_switcher.goto()
             if fsw.fleet_switcher.switch_to_costom_fleet(TEMP_FLEET_ID, temp_fleet):
                 nav.navigate.to('refresh_home')
                 nav.navigate.to('equipment')
-                equ.equipment.unload_fleet_equipment(fleet_id=TEMP_FLEET_ID, needed_load=False)
+                fsw.fleet_switcher.unload_fleet_equipment(fleet_id=TEMP_FLEET_ID, needed_load=False)
                 self.goto()
             else:
                 Log.log_error("kcauto failed to load the selected ship, exiting...")
@@ -155,7 +146,7 @@ class RepairCore(object):
                 self._select_ship(idx, ship)
                 
                 if status == self.UNLOAD_NEEDED:
-                    equ.equipment.unload_ship(ship.production_id)
+                    fsw.fleet_switcher.unload_ship(1, ship)
                     status = self._start_repair(ship, "force")
                 else:
                     status = self._start_repair(ship, context)
