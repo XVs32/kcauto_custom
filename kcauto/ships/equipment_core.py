@@ -90,12 +90,10 @@ class EquipmentCore(object):
 
         return equipment_list[0]
         
-    def get_reinforce_equipment_list(self, local_id):
+    def get_reinforce_equipment_list(self, ship):
 
         equipment_list = []
 
-        import ships.ships_core as shp
-        ship = shp.ships.get_ship_from_production_id(local_id)
         special_equipment_list = self.get_special_reinforce_equipment(ship) # sqecial equipment for this ship only
         
         keys = self.equipment_pool[self.RAW].keys()
@@ -128,13 +126,6 @@ class EquipmentCore(object):
 
         equipment_list = []
 
-        Log.log_debug(type(ship.api_id))
-        Log.log_debug(ship.api_id)
-        Log.log_debug(type(ship.ship_family))
-        Log.log_debug(ship.ship_family)
-        Log.log_debug(type(ship.ship_type.id))
-        Log.log_debug(ship.ship_type.id)
-        
         Log.log_debug(self.reinforce_special)
 
         for key in self.reinforce_special:
@@ -217,7 +208,7 @@ class EquipmentCore(object):
         
         for equipment in self.equipment_pool[self.ID]:
             if equipment.production_id == production_id:
-                Log.log_warn(f"Cannot find {self.get_equipment_static_data(equipment.model_id)[self.EQUIPMENT_NAME_KEY]} in specified equipment pool, maybe it is in use")
+                Log.log_warn(f"Cannot find {equipment.name} in specified equipment pool, maybe it is in use")
                 return None 
             
         return eq(eq().UNKNOWN_EQUIPMENT, production_id=production_id)
