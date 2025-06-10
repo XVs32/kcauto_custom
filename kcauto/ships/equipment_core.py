@@ -86,7 +86,8 @@ class EquipmentCore(object):
         #sort by the absolute value of difference between api_lv and rf
         equipment_list.sort(key=lambda x: abs(x.stars - noro6_equipment["r"]))
         # send warring, can't find exact same equipment
-        Log.log_warn(f"Can't find exact {equipment_list[0].name} with level {noro6_equipment['r']}, using the closest one")
+        if equipment_list[0].is_empty_equipment == False:
+            Log.log_warn(f"Can't find exact {equipment_list[0].name} with level {noro6_equipment['r']}, using the closest one with {equipment_list[0].stars}☆")
 
         return equipment_list[0]
         

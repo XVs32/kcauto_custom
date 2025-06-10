@@ -113,7 +113,6 @@ class RepairCore(object):
                 if ship.damage >= cfg.config.passive_repair.repair_threshold:
                     if ship not in flt.fleets.active_ships:
                         idx_of_passive_ships[idx] = ship
-                        Log.log_error(f' ship.equipment: {ship.equipment_ids} ')
                         if ship.has_no_equipment() == False:
                             temp_fleet[TEMP_FLEET_ID].ship_data.append(ship)
                         
