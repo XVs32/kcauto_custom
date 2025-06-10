@@ -89,13 +89,12 @@ class Kcauto(object):
                 exp.expedition.goto()
                 exp.expedition.get_expedition_ranking()
                 
-                if com.combat.enabled == False and pvp.pvp.enabled == False:
-                    self.run_quest_logic('auto_expedition')
+                self.run_quest_logic('auto_expedition')
                     
                 exp.expedition.prerequisite_handling()
                 exp.expedition.on_going_exp_handling()
                 
-                Log.log_msg(f'Expedition rank: {[expedition["id"] for expedition in exp.expedition.exp_rank]}')
+                Log.log_msg(f'Expedition rank: {[expedition[exp.expedition.EXP_ENUM].display_name for expedition in exp.expedition.exp_rank]}')
 
                 if not flt.fleets.assign_exp_ship():
                     exp.expedition.enabled = False

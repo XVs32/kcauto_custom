@@ -6,8 +6,7 @@ from util.wctf import WhoCallsTheFleetData
 
 class ShipsCore(object):
     max_ship_count = 0
-    ship_pool = {}
-    local_ships_by_production_id = {}
+    ship_pool : dict[int, Ship] = {}
     ship_library = []
     name_db = {}
 
@@ -20,10 +19,8 @@ class ShipsCore(object):
         Log.log_debug("Updating ship data from API.")
         self.ship_pool = {}
         for ship in data:
-            ship_instance = self.create_ship(
+            self.ship_pool[ship['api_id']] = self.create_ship(
                 self.get_ship_static_data(ship["api_sortno"]), ship)
-            self.ship_pool[ship['api_id']] = ship_instance
-            
 
     def update_ship_library(self, data):
         Log.log_debug("Updating ship library data.")
@@ -63,7 +60,7 @@ class ShipsCore(object):
     def ship_count(self):
         return len(self.ship_pool)
 
-    def get_ship_from_production_id(self, ship_id):
+    def get_ship_from_production_id(self, ship_id) -> Ship:
         
         if ship_id not in self.ship_pool:
             Log.log_error(f"Ship #{ship_id} not found in port.")

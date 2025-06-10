@@ -3,8 +3,10 @@ from datetime import timedelta
 from kca_enums.damage_states import DamageStateEnum
 from kca_enums.fatigue_states import FatigueStateEnum
 from kca_enums.ship_types import ShipTypeEnum
+import ships.equipment_core as equ 
+from ships.equipment import Equipment
 from util.kc_time import KCTime
-from ships.equipment import equipment
+from util.logger import Log
 
 
 class Ship(object):
@@ -41,11 +43,11 @@ class Ship(object):
     morale = None
     locked = None
     ndock_time_ms = None
-    slot_ex = None
+    slot_ex : Equipment = None
     
-    equipments :equipment = []
+    equipments : list[Equipment] = []
 
-    def __init__(self, static_data, local_data, equipments = None):
+    def __init__(self, static_data, local_data : dict):
         
         self.api_id = static_data['api_id']
         self.sortno = static_data['api_sortno']
@@ -67,10 +69,22 @@ class Ship(object):
         self.morale = local_data['api_cond']
         self.locked = local_data['api_locked'] == 1
         self.ndock_time_ms = local_data['api_ndock_time']
-        self.slot_ex = local_data['api_slot_ex']
         
+        self.equipments = []
+        for equipment_production_id in local_data.get("api_slot", []):
+            if equipment_production_id > 0:
+                self.equipments.append(
+                    equ.equipment.get_equipment_by_production_id(equ.equipment.equipment_pool[equ.equipment.ID], equipment_production_id))
             
-        self.equipments = equipments
+        if local_data['api_slot_ex'] == -1:
+            self.slot_ex = Equipment()
+        elif local_data['api_slot_ex'] == 0:
+            self.slot_ex = None
+        elif local_data['api_slot_ex'] > 0:
+            self.slot_ex = equ.equipment.get_equipment_by_production_id(equ.equipment.equipment_pool[equ.equipment.ID], local_data['api_slot_ex']) 
+        else:
+            Log.log_error(f"Unknown slot_ex equipment: {local_data['api_slot_ex']} not found, exiting...")
+            exit(1)
 
     @property
     def name(self):
@@ -144,3 +158,72 @@ class Ship(object):
             f"F:{self.fuel}/{self.fuel_max} / "
             f"A:{self.ammo}/{self.ammo_max} / "
             f"M:{self.morale} ({self.fatigue.name})")
+    
+    def has_no_equipment(self):
+        """
+        Checks if the ship has no equipment equipped.
+        Returns True if no equipment is equipped, False otherwise.
+        """
+        for equipment in self.equipments:
+            if equipment.model_id > 0:
+                return False
+            
+        if self.slot_ex != None and self.slot_ex.model_id > 0:
+            return False
+        
+        return True
+    
+    
+    @property
+    def equipment_ids(self):
+        """
+        Returns a list of equipment production ids equipped on the ship.
+        """
+        ids = []
+        for equipment in self.equipments:
+            if equipment.model_id > 0:
+                ids.append(equipment.production_id)
+        if self.slot_ex != None and self.slot_ex.model_id > 0:
+            ids.append(self.slot_ex.production_id)
+        
+        return ids    
+
+    @property
+    def equipment_count(self):
+        """
+        Returns the count equipments on board, slot_ex is not included
+        """
+        count = 0
+        for equipment in self.equipments:
+            if equipment.model_id > 0:
+                count += 1
+        return count
+    
+    
+    
+    def fill_with_equipment(self, model_id : int, count : int, sort_by_level : bool = False) -> dict[int, list[int]]:
+        """
+            method to fill a ship with one type of equipment
+            
+            arg:
+                ship (Ship): ship instance
+                equipment (int): equipment model id
+                count (int): how many equipment to fill
+                sort_by_level (bool): if True, use high level equipment first
+            
+            output a kcauto format ship equipment list
+        """
+        
+        self.equipments = []
+        
+        count = min(count, self.slot_num)
+        
+        temp_equipment = equ.equipment._get_match_equipment(equ.equipment.equipment_pool[equ.equipment.NON_NORO6], model_id)
+        count = min(count, len(temp_equipment))
+        
+        self.equipments = temp_equipment[:count]
+        
+        for i in range(count):
+            equ.equipment._remove_from_pool(target_equipment=temp_equipment[i], pool=equ.equipment.NON_NORO6)
+        
+        return 
