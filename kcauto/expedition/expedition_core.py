@@ -140,22 +140,37 @@ class ExpeditionCore(CoreBase):
                 horuly_rsc["steel"] = exp["steel"] / math.ceil(exp["time"] / pooling_interval) * pooling_interval 
                 horuly_rsc["baux"] = exp["baux"] / math.ceil(exp["time"] / pooling_interval) * pooling_interval 
                 horuly_rsc["bucket"] = (1 if exp["item"] == "bucket" else 0) / math.ceil(exp["time"] / pooling_interval) * pooling_interval 
+                
+                # Check and nullify overflowed resources
+                if sts.stats.rsc.fuel >= cfg.config.expedition.desire_oil:
+                    horuly_rsc["fuel"] = 0
+                if sts.stats.rsc.ammo >= cfg.config.expedition.desire_ammo:
+                    horuly_rsc["ammo"] = 0
+                if sts.stats.rsc.steel >= cfg.config.expedition.desire_steel:
+                    horuly_rsc["steel"] = 0
+                if sts.stats.rsc.bauxite >= cfg.config.expedition.desire_bauxite:
+                    horuly_rsc["baux"] = 0
+                if sts.stats.rsc.bucket >= cfg.config.expedition.desire_bucket:
+                    horuly_rsc["bucket"] = 0
 
                 exp_enum = ExpeditionEnum(exp["id"])
                 
-                avg_fill_rate = ((horuly_rsc["fuel"] + sts.stats.rsc.fuel +\
-                        horuly_rsc["ammo"]  + sts.stats.rsc.ammo  +\
-                        horuly_rsc["steel"] + sts.stats.rsc.steel  +\
-                        horuly_rsc["baux"]  + sts.stats.rsc.bauxite ) / MAX_RESOURCE +\
-                        horuly_rsc["bucket"]+ sts.stats.rsc.bucket / DESIRE_BUCKET) / 5
-
-                balace_score =  ((abs(horuly_rsc["fuel"]   + sts.stats.rsc.fuel)   / MAX_RESOURCE - avg_fill_rate)+\
-                                 (abs(horuly_rsc["ammo"]   + sts.stats.rsc.ammo)   / MAX_RESOURCE - avg_fill_rate)+\
-                                 (abs(horuly_rsc["steel"]  + sts.stats.rsc.steel)  / MAX_RESOURCE - avg_fill_rate)+\
-                                 (abs(horuly_rsc["baux"]   + sts.stats.rsc.bauxite)/ MAX_RESOURCE - avg_fill_rate)+\
-                                 (abs(horuly_rsc["bucket"] + sts.stats.rsc.bucket) / DESIRE_BUCKET- avg_fill_rate))\
-                                * (-1)
-                                
+                avg_fill_rate = (
+                    (horuly_rsc["fuel"]  + sts.stats.rsc.fuel)  / cfg.config.expedition.desire_oil +
+                    (horuly_rsc["ammo"]  + sts.stats.rsc.ammo)  / cfg.config.expedition.desire_ammo +
+                    (horuly_rsc["steel"] + sts.stats.rsc.steel) / cfg.config.expedition.desire_steel +
+                    (horuly_rsc["baux"]  + sts.stats.rsc.bauxite) / cfg.config.expedition.desire_bauxite +
+                    (horuly_rsc["bucket"] + sts.stats.rsc.bucket) / cfg.config.expedition.desire_bucket
+                ) / 5
+                
+                balace_score = (
+                    abs((horuly_rsc["fuel"]  + sts.stats.rsc.fuel)  / cfg.config.expedition.desire_oil   - avg_fill_rate) +
+                    abs((horuly_rsc["ammo"]  + sts.stats.rsc.ammo)  / cfg.config.expedition.desire_ammo  - avg_fill_rate) +
+                    abs((horuly_rsc["steel"] + sts.stats.rsc.steel) / cfg.config.expedition.desire_steel - avg_fill_rate) +
+                    abs((horuly_rsc["baux"]  + sts.stats.rsc.bauxite) / cfg.config.expedition.desire_bauxite - avg_fill_rate) +
+                    abs((horuly_rsc["bucket"] + sts.stats.rsc.bucket) / cfg.config.expedition.desire_bucket - avg_fill_rate)
+                ) * (-1)
+                
                 self.exp_rank.append({self.EXP_ENUM:exp_enum,self.SCORE:balace_score})
             self.exp_rank.sort(key=self.cmp, reverse=True)
 
