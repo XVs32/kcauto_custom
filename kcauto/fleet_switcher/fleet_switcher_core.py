@@ -369,8 +369,13 @@ class FleetSwitcherCore(object):
                 target_ship = target_fleet.get_ship_by_production_id(ship.production_id)
                 
                 if ship.equipment_ids != target_ship.equipment_ids\
-                or (ship.slot_ex!=None and ship.slot_ex.production_id != target_ship.slot_ex.production_id):
+                or (ship.slot_ex!=None \
+                    and (target_ship.slot_ex == None \
+                    or ship.slot_ex.production_id != target_ship.slot_ex.production_id)):
                     needed_load = True
+                    
+                    if ship.slot_ex != None and target_ship.slot_ex == None:
+                        Log.log_warn(f"Ship {ship.name} has a reinforce slot, but Noro6 config says she doesn't, you might want to update your config.")
                     
                     if ship.has_no_equipment() == False:
                         unload_ships.append(ship)

@@ -3,6 +3,7 @@ from sys import exit
 from time import sleep
 
 import args.args_core as arg
+from config.macro import *
 from config.combat import ConfigCombat
 from config.event_reset import ConfigEventReset
 from config.expedition import ConfigExpedition
@@ -18,6 +19,9 @@ from util.logger import Log
 
 
 class Config(object):
+    
+    
+    
     cfg_path = None
     last_cfg_update_time = None
     general = None
@@ -51,6 +55,8 @@ class Config(object):
         config_json = self.load_json(self.cfg_path)
         initial_load = True
         new_update_time = os.path.getmtime(self.cfg_path)
+        
+        self.compatibility_fix(config_json)
 
         if self.general:
             initial_load = False
@@ -97,6 +103,22 @@ class Config(object):
             self.scheduler = new_scheduler
             self.last_cfg_update_time = new_update_time
             return True
+        
+    def compatibility_fix(self, current_config):
+        """Check if the config is compatible with the current version of kcauto."""
+        
+        default_config = self.load_json(CONFIG_DEFAULT)
+        
+        write_back_needed = False
+        for key in default_config:
+            if key not in current_config:
+                Log.log_error(f"Missing item {key} in config, use value {default_config[key]} from default config.")
+                current_config[key] = default_config[key]
+                write_back_needed = True
+        if write_back_needed:
+            JsonData.dump_json(current_config, self.cfg_path)
+        
+        return True
 
     @property
     def config_changed(self):
