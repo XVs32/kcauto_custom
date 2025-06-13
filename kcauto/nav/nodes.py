@@ -228,7 +228,7 @@ class NavNode(object):
                 exp.expedition.receive_expedition()
             return c['target']
         else:
-            Log.log_warn(
+            Log.log_msg(
                 f"Not possible to navigate to '{target}' from {self.name} "
                 "screen.")
             return False
