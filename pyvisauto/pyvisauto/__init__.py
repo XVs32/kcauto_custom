@@ -45,7 +45,7 @@ class ImageMatch(ABC):
         Returns:
             PIL.Image: object representating captured region.
         """
-        return pyautogui.screenshot(region=(self.x, self.y, self.w, self.h))
+        return pyautogui.screenshot(region=(int(self.x), int(self.y), int(self.w), int(self.h)))
 
     def _match_template(self, target, template=None, cached=False):
         """Private method for finding matches from either the target asset
