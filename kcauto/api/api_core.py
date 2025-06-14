@@ -471,6 +471,28 @@ class ApiWrapper(object):
         try:
             equ.equipment.equipment_pool[equ.equipment.RAW] = data['api_data']['api_slot_data']
             keys = equ.equipment.equipment_pool[equ.equipment.RAW].keys()
+            
+            SECONDARY_GUN = "api_slottype4"
+            EVENT_SECONDARY_GUN = "api_slottype95"
+            if EVENT_SECONDARY_GUN in keys and SECONDARY_GUN in keys:
+                
+                temp = []
+                
+                for secondary_gun_production_id in equ.equipment.equipment_pool[equ.equipment.RAW][SECONDARY_GUN]:
+                    secondary_gun = equ.equipment.get_equipment_by_production_id(
+                        equ.equipment.equipment_pool[equ.equipment.ID], secondary_gun_production_id)
+                    for event_secondary_gun_production_id in equ.equipment.equipment_pool[equ.equipment.RAW][EVENT_SECONDARY_GUN]:
+                        event_secondary_gun = equ.equipment.get_equipment_by_production_id(
+                            equ.equipment.equipment_pool[equ.equipment.ID], secondary_gun_production_id)
+                        
+                        if secondary_gun.model_id > event_secondary_gun.model_id:
+                            temp.append(event_secondary_gun_production_id)
+
+                    temp.append(secondary_gun_production_id)
+                    
+                equ.equipment.equipment_pool[equ.equipment.RAW][SECONDARY_GUN] = temp
+                del equ.equipment.equipment_pool[equ.equipment.RAW][EVENT_SECONDARY_GUN]
+                
             sorted_keys = sorted(keys, key=lambda x: (len(x), x))
             for key in sorted_keys:
                 for equipment_production_id in equ.equipment.equipment_pool[equ.equipment.RAW][key]:
@@ -479,6 +501,12 @@ class ApiWrapper(object):
                             equ.equipment.equipment_pool[equ.equipment.ID], equipment_production_id))
             Log.log_debug(f"equipment updated")
             
+            for i, equipment in enumerate(equ.equipment.equipment_pool[equ.equipment.FREE]):
+                if i %10 == 0:  
+                    Log.log_debug(f'Page {i // 10 + 1}')
+                Log.log_debug(f'{i}: {equipment.name}{equipment.stars} (Production id: {equipment.production_id}, Model ID: {equipment.model_id})')
+            
+            exit("debugend")
         except KeyError:
             Log.log_debug("No provisional equipment data found in API response")
 
