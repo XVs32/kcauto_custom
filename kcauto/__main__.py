@@ -1,7 +1,10 @@
 import args.args_core as arg
 from util.logger import Log
 from version import __version__
+import sys
 
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
 
 if __name__ == '__main__':
     """Main entry point for kcauto script. Decides whether or not to launch in
