@@ -8,6 +8,7 @@ import combat.combat_core as com
 import combat.lbas_core as lbas
 import expedition.expedition_core as exp
 import ships.equipment_core as equ 
+from ships.equipment import Equipment as eq
 import fleet.fleet_core as flt
 import fleet_switcher.fleet_switcher_core as fsw
 import pvp.pvp_core as pvp
@@ -22,6 +23,7 @@ from util.exceptions import (
     ApiException, Catbomb201Exception, ChromeCrashException)
 from util.json_data import JsonData
 from util.logger import Log
+from constants import EMPTY_EQUIPMENT_API
 
 
 class ApiWrapper(object):
@@ -230,8 +232,11 @@ class ApiWrapper(object):
             
             equ.equipment.reinforce_general_category = data['api_data']['api_mst_equip_exslot']
             equ.equipment.reinforce_special = data['api_data']['api_mst_equip_exslot_ship']
+            eq.equipment_static_data = data['api_data']['api_mst_slotitem']
+            eq.equipment_static_data.append(EMPTY_EQUIPMENT_API)
             JsonData.dump_json(equ.equipment.reinforce_general_category, 'data|temp|reinforce_general_category.json')
             JsonData.dump_json(equ.equipment.reinforce_special, 'data|temp|reinforce_special.json')
+            JsonData.dump_json(eq.equipment_static_data, 'data|temp|equipment_static.json')
 
             JsonData.dump_json(data['api_data']['api_mst_stype'], 'data|temp|ship_type.json')
             JsonData.dump_json(data['api_data']['api_mst_equip_ship'], 'data|temp|equipment_ship_special.json')
@@ -263,11 +268,10 @@ class ApiWrapper(object):
         try:
             ship_data = data['api_data']['api_ship']
             shp.ships.update_ship_pool(ship_data)
-            equ.equipment.get_loaded_equipment(ship_data)
             JsonData.dump_json(ship_data, 'data|temp|local_ship.json')
             flt.fleets.load_custom_fleets()
             flt.fleets.load_custom_exp_pool()
-            
+            flt.fleets.load_idle_pool()
             
         except KeyError:
             Log.log_debug("No ship data found in API response.")
@@ -462,21 +466,21 @@ class ApiWrapper(object):
 
 
     def _process_free_equipment_data(self, data):
-        equ.equipment.equipment[equ.equipment.RAW] = {}
-        equ.equipment.equipment[equ.equipment.FREE] = []
+        equ.equipment.equipment_pool[equ.equipment.RAW] = {}
+        equ.equipment.equipment_pool[equ.equipment.FREE] = []
         try:
-            equ.equipment.equipment[equ.equipment.RAW] = data['api_data']['api_slot_data']
-            keys = equ.equipment.equipment[equ.equipment.RAW].keys()
+            equ.equipment.equipment_pool[equ.equipment.RAW] = data['api_data']['api_slot_data']
+            keys = equ.equipment.equipment_pool[equ.equipment.RAW].keys()
             sorted_keys = sorted(keys, key=lambda x: (len(x), x))
             for key in sorted_keys:
-                equ.equipment.equipment[equ.equipment.FREE] = equ.equipment.equipment[equ.equipment.FREE] + data['api_data']['api_slot_data'][key]
+                for equipment_production_id in equ.equipment.equipment_pool[equ.equipment.RAW][key]:
+                    equ.equipment.equipment_pool[equ.equipment.FREE].\
+                        append(equ.equipment.get_equipment_by_production_id(\
+                            equ.equipment.equipment_pool[equ.equipment.ID], equipment_production_id))
 
             Log.log_debug("equipment updated")
-            Log.log_debug(f"{equ.equipment.equipment[equ.equipment.RAW]}")
             
         except KeyError:
             Log.log_debug("No provisional equipment data found in API response")
-
-        #Log.log_debug(free_equipment)
 
 api = ApiWrapper()

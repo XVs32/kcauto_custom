@@ -33,6 +33,11 @@
     "expedition.fleet_3": [],
     "expedition.fleet_4": [],
     "expedition.fleet_preset": null,
+    "expedition.desire_oil": 350000,
+    "expedition.desire_ammo": 350000,
+    "expedition.desire_bauxite": 350000,
+    "expedition.desire_steel": 350000,
+    "expedition.desire_bucket": 3000,
     "factory.build_recipe": [
         30,
         30,

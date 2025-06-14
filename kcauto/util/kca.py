@@ -20,6 +20,7 @@ from constants import (
     GAME_W, GAME_H, VISUAL_URL, STRATEGY_ROOM_URL, API_URL, EXACT, DEFAULT, SLEEP_MODIFIER)
 from kca_enums.interaction_modes import InteractionModeEnum
 from kca_enums.kcsapi_paths import KCSAPIEnum
+from kca_enums.expeditions import ExpeditionEnum
 
 from util.exceptions import ChromeCrashException
 from util.logger import Log
@@ -960,13 +961,7 @@ class Kca(object):
                 action_raw_line = action_raw.split('\n')
                 action = {}
 
-                if quest_name[0] == "D":
-                    for line in action_raw_line:
-                        line = line.replace(' ', '/')
-                        count = int(line.split("/")[1]) - int(line.split("/")[0])
-                        map_name = line.split("/")[-1]
-                        action[map_name] = count
-                elif quest_name == "Bw1":
+                if quest_name == "Bw1":
                     action_raw_line[3] = action_raw_line[3].replace(' ', '/')
                     s_count =           int(action_raw_line[3].split("/")[1]) - int(action_raw_line[3].split("/")[0])
                     action_raw_line[2] = action_raw_line[2].replace(' ', '/')
@@ -1004,14 +999,21 @@ class Kca(object):
                     elif s_7_2_M_count > 0:
                         action["7-2-M"] = s_7_2_M_count
 
+                elif quest_name[0] == "D":
+                    for line in action_raw_line:
+                        line = line.replace(' ', '/')
+                        count = int(line.split("/")[1]) - int(line.split("/")[0])
+                        import expedition.expedition_core as exp
+                        map = exp.expedition.get_exp_enum_from_name(line.split("/")[-1])
+                        action[map] = count
                 else:
 
                     for line in action_raw_line:
                         line = line.replace(' ', '/')
                         count = int(line.split("/")[1]) - int(line.split("/")[0])
                         line = line.replace(']', '[')
-                        map_name = line.split("[")[1][1:]
-                        action[map_name] = count
+                        map = line.split("[")[1][1:]
+                        action[map] = count
 
                 return action
             elif quest_name == "":
