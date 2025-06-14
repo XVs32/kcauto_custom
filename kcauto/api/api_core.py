@@ -486,8 +486,6 @@ class ApiWrapper(object):
                     Log.log_debug("Page " + str(j//10 + 1) + ":")
                 Log.log_debug(f"{j}: {equipment.model_id} {equipment.name} {equipment.production_id} {equipment.stars} ★")
             
-            exit(f'debug end')
-            
         except KeyError:
             Log.log_debug("No provisional equipment data found in API response")
 
