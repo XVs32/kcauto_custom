@@ -630,7 +630,8 @@ class FleetSwitcherCore(object):
                     Log.log_error(f"Cannot find equipment {fleet.ship_data[i].equipments[slot].name} \
                         with production id:{fleet.ship_data[i].equipments[slot].production_id}, did you scrapped it?")
                     exit(1)
-                    
+                
+                Log.log_msg(f'Selecting {fleet.ship_data[i].equipments[slot].name} {fleet.ship_data[i].equipments[slot].stars}★')
                 ssw.ship_switcher.select_replacement_row(row_idx=row_id, mode= "equipment")
                 kca_u.kca.click_existing(
                     'lower_right', 'shipswitcher|shiplist_shipswitch_button.png')
