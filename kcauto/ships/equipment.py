@@ -54,6 +54,12 @@ class Equipment():
                 return equipment
         
         Log.log_error(f"Cannot find model_id:{self.model_id} in equipment static data, something is wrong with the api data")
+        Log.log_debug(f"equipment data:")
+        Log.log_debug(f"model_id: {self.model_id}")
+        Log.log_debug(f"production_id: {self.production_id}")
+        Log.log_debug(f"stars: {self.stars}")
+        Log.log_debug(f"lock: {self.lock}")
+        Log.log_debug(f"ace: {self.ace}")
         exit(1)
         
     @property
