@@ -630,20 +630,7 @@ class FleetSwitcherCore(object):
                     Log.log_error(f"Cannot find equipment {fleet.ship_data[i].equipments[slot].name} \
                         with production id:{fleet.ship_data[i].equipments[slot].production_id}, did you scrapped it?")
                     
-                    Log.log_debug(f"Available equipment list: ")
-                    for j, equipment in enumerate(equ.equipment.equipment_pool[equ.equipment.FREE]):
-                        if j %10 == 0:
-                            Log.log_debug("Page " + str(j//10 + 1) + ":")
-                        Log.log_debug(f"{j}: {equipment.model_id} {equipment.name} {equipment.production_id} {equipment.stars} ★")
-                    
                     exit(1)
-                
-                Log.log_debug(f"Available equipment list: ")
-                for j, equipment in enumerate(equ.equipment.equipment_pool[equ.equipment.FREE]):
-                    if j %10 == 0:
-                        Log.log_debug("Page " + str(j//10 + 1) + ":")
-                    Log.log_debug(f"{j}: {equipment.model_id} {equipment.name} {equipment.production_id} {equipment.stars} ★")
-                    
                 Log.log_msg(f'Selecting {fleet.ship_data[i].equipments[slot].name} {fleet.ship_data[i].equipments[slot].stars} ★')
                 ssw.ship_switcher.select_replacement_row(row_idx=row_id, mode= "equipment")
                 kca_u.kca.click_existing(
@@ -662,12 +649,6 @@ class FleetSwitcherCore(object):
                 if row_id == -1:
                     Log.log_error(f"Cannot find equipment {fleet.ship_data[i].slot_ex.name} \
                         with production id:{fleet.ship_data[i].slot_ex.production_id}, did you scrapped it?")
-                    
-                    Log.log_debug(f"Available equipment list: ")
-                    for j, equipment in enumerate(equ.equipment.get_reinforce_equipment_list(fleet.ship_data[i])):
-                        if j %10 == 0:
-                            Log.log_debug("Page " + str(j//10 + 1) + ":")
-                        Log.log_debug(f"{j}: {equipment.model_id} {equipment.name} {equipment.production_id} {equipment.stars} ★")
                     
                     exit(1)
                     
