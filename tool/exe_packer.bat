@@ -1,4 +1,9 @@
 @echo off
+:: Force UTF-8 encoding in cmd and Python output
+chcp 65001 >nul
+set PYTHONUTF8=1
+
+:: Paths
 set "VENV_PATH=..\.venv"
 set "src=..\kcauto\__main__.py"
 set "target_path=..\kcauto.exe"
@@ -6,27 +11,27 @@ set "target_path=..\kcauto.exe"
 :: Activate the virtual environment
 call "%VENV_PATH%\Scripts\activate.bat"
 
-:: Get site-packages from the virtual environment
+:: Get site-packages path from venv
 for /f "delims=" %%i in ('python -c "import site; print(site.getsitepackages()[0])"') do set "python_site_package=%%i"
 echo The Python site-packages directory is: %python_site_package%
 
-:: Build the first executable
+:: === Build first executable: __main__.py ===
 python -m PyInstaller -F %src% -p ..\kcauto\ -p ..\pyvisauto\ -p %python_site_package%
 move /y ".\dist\__main__.exe" "%target_path%"
 rmdir /s /q ".\dist"
 rmdir /s /q ".\build"
-del .\__main__.spec
+del /q .\__main__.spec
 
-:: Build the second executable
+:: === Build second executable: kcauto_cui.py ===
 set "src=..\kcauto\kcauto_cui.py"
 set "target_path=..\kcauto_cui.exe"
 python -m PyInstaller -F %src% -p ..\kcauto\ -p ..\pyvisauto\ -p %python_site_package%
 move /y ".\dist\kcauto_cui.exe" "%target_path%"
 rmdir /s /q ".\dist"
 rmdir /s /q ".\build"
-del .\kcauto_cui.spec
+del /q .\kcauto_cui.spec
 
-:: Deactivate the virtual environment
+:: Deactivate virtual environment
 call "%VENV_PATH%\Scripts\deactivate.bat"
 
 echo Build complete!
