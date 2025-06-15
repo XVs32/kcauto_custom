@@ -50,9 +50,7 @@ class EquipmentCore(object):
             self.equipment_pool[self.ID].append(eq())
         except FileNotFoundError:
             Log.log_error("Equipment data not found, please start kcauto from splash screen")
-            exit(1)
-    
-
+            Log.log_error(e)
             
     def _remove_from_pool(self, target_equipment : eq, pool):
         
