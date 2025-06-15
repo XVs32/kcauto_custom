@@ -23,7 +23,7 @@ from util.exceptions import (
     ApiException, Catbomb201Exception, ChromeCrashException)
 from util.json_data import JsonData
 from util.logger import Log
-from constants import EMPTY_EQUIPMENT_API
+from constants import EMPTY_EQUIPMENT_API, TEMP_EQUIPMENT_API
 
 
 class ApiWrapper(object):
@@ -234,6 +234,7 @@ class ApiWrapper(object):
             equ.equipment.reinforce_special = data['api_data']['api_mst_equip_exslot_ship']
             eq.equipment_static_data = data['api_data']['api_mst_slotitem']
             eq.equipment_static_data.append(EMPTY_EQUIPMENT_API)
+            eq.equipment_static_data.append(TEMP_EQUIPMENT_API)
             JsonData.dump_json(equ.equipment.reinforce_general_category, 'data|temp|reinforce_general_category.json')
             JsonData.dump_json(equ.equipment.reinforce_special, 'data|temp|reinforce_special.json')
             JsonData.dump_json(eq.equipment_static_data, 'data|temp|equipment_static.json')
