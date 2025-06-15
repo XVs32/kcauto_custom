@@ -60,7 +60,6 @@ class Equipment():
         Log.log_debug(f"stars: {self.stars}")
         Log.log_debug(f"lock: {self.lock}")
         Log.log_debug(f"ace: {self.ace}")
-        exit(1)
         
     @property
     def name(self):
