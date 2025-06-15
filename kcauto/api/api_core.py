@@ -477,19 +477,47 @@ class ApiWrapper(object):
             EVENT_SECONDARY_GUN = "api_slottype95"
             if EVENT_SECONDARY_GUN in keys and SECONDARY_GUN in keys:
                 
+                Log.log_debug(f"Found {SECONDARY_GUN} and {EVENT_SECONDARY_GUN} in equipment pool, merging them")
+                
                 temp = []
                 
-                for secondary_gun_production_id in equ.equipment.equipment_pool[equ.equipment.RAW][SECONDARY_GUN]:
+                secondary_gun_count = len(equ.equipment.equipment_pool[equ.equipment.RAW][SECONDARY_GUN])
+                event_secondary_gun_count = len(equ.equipment.equipment_pool[equ.equipment.RAW][EVENT_SECONDARY_GUN])
+                
+                i=0
+                j=0
+                
+                secondary_gun_production_id = equ.equipment.equipment_pool[equ.equipment.RAW][SECONDARY_GUN][0]
+                event_secondary_gun_production_id = equ.equipment.equipment_pool[equ.equipment.RAW][EVENT_SECONDARY_GUN][0]
+                
+                while i < secondary_gun_count and j < event_secondary_gun_count:
                     secondary_gun = equ.equipment.get_equipment_by_production_id(
                         equ.equipment.equipment_pool[equ.equipment.ID], secondary_gun_production_id)
-                    for event_secondary_gun_production_id in equ.equipment.equipment_pool[equ.equipment.RAW][EVENT_SECONDARY_GUN]:
-                        event_secondary_gun = equ.equipment.get_equipment_by_production_id(
-                            equ.equipment.equipment_pool[equ.equipment.ID], secondary_gun_production_id)
-                        
-                        if secondary_gun.model_id > event_secondary_gun.model_id:
-                            temp.append(event_secondary_gun_production_id)
-
+                    event_secondary_gun = equ.equipment.get_equipment_by_production_id(
+                        equ.equipment.equipment_pool[equ.equipment.ID], event_secondary_gun_production_id)
+                    
+                    if secondary_gun.model_id > event_secondary_gun.model_id:
+                        temp.append(event_secondary_gun_production_id)
+                        j += 1
+                        if j < event_secondary_gun_count:
+                            event_secondary_gun_production_id = equ.equipment.equipment_pool[equ.equipment.RAW][EVENT_SECONDARY_GUN][j]
+                    else:
+                        temp.append(secondary_gun_production_id)
+                        i += 1
+                        if i < secondary_gun_count:
+                            secondary_gun_production_id = equ.equipment.equipment_pool[equ.equipment.RAW][SECONDARY_GUN][i]
+                            
+                while i < secondary_gun_count:
+                    secondary_gun_production_id = equ.equipment.equipment_pool[equ.equipment.RAW][SECONDARY_GUN][i]
+                    secondary_gun = equ.equipment.get_equipment_by_production_id(
+                        equ.equipment.equipment_pool[equ.equipment.ID], secondary_gun_production_id)
                     temp.append(secondary_gun_production_id)
+                    i += 1
+                while j < event_secondary_gun_count:
+                    event_secondary_gun_production_id = equ.equipment.equipment_pool[equ.equipment.RAW][EVENT_SECONDARY_GUN][j]
+                    event_secondary_gun = equ.equipment.get_equipment_by_production_id(
+                        equ.equipment.equipment_pool[equ.equipment.ID], event_secondary_gun_production_id)
+                    temp.append(event_secondary_gun_production_id)
                     
                 equ.equipment.equipment_pool[equ.equipment.RAW][SECONDARY_GUN] = temp
                 del equ.equipment.equipment_pool[equ.equipment.RAW][EVENT_SECONDARY_GUN]
