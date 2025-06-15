@@ -116,6 +116,13 @@ class EquipmentCore(object):
         ret = []
         for production_id in equipment_list:
             ret.append(self.get_equipment_by_production_id(self.equipment_pool[self.ID], production_id))
+            
+        
+        Log.log_debug(f'ship {ship.name} reinforce equipment list:')
+        for i, equipment in enumerate(ret):
+            if i %10 == 0:  
+                Log.log_debug(f'Page {i // 10 + 1}')
+            Log.log_debug(f'{i}: {equipment.name}{equipment.stars} (Production id: {equipment.production_id}, Model ID: {equipment.model_id})')
         
         return ret 
 
