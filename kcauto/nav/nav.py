@@ -210,7 +210,7 @@ class NavigateList(object):
                     cls._change_page(region, 'prev', cls.OFFSET[offset_mode])
                     current_page -= 5
             elif page_delta >= 3:
-                if target_page > page_count - 5:
+                if target_page > (page_count - 5):
                     #Log.log_error("go to last")
                     cls._change_page(region, 'last', cls.OFFSET[offset_mode])
                     current_page = page_count
