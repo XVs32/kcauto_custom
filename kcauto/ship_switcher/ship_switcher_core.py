@@ -276,7 +276,8 @@ class ShipSwitcherCore(object):
                         f"(From pg{self.current_page} to pg{target_page}).")
             if ship == None:
                 Log.log_error("Ship must be specified for reinforcement mode.")
-            tot_pages = len(equ.equipment.get_reinforce_equipment_list(ship))
+            tot_pages = (len(equ.equipment.get_reinforce_equipment_list(ship)) -1) // 10 + 1
+            Log.log_debug(f"Total pages for reinforcement equipment: {tot_pages}")
                  
             offset_mode = nav.navigate_list.OFFSET_MODE_EQUIPMENT
 
