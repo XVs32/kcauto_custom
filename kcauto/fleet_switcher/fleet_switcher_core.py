@@ -226,7 +226,7 @@ class FleetSwitcherCore(object):
 
                 if i <= len(flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][fleet_id].ship_ids) and \
                     id == flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][fleet_id].ship_ids[i-1]:
-                    Log.log_debug("Ship loaded already for costom fleet")
+                    Log.log_debug("Ship loaded already for costom fleet: ")
                     continue
                 
                 if not ssw.ship_switcher.switch_slot_by_id(i-empty_slot_count,id):
@@ -262,7 +262,7 @@ class FleetSwitcherCore(object):
             custom_fleet(Fleet): Fleet obj contain ships to use
         """
         
-        self.unload_fleet_required_equipment(costom_fleet)
+        self._unload_fleet_required_equipment(costom_fleet)
         
         Log.log_success("unload_equipment done")
         
@@ -350,7 +350,7 @@ class FleetSwitcherCore(object):
                 Log.log_error("Unexpected preset id:" + str(key))
             return flt.fleets.fleets[key]
               
-    def unload_fleet_required_equipment(self, target_fleet : Fleet):
+    def _unload_fleet_required_equipment(self, target_fleet : Fleet):
         """
             method to unload the equipments used by this fleet
         """
@@ -392,6 +392,8 @@ class FleetSwitcherCore(object):
             unload_ships = [flt.fleets.fleets[flt.fleets.IDLE_FLEET_KEY][randrange(len(flt.fleets.fleets[flt.fleets.IDLE_FLEET_KEY]))]]
             while unload_ships[0].ship_type == ShipTypeEnum.AR:
                 unload_ships = [flt.fleets.fleets[flt.fleets.IDLE_FLEET_KEY][randrange(len(flt.fleets.fleets[flt.fleets.IDLE_FLEET_KEY]))]]
+                
+            Log.log_msg(f'No equipment to unload, use {unload_ships[0].name} to update equipment list')
         
         start_id = 0
         while len(unload_ships) > start_id:
@@ -642,8 +644,10 @@ class FleetSwitcherCore(object):
                fleet.ship_data[i].slot_ex.model_id != Equipment().model_id: 
                     
                 kca_u.kca.click('reinforce_slot_equipment') 
+                
+                reinforce_equipment_list = equ.equipment.get_reinforce_equipment_list(fleet.ship_data[i])
 
-                row_id = next((j for j, equipment in enumerate(equ.equipment.get_reinforce_equipment_list(fleet.ship_data[i])) \
+                row_id = next((j for j, equipment in enumerate(reinforce_equipment_list) \
                     if equipment.production_id == fleet.ship_data[i].slot_ex.production_id), -1)
                 
                 if row_id == -1:
@@ -652,9 +656,7 @@ class FleetSwitcherCore(object):
                     
                     exit(1)
                     
-                ssw.ship_switcher.current_page = 1
-
-                ssw.ship_switcher.select_replacement_row(row_idx=row_id, mode= "equipment")
+                ssw.ship_switcher.select_replacement_row(row_idx=row_id, ship=fleet.ship_data[i], mode= ssw.ship_switcher.REINFORCEMENT_MODE)
 
                 kca_u.kca.click_existing(
                     'lower_right', 'shipswitcher|shiplist_shipswitch_button.png')

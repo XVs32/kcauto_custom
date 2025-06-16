@@ -20,6 +20,10 @@ class ShipSwitcherCore(object):
     rules = {}
     current_page = 1
     DUMMY = -1
+    
+    SHIP_MODE = "ship"
+    EQUIPMENT_MODE = "equipment"
+    REINFORCEMENT_MODE = "reinforcement"
 
     def __init__(self):
         Log.log_debug("Initializing Ship Switcher core.")
@@ -229,9 +233,15 @@ class ShipSwitcherCore(object):
         """ship_idx // 10 gives 0 when ship_idx < 10, the "if" statement is not needed---XVs32"""
         """target_page = (ship_idx // 10) + 1 if ship_idx > 9 else 1"""
 
+        """Floor division gives 9 pages when ship count == 96, which should be 10 pages ---XVs32"""
+        """tot_pages = shp.ships.current_ship_count // 10"""
+        """Since "current_ship_count" could never goes under 1, this could be"""
+        """tot_pages = (shp.ships.current_ship_count - 1) // 10 + 1"""
+        """Which is a bit cleaner and faster"""
+        
         target_page = (row_idx // 10) + 1
 
-        if mode == "ship":
+        if mode == self.SHIP_MODE:
             if ship == None:
                 Log.log_msg(f"Selecting {row_idx}"
                             f"(From pg{self.current_page} to pg{target_page}).")
@@ -239,52 +249,61 @@ class ShipSwitcherCore(object):
                 Log.log_msg(
                     f"Selecting lvl{ship.level} {ship.name} "
                     f"(pg{target_page}#{row_idx}).")
-        elif mode == "equipment":
+                
+            tot_pages = (shp.ships.ship_count -1) // 10 + 1
+            offset_mode = nav.navigate_list.OFFSET_MODE_SHIPCOMP
+            
+            row_region = Region(
+                kca_u.kca.game_x + 590,
+                kca_u.kca.game_y + 225 + (row_idx % 10 * 43),
+                435, 34)
+            
+        elif mode == self.EQUIPMENT_MODE:
             Log.log_msg(f"Selecting {row_idx}"
                         f"(From pg{self.current_page} to pg{target_page}).")
-            pass
-        
-        """Floor division gives 9 pages when ship count == 96, which should be 10 pages ---XVs32"""
-        """tot_pages = shp.ships.current_ship_count // 10"""
-        """Since "current_ship_count" could never goes under 1, this could be"""
-        """tot_pages = (shp.ships.current_ship_count - 1) // 10 + 1"""
-        """Which is a bit cleaner and faster"""
-        if mode == "ship":
-            tot_pages = (shp.ships.ship_count -1) // 10 + 1
-        elif mode == "equipment":
+            
             tot_pages = (len(equ.equipment.equipment_pool[equ.equipment.FREE]) -1) // 10 + 1
+            offset_mode = nav.navigate_list.OFFSET_MODE_EQUIPMENT
+            
+            row_region = Region(
+                kca_u.kca.game_x + 590,
+                kca_u.kca.game_y + 195 + 5 + (row_idx % 10 * 45),
+                435, 34)
+            
+        elif mode == self.REINFORCEMENT_MODE:
+            self.current_page = 1
+            Log.log_msg(f"Selecting {row_idx}"
+                        f"(From pg{self.current_page} to pg{target_page}).")
+            if ship == None:
+                Log.log_error("Ship must be specified for reinforcement mode.")
+            tot_pages = len(equ.equipment.get_reinforce_equipment_list(ship))
+                 
+            offset_mode = nav.navigate_list.OFFSET_MODE_EQUIPMENT
 
+            row_region = Region(
+                kca_u.kca.game_x + 590,
+                kca_u.kca.game_y + 195 + 5 + (row_idx % 10 * 45),
+                435, 34)
+            
         list_control_region = Region(
             kca_u.kca.game_x + 625, kca_u.kca.game_y + 655, 495, 45)
         kca_u.kca.sleep(0.5)
 
-        if mode == "ship":
-            offset_mode = 'shipcomp' 
-        elif mode == "equipment":
-            offset_mode = 'equipment' 
         nav.navigate_list.to_page(
             list_control_region, tot_pages, self.current_page,
             target_page, offset_mode)
         self.current_page = target_page
         
-       
-        if mode == "ship":
-            row_region = Region(
-                kca_u.kca.game_x + 590,
-                kca_u.kca.game_y + 225 + (row_idx % 10 * 43),
-                435, 34)
-        elif mode == "equipment":
-            row_region = Region(
-                kca_u.kca.game_x + 590,
-                kca_u.kca.game_y + 195 + 5 + (row_idx % 10 * 45),
-                435, 34)
-
         kca_u.kca.click(row_region)
         kca_u.kca.r['top'].hover()
-        if mode == "ship":
+        
+        if mode == self.SHIP_MODE:
             kca_u.kca.wait(
                 'lower_right', 'shipswitcher|shiplist_shipmenu.png')
-        elif mode == "equipment":
+        elif mode == self.EQUIPMENT_MODE:
+            kca_u.kca.wait(
+                'lower_right', 'shipswitcher|shiplist_shipswitch_button.png')
+        elif mode == self.REINFORCEMENT_MODE:
             kca_u.kca.wait(
                 'lower_right', 'shipswitcher|shiplist_shipswitch_button.png')
 
