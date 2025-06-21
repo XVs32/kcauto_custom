@@ -1,6 +1,5 @@
 import pyautogui
 from util.pyvisauto import Region, FindFailed
-from time import sleep
 
 import config.config_core as cfg
 import stats.stats_core as sts
