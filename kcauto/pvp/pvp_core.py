@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from pyvisauto import Region
+from util.pyvisauto import Region
 from random import randint
 
 import api.api_core as api

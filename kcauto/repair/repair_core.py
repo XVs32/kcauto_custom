@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from pyvisauto import Region
+from util.pyvisauto import Region
 
 import api.api_core as api
 import combat.combat_core as com

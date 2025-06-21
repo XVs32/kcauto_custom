@@ -9,7 +9,7 @@ from pyquery import PyQuery
 from sys import path_hooks
 import PyChromeDevTools
 from datetime import datetime, timedelta
-from pyvisauto import Region, FindFailed, ImageMatch
+from util.pyvisauto import Region, FindFailed, ImageMatch
 from random import randint, uniform
 from time import sleep
 
