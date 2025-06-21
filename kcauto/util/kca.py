@@ -700,7 +700,9 @@ class Kca(object):
         """
         # Take screenshot
         import pyautogui
-        screen = pyautogui.screenshot(region=(self.game_x, self.game_y, 1200, 720))
+        
+        screen = Region(self.game_x, self.game_y, GAME_W, GAME_H)
+        screen = screen._capture()
         screen = cv2.cvtColor(np.array(screen), cv2.COLOR_RGB2BGR)
         
         cv2.rectangle(screen, 

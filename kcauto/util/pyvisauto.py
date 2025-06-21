@@ -1,3 +1,5 @@
+import mss
+from PIL import Image
 import cv2
 import numpy as np
 import pyautogui
@@ -39,13 +41,27 @@ class ImageMatch(ABC):
 
     _captured = None
 
-    def _capture(self):
-        """Private method for capturing the defined region.
 
+    def _capture(self):
+        """Private method for capturing the defined region using MSS.
+        
         Returns:
-            PIL.Image: object representating captured region.
+            PIL.Image: object representing captured region.
         """
-        return pyautogui.screenshot(region=(self.x, self.y, self.w, self.h))
+        with mss.mss() as sct:
+            # Ensure all coordinates are integers and not None
+            # MSS uses {'top': y, 'left': x, 'width': w, 'height': h}
+            region = {
+                'top': int(self.y),
+                'left': int(self.x),
+                'width': int(self.w),
+                'height': int(self.h)
+            }
+            
+            screenshot = sct.grab(region)
+            
+            # Convert MSS screenshot to PIL Image
+            return Image.frombytes('RGB', screenshot.size, screenshot.bgra, 'raw', 'BGRX')
 
     def _match_template(self, target, template=None, cached=False):
         """Private method for finding matches from either the target asset
