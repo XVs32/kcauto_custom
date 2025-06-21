@@ -1,4 +1,4 @@
-from pyvisauto import Region, FindFailed
+from util.pyvisauto import Region, FindFailed
 from random import randint, choice
 
 import nav.nodes as nodes

@@ -1,5 +1,5 @@
 import traceback
-from pyvisauto import FindFailed
+from util.pyvisauto import FindFailed
 from time import sleep
 
 import startup.kcauto as _

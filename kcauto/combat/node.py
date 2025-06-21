@@ -1,4 +1,4 @@
-from pyvisauto import Region
+from util.pyvisauto import Region
 import util.kca as kca_u
 
 

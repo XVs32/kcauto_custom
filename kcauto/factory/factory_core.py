@@ -1,5 +1,5 @@
 import time
-from pyvisauto import Region
+from util.pyvisauto import Region
 import api.api_core as api
 import fleet.fleet_core as flt
 import config.config_core as cfg
