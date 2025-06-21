@@ -1,12 +1,7 @@
 import time
-from util.pyvisauto import Region
-import api.api_core as api
-import fleet.fleet_core as flt
 import config.config_core as cfg
 import nav.nav as nav
-import stats.stats_core as sts
 import util.kca as kca_u
-from kca_enums.kcsapi_paths import KCSAPIEnum
 from util.logger import Log
 
 
