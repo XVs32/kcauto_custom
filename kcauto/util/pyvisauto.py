@@ -236,14 +236,16 @@ class ImageMatch(ABC):
         raise VanishFailed(
             f"{target} still in {self} after waiting for {wait} seconds.")
 
-    def hover(self):
+    def hover(self, x=None, y=None):
         """Method to hover over a random point within the region. If an
         override_hover_method exists, it will be used instead of the default
         pyautogui moveTo method. If a hover_callback is specified, it will be
         called after the hover action.
         """
-        x = randint(self.x, self.x + self.w)
-        y = randint(self.y, self.y + self.h)
+        
+        if x is None or y is None:
+            x = randint(self.x, self.x + self.w)
+            y = randint(self.y, self.y + self.h)
 
         if self.override_hover_method:
             self.override_hover_method(self, x, y)
