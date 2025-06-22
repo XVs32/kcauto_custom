@@ -3,7 +3,6 @@ from random import randint, choice
 
 import nav.nodes as nodes
 import util.kca as kca_u
-from constants import PAGE_NAV
 from util.logger import Log
 
 
