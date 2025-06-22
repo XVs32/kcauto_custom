@@ -600,7 +600,7 @@ class Kca(object):
                     r.x - pad[3],  
                     r.y - pad[0],
                     r.x + r.w + pad[1],
-                    r.y + r.h - pad[2]
+                    r.y + r.h + pad[2]
                 ]
                 
                 for corner in corners:
@@ -698,9 +698,9 @@ class Kca(object):
             click_y (int, optional): Y coordinate of click point 
             corners (list, optional): List of corner points visited
         """
-        # Take screenshot
-        import pyautogui
         
+        if self.game_x is None or self.game_y is None:
+            return
         screen = Region(self.game_x, self.game_y, GAME_W, GAME_H)
         screen = screen._capture()
         screen = cv2.cvtColor(np.array(screen), cv2.COLOR_RGB2BGR)
@@ -849,7 +849,7 @@ class Kca(object):
                 r.x - pad[3],  # Top-left corner
                 r.y - pad[0],
                 r.x + r.w + pad[1],
-                r.y + r.h - pad[2]
+                r.y + r.h + pad[2]
             ]
             self._draw_debug_visualization(corners)
 

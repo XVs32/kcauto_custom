@@ -40,7 +40,11 @@ class ImageMatch(ABC):
     click_callback = None
 
     _captured = None
-
+    
+    x = 0
+    y = 0
+    w = 0
+    h = 0
 
     def _capture(self):
         """Private method for capturing the defined region using MSS.
@@ -261,8 +265,8 @@ class ImageMatch(ABC):
                 bottom, left). Positive values expand the valid click area,
                 while negative values constrict it. Defaults to (0, 0, 0, 0).
         """
-        x = randint(self.x - pad[3], self.x + self.w + pad[1])
-        y = randint(self.y - pad[0], self.y + self.h + pad[2])
+        x = randint(self.x + pad[3], self.x + self.w + pad[1])
+        y = randint(self.y + pad[0], self.y + self.h + pad[2])
 
         if self.override_click_method:
             self.override_click_method(self, x, y, pad)
