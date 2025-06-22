@@ -603,9 +603,14 @@ class Kca(object):
                     r.y + r.h + pad[2]
                 ]
                 
-                for corner in corners:
-                    r.hover(corner[0], corner[1])
-                    self.sleep(0.1)
+                r.hover(corners[0], corners[1])
+                self.sleep(0.1)
+                r.hover(corners[2], corners[1])
+                self.sleep(0.1)
+                r.hover(corners[0], corners[3])
+                self.sleep(0.1)
+                r.hover(corners[2], corners[3])
+                self.sleep(0.1)
                     
                 # Draw debug with corners
                 self._draw_debug_visualization(corners)
