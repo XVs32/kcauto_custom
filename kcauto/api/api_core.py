@@ -8,6 +8,7 @@ import combat.combat_core as com
 import combat.lbas_core as lbas
 import expedition.expedition_core as exp
 import ships.equipment_core as equ 
+from ships.equipment import Equipment as eq
 import fleet.fleet_core as flt
 import fleet_switcher.fleet_switcher_core as fsw
 import pvp.pvp_core as pvp
@@ -22,6 +23,7 @@ from util.exceptions import (
     ApiException, Catbomb201Exception, ChromeCrashException)
 from util.json_data import JsonData
 from util.logger import Log
+from constants import EMPTY_EQUIPMENT_API, TEMP_EQUIPMENT_API
 
 
 class ApiWrapper(object):
@@ -230,8 +232,12 @@ class ApiWrapper(object):
             
             equ.equipment.reinforce_general_category = data['api_data']['api_mst_equip_exslot']
             equ.equipment.reinforce_special = data['api_data']['api_mst_equip_exslot_ship']
+            eq.equipment_static_data = data['api_data']['api_mst_slotitem']
+            eq.equipment_static_data.append(EMPTY_EQUIPMENT_API)
+            eq.equipment_static_data.append(TEMP_EQUIPMENT_API)
             JsonData.dump_json(equ.equipment.reinforce_general_category, 'data|temp|reinforce_general_category.json')
             JsonData.dump_json(equ.equipment.reinforce_special, 'data|temp|reinforce_special.json')
+            JsonData.dump_json(eq.equipment_static_data, 'data|temp|equipment_static.json')
 
             JsonData.dump_json(data['api_data']['api_mst_stype'], 'data|temp|ship_type.json')
             JsonData.dump_json(data['api_data']['api_mst_equip_ship'], 'data|temp|equipment_ship_special.json')
@@ -263,11 +269,10 @@ class ApiWrapper(object):
         try:
             ship_data = data['api_data']['api_ship']
             shp.ships.update_ship_pool(ship_data)
-            equ.equipment.get_loaded_equipment(ship_data)
             JsonData.dump_json(ship_data, 'data|temp|local_ship.json')
             flt.fleets.load_custom_fleets()
             flt.fleets.load_custom_exp_pool()
-            
+            flt.fleets.load_idle_pool()
             
         except KeyError:
             Log.log_debug("No ship data found in API response.")
@@ -462,21 +467,75 @@ class ApiWrapper(object):
 
 
     def _process_free_equipment_data(self, data):
-        equ.equipment.equipment[equ.equipment.RAW] = {}
-        equ.equipment.equipment[equ.equipment.FREE] = []
+        equ.equipment.equipment_pool[equ.equipment.RAW] = {}
+        equ.equipment.equipment_pool[equ.equipment.FREE] = []
         try:
-            equ.equipment.equipment[equ.equipment.RAW] = data['api_data']['api_slot_data']
-            keys = equ.equipment.equipment[equ.equipment.RAW].keys()
+            equ.equipment.equipment_pool[equ.equipment.RAW] = data['api_data']['api_slot_data']
+            keys = equ.equipment.equipment_pool[equ.equipment.RAW].keys()
+            
+            SECONDARY_GUN = "api_slottype4"
+            EVENT_SECONDARY_GUN = "api_slottype95"
+            if EVENT_SECONDARY_GUN in keys and SECONDARY_GUN in keys:
+                
+                Log.log_debug(f"Found {SECONDARY_GUN} and {EVENT_SECONDARY_GUN} in equipment pool, merging them")
+                
+                temp = []
+                
+                secondary_gun_count = len(equ.equipment.equipment_pool[equ.equipment.RAW][SECONDARY_GUN])
+                event_secondary_gun_count = len(equ.equipment.equipment_pool[equ.equipment.RAW][EVENT_SECONDARY_GUN])
+                
+                i=0
+                j=0
+                
+                secondary_gun_production_id = equ.equipment.equipment_pool[equ.equipment.RAW][SECONDARY_GUN][0]
+                event_secondary_gun_production_id = equ.equipment.equipment_pool[equ.equipment.RAW][EVENT_SECONDARY_GUN][0]
+                
+                while i < secondary_gun_count and j < event_secondary_gun_count:
+                    secondary_gun = equ.equipment.get_equipment_by_production_id(
+                        equ.equipment.equipment_pool[equ.equipment.ID], secondary_gun_production_id)
+                    event_secondary_gun = equ.equipment.get_equipment_by_production_id(
+                        equ.equipment.equipment_pool[equ.equipment.ID], event_secondary_gun_production_id)
+                    
+                    if secondary_gun.model_id > event_secondary_gun.model_id:
+                        temp.append(event_secondary_gun_production_id)
+                        j += 1
+                        if j < event_secondary_gun_count:
+                            event_secondary_gun_production_id = equ.equipment.equipment_pool[equ.equipment.RAW][EVENT_SECONDARY_GUN][j]
+                    else:
+                        temp.append(secondary_gun_production_id)
+                        i += 1
+                        if i < secondary_gun_count:
+                            secondary_gun_production_id = equ.equipment.equipment_pool[equ.equipment.RAW][SECONDARY_GUN][i]
+                            
+                while i < secondary_gun_count:
+                    secondary_gun_production_id = equ.equipment.equipment_pool[equ.equipment.RAW][SECONDARY_GUN][i]
+                    secondary_gun = equ.equipment.get_equipment_by_production_id(
+                        equ.equipment.equipment_pool[equ.equipment.ID], secondary_gun_production_id)
+                    temp.append(secondary_gun_production_id)
+                    i += 1
+                while j < event_secondary_gun_count:
+                    event_secondary_gun_production_id = equ.equipment.equipment_pool[equ.equipment.RAW][EVENT_SECONDARY_GUN][j]
+                    event_secondary_gun = equ.equipment.get_equipment_by_production_id(
+                        equ.equipment.equipment_pool[equ.equipment.ID], event_secondary_gun_production_id)
+                    temp.append(event_secondary_gun_production_id)
+                    
+                equ.equipment.equipment_pool[equ.equipment.RAW][SECONDARY_GUN] = temp
+                del equ.equipment.equipment_pool[equ.equipment.RAW][EVENT_SECONDARY_GUN]
+                
             sorted_keys = sorted(keys, key=lambda x: (len(x), x))
             for key in sorted_keys:
-                equ.equipment.equipment[equ.equipment.FREE] = equ.equipment.equipment[equ.equipment.FREE] + data['api_data']['api_slot_data'][key]
-
-            Log.log_debug("equipment updated")
-            Log.log_debug(f"{equ.equipment.equipment[equ.equipment.RAW]}")
+                for equipment_production_id in equ.equipment.equipment_pool[equ.equipment.RAW][key]:
+                    equ.equipment.equipment_pool[equ.equipment.FREE].\
+                        append(equ.equipment.get_equipment_by_production_id(\
+                            equ.equipment.equipment_pool[equ.equipment.ID], equipment_production_id))
+            Log.log_debug(f"equipment updated")
+            
+            for i, equipment in enumerate(equ.equipment.equipment_pool[equ.equipment.FREE]):
+                if i %10 == 0:  
+                    Log.log_debug(f'Page {i // 10 + 1}')
+                Log.log_debug(f'{i}: {equipment.name}{equipment.stars} (Production id: {equipment.production_id}, Model ID: {equipment.model_id})')
             
         except KeyError:
             Log.log_debug("No provisional equipment data found in API response")
-
-        #Log.log_debug(free_equipment)
 
 api = ApiWrapper()

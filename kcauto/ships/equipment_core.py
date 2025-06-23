@@ -1,21 +1,8 @@
-from datetime import datetime
-from pyvisauto import Region
 from sys import exit
-import api.api_core as api
-import fleet_switcher.fleet_switcher_core as fsw
-import ships.ships_core as shp
-import ship_switcher.ship_switcher_core as ssw
-import fleet.fleet_core as flt
-import nav.nav as nav
-from kca_enums.kcsapi_paths import KCSAPIEnum
-from kca_enums.fleet import FleetEnum
-import util.kca as kca_u
+from ships.equipment import Equipment as eq
 from util.json_data import JsonData
 from util.logger import Log
-from util.wctf import WhoCallsTheFleetData
-from fleet.noro6 import Noro6 
-from fleet.fleet import Fleet
-from random import randrange
+
 
 class EquipmentCore(object):
     
@@ -25,570 +12,119 @@ class EquipmentCore(object):
     ID = "id"
     
     NON_NORO6 = "NON_NORO6" #contain all equipments which does not exist in noro6 config
-
-    equipment = {}
+    
+    equipment_pool : dict[str, list[eq]] = {}
     reinforce_general_category = {}
     reinforce_special = {}
     ship_type = []
     equipment_special = []
     
-    custom_equipment = {}
     
     is_custom_fleet_equipment_loaded = False
     
+    EQUIPMENT_NAME_KEY = "api_name"
     
+    SLOT_EX_NOT_AVAILABLE = 0
 
     def __init__(self):
-        self.equipment[self.RAW] = {}
-        self.equipment[self.LOADED] = []
-        self.equipment[self.FREE] = []
-        self.equipment[self.ID] = []
-        self.equipment[self.NON_NORO6] = []
+        self.equipment_pool[self.RAW] = {}
+        self.equipment_pool[self.LOADED] = []
+        self.equipment_pool[self.FREE] = []
+        self.equipment_pool[self.ID] = []
+        self.equipment_pool[self.NON_NORO6] = []
 
         try:
             self.reinforce_general_category = JsonData.load_json('data|temp|reinforce_general_category.json')
             self.reinforce_special = JsonData.load_json('data|temp|reinforce_special.json')
             self.ship_type = JsonData.load_json('data|temp|ship_type.json')
             self.equipment_special = JsonData.load_json('data|temp|equipment_ship_special.json')
-        except FileNotFoundError:
+        except FileNotFoundError as e:
             Log.log_error("Reinforce equipment data not found, please start kcauto from splash screen")
+            Log.log_error(e)
 
         try:
-            self.equipment[self.ID] = JsonData.load_json('data|temp|equipment_list.json')
-            EMPTY_EQUIPMENT = {"api_id": 0, "api_slotitem_id": 0, "api_locked": 0, "api_level": 0}
-            self.equipment[self.ID].append(EMPTY_EQUIPMENT)
+            
+            for raw_equipment in JsonData.load_json('data|temp|equipment_list.json'):
+                self.equipment_pool[self.ID].append(eq(model_id=raw_equipment["api_slotitem_id"],production_id=raw_equipment["api_id"],
+                    stars=raw_equipment["api_level"], lock=raw_equipment["api_locked"], ace=raw_equipment.get("api_alv", eq().ace)))
+            self.equipment_pool[self.ID].append(eq())
         except FileNotFoundError:
-            Log.log_debug("Equipment data not found, use empty list instead")
-            JsonData.dump_json(self.equipment[self.ID], 'data|temp|equipment_list.json')
-    
-    def fill_with_equipment(self, ship, equipment, count):
-        """
-            method to fill a ship with one type of equipment
+            Log.log_error("Equipment data not found, please start kcauto from splash screen")
+            Log.log_error(e)
             
-            arg:
-                ship (Ship): ship instance
-                equipment (int): equipment type id
-            
-            output a kcauto format ship equipment list
-        """
+    def _remove_from_pool(self, target_equipment : eq, pool):
         
-        ret = {}
-        ret[ship.production_id] = []
-        
-        i=0
-        count = min(count, ship.slot_num)
-        
-        for i in range(5):
-            if count > 0:
-                temp_equipment = self._get_production_id(self.equipment[self.NON_NORO6], equipment)
-                if temp_equipment == []:
-                    ret[ship.production_id] = None
-                    return
-                ret[ship.production_id].append(temp_equipment[0])
-                self._remove_from_pool(equipment_id=temp_equipment[0], pool=self.NON_NORO6)
-                count -= 1
-            else:
-                ret[ship.production_id].append(-1)
-            
-        ret[ship.production_id].append(ship.slot_ex)
-        
-        return ret
-            
-    def _remove_from_pool(self, equipment_id, pool):
-        
-        if equipment_id == -1 or equipment_id == 0:
+        if target_equipment.production_id == eq().production_id:
             return
                
-        for equipment in self.equipment[pool]:
-            if equipment["api_id"] == equipment_id:
-                self.equipment[pool].remove(equipment)
+        for equipment in self.equipment_pool[pool]:
+            if equipment.production_id == target_equipment.production_id:
+                self.equipment_pool[pool].remove(equipment)
                 break
             
-    def noro6_to_kcauto(self):
-        """
-            method to load the noro6 equipment list
-            convert it to kcauto format and save it to a json file
-            file_name (str): equipment config json file
-            output (kcauto preset) :
-        """
-        
-        import expedition.expedition_core as exp
-        
-        equipment_bak = self.equipment[self.ID].copy()
-        self.equipment[self.NON_NORO6] = self.equipment[self.ID].copy()
-        
-        ret = {}
-        noro6 = Noro6()
- 
-        for preset in noro6.presets:
-            noro6.get_map(preset["name"])
-            
-            fleet_type = noro6.get_preset_type()
-            if fleet_type == FleetEnum.EXPEDITION:
-                preset_name = exp.expedition.get_exp_enum_from_name(preset["name"].split("-")[-1])
-            else:
-                preset_name = preset["name"]
-                
-            ret[preset_name] = {}
-           
-            for fleet_id in range(1, noro6.get_fleet_count() + 1 ):
-                noro6.get_fleet(fleet_id)
-                
-                for i in range(1, noro6.get_ship_count() + 1 ):
-                    ship = shp.ships.get_ship_from_noro6_ship(noro6.get_ship(i))
-                    if ship == None:
-                        Log.log_error(f'Something goes wrong when setting up Noro6 {preset_name} equipment, exiting...')
-                        exit()
-                    ret[preset_name][ship.production_id] = []
-                    
-                    for j in range(1, noro6.get_equipment_count() + 1 ):
-                        
-                        this_equipment = self._get_equipment_from_noro6_equipment(noro6.get_equipment(j))
-                        
-                        if this_equipment == None:
-                            Log.log_error(f"Failed finding equipment for {preset['name']}, exit...")
-                            exit(0)
-                        
-                        ret[preset_name][ship.production_id].append(
-                            this_equipment["api_id"]
-                        )
-                        
-                        #remove this equipment from equipment pool
-                        if  this_equipment["api_id"] > 0:
-                            self._remove_from_pool(equipment_id=this_equipment["api_id"], pool=self.NON_NORO6)
-                            self._remove_from_pool(equipment_id=this_equipment["api_id"], pool=self.ID)
-                        
-                    #padding to 6 equipment slot with -1
-                    for k in range(noro6.get_equipment_count() + 1, 7):
-                        ret[preset_name][ship.production_id].append(-1)
-                        
-                    reinforce_equipment = noro6.get_reinforce_equipment()
-                    if reinforce_equipment["i"] > 0:
-                        this_equipment = self._get_equipment_from_noro6_equipment(reinforce_equipment)
-                        ret[preset_name][ship.production_id][6-1] = this_equipment["api_id"]
-                    
-                        #remove this equipment from equipment pool
-                        if  this_equipment["api_id"] > 0:
-                            self._remove_from_pool(equipment_id=this_equipment["api_id"], pool=self.NON_NORO6)
-                            self._remove_from_pool(equipment_id=this_equipment["api_id"], pool=self.ID)
-                    else:
-                        ret[preset_name][ship.production_id][6-1] = reinforce_equipment["i"]
-
-            #restore equipment pool for next noro6 preset
-            self.equipment[self.ID] = equipment_bak.copy()                    
-                
-        return ret 
-    
     def _get_equipment_from_noro6_equipment(self, noro6_equipment):
         """
             method to convert noro6 equipment to kcauto equipment
             noro6_equipment (dict): noro6 equipment data
             output (int) : equipment production id
         """
-        production_id_list = self._get_production_id(self.equipment[self.ID], noro6_equipment["i"])
+        equipment_list = self._get_match_equipment(self.equipment_pool[self.ID], noro6_equipment["i"])
         
-        is_any_match = False
-        temp_equipment = []
-        for id in production_id_list:
-            for equipment in self.equipment[self.ID]:
-                if equipment["api_id"] == id:
-                    is_any_match = True
-                    temp_equipment.append(equipment)
-                    
-        if is_any_match == False:
+        if equipment_list == []:
             Log.log_error("can't find any match equipment")
             return None
         
-        for i in range(len(temp_equipment)):
+        for equipment in equipment_list:
             
             #@todo handle "api_alv"/"l" (plane exp level)
             #if "api_alv" in temp_equipment[i] and "l" in noro6_equipment:
-            if temp_equipment[i]["api_level"] == noro6_equipment["r"]:
-                return temp_equipment[i]
+            if equipment.stars == noro6_equipment["r"]:
+                return equipment
             
-        if len(temp_equipment) == 0:
-            
-            Log.log_error("can't find any match equipment")
-            Log.log_error("here can't find any match equipment")
-            return None
-        
         #sort by the absolute value of difference between api_lv and rf
-        temp_equipment.sort(key=lambda x: abs(x["api_level"] - noro6_equipment["r"]))
-        #@todo send warring, can't find exact same equipment
+        equipment_list.sort(key=lambda x: abs(x.stars - noro6_equipment["r"]))
+        # send warring, can't find exact same equipment
+        if equipment_list[0].is_empty_equipment == False:
+            Log.log_warn(f"Can't find exact {equipment_list[0].name} with level {noro6_equipment['r']}, using the closest one with {equipment_list[0].stars}★")
 
-        return temp_equipment[0]
+        return equipment_list[0]
         
- 
-    def get_loaded_equipment(self, api_data):
-        """
-            method to read the loaded equipment list from api data 
+    def get_reinforce_equipment_list(self, ship):
 
-            api_data (dict) : data from "port/api_data/api_ship" api
-        """
-        self.equipment["loaded"] = {}
-        
-        for ship in api_data:
-            self.equipment["loaded"][ship['api_id']] = ship["api_slot"]
-            self.equipment["loaded"][ship['api_id']].append(ship["api_slot_ex"])
-
-
-    def unload_equipment(self, map_name):
-        """
-            method to load the loaded equipment list from a json file
-            file_name (str): equipment config json file
-        """
-        
-        any_unload = False
-
-        EMPTY_a = [-1,-1,-1,-1,-1,0]
-        EMPTY_b = [-1,-1,-1,-1,-1,-1]
-
-        nav.navigate.to('refresh_home')
-
-        target_config = self.custom_equipment[map_name]
-            
-        unload_ship_id = []
-
-        for ship_id in self.equipment["loaded"]:
-            
-            if ship_id in target_config:
-                if self.equipment["loaded"][ship_id] != target_config[ship_id]\
-                    and self.equipment["loaded"][ship_id] != EMPTY_a\
-                    and self.equipment["loaded"][ship_id] != EMPTY_b:
-                    unload_ship_id.append(ship_id)
-                    any_unload = True
-            else: #target_config does not care this ship, but we still have to strip it if it holds any equipment we care
-                
-                if  self.equipment["loaded"][ship_id] != EMPTY_a\
-                and self.equipment["loaded"][ship_id] != EMPTY_b:
-                    
-                    target_equipments = set()
-                    
-                    for equipment_list in target_config.values():
-                        target_equipments.update(equipment_list)
-                        
-                    target_equipments.discard(0)
-                    target_equipments.discard(-1)
-                        
-                    for euipment in self.equipment["loaded"][ship_id]:
-                        if euipment in target_equipments:
-                            unload_ship_id.append(ship_id)
-                            any_unload = True
-                            break
-
-        needed_load = False
-        if any_unload == True:
-            #@todo temp element repeat fix
-            unload_ship_id = list(set(unload_ship_id))
-        else:
-            for ship_id in self.equipment["loaded"]:
-                try:
-                    if      target_config[ship_id] == EMPTY_a\
-                        or  target_config[ship_id] == EMPTY_b:
-                        #nothing to load
-                        continue
-
-                    if self.equipment["loaded"][ship_id] != target_config[ship_id]:
-                        needed_load = True
-                        break
-                        
-                except KeyError:
-                    pass
-
-            if needed_load == True: 
-                #let the current secretary ship load and unload a whatever equipment
-                #@todo if the secretary ship is akashi, unload another idle ship
-                unload_ship_id = [flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][1].ship_ids[0]]
-        
-        start_id = 0
-        while len(unload_ship_id) > start_id:
-            
-            fleet_size = min(6, len(unload_ship_id) - start_id)
-            
-            if needed_load == False:
-                fsw.fleet_switcher.goto()
-                
-                temp_fleet = {}
-                temp_fleet[1]=(Fleet("unload_equipment", FleetEnum.COMBAT, False))
-                temp_fleet[1].ship_data = []
-                for i in range(0, fleet_size):
-                    temp_fleet[1].ship_data.append(
-                        shp.ships.get_ship_from_production_id(unload_ship_id[start_id + i])
-                    )
-                if not fsw.fleet_switcher.switch_to_costom_fleet(1, temp_fleet):
-                    Log.log_error("kcauto failed to load the selected ship, exiting...")
-                    break
-                
-            nav.navigate.to('equipment')
-
-            for i in range(fleet_size):
-            
-                Log.log_debug(f"unload the {i+1} ship")
-                kca_u.kca.click('ship_'+ str(i + 1)) 
-                
-                if needed_load == True:
-                    #unload a ship to update equipment list
-                    kca_u.kca.click('1_slot_equipment') 
-                    
-                    ssw.ship_switcher.select_replacement_row(row_idx=randrange(10), mode= "equipment")
-
-                    kca_u.kca.click_existing(
-                        'lower_right', 'shipswitcher|shiplist_shipswitch_button.png')
-                    kca_u.kca.wait('lower', 'shipswitcher|equipment_panel.png')
-                    api_result = api.api.update_from_api({KCSAPIEnum.FREE_EQUIPMENT}, need_all=True, timeout=30)
-                
-                while True:
-                    
-                    if kca_u.kca.exists('equipment_panel', 'shipswitcher|1_slot_ship.png'):
-                        Log.log_debug(f"1 slot ship")
-                        kca_u.kca.click('1_slot_unload_equipment')
-                    elif kca_u.kca.exists('equipment_panel', 'shipswitcher|2_slot_ship.png',cached=True):
-                        Log.log_debug(f"2 slot ship")
-                        kca_u.kca.click('2_slot_unload_equipment') 
-                    elif kca_u.kca.exists('equipment_panel', 'shipswitcher|3_slot_ship.png',cached=True):
-                        Log.log_debug(f"3 slot ship")
-                        kca_u.kca.click('3_slot_unload_equipment') 
-                    elif kca_u.kca.exists('equipment_panel', 'shipswitcher|4_slot_ship.png',cached=True):
-                        Log.log_debug(f"4 slot ship")
-                        kca_u.kca.click('4_slot_unload_equipment') 
-                    else: 
-                        Log.log_debug(f"5 slot ship")
-                        kca_u.kca.click('5_slot_unload_equipment') 
-                        
-                    kca_u.kca.wait('lower', 'shipswitcher|equipment_panel.png')
-                    
-                    if self.equipment["loaded"][unload_ship_id[start_id + i]][-1] > 0:
-                        Log.log_debug(f"reinforce slot ship")
-                        kca_u.kca.click('reinforce_slot_unload_equipment') 
-
-                    kca_u.kca.wait('lower', 'shipswitcher|equipment_panel.png')
-                    
-                    api_result = api.api.update_from_api({KCSAPIEnum.FREE_EQUIPMENT}, need_all=True)
-                    if api_result != {}:
-                        break
-                    else:
-                        Log.log_error(f"Something goes wrong, skipping this round...")
-                        
-                        retry = 10
-                        while not kca_u.kca.exists('left', 'nav|side_menu_home.png'):
-                            kca_u.kca.click_existing('bottom_right', 'shipswitcher|equipment_cancel_reinforce.png', cached=True)
-                            
-                            if retry > 0:
-                                retry -=1
-                                kca_u.sleep(1)
-                            else:
-                                Log.log_error(f"kcauto can not figure out where it is, exiting...")
-                                exit()
-                        #skiping unload for this ship  <= usually it is already unloaded, but api didn't update due to network delay
-                        break
-                    
-            start_id += fleet_size
-
-        return any_unload
-    
-    def unload_ship(self, ship_id):
-        """
-        unload a ship in the specified fleet, assume nav in equipment page already
-            input: 
-                fleet_id: int, starts from 1
-                ship_id: int, ship production id
-        """
-         
-        fsw.fleet_switcher.goto()
-        
-        temp_fleet = {}
-        temp_fleet[1]=(Fleet("unload_equipment", FleetEnum.COMBAT, False))
-        temp_fleet[1].ship_data = []
-        temp_fleet[1].ship_data.append(
-            shp.ships.get_ship_from_production_id(ship_id)
-        )
-        if not fsw.fleet_switcher.switch_to_costom_fleet(1, temp_fleet):
-            Log.log_error("kcauto failed to load the selected ship, exiting...")
-            return False
-            
-        nav.navigate.to('equipment')
-
-        Log.log_debug(f"unload the {1} ship")
-        kca_u.kca.click('ship_'+ str(1)) 
-        
-        while True:
-            
-            if kca_u.kca.exists('equipment_panel', 'shipswitcher|1_slot_ship.png'):
-                Log.log_debug(f"1 slot ship")
-                kca_u.kca.click('1_slot_unload_equipment')
-            elif kca_u.kca.exists('equipment_panel', 'shipswitcher|2_slot_ship.png',cached=True):
-                Log.log_debug(f"2 slot ship")
-                kca_u.kca.click('2_slot_unload_equipment') 
-            elif kca_u.kca.exists('equipment_panel', 'shipswitcher|3_slot_ship.png',cached=True):
-                Log.log_debug(f"3 slot ship")
-                kca_u.kca.click('3_slot_unload_equipment') 
-            elif kca_u.kca.exists('equipment_panel', 'shipswitcher|4_slot_ship.png',cached=True):
-                Log.log_debug(f"4 slot ship")
-                kca_u.kca.click('4_slot_unload_equipment') 
-            else: 
-                Log.log_debug(f"5 slot ship")
-                kca_u.kca.click('5_slot_unload_equipment') 
-                
-            kca_u.kca.wait('lower', 'shipswitcher|equipment_panel.png')
-            
-            if self.equipment["loaded"][ship_id][-1] > 0:
-                Log.log_debug(f"reinforce slot ship")
-                kca_u.kca.click('reinforce_slot_unload_equipment') 
-
-            kca_u.kca.wait('lower', 'shipswitcher|equipment_panel.png')
-            
-            api_result = api.api.update_from_api({KCSAPIEnum.FREE_EQUIPMENT}, need_all=True)
-            if api_result != {}:
-                break
-            else:
-                Log.log_error(f"Something goes wrong, skipping this round...")
-                
-                retry = 10
-                while not kca_u.kca.exists('left', 'nav|side_menu_home.png'):
-                    kca_u.kca.click_existing('bottom_right', 'shipswitcher|equipment_cancel_reinforce.png', cached=True)
-                    
-                    if retry > 0:
-                        retry -=1
-                        kca_u.sleep(1)
-                    else:
-                        Log.log_error(f"kcauto can not figure out where it is, exiting...")
-                        exit()
-                #skiping unload for this ship  <= usually it is already unloaded, but api didn't update due to network delay
-                break
-            
-        return True
-
-
-        
-
-    def load_equipment(self, fleet_id, fleet, map_name):
-
-        EMPTY_a = [-1,-1,-1,-1,-1,0]
-        EMPTY_b = [-1,-1,-1,-1,-1,-1]
-
-        nav.navigate.to('home')
-
-        target_config = self.custom_equipment[map_name]
-        Log.log_debug("load_equipment target_config")
-        Log.log_debug(target_config)
-
-        load_ship_id = fleet
-        """
-        for ship_id in self.equipment["loaded"]:
-            try:
-                if      target_config[ship_id] == EMPTY_a\
-                    or  target_config[ship_id] == EMPTY_b:
-                    #nothing to load
-                    continue
-
-                if self.equipment["loaded"][ship_id] != target_config[ship_id]:
-                    # at this point, every ship doesn't have the target equipment should get unloaded already
-                    load_ship_id.append(ship_id)
-            except KeyError:
-                pass
-        """
-
-        fleet_size = len(load_ship_id)
-        nav.navigate.to('equipment')
-        
-        
-        kca_u.kca.wait("left", f"nav|side_menu_equipment_active.png")
-        while True:
-            kca_u.kca.click_existing("upper_left", f"fleet|fleet_{fleet_id}.png")
-            if  kca_u.kca.exists("upper_left", f"fleet|fleet_{fleet_id}_active.png"):
-                break
-            kca_u.kca.sleep(1)
-        
-            
-        for i in range(fleet_size):
-
-            if load_ship_id[i] not in target_config:
-                continue
-            elif self.equipment["loaded"][load_ship_id[i]] == target_config[load_ship_id[i]]:
-                Log.log_debug(f"equipment for ship {load_ship_id[i]} is already loaded")
-                continue
-            
-            Log.log_debug(f"load the {i+1} ship")
-            
-            if i+1 == 7:
-                next_region = Region(
-                    kca_u.kca.game_x + 262,
-                    kca_u.kca.game_y + 676,
-                    32, 25)
-                kca_u.kca.click(next_region)
-                kca_u.kca.click('ship_'+ str(6)) 
-            else:
-                kca_u.kca.click('ship_'+ str(i + 1))
-
-            ssw.ship_switcher.current_page = 1
-            for slot in range(1,7):
-
-                equipment_id = target_config[load_ship_id[i]][slot - 1]
-                if equipment_id == -1 or equipment_id == 0:
-                    continue
-
-                if slot < 6:
-                    kca_u.kca.click(str(slot) + '_slot_equipment') 
-
-                    if slot == 1:
-                        kca_u.kca.click_existing('upper_right', 'shipswitcher|equipment_sort_arrow.png')
-                        kca_u.kca.click('equipment_sort_all')
-                    
-                    kca_u.kca.wait('upper_right', 'shipswitcher|equipment_sort_all.png')
-                else:
-                    kca_u.kca.click('reinforce_slot_equipment') 
-
-                try:
-                    if slot < 6:
-                        row_id = self.equipment[self.FREE].index(equipment_id)
-                    else:
-                        row_id = self.get_reinforce_equipment_list(load_ship_id[i]).index(equipment_id)
-                        ssw.ship_switcher.current_page = 1
-                except ValueError:
-                    Log.log_error(f"Cannot find equipment name id:{self._get_name_id(equipment_id)} production id:{equipment_id}, did you scrapped it?")
-                    exit(1)
-
-                ssw.ship_switcher.select_replacement_row(row_idx=row_id, mode= "equipment")
-
-                kca_u.kca.click_existing(
-                    'lower_right', 'shipswitcher|shiplist_shipswitch_button.png')
-                kca_u.kca.wait('lower', 'shipswitcher|equipment_panel.png')
-                api_result = api.api.update_from_api({KCSAPIEnum.FREE_EQUIPMENT}, need_all=True, timeout=30)
-
-        return True
-
-    def get_reinforce_equipment_list(self, local_id):
-
-        
         equipment_list = []
 
-        ship = shp.ships.get_ship_from_production_id(local_id)
         special_equipment_list = self.get_special_reinforce_equipment(ship) # sqecial equipment for this ship only
-
-        keys = self.equipment['raw'].keys()
+        
+        keys = self.equipment_pool[self.RAW].keys()
         sorted_keys = sorted(keys, key=lambda x: (len(x), x))
         Log.log_debug(sorted_keys)
 
         for key in sorted_keys:
             #key is always "api_slottypeXXX"
             Log.log_debug(key)
-            Log.log_debug(self.equipment['raw'][key])
+            Log.log_debug(self.equipment_pool[self.RAW][key])
             if      int(key[12:]) in self.reinforce_general_category \
                 and self.is_available_category(ship, int(key[12:])):
-                equipment_list = equipment_list + self.equipment['raw'][key]
+                equipment_list = equipment_list + self.equipment_pool[self.RAW][key]
             else:
                 # see if this category has any special reinforce equipment
-                for production_id in self.equipment['raw'][key]:
+                for production_id in self.equipment_pool[self.RAW][key]:
                     name_id = self._get_name_id(production_id)
                     if name_id in special_equipment_list:
                         equipment_list.append(production_id)
-                        Log.log_debug("hit")
 
-
-        Log.log_debug("equipment_list")
-        Log.log_debug(equipment_list)
-
-        return equipment_list
+        ret = []
+        for production_id in equipment_list:
+            ret.append(self.get_equipment_by_production_id(self.equipment_pool[self.ID], production_id))
+            
+        
+        Log.log_debug(f'ship {ship.name} reinforce equipment list:')
+        for i, equipment in enumerate(ret):
+            if i %10 == 0:  
+                Log.log_debug(f'Page {i // 10 + 1}')
+            Log.log_debug(f'{i}: {equipment.name}{equipment.stars} (Production id: {equipment.production_id}, Model ID: {equipment.model_id})')
+        
+        return ret 
 
     def get_special_reinforce_equipment(self, ship):
 
@@ -596,13 +132,6 @@ class EquipmentCore(object):
 
         equipment_list = []
 
-        Log.log_debug(type(ship.api_id))
-        Log.log_debug(ship.api_id)
-        Log.log_debug(type(ship.ship_family))
-        Log.log_debug(ship.ship_family)
-        Log.log_debug(type(ship.ship_type.id))
-        Log.log_debug(ship.ship_type.id)
-        
         Log.log_debug(self.reinforce_special)
 
         for key in self.reinforce_special:
@@ -631,33 +160,64 @@ class EquipmentCore(object):
 
     def _get_name_id(self, production_id):
         """method to convert equipment production id to equipment name id"""
+        
+        ret = self.get_equipment_by_production_id(self.equipment_pool[self.ID], production_id)
+        
+        if ret is not None:
+            return ret.model_id
+        else:
+            Log.log_warn(f"Cannot find production_id:{production_id} in equipment list")
+            return None
 
-        for id in self.equipment[self.ID]:
-            if id["api_id"] == production_id:
-                return id["api_slotitem_id"]        
-        Log.log_warn(f"Cannot find production_id:{production_id} in equipment list, performing sortie to update")
-        return None
-
-    def _get_production_id(self, equipment_pool, name_id):
-        """method to convert equipment name id to equipment production id list"""
+    def _get_match_equipment(self, equipment_pool, model_id) -> list[eq]:
+        """method to find all equipment in the equipment pool with the specified model id
+            arg:
+                equipment_pool (list of equipment obj): the equipment pool to search in
+                model_id (int): the equipment model id to search for
+        """
         
         is_any_match = False
         output_list = []
 
         EMPTY = 0
-        if name_id != EMPTY:
-            for id in equipment_pool:
-                if id["api_slotitem_id"] == name_id:
-                    output_list.append(id["api_id"])
+        if model_id != EMPTY:
+            for equipment in equipment_pool:
+                if equipment.model_id == model_id:
+                    output_list.append(equipment)
                     is_any_match = True
 
             if is_any_match != True:
-                Log.log_warn(f"Cannot find namd_id:{name_id} in equipment list, looks like you don't have any")
+                for equipment in self.equipment_pool[self.ID]:
+                    if equipment.model_id == model_id:
+                        Log.log_warn(f"Cannot find {equipment.name} in equipment pool, maybe it is in use")
+                        is_any_match = True
+                        break
+                if is_any_match != True:
+                    Log.log_warn(f"Cannot find {equipment.name} in equipment list, looks like you don't have any")
         else:
             Log.log_debug("EMPTY equipment slot")
-            output_list = [0]
+            output_list = [eq()]
 
         return output_list
+    
+    def get_equipment_by_production_id(self, equipment_pool, production_id):
+        """
+        method to get the equipment by its production id
+
+        Args:
+            equipment_pool (list of equipment obj): the equipment pool to search in
+            production_id (int): the equipment production id
+        """
+        for equipment in equipment_pool:
+            if equipment.production_id == production_id:
+                return equipment
+        
+        for equipment in self.equipment_pool[self.ID]:
+            if equipment.production_id == production_id:
+                Log.log_warn(f"Cannot find {equipment.name} in specified equipment pool, maybe it is in use")
+                return None 
+            
+        return eq(eq().UNKNOWN_EQUIPMENT, production_id=production_id)
 
     def is_available_category(self, target_ship, category_id):
 
@@ -681,5 +241,5 @@ class EquipmentCore(object):
 
         Log.log_warn(f"Cannot find ship type id:{type_id}")
         return False
-
+    
 equipment = EquipmentCore()

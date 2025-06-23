@@ -5,6 +5,8 @@ import api.api_core as api
 import combat.combat_core as com
 import config.config_core as cfg
 import fleet.fleet_core as flt
+from fleet.fleet import Fleet
+import fleet_switcher.fleet_switcher_core as fsw
 import nav.nav as nav
 import ships.ships_core as shp
 import ships.equipment_core as equ 
@@ -12,6 +14,7 @@ import stats.stats_core as sts
 import util.kca as kca_u
 from kca_enums.damage_states import DamageStateEnum
 from kca_enums.kcsapi_paths import KCSAPIEnum
+from kca_enums.fleet import FleetEnum
 from util.kc_time import KCTime
 from util.logger import Log
 
@@ -44,11 +47,10 @@ class RepairCore(object):
     @property
     def can_conduct_repairs(self):
         if self.docks_are_available:
-            if cfg.config.combat.enabled and self.fleets_need_repair:
+            if self.is_combat_repair_needed:
                 return True
-            if cfg.config.passive_repair.enabled and self.ships_need_repair:
-                if (
-                        cfg.config.passive_repair.slots_to_reserve
+            if self.is_passive_repair_needed:
+                if (    cfg.config.passive_repair.slots_to_reserve
                         >= self.docks_available_count):
                     return False
                 return True
@@ -94,6 +96,12 @@ class RepairCore(object):
         repair_list = self._local_ships_sorted_by_repair
         idx_of_combat_ships = {}
         idx_of_passive_ships = {}
+        
+        TEMP_FLEET_ID = 1
+        temp_fleet = {}
+        temp_fleet[TEMP_FLEET_ID]=(Fleet("unload_equipment", FleetEnum.COMBAT, False))
+        temp_fleet[TEMP_FLEET_ID].ship_data = []
+            
         for idx, ship in enumerate(repair_list):
             
             if ship.production_id in self.ships_under_repair:
@@ -105,7 +113,18 @@ class RepairCore(object):
                 if ship.damage >= cfg.config.passive_repair.repair_threshold:
                     if ship not in flt.fleets.active_ships:
                         idx_of_passive_ships[idx] = ship
-
+                        if ship.has_no_equipment() == False:
+                            temp_fleet[TEMP_FLEET_ID].ship_data.append(ship)
+                        
+        if temp_fleet[TEMP_FLEET_ID].ship_data != []:
+            fsw.fleet_switcher.goto()
+            if fsw.fleet_switcher.switch_to_costom_fleet(TEMP_FLEET_ID, temp_fleet):
+                nav.navigate.to('refresh_home')
+                nav.navigate.to('equipment')
+                fsw.fleet_switcher.unload_fleet_equipment(fleet_id=TEMP_FLEET_ID, needed_load=False)
+                self.goto()
+            else:
+                Log.log_error("kcauto failed to load the selected ship, exiting...")
 
         while self.can_conduct_repairs:
             if len(idx_of_combat_ships) + len(idx_of_passive_ships) == 0:
@@ -126,7 +145,7 @@ class RepairCore(object):
                 self._select_ship(idx, ship)
                 
                 if status == self.UNLOAD_NEEDED:
-                    equ.equipment.unload_ship(ship.production_id)
+                    fsw.fleet_switcher.unload_ship(1, ship)
                     status = self._start_repair(ship, "force")
                 else:
                     status = self._start_repair(ship, context)
@@ -252,7 +271,7 @@ class RepairCore(object):
             key=lambda ship: (ship.hp_p, ship.sort_id, ship.production_id))
 
     @property
-    def fleets_need_repair(self):
+    def is_combat_repair_needed(self):
         if cfg.config.combat.enabled:
             for fleet in flt.fleets.combat_fleets:
                 if fleet.under_repair:
@@ -262,9 +281,11 @@ class RepairCore(object):
         return False
 
     @property
-    def ships_need_repair(self):
+    def is_passive_repair_needed(self):
         if cfg.config.passive_repair.enabled:
             for id in shp.ships.ship_pool:
+                if shp.ships.ship_pool[id].production_id in self.ships_under_repair:
+                    continue
                 if shp.ships.ship_pool[id].damage >= cfg.config.passive_repair.repair_threshold:
                     if shp.ships.ship_pool[id] not in flt.fleets.active_ships:
                         return True

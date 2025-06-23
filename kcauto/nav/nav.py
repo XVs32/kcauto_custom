@@ -12,7 +12,6 @@ class Navigate(object):
     All methods are class and static methods; Nav should not be directly
     instantiated.
     """
-
     @classmethod
     def to(cls, destination, max_sidestep=1):
         """Method to call to detect the current location and move to the
@@ -141,10 +140,15 @@ class NavigateList(object):
     """
     # offset of navigation controls, based off of the ship comp UI's ship list,
     # in x, y pixel format
+    
+    OFFSET_MODE_SHIPCOMP = 'shipcomp'
+    OFFSET_MODE_REPAIR = 'repair'
+    OFFSET_MODE_EQUIPMENT = 'equipment'
+
     OFFSET = {
-        'repair': (0, 0),
-        'shipcomp': (17, -4),
-        'equipment': (-3, -4)
+        OFFSET_MODE_REPAIR: (0, 0),
+        OFFSET_MODE_SHIPCOMP: (17, -4),
+        OFFSET_MODE_EQUIPMENT: (-3, -4)
     }
 
     @classmethod
@@ -206,7 +210,7 @@ class NavigateList(object):
                     cls._change_page(region, 'prev', cls.OFFSET[offset_mode])
                     current_page -= 5
             elif page_delta >= 3:
-                if target_page > page_count - 5:
+                if target_page > (page_count - 5):
                     #Log.log_error("go to last")
                     cls._change_page(region, 'last', cls.OFFSET[offset_mode])
                     current_page = page_count

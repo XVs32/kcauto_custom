@@ -551,10 +551,10 @@
       "B-6-5"
     ],
     "recommended_map": [
-      "B-5-1",
-      "B-5-4",
-      "B-6-4",
-      "B-6-5"
+      "Bq13-5-1",
+      "Bq13-5-4",
+      "Bq13-6-4",
+      "Bq13-6-5"
     ]
   },
   "By1": {
@@ -792,7 +792,7 @@
     "id": 330,
     "type": "other"
   },
-  "D2": {
+  "Dd1": {
     "id": 402,
     "type": "daily",
     "intervals": [
@@ -801,7 +801,7 @@
       1
     ]
   },
-  "D3": {
+  "Dd2": {
     "id": 403,
     "type": "daily",
     "intervals": [
@@ -810,7 +810,7 @@
       5
     ]
   },
-  "D4": {
+  "Dw1": {
     "id": 404,
     "type": "weekly",
     "intervals": [
@@ -819,7 +819,7 @@
       10
     ]
   },
-  "D9": {
+  "Dw2": {
     "id": 410,
     "type": "weekly",
     "intervals": [
@@ -832,7 +832,7 @@
       38
     ]
   },
-  "D11": {
+  "Dw3": {
     "id": 411,
     "type": "weekly",
     "intervals": [
@@ -843,28 +843,6 @@
     "expedition_context": [
       37,
       38
-    ]
-  },
-  "D22": {
-    "id": 424,
-    "type": "monthly",
-    "intervals": [
-      0,
-      0,
-      5
-    ],
-    "expedition_context": [
-      5
-    ]
-  },
-  "D24": {
-    "id": 426,
-    "type": "other",
-    "expedition_context": [
-      3,
-      4,
-      5,
-      10
     ]
   },
   "Dm1": {
