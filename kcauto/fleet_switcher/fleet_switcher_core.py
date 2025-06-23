@@ -1,4 +1,4 @@
-from pyvisauto import Region
+from util.pyvisauto import Region
 from sys import exit
 from random import choice
 from random import randrange
