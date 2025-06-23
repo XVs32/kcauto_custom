@@ -63,7 +63,9 @@ class Noro6(object):
                 self.item = None
                 return preset
             
-        IndexError(f"can't find map {name} in noro6")
+        Log.log_warn(f"Map {name} not found in noro6")
+        return None
+            
         
     def get_variant(self, map_name):
         """
