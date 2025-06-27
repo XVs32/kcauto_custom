@@ -82,8 +82,11 @@ api_start2/getData	：艦娘・装備固有データその他
 	api_mst_equip_exslot：補強スロットに装備可能なカテゴリ
 
 	api_mst_equip_exslot_ship		：補強スロットへの特殊装備
-		api_slotitem_id		：装備ID
-		api_ship_ids		：対象となる艦娘ID []
+		特殊装備の装備ID    ： 
+		    api_ship_ids    ：  {"対象となる艦娘ID" : 1(定数のようです)}
+            api_stypes      ：  {"対象となる艦船のstype" : 1(定数のようです)}
+            api_ctypes      ：  {"対象となる艦船のctype" : 1(定数のようです)}
+            api_req_level   ：  当該装備の必要最低限のレベル
 
 	api_mst_stype		：艦船カテゴリ
 		api_id			：カテゴリID(艦船のstypeに対応)
