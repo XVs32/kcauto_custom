@@ -281,6 +281,8 @@ class FleetCore(object):
         
         for preset in noro6.presets:
             
+            Log.log_msg(f"Loading Noro6 preset {preset['name']}...")
+            
             noro6.get_map(preset["name"])
             
             fleet_type = noro6.get_preset_type()
