@@ -536,8 +536,9 @@ api_start2/getData	：艦娘・装備固有データその他
 		api_name		：曲名
 
 	api_mst_equip_ship	：特殊装備
-		api_ship_id			：艦船ID
-		api_equip_type		：装備可能なカテゴリのリスト[]　当該艦の装備可否はこれで上書きされ、艦種の装備可否は無視される
+		艦船ID             ： 当該艦のid
+            api_equip_type	：装備可能なカテゴリのリスト[]　当該艦の装備可否はこれで上書きされ、艦種の装備可否は無視される
+                装備ID         ： 当該カテゴリ內装備可能な装備ID, 当該カテゴリのすべての装備が利用可能な場合は null。
 
 
 api_req_member/get_incentive	：褒賞関連
