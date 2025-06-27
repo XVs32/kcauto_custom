@@ -222,19 +222,19 @@ class EquipmentCore(object):
     def is_available_category(self, target_ship, category_id):
 
         # If this ship has a special available equipment category
-        ship_id = target_ship.api_id
-        for ship in self.equipment_special:
-            if ship["api_ship_id"] == ship_id:
-                if category_id in ship["api_equip_type"]:
+        target_ship_id = target_ship.api_id
+        for ship_id in self.equipment_special:
+            if ship_id == target_ship_id:
+                if self.equipment_special[ship_id]["api_equip_type"][category_id] != None:
                     return True
                 else:
                     return False
 
         # If this ship use general equipment category
         type_id = target_ship.ship_type.id
-        for ship in self.ship_type:
-            if ship["api_id"] == type_id:
-                if ship["api_equip_type"][str(category_id)] == 1:
+        for ship_id in self.ship_type:
+            if ship_id["api_id"] == type_id:
+                if ship_id["api_equip_type"][str(category_id)] == 1:
                     return True
                 else:
                     return False
