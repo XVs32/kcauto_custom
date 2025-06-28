@@ -66,32 +66,32 @@ class EquipmentCore(object):
                 self.equipment_pool[pool].remove(equipment)
                 break
             
-    def _get_equipment_from_noro6_equipment(self, noro6_equipment):
+    def get_equipment_from_noro6_equipment(self, noro6_equipment):
         """
             method to convert noro6 equipment to kcauto equipment
             noro6_equipment (dict): noro6 equipment data
             output (int) : equipment production id
+            output (bool) : is exact match
         """
+        
         equipment_list = self._get_match_equipment(self.equipment_pool[self.ID], noro6_equipment["i"])
         
         if equipment_list == []:
             Log.log_error("can't find any match equipment")
-            return None
+            return None, False
         
         for equipment in equipment_list:
             
             #@todo handle "api_alv"/"l" (plane exp level)
             #if "api_alv" in temp_equipment[i] and "l" in noro6_equipment:
             if equipment.stars == noro6_equipment["r"]:
-                return equipment
+                return equipment, True
             
         #sort by the absolute value of difference between api_lv and rf
         equipment_list.sort(key=lambda x: abs(x.stars - noro6_equipment["r"]))
-        # send warring, can't find exact same equipment
-        if equipment_list[0].is_empty_equipment == False:
-            Log.log_warn(f"Can't find exact {equipment_list[0].name} with level {noro6_equipment['r']}, using the closest one with {equipment_list[0].stars}★")
-
-        return equipment_list[0]
+            
+        return equipment_list[0], False
+    
         
     def get_reinforce_equipment_list(self, ship : Ship):
 
