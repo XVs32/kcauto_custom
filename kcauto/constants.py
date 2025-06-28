@@ -32,7 +32,7 @@ VISUAL_DAMAGE = 0.95
 DEFAULT = 0.8
 
 # click padding presets
-PAGE_NAV = (8, 10, -8, -10)
+PAGE_NAV = (10, 8, -10, -8)
 
 # external urls
 WCTF_DB_URL = (
