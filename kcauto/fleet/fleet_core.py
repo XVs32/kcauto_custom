@@ -281,7 +281,7 @@ class FleetCore(object):
         
         for preset in noro6.presets:
             
-            Log.log_msg(f"Loading Noro6 preset {preset['name']}...")
+            is_first_not_exact_match = True
             
             noro6.get_map(preset["name"])
             
@@ -309,8 +309,15 @@ class FleetCore(object):
                     
                     for j in range(1, noro6.get_equipment_count() + 1 ):
                         
-                        this_equipment = equ.equipment._get_equipment_from_noro6_equipment(noro6.get_equipment(j))
+                        this_equipment, is_exact_match = equ.equipment.get_equipment_from_noro6_equipment(noro6.get_equipment(j))
                         
+                        # send warring, can't find exact same equipment
+                        if this_equipment.is_empty_equipment == False and is_exact_match == False:
+                            if is_first_not_exact_match:
+                                Log.log_msg(f"In Noro6 preset {preset['name']}...")
+                                is_first_not_exact_match = False
+                            Log.log_warn(f"Can't find exact {this_equipment.name} with {noro6.get_equipment(j)['r']}★, using the closest one with {this_equipment.stars}★")
+                            
                         if this_equipment == None:
                             Log.log_error(f"Failed finding equipment for {preset['name']}, exit...")
                             exit(0)
@@ -326,8 +333,15 @@ class FleetCore(object):
                         
                     reinforce_equipment = noro6.get_reinforce_equipment()
                     if reinforce_equipment["i"] > 0:
-                        this_equipment = equ.equipment._get_equipment_from_noro6_equipment(reinforce_equipment)
+                        this_equipment, is_exact_match = equ.equipment.get_equipment_from_noro6_equipment(reinforce_equipment)
                         ship.slot_ex = this_equipment
+
+                        # send warring, can't find exact same equipment
+                        if this_equipment.is_empty_equipment == False and is_exact_match == False:
+                            if is_first_not_exact_match:
+                                Log.log_msg(f"In Noro6 preset {preset['name']}...")
+                                is_first_not_exact_match = False
+                            Log.log_warn(f"Can't find exact {this_equipment.name} with {reinforce_equipment['r']}★, using the closest one with {this_equipment.stars}★")
                     
                         #remove this equipment from equipment pool
                         if  this_equipment != None and this_equipment.model_id != None:
