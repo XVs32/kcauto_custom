@@ -33,6 +33,9 @@ from pyppeteer import connect
 class Kca(object):
     """Primary kcauto utility class.
     """
+    
+    KC_REF_OFFSET = (-144, 0)
+    
     ASSETS_FOLDER = 'assets'
     visual_tab_id = None
     visual_hook = None
@@ -168,25 +171,40 @@ class Kca(object):
 
         return True
 
-    def find_browser(self):
-        """Method that finds the dmm logo on-screen and provide the offset for chrome driver"""
-        Log.log_msg("Finding browser.")
+    def find_game_window_offset(self):
+        """Method that finds the game window offset for chrome driver"""
+        Log.log_msg("Finding browser offset")
 
-        window_info = self.visual_hook.Browser.getWindowForTarget(target_id=self.visual_tab_id)[0]["result"]["bounds"]
-
-        viewport_size = self.visual_hook.Page.getLayoutMetrics()[0]["result"]["cssLayoutViewport"]
+        template = cv2.imread(self._create_asset_path(f'global|kc_ref_point_{str(self.last_ui)}.png'), cv2.IMREAD_GRAYSCALE)
+        template.shape[::-1]
         
-        top_left_x = window_info["left"]
-        top_left_y = window_info["top"] + window_info["height"] - viewport_size["clientHeight"]
-
-        Log.log_debug(top_left_x)
-        Log.log_debug(top_left_y)
-
-        self.css_x = top_left_x
-        self.css_y = top_left_y
+        retry = 0
+        
+        import base64
+        while retry < 5:
+            
+            result = self.visual_hook.Page.captureScreenshot()[0]["result"]
+            screenshot_data = base64.b64decode(result['data'])
+            
+            # Convert the screenshot data to a Matlike array
+            screenshot = cv2.imdecode(np.frombuffer(screenshot_data, np.uint8), cv2.IMREAD_GRAYSCALE)
+            
+            match = cv2.matchTemplate(screenshot, template, cv2.TM_CCOEFF_NORMED)
+            min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(match)
+            
+            if max_val < 0.8:
+                Log.log_debug(f"Match value {max_val} is below threshold, retrying...")
+                retry += 1
+                self.sleep(1)
+                continue
+            
+            break
+        
+        self.css_x = self.game_x - (max_loc[0] + self.KC_REF_OFFSET[0])
+        self.css_y = self.game_y - (max_loc[1] + self.KC_REF_OFFSET[1])
+        Log.log_success(f"Browser offset found at X: {self.css_x}, Y: {self.css_y}")
 
         return True
-
 
 
     def find_kancolle(self):
@@ -242,8 +260,8 @@ class Kca(object):
                 Log.log_error("Could not find Kancolle reference point.")
                 raise FindFailed()
 
-        new_game_x = ref_r.x - 144
-        new_game_y = ref_r.y
+        new_game_x = ref_r.x + self.KC_REF_OFFSET[0]
+        new_game_y = ref_r.y + self.KC_REF_OFFSET[1]
         Log.log_debug(f"Game X:{new_game_x}, Y:{new_game_y}")
 
         # define click callback as needed
@@ -264,6 +282,8 @@ class Kca(object):
             self.game_x = new_game_x
             self.game_y = new_game_y
             self._update_regions()
+            
+        self.find_game_window_offset()
 
         return True
 
@@ -842,8 +862,8 @@ class Kca(object):
             pad (tuple): padding parameter used to modify click coordinate
         """
 
-        offset_x = randint(-pad[3], r.w + pad[1])
-        offset_y = randint(-pad[0], r.h + pad[2])
+        offset_x = randint(pad[0], r.w + pad[2])
+        offset_y = randint(pad[1], r.h + pad[3])
         x = r.x - self.css_x
         y = r.y - self.css_y
  
@@ -851,10 +871,10 @@ class Kca(object):
             # Draw debug visualization
             
             corners = [
-                r.x - pad[3],  # Top-left corner
-                r.y - pad[0],
-                r.x + r.w + pad[1],
-                r.y + r.h + pad[2]
+                r.x + pad[0],  # Top-left corner
+                r.y + pad[1],
+                r.x + r.w + pad[2],
+                r.y + r.h + pad[3]
             ]
             self._draw_debug_visualization(corners)
 
