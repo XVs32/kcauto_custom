@@ -586,7 +586,7 @@ class Kca(object):
             region (Region, Match, str): Region/Match object or pre-defined
                 region key.
             pad (tuple, optional): click region modifier. Defaults to
-                (0, 0, 0, 0).
+                (0, 0, 0, 0) as offset of (X1, Y1, X2, Y2)
         """
         self.sleep(0.5)
 
@@ -597,10 +597,10 @@ class Kca(object):
             if arg.args.parsed_args.debug_output:
                 # Visit corners first
                 corners = [
-                    r.x - pad[3],  
-                    r.y - pad[0],
-                    r.x + r.w + pad[1],
-                    r.y + r.h + pad[2]
+                    r.x + pad[0],  
+                    r.y + pad[1],
+                    r.x + r.w + pad[2],
+                    r.y + r.h + pad[3]
                 ]
                 
                 r.hover(corners[0], corners[1])

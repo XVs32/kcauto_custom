@@ -262,13 +262,12 @@ class ImageMatch(ABC):
         it will be called after the click action.
 
         Args:
-            pad (tuple, optional): Tuple specifying how to modify the valid
-                click area. Directions are ordered CSS-style (top, right,
-                bottom, left). Positive values expand the valid click area,
-                while negative values constrict it. Defaults to (0, 0, 0, 0).
+            pad (tuple, optional): Tuple specifying the offset of 
+                click area. The order is (x1, y1, x2, y2)
+                Defaults to (0, 0, 0, 0).
         """
-        x = randint(self.x + pad[3], self.x + self.w + pad[1])
-        y = randint(self.y + pad[0], self.y + self.h + pad[2])
+        x = randint(self.x + pad[0], self.x + self.w + pad[2])
+        y = randint(self.y + pad[1], self.y + self.h + pad[3])
 
         if self.override_click_method:
             self.override_click_method(self, x, y, pad)
