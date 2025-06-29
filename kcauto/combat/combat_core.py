@@ -660,7 +660,7 @@ class CombatCore(CoreBase):
         escort_ship_idx = None
 
         for ship_idx, ship in enumerate(flt.fleets.combat_ships):
-            if ship_idx == len(flt.fleets.combat_fleets[0].ship_data):
+            if ship_idx == len(flt.fleets.combat_fleets[0].ships):
                 # do not count the damage stage of the escort fleet flagship
                 # as it is un-sinkable and un-retreatable
                 pass
@@ -671,7 +671,7 @@ class CombatCore(CoreBase):
                 damaged_ship_idx = ship_idx
 
         if heavy_damage_counter == 1:
-            last_combat_fleet_ships = flt.fleets.combat_fleets[-1].ship_data
+            last_combat_fleet_ships = flt.fleets.combat_fleets[-1].ships
             for ship_idx, ship in enumerate(last_combat_fleet_ships):
                 if (
                         ship.ship_type is ShipTypeEnum.DD
@@ -715,7 +715,7 @@ class CombatCore(CoreBase):
             else list(data['api_f_nowhps']))
         new_hps = self._calculate_hps(new_hps, data)
         Log.log_debug(f"Calculated HPs: {new_hps}")
-        fleet_1_size = len(flt.fleets.combat_fleets[0].ship_data)
+        fleet_1_size = len(flt.fleets.combat_fleets[0].ships)
         flt.fleets.combat_fleets[0].update_ship_hps(new_hps[0:fleet_1_size])
         Log.log_msg(flt.fleets.combat_fleets[0])
         if flt.fleets.combined_fleet:
