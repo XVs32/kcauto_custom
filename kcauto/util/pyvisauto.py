@@ -46,7 +46,7 @@ class ImageMatch(ABC):
     w = 0
     h = 0
 
-    def _capture(self):
+    def capture(self):
         """Private method for capturing the defined region using MSS.
         
         Returns:
@@ -90,7 +90,7 @@ class ImageMatch(ABC):
         template.shape[::-1]
 
         if not cached or self._captured is None:
-            capture = self._capture()
+            capture = self.capture()
             capture_rgb = np.array(capture)
             self._captured = cv2.cvtColor(capture_rgb, cv2.COLOR_BGR2GRAY)
 
@@ -262,13 +262,12 @@ class ImageMatch(ABC):
         it will be called after the click action.
 
         Args:
-            pad (tuple, optional): Tuple specifying how to modify the valid
-                click area. Directions are ordered CSS-style (top, right,
-                bottom, left). Positive values expand the valid click area,
-                while negative values constrict it. Defaults to (0, 0, 0, 0).
+            pad (tuple, optional): Tuple specifying the offset of 
+                click area. The order is (x1, y1, x2, y2)
+                Defaults to (0, 0, 0, 0).
         """
-        x = randint(self.x + pad[3], self.x + self.w + pad[1])
-        y = randint(self.y + pad[0], self.y + self.h + pad[2])
+        x = randint(self.x + pad[0], self.x + self.w + pad[2])
+        y = randint(self.y + pad[1], self.y + self.h + pad[3])
 
         if self.override_click_method:
             self.override_click_method(self, x, y, pad)
@@ -296,7 +295,7 @@ class ImageMatch(ABC):
             str: result of OCR attempt.
         """
         pytesseract.pytesseract.tesseract_cmd = self.TESSERACT_PATH
-        capture = self._capture()
+        capture = self.capture()
         try:
             return pytesseract.image_to_string(
                 capture, lang=lang, config=config)
@@ -312,7 +311,7 @@ class ImageMatch(ABC):
         Args:
             filename (str): path to save screenshot to.
         """
-        capture = self._capture()
+        capture = self.capture()
         capture.save(filename)
 
 
