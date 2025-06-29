@@ -99,7 +99,8 @@ class Kca(object):
         self.api_hook.Network.enable()
         Log.log_debug(f"Connected to API tab ({api_tab}:{api_tab_id})")
         Log.log_success("Connected to Chrome")
-
+        
+        self.find_game_window_offset()
 
     def hook_health_check(self):
         """Method that runs through the different events reported to the api
@@ -174,9 +175,10 @@ class Kca(object):
     def find_game_window_offset(self):
         """Method that finds the game window offset for chrome driver"""
         Log.log_msg("Finding browser offset")
-
-        template = cv2.imread(self._create_asset_path(f'global|kc_ref_point_{str(self.last_ui)}.png'), cv2.IMREAD_GRAYSCALE)
-        template.shape[::-1]
+        
+        whole_screen = Region().capture()
+        whole_screen_rgb = np.array(whole_screen)
+        whole_screen_gray = cv2.cvtColor(whole_screen_rgb, cv2.COLOR_BGR2GRAY)
         
         retry = 0
         
@@ -187,12 +189,23 @@ class Kca(object):
             screenshot_data = base64.b64decode(result['data'])
             
             # Convert the screenshot data to a Matlike array
-            screenshot = cv2.imdecode(np.frombuffer(screenshot_data, np.uint8), cv2.IMREAD_GRAYSCALE)
+            ref = cv2.imdecode(np.frombuffer(screenshot_data, np.uint8), cv2.IMREAD_GRAYSCALE)
             
-            match = cv2.matchTemplate(screenshot, template, cv2.TM_CCOEFF_NORMED)
+            # clip ref, keep the central part only
+            clip_height = int(ref.shape[0] * 0.1) 
+            clip_width = int(ref.shape[1] * 0.1)  
+
+            # Calculate top-left corner of the clip
+            start_y = (ref.shape[0] - clip_height) // 2
+            start_x = (ref.shape[1] - clip_width) // 2
+
+            # Crop the central region
+            ref = ref[start_y:start_y + clip_height, start_x:start_x + clip_width]
+            
+            match = cv2.matchTemplate(whole_screen_gray, ref, cv2.TM_CCOEFF_NORMED)
             min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(match)
             
-            if max_val < 0.8:
+            if max_val < 0.9:
                 Log.log_debug(f"Match value {max_val} is below threshold, retrying...")
                 retry += 1
                 self.sleep(1)
@@ -200,12 +213,11 @@ class Kca(object):
             
             break
         
-        self.css_x = self.game_x - (max_loc[0] + self.KC_REF_OFFSET[0])
-        self.css_y = self.game_y - (max_loc[1] + self.KC_REF_OFFSET[1])
+        self.css_x = max_loc[0] - start_x
+        self.css_y = max_loc[1] - start_y
         Log.log_success(f"Browser offset found at X: {self.css_x}, Y: {self.css_y}")
 
         return True
-
 
     def find_kancolle(self):
         """Method that finds the Kancolle game on-screen and determine the UI
@@ -727,7 +739,7 @@ class Kca(object):
         if self.game_x is None or self.game_y is None:
             return
         screen = Region(self.game_x, self.game_y, GAME_W, GAME_H)
-        screen = screen._capture()
+        screen = screen.capture()
         screen = cv2.cvtColor(np.array(screen), cv2.COLOR_RGB2BGR)
         
         cv2.rectangle(screen, 

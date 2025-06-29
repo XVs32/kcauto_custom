@@ -46,7 +46,7 @@ class ImageMatch(ABC):
     w = 0
     h = 0
 
-    def _capture(self):
+    def capture(self):
         """Private method for capturing the defined region using MSS.
         
         Returns:
@@ -90,7 +90,7 @@ class ImageMatch(ABC):
         template.shape[::-1]
 
         if not cached or self._captured is None:
-            capture = self._capture()
+            capture = self.capture()
             capture_rgb = np.array(capture)
             self._captured = cv2.cvtColor(capture_rgb, cv2.COLOR_BGR2GRAY)
 
@@ -295,7 +295,7 @@ class ImageMatch(ABC):
             str: result of OCR attempt.
         """
         pytesseract.pytesseract.tesseract_cmd = self.TESSERACT_PATH
-        capture = self._capture()
+        capture = self.capture()
         try:
             return pytesseract.image_to_string(
                 capture, lang=lang, config=config)
@@ -311,7 +311,7 @@ class ImageMatch(ABC):
         Args:
             filename (str): path to save screenshot to.
         """
-        capture = self._capture()
+        capture = self.capture()
         capture.save(filename)
 
 
