@@ -10,7 +10,7 @@ from util.kc_time import KCTime
 from util.logger import Log
 from util.json_data import JsonData
 import ships.equipment_core as equ 
-from ships.equipment import Equipment as eq
+from ships.equipment import Equipment as Equipment
 import expedition.expedition_core as exp
 from kca_enums.expeditions import ExpeditionEnum
 
@@ -281,6 +281,8 @@ class FleetCore(object):
         
         for preset in noro6.presets:
             
+            is_first_not_exact_match = True
+            
             noro6.get_map(preset["name"])
             
             fleet_type = noro6.get_preset_type()
@@ -307,14 +309,21 @@ class FleetCore(object):
                     
                     for j in range(1, noro6.get_equipment_count() + 1 ):
                         
-                        this_equipment = equ.equipment._get_equipment_from_noro6_equipment(noro6.get_equipment(j))
+                        this_equipment, is_exact_match = equ.equipment.get_equipment_from_noro6_equipment(noro6.get_equipment(j))
                         
+                        # send warring, can't find exact same equipment
+                        if this_equipment.is_empty_equipment == False and is_exact_match == False:
+                            if is_first_not_exact_match:
+                                Log.log_msg(f"In Noro6 preset {preset['name']}...")
+                                is_first_not_exact_match = False
+                            Log.log_warn(f"Can't find exact {this_equipment.name} with {noro6.get_equipment(j)['r']}★, using the closest one with {this_equipment.stars}★")
+                            
                         if this_equipment == None:
                             Log.log_error(f"Failed finding equipment for {preset['name']}, exit...")
                             exit(0)
                         
                         #check if this_equipment is eq obj
-                        if not isinstance(this_equipment, eq):
+                        if not isinstance(this_equipment, Equipment):
                             Log.log_error(f"DEBUG1: hit")
                             exit(0)
                         ship.equipments.append(this_equipment)
@@ -324,8 +333,15 @@ class FleetCore(object):
                         
                     reinforce_equipment = noro6.get_reinforce_equipment()
                     if reinforce_equipment["i"] > 0:
-                        this_equipment = equ.equipment._get_equipment_from_noro6_equipment(reinforce_equipment)
+                        this_equipment, is_exact_match = equ.equipment.get_equipment_from_noro6_equipment(reinforce_equipment)
                         ship.slot_ex = this_equipment
+
+                        # send warring, can't find exact same equipment
+                        if this_equipment.is_empty_equipment == False and is_exact_match == False:
+                            if is_first_not_exact_match:
+                                Log.log_msg(f"In Noro6 preset {preset['name']}...")
+                                is_first_not_exact_match = False
+                            Log.log_warn(f"Can't find exact {this_equipment.name} with {reinforce_equipment['r']}★, using the closest one with {this_equipment.stars}★")
                     
                         #remove this equipment from equipment pool
                         if  this_equipment != None and this_equipment.model_id != None:
@@ -334,7 +350,7 @@ class FleetCore(object):
                     elif reinforce_equipment["i"] == 0:
                         ship.slot_ex = None
                     elif reinforce_equipment["i"] == -1:
-                        ship.slot_ex = eq()
+                        ship.slot_ex = Equipment()
                     else:
                         Log.log_error(f"Unknown reinforce equipment {reinforce_equipment}, exit...")
                         exit(1)
@@ -504,7 +520,7 @@ class FleetCore(object):
                         if temp_ship.equipments != []:
                             req_lc -= lc_count
                             if temp_ship.slot_ex != None:
-                                temp_ship.slot_ex = eq()
+                                temp_ship.slot_ex = Equipment()
                             assign_fleet.add_ship(temp_ship)
                             ship_pool[ship_enum].remove(ship)
                             Log.log_debug(f"fleet_core: assign ship {ship} for {fleet_list}")
@@ -534,7 +550,7 @@ class FleetCore(object):
                             req_dc -= dc_count
                             req_dc_carrier -= 1
                             if temp_ship.slot_ex != None:
-                                temp_ship.slot_ex = eq()
+                                temp_ship.slot_ex = Equipment()
                             assign_fleet.add_ship(temp_ship)
                             ship_pool[ship_enum].remove(ship)
                             Log.log_debug(f"fleet_core: assign ship {ship} for {fleet_list}")
@@ -554,7 +570,7 @@ class FleetCore(object):
                 temp_ship = copy.deepcopy(ship)
                 temp_ship.equipments = []
                 if temp_ship.slot_ex != None:
-                    temp_ship.slot_ex = eq()
+                    temp_ship.slot_ex = Equipment()
                 assign_fleet.add_ship(temp_ship)
                 ship_pool[ship_enum].remove(ship)
                 Log.log_debug(f"fleet_core: assign ship {ship} for {fleet_list}")
