@@ -270,24 +270,23 @@ class ApiWrapper(object):
             ship_data = data['api_data']['api_ship']
             shp.ships.update_ship_pool(ship_data)
             JsonData.dump_json(ship_data, 'data|temp|local_ship.json')
+        except KeyError:
+            Log.log_debug("No ship data found in API response.")
+
+        try:
+            fleet_data = data['api_data']['api_deck_port']
+            flt.fleets.update_fleets(fleet_data)
             flt.fleets.load_custom_fleets()
             flt.fleets.load_custom_exp_pool()
             flt.fleets.load_idle_pool()
-            
         except KeyError:
-            Log.log_debug("No ship data found in API response.")
+            Log.log_debug("No fleet data found in API response.")
 
         try:
             repair_data = data['api_data']['api_ndock']
             rep.repair.update_repair_data(repair_data)
         except KeyError:
             Log.log_debug("No repair data found in API response.")
-
-        try:
-            fleet_data = data['api_data']['api_deck_port']
-            flt.fleets.update_fleets(fleet_data)
-        except KeyError:
-            Log.log_debug("No fleet data found in API response.")
 
         try:
             max_ships = data['api_data']['api_basic']['api_max_chara']

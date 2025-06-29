@@ -19,7 +19,7 @@ class Fleet(object):
     _at_base = True
     _return_time = None
     _expedition_id = None
-    ship_data: list[Ship] = []
+    ships: list[Ship] = []
     visual_health = []
 
     def __init__(self, fleet_id, fleet_type, enabled=True):
@@ -27,13 +27,13 @@ class Fleet(object):
         self.fleet_id = fleet_id
         self.enabled = enabled
         self.fleet_type = fleet_type
-        self.ship_data: list[Ship] = []
+        self.ships: list[Ship] = []
 
     def update_ship_data(self):
         ship_ids = self.ship_ids
-        self.ship_data = []
+        self.ships = []
         for id in ship_ids:
-            self.ship_data.append(shp.ships.get_ship_from_production_id(id))
+            self.ships.append(shp.ships.get_ship_from_production_id(id))
 
     def select(self):
         Log.log_debug(f"Selecting fleet {self.fleet_id}.")
@@ -74,12 +74,6 @@ class Fleet(object):
             Log.log_success(f"Fleet {self.fleet_id} activated.")
         elif value is False and print_log:
             Log.log_success(f"Fleet {self.fleet_id} deactivated.")
-            """
-            self._at_base = True
-            self._ships = []
-            self._return_time = None
-            self.ship_data = []
-            """
         self._enabled = value
 
     @property
@@ -95,7 +89,7 @@ class Fleet(object):
             Log.log_msg(f"Fleet {self.fleet_id} has arrived at base!")
             
             ship : Ship
-            for ship in self.ship_data:
+            for ship in self.ships:
                 ship.needs_resupply = True
         elif value is False and print_log:
             Log.log_msg(f"Fleet {self.fleet_id} is away on assignment.")
@@ -106,7 +100,7 @@ class Fleet(object):
         
         ret = []
         
-        for ship in self.ship_data:
+        for ship in self.ships:
             ret.append(ship.production_id)
         
         return ret
@@ -116,7 +110,7 @@ class Fleet(object):
         
         ret = []
         
-        for ship in self.ship_data:
+        for ship in self.ships:
             ret += ship.equipment_ids
         
         return ret
@@ -141,7 +135,7 @@ class Fleet(object):
 
     @property
     def needs_resupply(self):
-        for ship in self.ship_data:
+        for ship in self.ships:
             if ship.needs_resupply:
                 return True
         return False
@@ -150,7 +144,7 @@ class Fleet(object):
     def needs_resupply(self, value):
         if type(value) is not bool:
             raise ValueError("Needs resupply flag is not bool")
-        for ship in self.ship_data:
+        for ship in self.ships:
             if value is True:
                 ship.needs_resupply = True
             else:
@@ -158,7 +152,7 @@ class Fleet(object):
 
     @property
     def needs_repair(self):
-        for ship in self.ship_data:
+        for ship in self.ships:
             if ship.damage >= cfg.config.combat.repair_limit:
                 return True
         return False
@@ -167,7 +161,7 @@ class Fleet(object):
     def under_repair(self):
         import repair.repair_core as rep
         
-        for ship in self.ship_data:
+        for ship in self.ships:
             if ship.production_id in rep.repair.ships_under_repair:
                 return True
         return False
@@ -175,7 +169,7 @@ class Fleet(object):
     @property
     def weakest_state(self):
         weakest_state = DamageStateEnum.NO
-        for ship in self.ship_data:
+        for ship in self.ships:
             if ship.damage > weakest_state:
                 weakest_state = ship.damage
         return weakest_state
@@ -183,7 +177,7 @@ class Fleet(object):
     @property
     def highest_fatigue(self):
         highest_fatigue = FatigueStateEnum.SPARKLED
-        for ship in self.ship_data:
+        for ship in self.ships:
             if ship.fatigue > highest_fatigue:
                 highest_fatigue = ship.fatigue
         return highest_fatigue
@@ -191,7 +185,7 @@ class Fleet(object):
     @property
     def lowest_morale(self):
         lowest_morale = 100
-        for ship in self.ship_data:
+        for ship in self.ships:
             if ship.morale < lowest_morale:
                 lowest_morale = ship.morale
         return lowest_morale
@@ -225,19 +219,19 @@ class Fleet(object):
     @property
     def detailed_fleet_status(self):
         ship_strings = []
-        for ship in self.ship_data:
+        for ship in self.ships:
             ship_strings.append(
                 f"{ship.name} ({ship.damage.display_name} damage)")
         return " : ".join(ship_strings)
 
     @property
     def size(self):
-        return len(self.ship_data)
+        return len(self.ships)
             
     @property
     def sum_level(self):
         level_sum = 0
-        for ship in self.ship_data:
+        for ship in self.ships:
             level_sum += ship.level
         return level_sum
             
@@ -245,30 +239,30 @@ class Fleet(object):
     def flag_level(self):
         if self.size == 0:
             return 0
-        return self.ship_data[0].level
+        return self.ships[0].level
     
     def add_ship(self, ship):
         if not isinstance(ship, Ship):
             raise TypeError("ship must be an instance of Ship class.")
-        self.ship_data.append(ship)
+        self.ships.append(ship)
         return
             
     def remove_ship(self, ship):
-        for i, ship in enumerate(self.ship_data):
+        for i, ship in enumerate(self.ships):
             if ship.production_id == ship.production_id:
-                del self.ship_data[i]
+                del self.ships[i]
                 Log.log_debug(f"Removed ship {ship.name} from fleet {self.fleet_id}.")
                 return
         Log.log_debug(f"Ship {ship.name} not found in fleet {self.fleet_id}.")
     
     def get_ship_by_production_id(self, production_id):
-        for ship in self.ship_data:
+        for ship in self.ships:
             if ship.production_id == production_id:
                 return ship
         return None
             
     def update_ship_hps(self, hps):
-        for idx, ship in enumerate(self.ship_data):
+        for idx, ship in enumerate(self.ships):
             ship.hp = hps[idx]
 
     def visual_health_check(self, region):
@@ -295,26 +289,11 @@ class Fleet(object):
         return self.visual_health
 
     def get_fleet_id_and_name(self):
-        # print("Fleet data:")
-
-        ship_type = self.ship_data[0].ship_type.name
-        for ship in self.ship_data:
+        ship_type = self.ships[0].ship_type.name
+        for ship in self.ships:
             if ship.ship_type.name != ship_type:
                 ship_type = ""
                 break
-        # print("\t\"" + ship_type + "\":" , end ="\t")
-
-        # print("[" , end ="")
-        # for ship in self.ship_data:
-            # print(str(ship.sortno) + ",", end ="")
-        # print("\b],")
-
-        # print("\t\"" + ship_type + "_NAME\":" , end ="")
-        # print("[" , end ="")
-        # for ship in self.ship_data:
-            # print("\"" + ship.name_jp + "\",", end ="")
-        # print("\b],")
-
         return
 
     def __str__(self):

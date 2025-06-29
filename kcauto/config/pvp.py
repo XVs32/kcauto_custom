@@ -44,3 +44,9 @@ class ConfigPvP(ConfigBase):
             if not 0 < value <= MAX_FLEET_PRESETS:
                 raise ValueError("Invalid value specified for fleet preset")
             self._fleet_preset = value
+
+    @property
+    def is_auto_mode(self):
+        if self.fleet_preset == AUTO_PRESET:
+            return True
+        return False

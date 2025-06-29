@@ -13,6 +13,7 @@ import ships.equipment_core as equ
 from ships.equipment import Equipment as Equipment
 import expedition.expedition_core as exp
 from kca_enums.expeditions import ExpeditionEnum
+from constants import AUTO_PRESET
 
 import os
 import copy
@@ -29,7 +30,8 @@ class FleetCore(object):
     ASSIGN_DRUM_FAILED = -2
     ASSIGN_LC_FAILED = -3
     
-    fleets :dict[str, dict[int, Fleet]] = {}
+    FleetDict = dict[int, Fleet]
+    fleets :dict[str | int, FleetDict | Fleet] = {}
     
     combined_flag = None
     
@@ -70,10 +72,10 @@ class FleetCore(object):
             if return_time != fleet.return_time:
                 fleet.return_time = fleet_data['api_mission'][2]
                 
-            fleet.ship_data = []
+            fleet.ships = []
             for ship_id in fleet_data['api_ship']:
                 if ship_id != -1:
-                    fleet.ship_data.append(
+                    fleet.ships.append(
                         shp.ships.get_ship_from_production_id(ship_id)
                     )
 
@@ -126,7 +128,7 @@ class FleetCore(object):
         return ships
 
     @property
-    def expedition_fleets(self):
+    def expedition_fleets(self) -> list[Fleet]:
         expedition_fleets = []
         if not cfg.config.expedition.enabled:
             return expedition_fleets
@@ -150,7 +152,7 @@ class FleetCore(object):
     def combat_ships(self):
         combat_ships = []
         for f in self.combat_fleets:
-            combat_ships += f.ship_data
+            combat_ships += f.ships
         return combat_ships
 
     @property
@@ -158,7 +160,7 @@ class FleetCore(object):
         active_ships = []
         for fleet_id in self.fleets[self.ACTIVE_FLEET_KEY]:
             if self.fleets[self.ACTIVE_FLEET_KEY][fleet_id].enabled:
-                active_ships += self.fleets[self.ACTIVE_FLEET_KEY][fleet_id].ship_data
+                active_ships += self.fleets[self.ACTIVE_FLEET_KEY][fleet_id].ships
         return active_ships
 
     # fleet_id starts form 1
@@ -180,9 +182,15 @@ class FleetCore(object):
         
         if self.is_custom_fleet_loaded == False:
             self.is_custom_fleet_loaded = True
-        else:
+        elif self.is_custom_fleet_loaded == True:
             Log.log_debug("Custom fleets setting is already loaded")
             return
+        elif not cfg.config.combat.is_auto_mode and not cfg.config.expedition.is_auto_mode and not cfg.config.pvp.is_auto_mode:
+            Log.log_success("Manual mode kcauto, noro6 config ignored")
+            self.is_custom_fleet_loaded = True
+            return
+        else:
+            Log.log_error("Unexpected state for noro6 config load, exiting...")
         
         #merge custom fleets data into fleet core
         self.fleets = {**self.fleets, **self._noro6_to_kcauto()}
@@ -210,7 +218,7 @@ class FleetCore(object):
                 continue
             
             for fleet_id in self.fleets[key]:
-                for ship in self.fleets[key][fleet_id].ship_data:
+                for ship in self.fleets[key][fleet_id].ships:
                     if ship.production_id in exp_pool:
                         exp_pool.pop(ship.production_id)
                         
@@ -251,7 +259,7 @@ class FleetCore(object):
                 continue
             
             for fleet_id in self.fleets[key]:
-                for ship in self.fleets[key][fleet_id].ship_data:
+                for ship in self.fleets[key][fleet_id].ships:
                     if ship.production_id in ship_pool:
                         ship_pool.pop(ship.production_id)
                         
@@ -276,6 +284,17 @@ class FleetCore(object):
         equipment_bak = equ.equipment.equipment_pool[equ.equipment.ID].copy()
         equ.equipment.equipment_pool[equ.equipment.NON_NORO6] = equ.equipment.equipment_pool[equ.equipment.ID].copy()
         
+        if cfg.config.expedition.is_auto_mode == False:
+            Log.log_warn("Manual expedition mode, please make sure expedition fleet doesn't occupy noro6's ship and equipment")
+            
+            for fleet in self.expedition_fleets:
+                for ship in fleet.ships:
+                    if ship.equipments != []:
+                        Log.log_warn(f"Expedition fleet {fleet.fleet_id} has ship {ship.name} with equipments, please remove them before using noro6 preset")
+                        Log.log_warn("If you don't care about this, you can ignore this warning")
+            
+        
+        
         ret = {}
         noro6 = Noro6()
         
@@ -296,8 +315,8 @@ class FleetCore(object):
             for fleet_id in range(0, noro6.get_fleet_count()):
                 noro6.get_fleet(fleet_id)
                 
-                ret[preset_name][fleet_id] = Fleet(fleet_id + fleet_type.value, fleet_type, False)
-                ret[preset_name][fleet_id].ship_data = []
+                temp = Fleet(fleet_id + fleet_type.value, fleet_type, False)
+                temp.ships = []
                     
                 for i in range(1, noro6.get_ship_count() + 1 ):
                     ship = copy.deepcopy(shp.ships.get_ship_from_noro6_ship(noro6.get_ship(i))) # avoid modifying ship data in ship_pool
@@ -355,7 +374,9 @@ class FleetCore(object):
                         Log.log_error(f"Unknown reinforce equipment {reinforce_equipment}, exit...")
                         exit(1)
                         
-                    ret[preset_name][fleet_id].ship_data.append(ship)
+                    temp.ships.append(ship)
+                
+                ret[preset_name][fleet_id] = temp
 
             #restore equipment pool for next noro6 preset
             equ.equipment.equipment_pool[equ.equipment.ID] = equipment_bak.copy()                    
@@ -376,7 +397,7 @@ class FleetCore(object):
         
         for i in range(len(exp.expedition.cur_exp)):
             if exp.expedition.cur_exp[i] != ExpeditionEnum.NULL:
-                for ongoing_ship in self.fleets[self.ACTIVE_FLEET_KEY][i+1].ship_data:
+                for ongoing_ship in self.fleets[self.ACTIVE_FLEET_KEY][i+1].ships:
                     for standby_ship in exp_ship_pool[ongoing_ship.ship_type][:] :
                         if standby_ship.production_id == ongoing_ship.production_id:
                             exp_ship_pool[ongoing_ship.ship_type].remove(standby_ship)
