@@ -281,19 +281,17 @@ class FleetCore(object):
             output: (kcauto preset) 
         """
         
-        equipment_bak = equ.equipment.equipment_pool[equ.equipment.ID].copy()
-        equ.equipment.equipment_pool[equ.equipment.NON_NORO6] = equ.equipment.equipment_pool[equ.equipment.ID].copy()
+        equipment_pool_read_only = equ.equipment.equipment_pool[equ.equipment.ID].copy()
         
         if cfg.config.expedition.is_auto_mode == False:
             Log.log_warn("Manual expedition mode, please make sure expedition fleet doesn't occupy noro6's ship and equipment")
             
             for fleet in self.expedition_fleets:
                 for ship in fleet.ships:
-                    if ship.equipments != []:
-                        Log.log_warn(f"Expedition fleet {fleet.fleet_id} has ship {ship.name} with equipments, please remove them before using noro6 preset")
-                        Log.log_warn("If you don't care about this, you can ignore this warning")
-            
-        
+                    for equipment in ship.equipments:
+                        equ.equipment._remove_from_pool(equipment, pool=equ.equipment.ID)
+                        
+        equipment_pool_bak = equ.equipment.equipment_pool[equ.equipment.ID].copy()
         
         ret = {}
         noro6 = Noro6()
@@ -331,7 +329,7 @@ class FleetCore(object):
                         this_equipment, is_exact_match = equ.equipment.get_equipment_from_noro6_equipment(noro6.get_equipment(j))
                         
                         # send warring, can't find exact same equipment
-                        if this_equipment.is_empty_equipment == False and is_exact_match == False:
+                        if this_equipment!=None and this_equipment.is_empty_equipment == False and is_exact_match == False:
                             if is_first_not_exact_match:
                                 Log.log_msg(f"In Noro6 preset {preset['name']}...")
                                 is_first_not_exact_match = False
@@ -347,7 +345,6 @@ class FleetCore(object):
                             exit(0)
                         ship.equipments.append(this_equipment)
                         
-                        equ.equipment._remove_from_pool(this_equipment, pool=equ.equipment.NON_NORO6)
                         equ.equipment._remove_from_pool(this_equipment, pool=equ.equipment.ID)
                         
                     reinforce_equipment = noro6.get_reinforce_equipment()
@@ -356,7 +353,7 @@ class FleetCore(object):
                         ship.slot_ex = this_equipment
 
                         # send warring, can't find exact same equipment
-                        if this_equipment.is_empty_equipment == False and is_exact_match == False:
+                        if this_equipment != None and this_equipment.is_empty_equipment == False and is_exact_match == False:
                             if is_first_not_exact_match:
                                 Log.log_msg(f"In Noro6 preset {preset['name']}...")
                                 is_first_not_exact_match = False
@@ -364,7 +361,6 @@ class FleetCore(object):
                     
                         #remove this equipment from equipment pool
                         if  this_equipment != None and this_equipment.model_id != None:
-                            equ.equipment._remove_from_pool(this_equipment, pool=equ.equipment.NON_NORO6)
                             equ.equipment._remove_from_pool(this_equipment, pool=equ.equipment.ID)
                     elif reinforce_equipment["i"] == 0:
                         ship.slot_ex = None
@@ -378,8 +374,11 @@ class FleetCore(object):
                 
                 ret[preset_name][fleet_id] = temp
 
+            equ.equipment.equipment_pool[equ.equipment.NON_NORO6] = equ.equipment.equipment_pool[equ.equipment.ID].copy()
             #restore equipment pool for next noro6 preset
-            equ.equipment.equipment_pool[equ.equipment.ID] = equipment_bak.copy()                    
+            equ.equipment.equipment_pool[equ.equipment.ID] = equipment_pool_bak.copy()                    
+            
+        equ.equipment.equipment_pool[equ.equipment.ID] = equipment_pool_read_only.copy()                    
                
         return ret 
  
