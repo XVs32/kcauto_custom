@@ -284,13 +284,19 @@ class FleetCore(object):
         equipment_pool_read_only = equ.equipment.equipment_pool[equ.equipment.ID].copy()
         
         if cfg.config.expedition.is_auto_mode == False:
-            Log.log_warn("Manual expedition mode, please make sure expedition fleet doesn't occupy noro6's ship and equipment")
+            Log.log_warn("Expedition mode manual, please make sure expedition fleet doesn't occupy noro6's ship and equipment")
             
             for fleet in self.expedition_fleets:
                 for ship in fleet.ships:
                     for equipment in ship.equipments:
                         equ.equipment._remove_from_pool(equipment, pool=equ.equipment.ID)
-                        
+        else:
+            if cfg.config.combat.is_auto_mode == False:
+                Log.log_warn("Combat mode manual, expedition model might mess up combat fleet on fly.")
+            
+            if cfg.config.pvp.is_auto_mode == False:
+                Log.log_warn("PVP mode manual, expedition model might mess up pvp fleet on fly.")
+                
         equipment_pool_bak = equ.equipment.equipment_pool[equ.equipment.ID].copy()
         
         ret = {}
@@ -378,11 +384,22 @@ class FleetCore(object):
             #restore equipment pool for next noro6 preset
             equ.equipment.equipment_pool[equ.equipment.ID] = equipment_pool_bak.copy()                    
             
-        equ.equipment.equipment_pool[equ.equipment.ID] = equipment_pool_read_only.copy()                    
-               
-        return ret 
+        equ.equipment.equipment_pool[equ.equipment.ID] = equipment_pool_read_only.copy()
+        
+        #print out the fleet data in debug log
+        for key in ret:
+            Log.log_debug(f"Fleet preset: {key}")
+            for fleet_id in ret[key]:
+                Log.log_debug(f"Fleet ID: {fleet_id}, Fleet Type: {ret[key][fleet_id].fleet_type.name}")
+                
+                fleet = ret[key][fleet_id]
+                for ship in fleet.ships:
+                    Log.log_debug(f"{ship.name} ({ship.ship_type.name}) - Level: {ship.level}, \
+                        Equipment name and production id: {[f'{eq.name} {eq.production_id}' for eq in ship.equipments]}, \
+                        Slot Ex: {f'{ship.slot_ex.name} {ship.slot_ex.production_id}' if ship.slot_ex != None else 'None'}")
+                    
+        return ret
  
-    
     def assign_exp_ship(self):
         
         noro6_available = not exp.expedition.is_noro6_in_use()
