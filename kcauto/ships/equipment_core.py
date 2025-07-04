@@ -109,8 +109,6 @@ class EquipmentCore(object):
             else:
                 Log.log_debug(f"Equipment {equipment.name} ({equipment.production_id}) is not available for ship {ship.name}, skipping")
                 
-        #ret = sorted(ret, key=lambda x: (x.category))
-        ret = sorted(ret, key=lambda x: (x.category, x.model_id))
 
         Log.log_debug(f'ship {ship.name} reinforce equipment list:')
         for i, equipment in enumerate(ret):
