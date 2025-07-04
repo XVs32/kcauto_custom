@@ -1,5 +1,5 @@
 import traceback
-from pyvisauto import FindFailed
+from util.pyvisauto import FindFailed
 from time import sleep
 
 import startup.kcauto as _
@@ -20,7 +20,6 @@ def kcauto_main():
     while active_loop:
         try:
             # startup methods
-            _.kcauto.find_browser()
             _.kcauto.start_kancolle()
             _.kcauto.find_kancolle()
 

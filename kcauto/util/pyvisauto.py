@@ -1,3 +1,5 @@
+import mss
+from PIL import Image
 import cv2
 import numpy as np
 import pyautogui
@@ -38,14 +40,32 @@ class ImageMatch(ABC):
     click_callback = None
 
     _captured = None
+    
+    x = 0
+    y = 0
+    w = 0
+    h = 0
 
-    def _capture(self):
-        """Private method for capturing the defined region.
-
+    def capture(self):
+        """Private method for capturing the defined region using MSS.
+        
         Returns:
-            PIL.Image: object representating captured region.
+            PIL.Image: object representing captured region.
         """
-        return pyautogui.screenshot(region=(int(self.x), int(self.y), int(self.w), int(self.h)))
+        with mss.mss() as sct:
+            # Ensure all coordinates are integers and not None
+            # MSS uses {'top': y, 'left': x, 'width': w, 'height': h}
+            region = {
+                'top': int(self.y),
+                'left': int(self.x),
+                'width': int(self.w),
+                'height': int(self.h)
+            }
+            
+            screenshot = sct.grab(region)
+            
+            # Convert MSS screenshot to PIL Image
+            return Image.frombytes('RGB', screenshot.size, screenshot.bgra, 'raw', 'BGRX')
 
     def _match_template(self, target, template=None, cached=False):
         """Private method for finding matches from either the target asset
@@ -70,7 +90,7 @@ class ImageMatch(ABC):
         template.shape[::-1]
 
         if not cached or self._captured is None:
-            capture = self._capture()
+            capture = self.capture()
             capture_rgb = np.array(capture)
             self._captured = cv2.cvtColor(capture_rgb, cv2.COLOR_BGR2GRAY)
 
@@ -216,14 +236,16 @@ class ImageMatch(ABC):
         raise VanishFailed(
             f"{target} still in {self} after waiting for {wait} seconds.")
 
-    def hover(self):
+    def hover(self, x=None, y=None):
         """Method to hover over a random point within the region. If an
         override_hover_method exists, it will be used instead of the default
         pyautogui moveTo method. If a hover_callback is specified, it will be
         called after the hover action.
         """
-        x = randint(self.x, self.x + self.w)
-        y = randint(self.y, self.y + self.h)
+        
+        if x is None or y is None:
+            x = randint(self.x, self.x + self.w)
+            y = randint(self.y, self.y + self.h)
 
         if self.override_hover_method:
             self.override_hover_method(self, x, y)
@@ -240,39 +262,18 @@ class ImageMatch(ABC):
         it will be called after the click action.
 
         Args:
-            pad (tuple, optional): Tuple specifying how to modify the valid
-                click area. Directions are ordered CSS-style (top, right,
-                bottom, left). Positive values expand the valid click area,
-                while negative values constrict it. Defaults to (0, 0, 0, 0).
+            pad (tuple, optional): Tuple specifying the offset of 
+                click area. The order is (x1, y1, x2, y2)
+                Defaults to (0, 0, 0, 0).
         """
-        x = randint(self.x - pad[3], self.x + self.w + pad[1])
-        y = randint(self.y - pad[0], self.y + self.h + pad[2])
+        x = randint(self.x + pad[0], self.x + self.w + pad[2])
+        y = randint(self.y + pad[1], self.y + self.h + pad[3])
 
         if self.override_click_method:
             self.override_click_method(self, x, y, pad)
         else:
             pyautogui.moveTo(x, y, self.MOUSE_MOVE_SPEED)
             pyautogui.click()
-
-        if self.click_callback:
-            self.click_callback(self, x, y)
-            
-    def drag(self, pad=(0, 0, 0, 0)):
-        """Method to drag from A to B with random point within the region. If an
-        override_click_method exists, it will be used instead of the default
-        pyautogui moveTo and click methods. If a click_callback is specified,
-        it will be called after the click action.
-
-        Args:
-            pad (tuple, optional): Tuple specifying how to modify the valid
-                click area. Directions are ordered CSS-style (top, right,
-                bottom, left). Positive values expand the valid click area,
-                while negative values constrict it. Defaults to (0, 0, 0, 0).
-        """
-        x = randint(self.x - pad[3], self.x + self.w + pad[1])
-        y = randint(self.y - pad[0], self.y + self.h + pad[2])
-
-        pyautogui.dragTo(x, y, self.MOUSE_MOVE_SPEED, button='left')
 
         if self.click_callback:
             self.click_callback(self, x, y)
@@ -294,7 +295,7 @@ class ImageMatch(ABC):
             str: result of OCR attempt.
         """
         pytesseract.pytesseract.tesseract_cmd = self.TESSERACT_PATH
-        capture = self._capture()
+        capture = self.capture()
         try:
             return pytesseract.image_to_string(
                 capture, lang=lang, config=config)
@@ -310,7 +311,7 @@ class ImageMatch(ABC):
         Args:
             filename (str): path to save screenshot to.
         """
-        capture = self._capture()
+        capture = self.capture()
         capture.save(filename)
 
 

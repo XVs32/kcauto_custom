@@ -1,4 +1,4 @@
-from pyvisauto import Region
+from util.pyvisauto import Region
 
 import fleet.fleet_core as flt
 
@@ -72,7 +72,7 @@ class ShipSwitcherCore(object):
             
             """The rule says remove the ship in this slot -- XVs32"""
             if switch_info["idx"] < 0:
-                j = len(flt.fleets.fleets[1].ship_data) - switch_info["slot_id"] + 1
+                j = len(flt.fleets.fleets[1].ships) - switch_info["slot_id"] + 1
                 while j > 0:
                     self._select_switch_button(switch_info["slot_id"])
                     self._select_remove_button()

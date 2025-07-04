@@ -1,4 +1,4 @@
-from pyvisauto import Region
+from util.pyvisauto import Region
 from random import choice
 import math
 

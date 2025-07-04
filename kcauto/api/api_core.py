@@ -8,7 +8,7 @@ import combat.combat_core as com
 import combat.lbas_core as lbas
 import expedition.expedition_core as exp
 import ships.equipment_core as equ 
-from ships.equipment import Equipment as eq
+from ships.equipment import Equipment as Equipment
 import fleet.fleet_core as flt
 import fleet_switcher.fleet_switcher_core as fsw
 import pvp.pvp_core as pvp
@@ -232,12 +232,12 @@ class ApiWrapper(object):
             
             equ.equipment.reinforce_general_category = data['api_data']['api_mst_equip_exslot']
             equ.equipment.reinforce_special = data['api_data']['api_mst_equip_exslot_ship']
-            eq.equipment_static_data = data['api_data']['api_mst_slotitem']
-            eq.equipment_static_data.append(EMPTY_EQUIPMENT_API)
-            eq.equipment_static_data.append(TEMP_EQUIPMENT_API)
+            Equipment.equipment_static_data = data['api_data']['api_mst_slotitem']
+            Equipment.equipment_static_data.append(EMPTY_EQUIPMENT_API)
+            Equipment.equipment_static_data.append(TEMP_EQUIPMENT_API)
             JsonData.dump_json(equ.equipment.reinforce_general_category, 'data|temp|reinforce_general_category.json')
             JsonData.dump_json(equ.equipment.reinforce_special, 'data|temp|reinforce_special.json')
-            JsonData.dump_json(eq.equipment_static_data, 'data|temp|equipment_static.json')
+            JsonData.dump_json(Equipment.equipment_static_data, 'data|temp|equipment_static.json')
 
             JsonData.dump_json(data['api_data']['api_mst_stype'], 'data|temp|ship_type.json')
             JsonData.dump_json(data['api_data']['api_mst_equip_ship'], 'data|temp|equipment_ship_special.json')
@@ -270,24 +270,23 @@ class ApiWrapper(object):
             ship_data = data['api_data']['api_ship']
             shp.ships.update_ship_pool(ship_data)
             JsonData.dump_json(ship_data, 'data|temp|local_ship.json')
+        except KeyError:
+            Log.log_debug("No ship data found in API response.")
+
+        try:
+            fleet_data = data['api_data']['api_deck_port']
+            flt.fleets.update_fleets(fleet_data)
             flt.fleets.load_custom_fleets()
             flt.fleets.load_custom_exp_pool()
             flt.fleets.load_idle_pool()
-            
         except KeyError:
-            Log.log_debug("No ship data found in API response.")
+            Log.log_debug("No fleet data found in API response.")
 
         try:
             repair_data = data['api_data']['api_ndock']
             rep.repair.update_repair_data(repair_data)
         except KeyError:
             Log.log_debug("No repair data found in API response.")
-
-        try:
-            fleet_data = data['api_data']['api_deck_port']
-            flt.fleets.update_fleets(fleet_data)
-        except KeyError:
-            Log.log_debug("No fleet data found in API response.")
 
         try:
             max_ships = data['api_data']['api_basic']['api_max_chara']

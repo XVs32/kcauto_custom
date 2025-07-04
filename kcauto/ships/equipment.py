@@ -68,6 +68,14 @@ class Equipment():
             output: equipment name (str)
         """
         return self.static_data['api_name']
+    
+    @property
+    def category(self):
+        """
+            method to get the equipment category
+            output: equipment category (str)
+        """
+        return self.static_data['api_type'][2]
 
     @property
     def is_empty_equipment(self):

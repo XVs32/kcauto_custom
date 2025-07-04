@@ -1,3 +1,5 @@
+import cv2
+import numpy as np
 import os
 import json
 import glob
@@ -7,7 +9,7 @@ from pyquery import PyQuery
 from sys import path_hooks
 import PyChromeDevTools
 from datetime import datetime, timedelta
-from pyvisauto import Region, FindFailed, ImageMatch
+from util.pyvisauto import Region, FindFailed, ImageMatch
 from random import randint, uniform
 from time import sleep
 
@@ -31,6 +33,9 @@ from pyppeteer import connect
 class Kca(object):
     """Primary kcauto utility class.
     """
+    
+    KC_REF_OFFSET = (-144, 0)
+    
     ASSETS_FOLDER = 'assets'
     visual_tab_id = None
     visual_hook = None
@@ -94,7 +99,8 @@ class Kca(object):
         self.api_hook.Network.enable()
         Log.log_debug(f"Connected to API tab ({api_tab}:{api_tab_id})")
         Log.log_success("Connected to Chrome")
-
+        
+        self.find_game_window_offset()
 
     def hook_health_check(self):
         """Method that runs through the different events reported to the api
@@ -166,26 +172,52 @@ class Kca(object):
 
         return True
 
-    def find_browser(self):
-        """Method that finds the dmm logo on-screen and provide the offset for chrome driver"""
-        Log.log_msg("Finding browser.")
-
-        window_info = self.visual_hook.Browser.getWindowForTarget(target_id=self.visual_tab_id)[0]["result"]["bounds"]
-
-        viewport_size = self.visual_hook.Page.getLayoutMetrics()[0]["result"]["cssLayoutViewport"]
+    def find_game_window_offset(self):
+        """Method that finds the game window offset for chrome driver"""
+        Log.log_msg("Finding browser offset")
         
-        top_left_x = window_info["left"]
-        top_left_y = window_info["top"] + window_info["height"] - viewport_size["clientHeight"]
+        whole_screen = Region().capture()
+        whole_screen_rgb = np.array(whole_screen)
+        whole_screen_gray = cv2.cvtColor(whole_screen_rgb, cv2.COLOR_BGR2GRAY)
+        
+        retry = 0
+        
+        import base64
+        while retry < 5:
+            
+            result = self.visual_hook.Page.captureScreenshot()[0]["result"]
+            screenshot_data = base64.b64decode(result['data'])
+            
+            # Convert the screenshot data to a Matlike array
+            ref = cv2.imdecode(np.frombuffer(screenshot_data, np.uint8), cv2.IMREAD_GRAYSCALE)
+            
+            # clip ref, keep the central part only
+            clip_height = int(ref.shape[0] * 0.1) 
+            clip_width = int(ref.shape[1] * 0.1)  
 
-        Log.log_debug(top_left_x)
-        Log.log_debug(top_left_y)
+            # Calculate top-left corner of the clip
+            start_y = (ref.shape[0] - clip_height) // 2
+            start_x = (ref.shape[1] - clip_width) // 2
 
-        self.css_x = top_left_x
-        self.css_y = top_left_y
+            # Crop the central region
+            ref = ref[start_y:start_y + clip_height, start_x:start_x + clip_width]
+            
+            match = cv2.matchTemplate(whole_screen_gray, ref, cv2.TM_CCOEFF_NORMED)
+            min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(match)
+            
+            if max_val < 0.9:
+                Log.log_debug(f"Match value {max_val} is below threshold, retrying...")
+                retry += 1
+                self.sleep(1)
+                continue
+            
+            break
+        
+        self.css_x = max_loc[0] - start_x
+        self.css_y = max_loc[1] - start_y
+        Log.log_success(f"Browser offset found at X: {self.css_x}, Y: {self.css_y}")
 
         return True
-
-
 
     def find_kancolle(self):
         """Method that finds the Kancolle game on-screen and determine the UI
@@ -240,8 +272,8 @@ class Kca(object):
                 Log.log_error("Could not find Kancolle reference point.")
                 raise FindFailed()
 
-        new_game_x = ref_r.x - 144
-        new_game_y = ref_r.y
+        new_game_x = ref_r.x + self.KC_REF_OFFSET[0]
+        new_game_y = ref_r.y + self.KC_REF_OFFSET[1]
         Log.log_debug(f"Game X:{new_game_x}, Y:{new_game_y}")
 
         # define click callback as needed
@@ -262,6 +294,8 @@ class Kca(object):
             self.game_x = new_game_x
             self.game_y = new_game_y
             self._update_regions()
+            
+        self.find_game_window_offset()
 
         return True
 
@@ -584,13 +618,35 @@ class Kca(object):
             region (Region, Match, str): Region/Match object or pre-defined
                 region key.
             pad (tuple, optional): click region modifier. Defaults to
-                (0, 0, 0, 0).
+                (0, 0, 0, 0) as offset of (X1, Y1, X2, Y2)
         """
         self.sleep(0.5)
 
         r = self._get_region(region)
         if (cfg.config.general.interaction_mode
                 is InteractionModeEnum.DIRECT_CONTROL):
+ 
+            if arg.args.parsed_args.debug_output:
+                # Visit corners first
+                corners = [
+                    r.x + pad[0],  
+                    r.y + pad[1],
+                    r.x + r.w + pad[2],
+                    r.y + r.h + pad[3]
+                ]
+                
+                r.hover(corners[0], corners[1])
+                self.sleep(0.1)
+                r.hover(corners[2], corners[1])
+                self.sleep(0.1)
+                r.hover(corners[0], corners[3])
+                self.sleep(0.1)
+                r.hover(corners[2], corners[3])
+                self.sleep(0.1)
+                    
+                # Draw debug with corners
+                self._draw_debug_visualization(corners)
+            
             r.click(pad=pad)
         elif (cfg.config.general.interaction_mode
                 is InteractionModeEnum.CHROME_DRIVER):
@@ -669,6 +725,37 @@ class Kca(object):
 
         self.sleep(0.5)
 
+
+    def _draw_debug_visualization(self, corners):
+        """Draw debug visualization showing regions and click points
+        
+        Args:
+            r (Region): Region to highlight
+            click_x (int, optional): X coordinate of click point
+            click_y (int, optional): Y coordinate of click point 
+            corners (list, optional): List of corner points visited
+        """
+        
+        if self.game_x is None or self.game_y is None:
+            return
+        screen = Region(self.game_x, self.game_y, GAME_W, GAME_H)
+        screen = screen.capture()
+        screen = cv2.cvtColor(np.array(screen), cv2.COLOR_RGB2BGR)
+        
+        cv2.rectangle(screen, 
+                 (int(corners[0] - self.game_x), int(corners[1] - self.game_y)),  # Top-left point 
+                 (int(corners[2] - self.game_x), int(corners[3] - self.game_y)),  # Bottom-right point
+                 (0, 255, 0), 
+                 2)
+        
+        # Save debug image
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        
+        #create folder if not exist
+        if not os.path.exists("debug"):
+            os.makedirs("debug")
+            
+        cv2.imwrite(f"debug/click_{timestamp}.png", screen)
 
     def sleep(self, base=None, flex=None):
         """Helper method for sleeping the script. Adds in random variance to
@@ -787,10 +874,21 @@ class Kca(object):
             pad (tuple): padding parameter used to modify click coordinate
         """
 
-        offset_x = randint(-pad[3], r.w + pad[1])
-        offset_y = randint(-pad[0], r.h + pad[2])
+        offset_x = randint(pad[0], r.w + pad[2])
+        offset_y = randint(pad[1], r.h + pad[3])
         x = r.x - self.css_x
         y = r.y - self.css_y
+ 
+        if arg.args.parsed_args.debug_output:
+            # Draw debug visualization
+            
+            corners = [
+                r.x + pad[0],  # Top-left corner
+                r.y + pad[1],
+                r.x + r.w + pad[2],
+                r.y + r.h + pad[3]
+            ]
+            self._draw_debug_visualization(corners)
 
         #self.visual_hook.Input.synthesizeTapGesture(x= x + offset_x , y=y + offset_y)
         self.visual_hook.Input.dispatchMouseEvent(type = "mouseMoved", x= x + offset_x , y=y + offset_y)

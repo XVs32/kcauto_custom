@@ -38,9 +38,6 @@ class Kcauto(object):
     def find_kancolle(self):
         kca_u.kca.find_kancolle()
     
-    def find_browser(self):
-        kca_u.kca.find_browser()
-
     def hook_health_check(self):
         kca_u.kca.hook_health_check()
 
@@ -78,7 +75,6 @@ class Kcauto(object):
           (set([ExpeditionEnum.E5_33, ExpeditionEnum.E5_34,
                 ExpeditionEnum.EE_S1, ExpeditionEnum.EE_S2]) & set(
                     cfg.config.expedition.all_expeditions) and com.combat.time_to_sortie == True):
-            self.find_kancolle()
             nav.navigate.to('refresh_home')
 
         if exp.expedition.fleets_are_ready:
@@ -195,7 +191,6 @@ class Kcauto(object):
                 return False
             nav.navigate.to('home')
             
-            self.find_kancolle()
             self.run_quest_logic('pvp', back_to_home=True)
             self._run_fleetswitch_logic('pvp')
         else:
@@ -324,7 +319,6 @@ class Kcauto(object):
 
     def run_resupply_logic(self, back_to_home=False):
         if res.resupply.need_to_resupply:
-            self.find_kancolle()
             res.resupply.goto()
             res.resupply.resupply_fleets()
             self.handle_back_to_home(back_to_home)
@@ -339,7 +333,6 @@ class Kcauto(object):
             return
         
         if rep.repair.can_conduct_repairs:
-            self.find_kancolle()
             rep.repair.goto()
             rep.repair.repair_ships()
             self.handle_back_to_home(back_to_home)
@@ -377,7 +370,6 @@ class Kcauto(object):
             return False
 
         if qst.quest.need_to_check(context) or force == True:
-            self.find_kancolle()
             qst.quest.goto()
             qst.quest.manage_quests(context, fast_check)
             sts.stats.quest.times_checked += 1

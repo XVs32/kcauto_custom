@@ -59,10 +59,10 @@ def run_external_program(panel):
     global process
     
     if platform == "linux" or platform == "linux2":
-        filename = "kcauto.bin"
+        filename = "kcauto_custom"
         if os.path.isfile(filename):
             process = subprocess.Popen(
-                ['./kcauto.bin', '--cli', '--cfg', 'config_cui'],
+                [f'./{filename}', '--cli', '--cfg', 'config_cui'],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 text=True,  # Enable text mode
@@ -83,10 +83,10 @@ def run_external_program(panel):
             print_log(panel, "Start kcauto in Python instead\n")
             
     elif platform == "darwin" or platform == "win32": 
-        filename = "kcauto.exe"
+        filename = "kcauto_custom.exe"
         if os.path.isfile(filename):
             process = subprocess.Popen(
-                ['kcauto.exe', '--cli', '--cfg', 'config_cui'],
+                [filename, '--cli', '--cfg', 'config_cui'],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 text=True,  # Enable text mode

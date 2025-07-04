@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from pyvisauto import Region
+from util.pyvisauto import Region
 
 import api.api_core as api
 import combat.combat_core as com
@@ -98,9 +98,8 @@ class RepairCore(object):
         idx_of_passive_ships = {}
         
         TEMP_FLEET_ID = 1
-        temp_fleet = {}
-        temp_fleet[TEMP_FLEET_ID]=(Fleet("unload_equipment", FleetEnum.COMBAT, False))
-        temp_fleet[TEMP_FLEET_ID].ship_data = []
+        temp_fleet = (Fleet("unload_equipment", FleetEnum.COMBAT, False))
+        temp_fleet.ships = []
             
         for idx, ship in enumerate(repair_list):
             
@@ -114,11 +113,11 @@ class RepairCore(object):
                     if ship not in flt.fleets.active_ships:
                         idx_of_passive_ships[idx] = ship
                         if ship.has_no_equipment() == False:
-                            temp_fleet[TEMP_FLEET_ID].ship_data.append(ship)
+                            temp_fleet.ships.append(ship)
                         
-        if temp_fleet[TEMP_FLEET_ID].ship_data != []:
+        if temp_fleet.ships != []:
             fsw.fleet_switcher.goto()
-            if fsw.fleet_switcher.switch_to_costom_fleet(TEMP_FLEET_ID, temp_fleet):
+            if fsw.fleet_switcher.switch_to_costom_fleet(TEMP_FLEET_ID, {TEMP_FLEET_ID:temp_fleet}):
                 nav.navigate.to('refresh_home')
                 nav.navigate.to('equipment')
                 fsw.fleet_switcher.unload_fleet_equipment(fleet_id=TEMP_FLEET_ID, needed_load=False)
