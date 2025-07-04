@@ -155,6 +155,13 @@ class ConfigCombat(ConfigBase):
             if not 0 < value[i] <= MAX_FLEET_PRESETS:
                 raise ValueError("Invalid value specified for fleet preset")
         self._fleet_presets = value
+        
+    @property
+    def is_auto_mode(self):
+        for preset in self.fleet_presets:
+            if preset == AUTO_PRESET:
+                return True
+        return False
 
     @property
     def sortie_map(self):

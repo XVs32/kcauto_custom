@@ -176,9 +176,9 @@ class EquipmentCore(object):
         
         is_any_match = False
         output_list = []
+        
 
-        EMPTY = 0
-        if model_id != EMPTY:
+        if model_id != Equipment.EMPTY_EQUIPMENT and model_id != Equipment.UNKNOWN_EQUIPMENT:
             for equipment in equipment_pool:
                 if equipment.model_id == model_id:
                     output_list.append(equipment)
@@ -191,7 +191,8 @@ class EquipmentCore(object):
                         is_any_match = True
                         break
                 if is_any_match != True:
-                    Log.log_warn(f"Cannot find {equipment.name} in equipment list, looks like you don't have any")
+                    temp = Equipment(model_id=model_id)
+                    Log.log_warn(f"Cannot find {temp.name} in equipment list, looks like you don't have any")
         else:
             Log.log_debug("EMPTY equipment slot")
             output_list = [Equipment()]
