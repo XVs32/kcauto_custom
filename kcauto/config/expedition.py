@@ -135,7 +135,12 @@ class ConfigExpedition(ConfigBase):
             if value != "auto":
                 raise ValueError("The only supported expedition preset is 'auto'/null at the moment.")
             self._fleet_preset = value
-
+        
+    @property
+    def is_auto_mode(self):
+        if self.fleet_preset == "auto":
+            return True
+        return False
             
     @property
     def desire_oil(self):
