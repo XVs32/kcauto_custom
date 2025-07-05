@@ -6,7 +6,7 @@ set PYTHONUTF8=1
 :: Paths
 set "VENV_PATH=..\.venv"
 set "src=..\kcauto\__main__.py"
-set "target_path=..\kcauto.exe"
+set "target_path=..\kcauto_custom.exe"
 
 :: Activate the virtual environment
 call "%VENV_PATH%\Scripts\activate.bat"
