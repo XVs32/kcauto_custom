@@ -1,5 +1,4 @@
 
-
 #open/create file called test.py
 f = open("maps.py", "w", encoding='utf-8')
 
@@ -12,7 +11,7 @@ class MapEnum(EnumBase):\n')
 #read all .json file under data/combat folder
 import os
 import json
-for file in os.listdir("../../data/combat"):
+for file in os.listdir("../data/combat"):
     if file.endswith(".json"):
         
         world = file.split("-")[0]
@@ -20,7 +19,7 @@ for file in os.listdir("../../data/combat"):
         
         f.write("    W"+ str(world) + "_" + str(stage) + "=" +  "\"B-" + str(world) + "-" + str(stage) + "\"\n")
         #open file
-        with open("../../data/combat/" + file, "r", encoding='utf-8') as map_json:
+        with open("../data/combat/" + file, "r", encoding='utf-8') as map_json:
             #read file
             data = json.load(map_json)
             
@@ -163,50 +162,7 @@ f.write('\n\
 \n\
     auto_map_selete = "B-auto"\n\
 \n\
-    @property\n\
-    def quest(self):\n\
-        if len(self.value.split("-")[0]) > 1:\n\
-            return self.value.split("-")[0][1:]\n\
-        \n\
-        return None\n\
-    \n\
-    @property\n\
-    def world(self):\n\
-        world = self.value.split("-")[1]\n\
-        if world == "E":\n\
-            return world\n\
-        return int(world)\n\
-\n\
-    @property\n\
-    def map(self):\n\
-        return int(self.value.split("-")[2])\n\
-\n\
-    @property\n\
-    def world_and_map(self):\n\
-        if self.value != "auto":\n\
-            return self.value.split("-")[1] + "-" + self.value.split("-")[2] \n\
-        else:\n\
-            return "auto"\n\
-\n\
-    @property\n\
-    def without_quest(self):\n\
-        if self.value != "auto":\n\
-            #find the first "-"\n\
-            return self.value[self.value.index("-")+1:]\n\
-        else:\n\
-            return "auto"\n\
-        \n\
-    @property\n\
-    def is_map_variant(self):\n\
-        return len(self.value.split("-")) > 3\n\
-\n\
-    @property\n\
-    def variant(self):\n\
-        if self.is_map_variant:\n\
-            return self.value.split("-")[3]\n\
-        else:\n\
-            return None\n\
-            \n')
+\n')
 
 #close the file
 f.close()
