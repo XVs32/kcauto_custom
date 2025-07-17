@@ -181,43 +181,60 @@ class Kca(object):
         whole_screen_gray = cv2.cvtColor(whole_screen_rgb, cv2.COLOR_BGR2GRAY)
         
         retry = 0
+        max_retries = 5
+        retry_delay = 1
         
         import base64
-        while retry < 5:
-            
-            result = self.visual_hook.Page.captureScreenshot()[0]["result"]
-            screenshot_data = base64.b64decode(result['data'])
-            
-            # Convert the screenshot data to a Matlike array
-            ref = cv2.imdecode(np.frombuffer(screenshot_data, np.uint8), cv2.IMREAD_GRAYSCALE)
-            
-            # clip ref, keep the central part only
-            clip_height = int(ref.shape[0] * 0.1) 
-            clip_width = int(ref.shape[1] * 0.1)  
-
-            # Calculate top-left corner of the clip
-            start_y = (ref.shape[0] - clip_height) // 2
-            start_x = (ref.shape[1] - clip_width) // 2
-
-            # Crop the central region
-            ref = ref[start_y:start_y + clip_height, start_x:start_x + clip_width]
-            
-            match = cv2.matchTemplate(whole_screen_gray, ref, cv2.TM_CCOEFF_NORMED)
-            min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(match)
-            
-            if max_val < 0.9:
-                Log.log_debug(f"Match value {max_val} is below threshold, retrying...")
+        while retry < max_retries:
+            try:
+                screenshot_raw = self.visual_hook.Page.captureScreenshot()
+                
+                if screenshot_raw is None or not screenshot_raw:
+                    raise ValueError("Failed to capture screenshot from Chrome")
+                    
+                if len(screenshot_raw) == 0 or "result" not in screenshot_raw[0]:
+                    raise ValueError("Invalid screenshot data structure")
+                    
+                result = screenshot_raw[0]["result"]
+                if "data" not in result:
+                    raise ValueError("No image data in screenshot result")
+                    
+                screenshot_data = base64.b64decode(result['data'])
+                ref = cv2.imdecode(np.frombuffer(screenshot_data, np.uint8), cv2.IMREAD_GRAYSCALE)
+                
+                clip_height = int(ref.shape[0] * 0.1)
+                clip_width = int(ref.shape[1] * 0.1)
+                
+                start_y = (ref.shape[0] - clip_height) // 2
+                start_x = (ref.shape[1] - clip_width) // 2
+                
+                ref = ref[start_y:start_y + clip_height, start_x:start_x + clip_width]
+                
+                match = cv2.matchTemplate(whole_screen_gray, ref, cv2.TM_CCOEFF_NORMED)
+                min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(match)
+                
+                if max_val < 0.9:
+                    raise ValueError(f"Match value {max_val} is below threshold")
+                    
+                self.css_x = max_loc[0] - start_x
+                self.css_y = max_loc[1] - start_y
+                Log.log_success(f"Browser offset found at X: {self.css_x}, Y: {self.css_y}")
+                return True
+                
+            except Exception as e:
+                Log.log_error(f"Attempt {retry + 1}/{max_retries} failed: {str(e)}")
                 retry += 1
-                self.sleep(1)
-                continue
-            
-            break
-        
-        self.css_x = max_loc[0] - start_x
-        self.css_y = max_loc[1] - start_y
-        Log.log_success(f"Browser offset found at X: {self.css_x}, Y: {self.css_y}")
-
-        return True
+                if retry < max_retries:
+                    self.sleep(retry_delay)
+                    continue
+                else:
+                    Log.log_error("Failed to find browser offset after max retries")
+                    
+                    if self.css_x is None or self.css_y is None:
+                        Log.log_error("Browser offset not found. Please check your Chrome setup.")
+                        exit(1)
+                    
+                    return False
 
     def find_kancolle(self):
         """Method that finds the Kancolle game on-screen and determine the UI
