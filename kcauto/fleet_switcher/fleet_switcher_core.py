@@ -137,11 +137,10 @@ class FleetSwitcherCore(object):
                 fleet_id = flt.fleets.get_next_exp_fleet_id()
                 while fleet_id != None and exp.expedition.exp_for_fleet[fleet_id] != None:
                     
-                    
                     DEFAULT_FLEET_ID = 1
-                    temp = {}
-                    temp[fleet_id] = flt.fleets.fleets[exp.expedition.exp_for_fleet[fleet_id]][DEFAULT_FLEET_ID]
-                    if not self.switch_to_costom_fleet_with_equipment(fleet_id, temp[fleet_id]):
+                    temp = self._get_fleet_preset(self, exp.expedition.exp_for_fleet[fleet_id])[DEFAULT_FLEET_ID]
+                    
+                    if not self.switch_to_costom_fleet_with_equipment(fleet_id, temp):
                         return False
                     fleet_id = flt.fleets.get_next_exp_fleet_id(fleet_id)
 
