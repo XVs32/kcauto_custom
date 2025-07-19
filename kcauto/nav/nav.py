@@ -244,7 +244,10 @@ class NavigateList(object):
                 else:
                     #Log.log_error("prev")
                     cls._change_page('prev', op_mode)
-                    current_page -= 5
+                    if op_mode == cls.OP_MODE_QUEST:
+                        current_page -= 1
+                    else:
+                        current_page -= 5
             elif page_delta >= 3:
                 if target_page > (page_count - 5):
                     #Log.log_error("go to last")
@@ -253,7 +256,10 @@ class NavigateList(object):
                 else:
                     #Log.log_error("next")
                     cls._change_page('next', op_mode)
-                    current_page += 5
+                    if op_mode == cls.OP_MODE_QUEST:
+                        current_page += 1
+                    else:
+                        current_page += 5
         kca_u.kca.sleep(0.5)
         return current_page
 
