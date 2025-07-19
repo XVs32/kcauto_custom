@@ -251,7 +251,7 @@ class ShipSwitcherCore(object):
                     f"(pg{target_page}#{row_idx}).")
                 
             tot_pages = (shp.ships.ship_count -1) // 10 + 1
-            offset_mode = nav.navigate_list.OFFSET_MODE_SHIPCOMP
+            offset_mode = nav.navigate_list.OP_MODE_SHIPCOMP
             
             row_region = Region(
                 kca_u.kca.game_x + 590,
@@ -263,7 +263,7 @@ class ShipSwitcherCore(object):
                         f"(From pg{self.current_page} to pg{target_page}).")
             
             tot_pages = (len(equ.equipment.equipment_pool[equ.equipment.FREE]) -1) // 10 + 1
-            offset_mode = nav.navigate_list.OFFSET_MODE_EQUIPMENT
+            offset_mode = nav.navigate_list.OP_MODE_EQUIPMENT
             
             row_region = Region(
                 kca_u.kca.game_x + 590,
@@ -279,19 +279,17 @@ class ShipSwitcherCore(object):
             tot_pages = (len(equ.equipment.get_reinforce_equipment_list(ship)) -1) // 10 + 1
             Log.log_debug(f"Total pages for reinforcement equipment: {tot_pages}")
                  
-            offset_mode = nav.navigate_list.OFFSET_MODE_EQUIPMENT
+            offset_mode = nav.navigate_list.OP_MODE_EQUIPMENT
 
             row_region = Region(
                 kca_u.kca.game_x + 590,
                 kca_u.kca.game_y + 195 + 5 + (row_idx % 10 * 45),
                 435, 34)
             
-        list_control_region = Region(
-            kca_u.kca.game_x + 625, kca_u.kca.game_y + 655, 495, 45)
         kca_u.kca.sleep(0.5)
 
         nav.navigate_list.to_page(
-            list_control_region, tot_pages, self.current_page,
+            tot_pages, self.current_page,
             target_page, offset_mode)
         self.current_page = target_page
         

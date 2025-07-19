@@ -208,11 +208,9 @@ class RepairCore(object):
         Log.log_msg(f"Selecting lvl{ship.level} {ship.name} (pg{page}#{idx}).")
         if page > 1:
             tot_pages = shp.ships.ship_count // 10
-            list_control_region = Region(
-                kca_u.kca.game_x + 610, kca_u.kca.game_y + 660, 490, 45)
             nav.navigate_list.to_page(
-                list_control_region, tot_pages, self.current_repair_list_page,
-                page, 'repair')
+                tot_pages, self.current_repair_list_page,
+                page, nav.navigate_list.OP_MODE_REPAIR)
             self.current_repair_list_page = page
         repair_list_region = Region(
             kca_u.kca.game_x + 596,
