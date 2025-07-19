@@ -13,6 +13,7 @@ from util.pyvisauto import Region, FindFailed, ImageMatch
 from random import randint, uniform
 from time import sleep
 
+from quest.quest import Quest
 import api.api_core as api
 import args.args_core as arg
 import config.config_core as cfg
@@ -1039,7 +1040,7 @@ class Kca(object):
         
         return quest_tree_dom
         
-    def get_quest_count(self, target_quest_name, quest_dom=None):
+    def get_quest_count(self, target_quest: Quest, quest_dom=None):
         """ method to get the remaining action needed for the specified quest.
             For example, the remaining sorties needed for quest Bm3 could be {1-4:1, 3-5:0}
 
@@ -1050,6 +1051,8 @@ class Kca(object):
             dict with key of quest name, and value of remaining actions needed.
             return None if quest is not combat type.
         """
+        
+        target_quest_name = target_quest.name
         
         if quest_dom == None:
             self.reload_kc3_strategy_page(subpage = "#flowchart")
