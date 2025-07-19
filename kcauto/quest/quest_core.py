@@ -32,10 +32,7 @@ class QuestCore(CoreBase):
     module_display_name = 'Quest'
     quest_reset_time = datetime.now()
     max_quests = None
-    #quest_library = {}
     quest_priority_library :list[Quest]= []
-    #quest_recommended_maps = {}
-    #quest_default_expedition_maps = {}
     _context_cache = None
     _relevant_quests = []
     last_checked_context = 'reset'
@@ -50,18 +47,6 @@ class QuestCore(CoreBase):
         super().update_from_config()
         #self._load_quest_data()
         self._load_quest_priority()
-
-    '''
-    def _load_quest_data(self):
-        Log.log_msg("Loading Quest data.")
-        quest_data = JsonData.load_json('data|quests|quests.json')
-        for quest_name in quest_data:
-            quest = Quest(quest_name, quest_data[quest_name])
-            self.quest_library[quest_name] = quest
-            self.quest_library[quest.quest_id] = quest
-            self.quest_recommended_maps[quest_name] = quest_data[quest_name].get('recommended_map','')
-            self.quest_default_expedition_maps[quest_name] = [ExpeditionEnum(exp) for exp in quest_data[quest_name].get('expedition_context',[])]
-    '''
 
     def _load_quest_priority(self):
         self.quest_priority_library = []
@@ -99,7 +84,7 @@ class QuestCore(CoreBase):
             self.current_quest_list.append(Quest(
                 api_data=raw_quest_api))
 
-            if raw_quest_api['api_state'] == QuestStateEnum.IN_PROGRESS:
+            if self.current_quest_list[-1].state == QuestStateEnum.IN_PROGRESS:
                 self.active_quest_list.append(self.current_quest_list[-1])
         
         self.tot_page = math.ceil(len(self.current_quest_list)/5)
@@ -172,7 +157,6 @@ class QuestCore(CoreBase):
         
         while i >= 0:
             quest = self.current_quest_list[i]
-
             if quest.is_kcauto_support_quest() == False:
                 if quest.state == QuestStateEnum.DONE:
                     self._turn_in_quest_idx(i)
@@ -206,7 +190,7 @@ class QuestCore(CoreBase):
                 sts.stats.quest.quests_turned_in += 1
                 quest_turned_in = True
             
-            i=-1
+            i-=1
                
         return quest_turned_in
     
@@ -249,11 +233,13 @@ class QuestCore(CoreBase):
             api.api.update_from_api({KCSAPIEnum.QUEST_LIST}) #update quest_list
         
         remain_quest_slot = self.max_quests - len(self.active_quest_list)
+        
+        Log.log_error(
+            f"Remaining quest slots: {remain_quest_slot}. ")
+        
         self.cur_page = 1
             
         for i, quest in enumerate(self.current_quest_list):
-            
-            Log.log_error(f'Checking quest {quest.name} {quest.state} at index {i}.')
             
             if quest.is_kcauto_support_quest() == False:
                 #do not touch quests that are not supported by kcauto, probably actived by player
@@ -273,6 +259,8 @@ class QuestCore(CoreBase):
                     self._click_quest_idx(i)
                     self._track_quest(quest)
                     remain_quest_slot -= 1
+                    Log.log_error(
+                        f"Remaining quest slots: {remain_quest_slot}. ")
                     if remain_quest_slot <= 0:
                         Log.log_msg("Reached maximum quest slots, stopping activation.")
                         return
@@ -309,7 +297,7 @@ class QuestCore(CoreBase):
             sortie_list = []
             if sortie_dict == None:
                 Log.log_warn(f"Cannot get quest progress from kc3, use default in config file.")
-                sortie_list = next_quest.recommended_map
+                sortie_list = list(next_quest.recommended_map)
                 Log.log_debug(f"sortie_list = {sortie_list}")
             else:
                 for map_name in sortie_dict:
@@ -469,7 +457,7 @@ class QuestCore(CoreBase):
     def soonest_check_intervals(self):
         soonest_intervals = [math.inf, math.inf, math.inf]
         for quest_name in self.next_check_intervals:
-            interval = self.next_check_intervals[quest_name]
+            interval = self.next_check_intervals[quest_name].next_intervals
             for idx in range(0, 3):
                 if interval[idx] < soonest_intervals[idx]:
                     soonest_intervals[idx] = interval[idx]
