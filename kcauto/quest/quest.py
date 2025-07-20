@@ -29,6 +29,13 @@ class Quest(object):
                 Log.log_error("Quest data not found, please re-download it from github")
                 Log.log_error(e)
                 
+        if name != None:
+            self.name = name
+            self.quest_id = self._get_quest_id(name)
+        elif quest_id != None:
+            self.quest_id = quest_id
+            self.name = self._get_name(quest_id) 
+            
         if api_data is not None:
             quest_id = api_data.get('api_no', None)
             self.category = QuestCategoryEnum(api_data.get('api_category', None))
@@ -36,14 +43,11 @@ class Quest(object):
             self.state = QuestStateEnum(api_data.get('api_state', 0))
             self.title = api_data.get('api_title', '')
             self.select_rewards = api_data.get('api_select_rewards', None)
+        else:
+            self.category = QuestCategoryEnum.UNDEFINED
             
             
-        if name != None:
-            self.name = name
-            self.quest_id = self._get_quest_id(name)
-        elif quest_id != None:
-            self.quest_id = quest_id
-            self.name = self._get_name(quest_id) 
+            
         
     @property
     def intervals(self):
