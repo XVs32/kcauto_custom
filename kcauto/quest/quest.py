@@ -1,4 +1,5 @@
 from kca_enums.expeditions import ExpeditionEnum
+from kca_enums.quest_category import QuestCategoryEnum
 from util.json_data import JsonData
 from kca_enums.maps import MapEnum
 from kca_enums.quest_type import QuestTypeEnum
@@ -30,7 +31,7 @@ class Quest(object):
                 
         if api_data is not None:
             quest_id = api_data.get('api_no', None)
-            self.category = api_data.get('api_category', None)
+            self.category = QuestCategoryEnum(api_data.get('api_category', None))
             self.quest_type = QuestTypeEnum(api_data.get('api_type', ''))
             self.state = QuestStateEnum(api_data.get('api_state', 0))
             self.title = api_data.get('api_title', '')
@@ -55,7 +56,7 @@ class Quest(object):
         
     @property
     def map_context(self):
-        return tuple(Quest.static_data[self.name].get('map_context', ()))
+        return tuple([MapEnum(m) for m in Quest.static_data[self.name].get('map_context', [])])
         
     @property
     def exp_context(self):
