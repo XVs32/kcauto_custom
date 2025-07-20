@@ -491,7 +491,7 @@ class QuestCore(CoreBase):
             Log.log_debug(f"Invalid quest: {quest}")
             return False
         
-        if not (quest.quest_id in cfg.config.quest.quests):
+        if not (quest.name in cfg.config.quest.quests):
             Log.log_debug(f"Quest {quest.name} is not in config.")
             return False
         
