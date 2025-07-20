@@ -1,6 +1,7 @@
 from kca_enums.enum_base import EnumBase
 
 class QuestCategoryEnum(EnumBase):
+    UNDEFINED = 0
     ORGANISATION = 1
     SORTIE = 2
     PVP = 3
