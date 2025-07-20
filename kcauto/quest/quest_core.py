@@ -13,7 +13,6 @@ import expedition.expedition_core as exp
 import nav.nav as nav
 from constants import NEAR_EXACT, PAGE_NAV
 from kca_enums.kcsapi_paths import KCSAPIEnum
-from kca_enums.expeditions import ExpeditionEnum
 from kca_enums.quest_state import QuestStateEnum
 from kca_enums.maps import MapEnum
 from quest.quest import Quest
@@ -104,8 +103,10 @@ class QuestCore(CoreBase):
             self.last_checked_context = context
         if not context and self.last_checked_context:
             context = self.last_checked_context
-
-        is_any_quest_turned_in = self._turn_in_quests(context)
+            
+        is_any_quest_turned_in = False
+        if context != "auto_sortie" and context != "auto_expedition" and context != "auto_pvp":
+            is_any_quest_turned_in = self._turn_in_quests(context)
 
         if fast_check == False or is_any_quest_turned_in == True:
             if context == "auto_sortie":
@@ -162,7 +163,24 @@ class QuestCore(CoreBase):
                     self._turn_in_quest_idx(i)
                     quest_turned_in = True
             elif quest.state == QuestStateEnum.IN_PROGRESS:
-                if self._is_relevent_quest(quest, [context, "expedition"]):
+                
+                Log.log_msg(f"Checking if quest {quest.name} is relevant to context {context}.")
+                
+                deactivate_needed = False 
+                if not self._is_relevent_quest(quest, context=context):
+                    if context != "expedition":
+                        if not self._is_relevent_quest(quest, context="expedition"):
+                            deactivate_needed = True
+                    else:
+                        deactivate_needed = True 
+                    
+                    if deactivate_needed:    
+                        Log.log_msg(f"Deactivating quest {quest.name}.")
+                        self._click_quest_idx(i)
+                        self._untrack_quest(quest)
+                        sts.stats.quest.quests_deactivated += 1
+                        
+                if deactivate_needed == False:
                     Log.log_msg(f"Quest {quest.name} already active.")
                     if self._quest_should_be_done(quest):
                         # quest is expected to be completed, but it isn't;
@@ -173,13 +191,6 @@ class QuestCore(CoreBase):
                         # tracking with fresh intervals
                         self._track_quest(quest)
 
-                elif context is not None:
-                    Log.log_msg(f"Deactivating quest {quest.name}.")
-
-                    self._click_quest_idx(i)
-
-                    self._untrack_quest(quest)
-                    sts.stats.quest.quests_deactivated += 1
             elif quest.state == QuestStateEnum.DONE:
                 Log.log_msg(f"Turning in quest {quest.name}.")
 
@@ -202,14 +213,14 @@ class QuestCore(CoreBase):
         """
         
         if mode == self.SORTIE:
-            context = ["combat"]
+            context = "combat"
         elif mode == self.EXPEDITION:
-            context = ["expedition"]
+            context = "expedition"
             
         ret = []
         
         for quest in self.quest_priority_library:
-            if self._is_relevent_quest(quest, context):
+            if self._is_relevent_quest(quest, context=context):
                 for current_quest in self.current_quest_list:
                     if current_quest.quest_id != quest.quest_id:
                         continue
@@ -234,9 +245,6 @@ class QuestCore(CoreBase):
         
         remain_quest_slot = self.max_quests - len(self.active_quest_list)
         
-        Log.log_error(
-            f"Remaining quest slots: {remain_quest_slot}. ")
-        
         self.cur_page = 1
             
         for i, quest in enumerate(self.current_quest_list):
@@ -252,19 +260,16 @@ class QuestCore(CoreBase):
                 # quest is in progress, check if it should be tracked
                 continue
             else:
-            
-                if self._is_relevent_quest(quest, [context]):
-                    
+                
+                if self._is_relevent_quest(quest, context=context):
                     Log.log_msg(f"Activating quest {quest.name}.")
                     self._click_quest_idx(i)
                     self._track_quest(quest)
                     remain_quest_slot -= 1
-                    Log.log_error(
-                        f"Remaining quest slots: {remain_quest_slot}. ")
                     if remain_quest_slot <= 0:
                         Log.log_msg("Reached maximum quest slots, stopping activation.")
                         return
-
+                
     def _auto_target_select(self, mode):
 
         """
@@ -392,7 +397,6 @@ class QuestCore(CoreBase):
         nav.navigate_list.to_page(self.tot_page, self.cur_page, math.ceil((idx+1)/5),nav.navigate_list.OP_MODE_QUEST)
         self.cur_page = math.ceil((idx+1)/5)
         
-        Log.log_error(f'Clicking quest at position {idx} on page {self.cur_page}. {idx%5} {(idx%5)*102} {173 + ((idx % 5) * 102)}')
         quest_list_region = Region(
             kca_u.kca.game_x + 230, kca_u.kca.game_y + 173 + ((idx % 5) * 102),
             830, 30)
@@ -430,14 +434,14 @@ class QuestCore(CoreBase):
 
     def _get_quests_to_check_by_interval(self):
         quest_names = set()
-        for quest_name in self.next_check_intervals:
-            interval = self.next_check_intervals[quest_name].next_intervals
+        for quest_id in self.next_check_intervals:
+            interval = self.next_check_intervals[quest_id].next_intervals
             if (
                     sts.stats.combat.combat_sorties >= interval[0]
                     or sts.stats.pvp.pvp_done >= interval[1]
                     or sts.stats.expedition.expeditions_received >= interval[2]
             ):
-                quest_names.add(quest_name)
+                quest_names.add(quest_id)
         return quest_names
     
     def _quest_should_be_done(self, quest : Quest):
@@ -474,7 +478,7 @@ class QuestCore(CoreBase):
                 temp_time += timedelta(days=1)
         self.quest_reset_time = KCTime.convert_from_jst(temp_time)
 
-    def _is_relevent_quest(self, quest, context_list):
+    def _is_relevent_quest(self, quest : Quest, context):
         """method to check if a quest is relevant to the current context.
         Args:
             quest (Quest): The quest to check.
@@ -482,18 +486,67 @@ class QuestCore(CoreBase):
         Returns: 
             bool: True if the quest is relevant, False otherwise.
         """
-        if self._context_cache != context_list:
-            self._context_cache = context_list
-            self._relevant_quests = self._get_quest_in_config(context_list)
-            
+        
         if quest is None or not isinstance(quest, Quest) or quest.quest_id is None:
             Log.log_debug(f"Invalid quest: {quest}")
             return False
-            
-        for relevant_quest in self._relevant_quests:
-            if relevant_quest.quest_id == quest.quest_id:
-                return True
         
-        return False 
+        if not (quest.quest_id in cfg.config.quest.quests):
+            Log.log_debug(f"Quest {quest.name} is not in config.")
+            return False
+        
+        if quest.category.is_repair():
+            Log.log_debug(f"Quest {quest.name} is a repair/supply quest, which is always enabled.")
+            return True
+        
+        if context == "combat":
+            if quest.category.is_sortie() == False:
+                Log.log_debug(f"Quest {quest.name} is not a combat quest.")
+                return False
+            if len(com.combat.get_sortie_queue()) <= 0:
+                Log.log_msg("No sortie quests available, cannot activate sortie quest.")
+                return False
+            elif not (com.combat.get_sortie_queue()[0] in quest.map_context):
+                Log.log_debug(f"Quest {quest.name} is not relevant to sortie map {com.combat.get_sortie_queue()[0]}.")
+                return False
+            else:
+                return True
+        elif context == "expedition":
+            if quest.category.is_expedition() == False:
+                Log.log_debug(f"Quest {quest.name} is not an expedition quest.")
+                return False
+            if exp.expedition.cur_exp not in quest.exp_context:
+                Log.log_debug(f"Quest {quest.name} is not relevant to expedition {exp.expedition.cur_exp}.")
+                return False
+            else:
+                return True
+        elif context == "pvp":
+            if quest.category.is_pvp() == False:
+                Log.log_debug(f"Quest {quest.name} is not a PVP quest.")
+                return False
+            else:
+                return True
+        elif context == "factory":
+            if quest.category.is_factory() == False:
+                Log.log_debug(f"Quest {quest.name} is not a factory quest.")
+                return False
+            else:
+                return True
+        elif context == "auto_sortie":
+            if quest.category.is_sortie() == False:
+                Log.log_debug(f"Quest {quest.name} is not a combat quest.")
+                return False
+            return True 
+        elif context == "auto_expedition":
+            if quest.category.is_expedition() == False:
+                Log.log_debug(f"Quest {quest.name} is not an expedition quest.")
+                return False
+            return True
+        elif context == "reset":
+            return False
+    
+    def is_tracking_quest(self, quest : Quest):
+        """Check if a quest is being tracked."""
+        return quest.quest_id in self.next_check_intervals
 
 quest = QuestCore()
