@@ -18,6 +18,7 @@ from fleet.noro6 import Noro6
 from kca_enums.expeditions import ExpeditionEnum
 from util.logger import Log
 from kca_enums.maps import MapEnum
+from quest.quest import Quest
 
 from constants import COMBAT_CONFIG
 
@@ -121,17 +122,16 @@ class Kcauto(object):
 
         anything_is_done = False
 
-        if "F5" in qst.quest.next_check_intervals.keys():
+        if qst.quest.is_tracking_quest(Quest(name="F5")):
             anything_is_done = True
 
             self._run_fleetswitch_logic('factory_develop')
 
             fty.factory.goto()
             if fty.factory.develop_logic(1) == True:
-                self.run_quest_logic('factory', fast_check=True, back_to_home=True, force=True)
                 nav.navigate.to('home')
 
-        if "F6" in qst.quest.next_check_intervals.keys():
+        if qst.quest.is_tracking_quest(Quest(name="F6")):
             anything_is_done = True
             fty.factory.goto()
             if fty.factory.any_build_slot_available() == False:
@@ -142,23 +142,21 @@ class Kcauto(object):
 
                 fty.factory.goto()
                 if fty.factory.build_logic(1) == True:
-                    self.run_quest_logic('factory', fast_check=True, back_to_home=True, force=True)
                     nav.navigate.to('home')
                 else:
                     # disable module for 60 mins
                     fty.factory.set_timer()
 
-        if "F7" in qst.quest.next_check_intervals.keys():
+        if qst.quest.is_tracking_quest(Quest(name="F7")):
             anything_is_done = True
 
             self._run_fleetswitch_logic('factory_develop')
 
             fty.factory.goto()
             if fty.factory.develop_logic(3) == True:
-                self.run_quest_logic('factory', fast_check=True, back_to_home=True, force=True)
                 nav.navigate.to('home')
         
-        if "F8" in qst.quest.next_check_intervals.keys():
+        if qst.quest.is_tracking_quest(Quest(name="F8")):
             anything_is_done = True
 
             if fty.factory.any_build_slot_available() == False:
@@ -171,7 +169,6 @@ class Kcauto(object):
                 """If F8 is already 80% done, one more build could finish the quest"""
                 """Therefore, no if == True here"""
                 fty.factory.build_logic(3)
-                self.run_quest_logic('factory', fast_check=True, back_to_home=True, force=True)
                 nav.navigate.to('home')
                 #always disable module for 60 mins
                 fty.factory.set_timer()
@@ -206,7 +203,6 @@ class Kcauto(object):
         return True
 
     def run_combat_logic(self):
-        quest_selected = False
         if not com.combat.enabled or com.combat.time_to_sortie == False:
             return False
         else :
@@ -226,7 +222,7 @@ class Kcauto(object):
                 sortie_queue = [cfg.config.combat.sortie_map_read_only.value]
                 com.combat.set_sortie_queue(sortie_queue)
         else:
-            Log.log_msg(f"Sortie queue:{com.combat.get_sortie_queue()}")
+            Log.log_msg(f"Sortie queue:{com.combat.get_sortie_queue().value}")
 
 
         if len(com.combat.get_sortie_queue()) == 0: #If no combat map available, turn off combat module
@@ -236,7 +232,7 @@ class Kcauto(object):
         else:
             #update current sortie_map
             #@todo fix sortie queue map name
-            cfg.config.combat.sortie_map = com.combat.get_sortie_queue()[0]
+            cfg.config.combat.sortie_map = com.combat.get_sortie_queue()[0].value
 
             """Check if multi stage map requested"""
             MULTI_STAGE_MAPS = {"7-2":["G", "M"], "7-3":["E", "M"], "7-5":["K", "Q", "T"]}
