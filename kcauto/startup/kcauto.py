@@ -117,7 +117,7 @@ class Kcauto(object):
         if not fty.factory.enabled or not fty.factory.disable_time_up():
             return False
 
-        self.run_quest_logic('factory', fast_check=False)
+        self.run_quest_logic('factory', fast_check=False, force=True)
         nav.navigate.to('home')
 
         anything_is_done = False
