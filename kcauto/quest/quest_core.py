@@ -216,22 +216,29 @@ class QuestCore(CoreBase):
         # that way _is_relevent_quest is not needed here anymore
         # that way _is_relevent_quest can assume Quest input always has api data in it
         
-        if mode == self.SORTIE:
-            context = "combat"
-        elif mode == self.EXPEDITION:
-            context = "expedition"
-            
         ret = []
         
         for quest in self.quest_priority_library:
-            if self._is_relevent_quest(quest, context=context):
-                for current_quest in self.current_quest_list:
-                    if current_quest.quest_id != quest.quest_id:
-                        continue
-                    
-                    if current_quest.state == QuestStateEnum.DONE: 
-                        continue
-                    ret.append(current_quest)
+                
+            if not (quest.name in cfg.config.quest.quests):
+                Log.log_debug(f"Quest {quest.name} is not in config.")
+                continue
+        
+            if mode == self.SORTIE and quest.category.is_sortie() == False:
+                Log.log_debug(f"Quest {quest.name} {quest.category} is not a combat quest.")
+                continue
+            elif mode == self.EXPEDITION and quest.category.is_expedition() == False:
+                Log.log_debug(f"Quest {quest.name} {quest.category} is not an expedition quest.")
+                continue
+            
+            for current_quest in self.current_quest_list:
+                if current_quest.quest_id != quest.quest_id:
+                    continue
+                
+                if current_quest.state == QuestStateEnum.DONE: 
+                    continue
+                ret.append(current_quest)
+                
         return ret
  
     def _toggle_quests(self, context):
@@ -252,8 +259,6 @@ class QuestCore(CoreBase):
         self.cur_page = 1
             
         for i, quest in enumerate(self.current_quest_list):
-            
-            Log.log_error(f"Checking quest {quest.name} {quest.category} {quest.state} at index {i}.")
             
             if quest.is_kcauto_support_quest() == False:
                 #do not touch quests that are not supported by kcauto, probably actived by player
@@ -289,7 +294,7 @@ class QuestCore(CoreBase):
                     'left', f'quest|filter_tab_all_active.png',
                     NEAR_EXACT)
             api.api.update_from_api({KCSAPIEnum.QUEST_LIST}) #update quest_list
-            Log.log_msg(f"api update done in auto {mode} map select.")
+            Log.log_msg(f"api update done in #{mode} auto map select.")
 
         if mode == self.SORTIE and cfg.config.combat.sortie_map_read_only == MapEnum.auto_map_selete:
             next_quest = self._get_quests_rank_list(self.SORTIE)
@@ -335,7 +340,7 @@ class QuestCore(CoreBase):
                 
                 if exp_dict == None:
                     Log.log_warn(f"Cannot get quest progress from kc3, use default in config file.")
-                    exp_list = next_quest.exp_context
+                    exp_list = list(next_quest.exp_context)
                     if exp_list == []:
                         Log.log_error(f"Cannot get quest info from kc3 and default config file, kcauto_custom fail to select corresponding expedition")
                     else:
@@ -508,13 +513,16 @@ class QuestCore(CoreBase):
         if context == "combat":
             if quest.category.is_sortie() == False:
                 Log.log_debug(f"Quest {quest.name} {quest.category} is not a combat quest.")
-                
                 return False
             if len(com.combat.get_sortie_queue()) <= 0:
                 Log.log_msg("No sortie quests available, cannot activate sortie quest.")
                 return False
-            elif not (com.combat.get_sortie_queue()[0] in quest.map_context):
+            elif quest.map_context != () and not (com.combat.get_sortie_queue()[0] in quest.map_context):
                 Log.log_debug(f"Quest {quest.name} is not relevant to sortie map {com.combat.get_sortie_queue()[0]}.")
+                return False
+            #if any combat.map_data.enemy_context in quest.enemy_context:
+            elif quest.enemy_context != () and not (set(com.combat.map_data.enemy_context) & set(quest.enemy_context)):
+                Log.log_debug(f"Quest {quest.name} is not relevant to enemy context {com.combat.map_data.enemy_context}.")
                 return False
             else:
                 return True
