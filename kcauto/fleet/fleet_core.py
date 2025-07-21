@@ -637,21 +637,18 @@ class FleetCore(object):
         
         START_UP = -1
         
-        available_fleets = []
-        for fleet in self.expedition_fleets:
-            if exp.expedition.cur_exp[fleet.fleet_id - 1] == ExpeditionEnum.NULL:
-                available_fleets.append(fleet)
-            
         flag = False
-        for fleet in available_fleets:
-            if fleet_id == START_UP:
-                return fleet.fleet_id
-            
-            if fleet.fleet_id == fleet_id and len(available_fleets) > 1:
+        if fleet_id == START_UP:
+            flag = True 
+        for fleet in self.expedition_fleets:
+            if fleet.at_base == False:
+                continue
+            if fleet.fleet_id == fleet_id:
                 flag = True
             elif flag == True:
                 return fleet.fleet_id
-            
+        
+        Log.log_warn(f"Failed to get next expedition fleet id, current fleet id: {fleet_id}, return None")        
         return None
 
     def _get_exp_ship_requirement_from_composition(self, composition):
