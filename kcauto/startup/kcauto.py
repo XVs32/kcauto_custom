@@ -222,7 +222,7 @@ class Kcauto(object):
                 sortie_queue = [cfg.config.combat.sortie_map_read_only.value]
                 com.combat.set_sortie_queue(sortie_queue)
         else:
-            Log.log_msg(f"Sortie queue:{com.combat.get_sortie_queue().value}")
+            Log.log_msg(f"Sortie queue:{com.combat.get_sortie_queue()}")
 
 
         if len(com.combat.get_sortie_queue()) == 0: #If no combat map available, turn off combat module
