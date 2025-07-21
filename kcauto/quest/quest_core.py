@@ -130,9 +130,9 @@ class QuestCore(CoreBase):
     def _to_tab(self, tab_name):
         Log.log_msg(f"Navigating to {tab_name} quests tab.")
         if kca_u.kca.click_existing(
-            'left', f'quest|filter_tab_{tab_name}.png') == True:
+            'left', f'quest|filter_tab_{tab_name}.png', similarity=NEAR_EXACT) == True:
             kca_u.kca.wait(
-                'left', f'quest|filter_tab_{tab_name}_active.png')
+                'left', f'quest|filter_tab_{tab_name}_active.png', similarity=NEAR_EXACT)
             api.api.update_from_api({KCSAPIEnum.QUEST_LIST}) #update quest_list
         else:
             Log.log_error(f"Cannot find {tab_name} quests tab.")
@@ -145,8 +145,8 @@ class QuestCore(CoreBase):
         quest_turned_in = False
         Log.log_msg("Navigating to active quests tab.")
         
-        if kca_u.kca.click_existing('left', 'quest|filter_tab_active.png') == True:
-            kca_u.kca.wait('left', 'quest|filter_tab_active_active.png')
+        if kca_u.kca.click_existing('left', 'quest|filter_tab_active.png', similarity=NEAR_EXACT) == True:
+            kca_u.kca.wait('left', 'quest|filter_tab_active_active.png', similarity=NEAR_EXACT)
             api.api.update_from_api({KCSAPIEnum.QUEST_LIST}) #update quest_list
             
         kca_u.kca.click_existing(
@@ -212,6 +212,10 @@ class QuestCore(CoreBase):
                 quest(str): The name of quest(ex. "Bd1")
         """
         
+        #@todo quest rank list is a static list, sperate combat and expedition quests into two files
+        # that way _is_relevent_quest is not needed here anymore
+        # that way _is_relevent_quest can assume Quest input always has api data in it
+        
         if mode == self.SORTIE:
             context = "combat"
         elif mode == self.EXPEDITION:
@@ -239,8 +243,8 @@ class QuestCore(CoreBase):
         Log.log_msg(
             f"Checking for quests to activate with {context} context.")
         # quests should only be activated at this point
-        if kca_u.kca.click_existing('left', 'quest|filter_tab_all.png') == True:
-            kca_u.kca.wait('left', 'quest|filter_tab_all_active.png')
+        if kca_u.kca.click_existing('left', 'quest|filter_tab_all.png', similarity=NEAR_EXACT) == True:
+            kca_u.kca.wait('left', 'quest|filter_tab_all_active.png', similarity=NEAR_EXACT)
             api.api.update_from_api({KCSAPIEnum.QUEST_LIST}) #update quest_list
         
         remain_quest_slot = self.max_quests - len(self.active_quest_list)
@@ -248,6 +252,8 @@ class QuestCore(CoreBase):
         self.cur_page = 1
             
         for i, quest in enumerate(self.current_quest_list):
+            
+            Log.log_error(f"Checking quest {quest.name} {quest.category} {quest.state} at index {i}.")
             
             if quest.is_kcauto_support_quest() == False:
                 #do not touch quests that are not supported by kcauto, probably actived by player
@@ -278,12 +284,12 @@ class QuestCore(CoreBase):
         """
 
         if kca_u.kca.click_existing(
-            'left', f'quest|filter_tab_all.png') == True:
+            'left', f'quest|filter_tab_all.png', similarity=NEAR_EXACT) == True:
             kca_u.kca.wait(
                     'left', f'quest|filter_tab_all_active.png',
                     NEAR_EXACT)
             api.api.update_from_api({KCSAPIEnum.QUEST_LIST}) #update quest_list
-            Log.log_msg(f"api update done in auto map select.")
+            Log.log_msg(f"api update done in auto {mode} map select.")
 
         if mode == self.SORTIE and cfg.config.combat.sortie_map_read_only == MapEnum.auto_map_selete:
             next_quest = self._get_quests_rank_list(self.SORTIE)
@@ -501,7 +507,8 @@ class QuestCore(CoreBase):
         
         if context == "combat":
             if quest.category.is_sortie() == False:
-                Log.log_debug(f"Quest {quest.name} is not a combat quest.")
+                Log.log_debug(f"Quest {quest.name} {quest.category} is not a combat quest.")
+                
                 return False
             if len(com.combat.get_sortie_queue()) <= 0:
                 Log.log_msg("No sortie quests available, cannot activate sortie quest.")
@@ -513,7 +520,7 @@ class QuestCore(CoreBase):
                 return True
         elif context == "expedition":
             if quest.category.is_expedition() == False:
-                Log.log_debug(f"Quest {quest.name} is not an expedition quest.")
+                Log.log_debug(f"Quest {quest.name} {quest.category} is not an expedition quest.")
                 return False
             if exp.expedition.cur_exp not in quest.exp_context:
                 Log.log_debug(f"Quest {quest.name} is not relevant to expedition {exp.expedition.cur_exp}.")
@@ -522,24 +529,24 @@ class QuestCore(CoreBase):
                 return True
         elif context == "pvp":
             if quest.category.is_pvp() == False:
-                Log.log_debug(f"Quest {quest.name} is not a PVP quest.")
+                Log.log_debug(f"Quest {quest.name} {quest.category} is not a PVP quest.")
                 return False
             else:
                 return True
         elif context == "factory":
             if quest.category.is_factory() == False:
-                Log.log_debug(f"Quest {quest.name} is not a factory quest.")
+                Log.log_debug(f"Quest {quest.name} {quest.category} is not a factory quest.")
                 return False
             else:
                 return True
         elif context == "auto_sortie":
             if quest.category.is_sortie() == False:
-                Log.log_debug(f"Quest {quest.name} is not a combat quest.")
+                Log.log_debug(f"Quest {quest.name} {quest.category} is not a combat quest.")
                 return False
             return True 
         elif context == "auto_expedition":
             if quest.category.is_expedition() == False:
-                Log.log_debug(f"Quest {quest.name} is not an expedition quest.")
+                Log.log_debug(f"Quest {quest.name} {quest.category} is not an expedition quest.")
                 return False
             return True
         elif context == "reset":
