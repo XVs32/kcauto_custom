@@ -168,19 +168,17 @@ class QuestCore(CoreBase):
                 
                 deactivate_needed = False 
                 if not self._is_relevent_quest(quest, context=context):
-                    if context != "expedition":
-                        if not self._is_relevent_quest(quest, context="expedition"):
-                            deactivate_needed = True
-                    else:
-                        deactivate_needed = True 
                     
-                    if deactivate_needed:    
-                        Log.log_msg(f"Deactivating quest {quest.name}.")
-                        self._click_quest_idx(i)
-                        self._untrack_quest(quest)
-                        sts.stats.quest.quests_deactivated += 1
-                        
-                if deactivate_needed == False:
+                    deactivate_needed = True
+                    if context != "expedition" and self._is_relevent_quest(quest, context="expedition"):
+                        deactivate_needed = False
+                    
+                if deactivate_needed == True:    
+                    Log.log_msg(f"Deactivating quest {quest.name}.")
+                    self._click_quest_idx(i)
+                    self._untrack_quest(quest)
+                    sts.stats.quest.quests_deactivated += 1
+                elif deactivate_needed == False:
                     Log.log_msg(f"Quest {quest.name} already active.")
                     if self._quest_should_be_done(quest):
                         # quest is expected to be completed, but it isn't;
@@ -355,33 +353,6 @@ class QuestCore(CoreBase):
                 
                 Log.log_debug(f'exp_rank: {exp.expedition.exp_rank}')
 
-    def _get_quest_in_config(self, type_list) -> list[Quest]:
-        """Method that get all quests name which is available in game and enabled in config"""
-        """type_list(str) : The type of quest to find(combat,pvp,factory,expedition)"""
-        """Attention: Return quest name ONLY, no quest id is returned"""
-
-        quest_groups = ['E']
-        for type in type_list:
-            if type == "combat" or type == "auto_sortie":
-                quest_groups.append('B')
-            elif type == "pvp":
-                quest_groups.append('C')
-            elif type == "factory":
-                quest_groups.append('F')
-            elif type == "expedition" or type == "auto_expedition":
-                quest_groups.append('D')
-            elif type != "reset":
-                raise ValueError("Invalid quest type specified:" + type)
-                
-
-        quests_list = []
-        for quest_name in cfg.config.quest.quests:
-            if quest_name[0] not in quest_groups:
-                continue
-            quests_list.append(Quest(quest_name))
-        
-        return quests_list
-
     def _turn_in_quest_idx(self, idx):
         """Method to turn in quest by index in the current quest list.
         
@@ -530,7 +501,7 @@ class QuestCore(CoreBase):
             if quest.category.is_expedition() == False:
                 Log.log_debug(f"Quest {quest.name} {quest.category} is not an expedition quest.")
                 return False
-            if exp.expedition.cur_exp not in quest.exp_context:
+            if quest.exp_context != () and not (exp.expedition.cur_exp in quest.exp_context):
                 Log.log_debug(f"Quest {quest.name} is not relevant to expedition {exp.expedition.cur_exp}.")
                 return False
             else:
