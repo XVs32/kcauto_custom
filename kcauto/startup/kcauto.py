@@ -190,6 +190,7 @@ class Kcauto(object):
             
             self.run_quest_logic('pvp', back_to_home=True)
             self._run_fleetswitch_logic('pvp')
+            self.run_repair_logic()
         else:
             return False
 
