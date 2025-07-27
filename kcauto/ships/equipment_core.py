@@ -6,6 +6,8 @@ if TYPE_CHECKING:
 from ships.equipment import Equipment
 from util.json_data import JsonData
 from util.logger import Log
+from kca_enums.ship_class import ShipClassEnum 
+from kca_enums.ship_types import ShipTypeEnum
 
 
 class EquipmentCore(object):
@@ -119,7 +121,7 @@ class EquipmentCore(object):
         
         return ret 
 
-    def _get_special_reinforce_equipment(self, ship):
+    def _get_special_reinforce_equipment(self, ship: Ship):
         """method to get the special reinforce equipment for the ship
         Args:
             ship (Ship): the ship to check
@@ -141,16 +143,14 @@ class EquipmentCore(object):
             or \
                 (self.reinforce_special[key]["api_ctypes"] is not None \
                 and \
-                str(ship.ship_family) in self.reinforce_special[key]["api_ctypes"].keys())\
+                ship.ship_class in [ShipClassEnum(int(reinforce_ship_class)) for reinforce_ship_class in self.reinforce_special[key]["api_ctypes"].keys()])\
             or \
                 (self.reinforce_special[key]["api_stypes"] is not None \
                 and \
-                    (str(ship.ship_type.id) in self.reinforce_special[key]["api_stypes"].keys() \
-                        or\
-                    WILDCARD_SHIP_TYPE in self.reinforce_special[key]["api_stypes"].keys())):
+                set([ship.ship_type,ShipTypeEnum.WILDCARD]).intersection(set([ShipTypeEnum(int(reinforce_ship_type)) for reinforce_ship_type in self.reinforce_special[key]["api_stypes"].keys()]))):
                 Log.log_debug("hit")
                 equipment_list[(int(key))] = self.reinforce_special[key]["api_req_level"]
-
+ 
         Log.log_debug("special equipment_list")
         Log.log_debug(equipment_list)
 
