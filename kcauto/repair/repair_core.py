@@ -3,6 +3,7 @@ from util.pyvisauto import Region
 
 import api.api_core as api
 import combat.combat_core as com
+import pvp.pvp_core as pvp
 import config.config_core as cfg
 import fleet.fleet_core as flt
 from fleet.fleet import Fleet
@@ -52,6 +53,9 @@ class RepairCore(object):
             if self.is_passive_repair_needed:
                 if (    cfg.config.passive_repair.slots_to_reserve
                         >= self.docks_available_count):
+                    
+                    Log.log_debug(f"Not enough docks {self.docks_available_count} withour reserve {cfg.config.passive_repair.slots_to_reserve}.")
+                    
                     return False
                 return True
         return False
@@ -100,7 +104,8 @@ class RepairCore(object):
         TEMP_FLEET_ID = 1
         temp_fleet = (Fleet("unload_equipment", FleetEnum.COMBAT, False))
         temp_fleet.ships = []
-            
+        
+        count = 0    
         for idx, ship in enumerate(repair_list):
             
             if ship.production_id in self.ships_under_repair:
@@ -114,10 +119,13 @@ class RepairCore(object):
                         idx_of_passive_ships[idx] = ship
                         if ship.has_no_equipment() == False:
                             temp_fleet.ships.append(ship)
+                            count += 1
+                            if count >= self.docks_available_count - cfg.config.passive_repair.slots_to_reserve:
+                                break
                         
         if temp_fleet.ships != []:
             fsw.fleet_switcher.goto()
-            if fsw.fleet_switcher.switch_to_costom_fleet(TEMP_FLEET_ID, {TEMP_FLEET_ID:temp_fleet}):
+            if fsw.fleet_switcher.switch_to_costom_fleet(TEMP_FLEET_ID, temp_fleet):
                 nav.navigate.to('refresh_home')
                 nav.navigate.to('equipment')
                 fsw.fleet_switcher.unload_fleet_equipment(fleet_id=TEMP_FLEET_ID, needed_load=False)
@@ -269,7 +277,10 @@ class RepairCore(object):
 
     @property
     def is_combat_repair_needed(self):
-        if cfg.config.combat.enabled:
+        if com.combat.enabled or pvp.pvp.enabled:
+            
+            #@todo this function do not know if combat fleet or pvp fleet needs repair
+            
             for fleet in flt.fleets.combat_fleets:
                 if fleet.under_repair:
                     return False
