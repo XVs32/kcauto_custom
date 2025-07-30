@@ -255,7 +255,7 @@ def open_pop_up(thread, stdscr, active_panel):
             passive_repair.set_config(config, 0)
         else:
             ship_switch.set_config(config, {})
-            passive_repair.set_config(config, 2)
+            passive_repair.set_config(config, 1)
 
     elif active_panel == SCHEDULER :
         end_time = scheduler.get_end_time(config)
