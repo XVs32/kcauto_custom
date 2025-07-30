@@ -260,6 +260,7 @@ class FleetSwitcherCore(object):
             else:
                 break
         
+        Log.log_success("load fleet done")
         return True
         
         
@@ -279,53 +280,7 @@ class FleetSwitcherCore(object):
         
         self.goto()
         
-        EMPTY = -1
-        retry = 0
-
-        while True:
-            
-            flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][fleet_id].select()
-            
-            empty_slot_count = 0
-            
-            size = max(flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][fleet_id].size, costom_fleet.size)
-
-            any_vaild_switch = False
-            retry = False
-            for i in range(1,size + 1):
-                if i > costom_fleet.size:
-                    id = EMPTY #remove this slot
-                else:
-                    id = costom_fleet.ship_ids[i-1]
-
-                if i <= len(flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][fleet_id].ship_ids) and \
-                    id == flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][fleet_id].ship_ids[i-1]:
-                    Log.log_debug("Ship loaded already for costom fleet with equipment")
-                    continue
-
-                if not ssw.ship_switcher.switch_slot_by_id(i-empty_slot_count,id):
-                    #fleet data update
-                    if any_vaild_switch == True:
-                        Log.log_msg(f"retrying...")
-                        nav.navigate.to('home')
-                        self.goto()
-                        retry = True 
-                        break
-                    else:
-                        return False
-                    
-                else:
-                    any_vaild_switch = True
-                    
-                if id == EMPTY:
-                    empty_slot_count += 1
-
-            if retry == True:
-                continue
-            else:
-                break
-            
-        Log.log_success("load fleet done")
+        self.switch_to_costom_fleet(fleet_id, costom_fleet) 
             
         self._load_equipment(fleet_id, costom_fleet)    
         Log.log_success("load equipment done")
