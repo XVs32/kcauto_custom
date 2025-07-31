@@ -314,13 +314,13 @@ class ShipSwitcherCore(object):
         
         while retry < 5:
             if kca_u.kca.exists(
-                'lower_right', 'shipswitcher|shiplist_shipswitch_button_unable.png'):
+                'lower_right', 'shipswitcher|shiplist_shipswitch_button_unable.png', similarity=NEAR_EXACT):
                 Log.log_warn("Could not switch to selected ship.")
                 return False
             elif kca_u.kca.exists(
-                    'lower_right', 'shipswitcher|shiplist_shipswitch_button.png', cached = True):
+                    'lower_right', 'shipswitcher|shiplist_shipswitch_button.png', cached = True, similarity=NEAR_EXACT):
                 kca_u.kca.click_existing(
-                    'lower_right', 'shipswitcher|shiplist_shipswitch_button.png', cached = True)
+                    'lower_right', 'shipswitcher|shiplist_shipswitch_button.png', cached = True, similarity=NEAR_EXACT)
                 kca_u.kca.r['top'].hover()
                 kca_u.kca.wait(
                     'right', 'shipswitcher|shiplist_button.png')
