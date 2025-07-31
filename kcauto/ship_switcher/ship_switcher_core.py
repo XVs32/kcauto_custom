@@ -46,7 +46,7 @@ class ShipSwitcherCore(object):
         """
 
         # The slot has the specified ship already
-        #@todo upper function has to handle the switched already detection
+        #@todo upper function has to handle the switched already detection, tho ship switcher does not know what fleet currently is
         #if len(flt.fleets.fleets[1].ship_ids) >= slot and ship_local_id == flt.fleets.fleets[1].ship_ids[slot-1]:
             #return
 
@@ -175,6 +175,8 @@ class ShipSwitcherCore(object):
         self.current_page = 1
         
     def _select_switch_button(self, slot_id):
+        
+        Log.log_debug(f"Selecting switch button for slot {slot_id}.")
         
         if slot_id == 7:
             next_region = Region(
@@ -308,24 +310,25 @@ class ShipSwitcherCore(object):
 
     def _switch_ship(self):
 
-        flag = False 
         retry = 0
-
-        if kca_u.kca.click_existing(
-                'lower_right', 'shipswitcher|shiplist_shipswitch_button.png', cached = True):
-            kca_u.kca.r['top'].hover()
-            while retry < 5:
-                if kca_u.kca.exists('right', 'shipswitcher|shiplist_button.png'):
-                    flag = True
-                    break
-                else:
-                    retry += 1
-                    kca_u.kca.sleep(1)
+        
+        while retry < 5:
+            if kca_u.kca.exists(
+                'lower_right', 'shipswitcher|shiplist_shipswitch_button_unable.png'):
+                Log.log_warn("Could not switch to selected ship.")
+                return False
+            elif kca_u.kca.exists(
+                    'lower_right', 'shipswitcher|shiplist_shipswitch_button.png', cached = True):
+                kca_u.kca.click_existing(
+                    'lower_right', 'shipswitcher|shiplist_shipswitch_button.png', cached = True)
+                kca_u.kca.r['top'].hover()
+                kca_u.kca.wait(
+                    'right', 'shipswitcher|shiplist_button.png')
+            else:
+                kca_u.kca.sleep(1)
+                retry += 1
             
-        if not flag:
-            Log.log_warn("Could not switch to selected ship.")
-
-        return flag
+        return True
 
     @property
     def _local_ships_sorted_by_levels(self):
