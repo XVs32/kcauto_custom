@@ -328,11 +328,13 @@ class QuestCore(CoreBase):
             
             quest_list = self._get_quests_rank_list(self.EXPEDITION)
             
+            quest_dom = kca_u.kca.get_quest_dom()
+            
             for next_quest in reversed(quest_list):
                 Log.log_debug(f"next_quest = {next_quest.name}")
             
                 """Read quest progress""" 
-                exp_dict = kca_u.kca.get_quest_count(target_quest= next_quest)
+                exp_dict = kca_u.kca.get_quest_count(target_quest= next_quest, quest_dom=quest_dom)
                 
                 Log.log_debug(f'exp_dict {exp_dict}')
                 
