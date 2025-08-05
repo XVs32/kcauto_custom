@@ -1055,12 +1055,7 @@ class Kca(object):
         target_quest_name = target_quest.name
         
         if quest_dom == None:
-            self.reload_kc3_strategy_page(subpage = "#flowchart")
-
-            dom = PyQuery(self.html, parser='html')
-
-            quest_tree_dom = dom("ul#questBox_rootFlow.questTree")
-            Log.log_debug(f"kac.quest_tree_dom:{quest_tree_dom}")
+            quest_tree_dom = self.get_quest_dom()
         else:
             quest_tree_dom = quest_dom
 
