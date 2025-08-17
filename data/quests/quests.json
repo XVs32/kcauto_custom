@@ -279,18 +279,21 @@
     "fleet_composition": {
       "requirements": [
         {
-          "type": "ship",
-          "id": 62,
+          "id": [
+            62
+          ],
           "amount": 1
         },
         {
-          "type": "ship",
-          "id": 63,
+          "id": [
+            63
+          ],
           "amount": 1
         },
         {
-          "type": "ship",
-          "id": 65,
+          "id": [
+            65
+          ],
           "amount": 1
         }
       ]
@@ -313,7 +316,6 @@
     "fleet_composition": {
       "requirements": [
         {
-          "type": "ship_type",
           "stype": [
             13,
             14
@@ -336,24 +338,26 @@
     "fleet_composition": {
       "requirements": [
         {
-          "type": "ship_type",
-          "stype": 3,
+          "stype": [
+            3
+          ],
           "position": 0
         },
         {
-          "type": "ship_type",
-          "stype": 3,
+          "stype": [
+            3
+          ],
           "count_rule": "at_most",
           "amount": 3
         },
         {
-          "type": "ship_type",
-          "stype": 2,
+          "stype": [
+            2
+          ],
           "count_rule": "at_least",
           "amount": 1
         },
         {
-          "type": "fleet_options",
           "allowed_ship_types": [
             2,
             3
@@ -374,7 +378,6 @@
     "fleet_composition": {
       "requirements": [
         {
-          "type": "ship_class",
           "ctype": [
             37,
             19,
@@ -384,8 +387,9 @@
           "amount": 3
         },
         {
-          "type": "ship_type",
-          "stype": 3,
+          "stype": [
+            3
+          ],
           "amount": 1
         }
       ]
@@ -418,7 +422,6 @@
     "fleet_composition": {
       "requirements": [
         {
-          "type": "ship_type",
           "stype": [
             7,
             11,
@@ -428,8 +431,9 @@
           "amount": 2
         },
         {
-          "type": "ship_type",
-          "stype": 2,
+          "stype": [
+            2
+          ],
           "count_rule": "at_least",
           "amount": 2
         }
@@ -448,25 +452,29 @@
     "fleet_composition": {
       "requirements": [
         {
-          "type": "ship_type",
-          "stype": 2,
+          "stype": [
+            2
+          ],
           "position": 0
         },
         {
-          "type": "ship_type",
-          "stype": 5,
+          "stype": [
+            5
+          ],
           "count_rule": "exact",
           "amount": 1
         },
         {
-          "type": "ship_type",
-          "stype": 3,
+          "stype": [
+            3
+          ],
           "count_rule": "exact",
           "amount": 1
         },
         {
-          "type": "ship_type",
-          "stype": 2,
+          "stype": [
+            2
+          ],
           "count_rule": "exact",
           "amount": 4
         }
@@ -491,7 +499,6 @@
     "fleet_composition": {
       "requirements": [
         {
-          "type": "ship_type",
           "stype": [
             3,
             4,
@@ -501,7 +508,6 @@
           "amount": 1
         },
         {
-          "type": "ship_type",
           "stype": [
             1,
             2
@@ -550,7 +556,6 @@
     "fleet_composition": {
       "requirements": [
         {
-          "type": "ship_type",
           "stype": [
             10,
             22
@@ -573,13 +578,15 @@
     "fleet_composition": {
       "requirements": [
         {
-          "type": "ship_type",
-          "stype": 16,
+          "stype": [
+            16
+          ],
           "amount": 1
         },
         {
-          "type": "ship_type",
-          "stype": 3,
+          "stype": [
+            3
+          ],
           "count_rule": "at_least",
           "amount": 2
         }
@@ -602,8 +609,9 @@
     "fleet_composition": {
       "requirements": [
         {
-          "type": "ship_type",
-          "stype": 3,
+          "stype": [
+            3
+          ],
           "count_rule": "at_least",
           "amount": 1
         }
@@ -622,12 +630,12 @@
     "fleet_composition": {
       "requirements": [
         {
-          "type": "ship",
-          "id": 543,
+          "id": [
+            543
+          ],
           "amount": 1
         },
         {
-          "type": "ship",
           "id": [
             345,
             649,
@@ -733,7 +741,6 @@
     "fleet_composition": {
       "requirements": [
         {
-          "type": "ship_type",
           "stype": [
             3,
             4,
@@ -743,7 +750,6 @@
           "amount": 1
         },
         {
-          "type": "ship_type",
           "stype": [
             1,
             2
@@ -786,7 +792,41 @@
       "Bq13-5-4",
       "Bq13-6-4",
       "Bq13-6-5"
-    ]
+    ],
+    "fleet_composition": {
+      "requirements_1": [
+        {
+          "id": [
+            487,
+            488,
+            629
+          ],
+          "position": 0
+        },
+        {
+          "ctype": [
+            30
+          ],
+          "count_rule": "at_least",
+          "amount": 2
+        }
+      ],
+      "requirements_2": [
+        {
+          "id": [
+            487,
+            488,
+            629
+          ],
+          "position": 0
+        },
+        {
+          "id": [
+            200
+          ]
+        }
+      ]
+    }
   },
   "By1": {
     "id": 904,
