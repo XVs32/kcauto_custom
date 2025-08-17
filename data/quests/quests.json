@@ -309,7 +309,20 @@
     ],
     "recommended_map": [
       "B-6-1"
-    ]
+    ],
+    "fleet_composition": {
+      "requirements": [
+        {
+          "type": "ship_type",
+          "stype": [
+            13,
+            14
+          ],
+          "count_rule": "at_least",
+          "amount": 4
+        }
+      ]
+    }
   },
   "Bm3": {
     "id": 257,
@@ -401,7 +414,27 @@
     ],
     "recommended_map": [
       "Bm6-4-2"
-    ]
+    ],
+    "fleet_composition": {
+      "requirements": [
+        {
+          "type": "ship_type",
+          "stype": [
+            7,
+            11,
+            18
+          ],
+          "count_rule": "at_least",
+          "amount": 2
+        },
+        {
+          "type": "ship_type",
+          "stype": 2,
+          "count_rule": "at_least",
+          "amount": 2
+        }
+      ]
+    }
   },
   "Bm7": {
     "id": 266,
@@ -411,7 +444,34 @@
     ],
     "recommended_map": [
       "Bm7-2-5"
-    ]
+    ],
+    "fleet_composition": {
+      "requirements": [
+        {
+          "type": "ship_type",
+          "stype": 2,
+          "position": 0
+        },
+        {
+          "type": "ship_type",
+          "stype": 5,
+          "count_rule": "exact",
+          "amount": 1
+        },
+        {
+          "type": "ship_type",
+          "stype": 3,
+          "count_rule": "exact",
+          "amount": 1
+        },
+        {
+          "type": "ship_type",
+          "stype": 2,
+          "count_rule": "exact",
+          "amount": 4
+        }
+      ]
+    }
   },
   "Bm8": {
     "id": 280,
