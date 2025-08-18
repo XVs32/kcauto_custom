@@ -68,11 +68,11 @@ class Quest(object):
     @property
     def recommended_map(self):
         return tuple(Quest.static_data[self.name].get('recommended_map', ()))
-        
+    
     def _get_quest_id(self, name):
-        for quest_name in Quest.static_data:
-            if quest_name == name:
-                return Quest.static_data[quest_name]['id']
+        quest = Quest.static_data.get(name, None)
+        if quest != None:
+            return quest['id']
         return None
 
     def _get_name(self, quest_id):
