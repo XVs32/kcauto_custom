@@ -188,8 +188,10 @@ class Kcauto(object):
                 return False
             nav.navigate.to('home')
             
-            self.run_quest_logic('pvp', back_to_home=True)
             self._run_fleetswitch_logic('pvp')
+            
+            self.run_quest_logic('pvp', back_to_home=True)
+            
             self.run_repair_logic()
         else:
             return False
@@ -288,9 +290,6 @@ class Kcauto(object):
             else:
                 Log.log_warn(f"{cfg.config.combat.sortie_map.value} combat config not found, use default combat config instead.")
 
-        #apply for combat queue, assume map_data is up-to-date
-        self.run_quest_logic('combat', fast_check = not was_sortie_queue_empty, force= was_sortie_queue_empty)
-
         port_api_update = False 
         if self._run_fleetswitch_logic('combat') == 0:
             port_api_update = True
@@ -300,6 +299,9 @@ class Kcauto(object):
         
         if com.combat.should_and_able_to_sortie(ignore_supply=True):
 
+            #apply for combat queue, assume map_data is up-to-date
+            self.run_quest_logic('combat', fast_check = not was_sortie_queue_empty, force= was_sortie_queue_empty)
+            
             self.run_resupply_logic()
             com.combat.goto()
 
