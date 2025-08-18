@@ -1019,7 +1019,7 @@
       "B-5-3"
     ]
   },
-  "C2": {
+  "Cd1": {
     "id": 303,
     "type": "daily",
     "intervals": [
@@ -1028,7 +1028,7 @@
       0
     ]
   },
-  "C3": {
+  "Cd2": {
     "id": 304,
     "type": "daily",
     "intervals": [
@@ -1037,7 +1037,7 @@
       0
     ]
   },
-  "C4": {
+  "Cw1": {
     "id": 302,
     "type": "weekly",
     "intervals": [
@@ -1046,7 +1046,7 @@
       0
     ]
   },
-  "C8": {
+  "Cm1": {
     "id": 311,
     "type": "monthly",
     "intervals": [
@@ -1055,13 +1055,52 @@
       0
     ]
   },
-  "C16": {
+  "Cm2": {
     "id": 318,
-    "type": "monthly"
+    "type": "monthly",
+    "fleet_composition": {
+      "requirements": [
+        {
+          "stype": [
+            3
+          ],
+          "count_rule": "at_least",
+          "amount": 2
+        }
+      ]
+    }
   },
-  "C29": {
+  "Cq1": {
     "id": 330,
-    "type": "other"
+    "type": "other",
+    "fleet_composition": {
+      "requirements": [
+        {
+          "stype": [
+            7,
+            11,
+            18
+          ],
+          "position": 0
+        },
+        {
+          "stype": [
+            7,
+            11,
+            18
+          ],
+          "count_rule": "at_least",
+          "amount": 2
+        },
+        {
+          "stype": [
+            2
+          ],
+          "count_rule": "at_least",
+          "amount": 2
+        }
+      ]
+    }
   },
   "Dd1": {
     "id": 402,
