@@ -508,15 +508,15 @@ class FleetSwitcherCore(object):
                     kca_u.kca.click('5_slot_unload_equipment') 
                     
                 kca_u.kca.wait('lower', 'shipswitcher|equipment_panel.png')
+                api_result = api.api.update_from_api({KCSAPIEnum.FREE_EQUIPMENT}, need_all=True)
                 
                 if flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][fleet_id].ships[i].slot_ex != None and \
                    flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][fleet_id].ships[i].slot_ex != Equipment():
                     Log.log_debug(f"reinforce slot ship")
                     kca_u.kca.click('reinforce_slot_unload_equipment')
-
-                kca_u.kca.wait('lower', 'shipswitcher|equipment_panel.png')
+                    kca_u.kca.wait('lower', 'shipswitcher|equipment_panel.png')
+                    api_result = api.api.update_from_api({KCSAPIEnum.FREE_EQUIPMENT}, need_all=True)
                 
-                api_result = api.api.update_from_api({KCSAPIEnum.FREE_EQUIPMENT}, need_all=True)
                 if api_result != {}:
                     break
                 else:
