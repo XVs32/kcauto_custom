@@ -49,10 +49,19 @@ class Kca(object):
     last_ui = None
     r = {}
     html = None
+    kc3_id = None
 
     def __init__(self):
+        if self.kc3_id ==None:
+            try:
+                with open('data/config/kc3_id.json', 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                    self.kc3_id = data.get('id', "hkgmldnainaglpjngpajnnjfhpdjkohh")
+            except FileNotFoundError:
+                Log.log_warn("kc3_id.json not found, using default value None.")
+                self.kc3_id = "hkgmldnainaglpjngpajnnjfhpdjkohh"
         Log.log_debug("Kca module initialized.")
-
+        
     def hook_chrome(self):
         """Method that initializes the necessary hooks to Chrome using
         PyChromeDevTools. The visual hook connects to the tab that actually
@@ -1016,9 +1025,7 @@ class Kca(object):
         Args:
             subpage (string): The name of sub page to open. (ex. flowchart)
         """
-
-        asyncio.get_event_loop().run_until_complete(self.get_html("chrome-extension://hkgmldnainaglpjngpajnnjfhpdjkohh/pages/strategy/strategy.html"+subpage))
-
+        asyncio.get_event_loop().run_until_complete(self.get_html(f"chrome-extension://{self.kc3_id}/pages/strategy/strategy.html{subpage}"))
         #Wait for quest panel finish closing
         self.find_kancolle()
 
@@ -1045,7 +1052,7 @@ class Kca(object):
             For example, the remaining sorties needed for quest Bm3 could be {1-4:1, 3-5:0}
 
         Args:
-            target_quest_name (string): The quest to check. (ex. "Bm3")
+            target_quest (Quest): The quest to check, in the form of Quest object.
         
         Return:
             dict with key of quest name, and value of remaining actions needed.
