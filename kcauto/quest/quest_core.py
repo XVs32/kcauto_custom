@@ -31,7 +31,7 @@ class QuestCore(CoreBase):
     module_display_name = 'Quest'
     quest_reset_time = datetime.now()
     max_quests = None
-    quest_priority_library :list[Quest]= []
+    quest_priority_library : dict[int , list[Quest]] = {}
     _context_cache = None
     _relevant_quests = []
     last_checked_context = 'reset'
@@ -48,13 +48,26 @@ class QuestCore(CoreBase):
         self._load_quest_priority()
 
     def _load_quest_priority(self):
-        self.quest_priority_library = []
+        self.quest_priority_library = {}
+        self.quest_priority_library[self.SORTIE] = []
+        self.quest_priority_library[self.EXPEDITION] = []
+        self.quest_priority_library[self.PVP] = []
 
         Log.log_msg("Loading Quest priority data.")
-        quest_priority = JsonData.load_json('data|quests|quest_priority.json')
+        quest_priority = JsonData.load_json('data|quests|sorite_quest_priority.json')
         for quest_type in quest_priority:
             for quest_name in quest_priority[quest_type]:
-                self.quest_priority_library.append(Quest(quest_name))
+                self.quest_priority_library[self.SORTIE].append(Quest(quest_name))
+                
+        quest_priority = JsonData.load_json('data|quests|expedition_quest_priority.json')
+        for quest_type in quest_priority:
+            for quest_name in quest_priority[quest_type]:
+                self.quest_priority_library[self.EXPEDITION].append(Quest(quest_name))
+                
+        quest_priority = JsonData.load_json('data|quests|pvp_quest_priority.json')
+        for quest_type in quest_priority:
+            for quest_name in quest_priority[quest_type]:
+                self.quest_priority_library[self.PVP].append(Quest(quest_name))
 
     def need_to_check(self, context):
         if datetime.now() > self.quest_reset_time:
@@ -216,25 +229,16 @@ class QuestCore(CoreBase):
         
         ret = []
         
-        for quest in self.quest_priority_library:
+        for quest in self.quest_priority_library[mode]:
                 
             if not (quest.name in cfg.config.quest.quests):
-                Log.log_debug(f"Quest {quest.name} is not in config.")
-                continue
-        
-            if mode == self.SORTIE and quest.category.is_sortie() == False:
-                Log.log_debug(f"Quest {quest.name} {quest.category} is not a combat quest.")
-                continue
-            elif mode == self.EXPEDITION and quest.category.is_expedition() == False:
-                Log.log_debug(f"Quest {quest.name} {quest.category} is not an expedition quest.")
+                #Log.log_debug(f"Quest {quest.name} is not in config.")
                 continue
             
             for current_quest in self.current_quest_list:
-                if current_quest.quest_id != quest.quest_id:
+                if current_quest.quest_id != quest.quest_id or current_quest.state == QuestStateEnum.DONE:
                     continue
                 
-                if current_quest.state == QuestStateEnum.DONE: 
-                    continue
                 ret.append(current_quest)
                 
         return ret
@@ -318,11 +322,27 @@ class QuestCore(CoreBase):
                     for i in range(0, sortie_dict[map_name]):
                         #sortie_list.append(key+"-"+next_quest)
                         sortie_list.append(next_quest.name +"-"+ map_name)
+            
+            #patch to turn Bxx-1-6-N from quest to Bxx-1-6
+            for i in len(sortie_list):
+                if sortie_list[i][-5:] == "1-6-N":
+                    sortie_list[i] = sortie_list[i][:-2]
 
             com.combat.set_sortie_queue(sortie_list)
 
             Log.log_debug(f"_find_next_sorties_quests {next_quest.name}.")
             Log.log_debug(f"get_sortie_queue {com.combat.get_sortie_queue()}.")
+            
+        elif mode == self.PVP:
+            
+            next_quest = self._get_quests_rank_list(self.PVP)
+            quest_dom = kca_u.kca.get_quest_dom()
+            
+            if next_quest != []:
+                next_quest = next_quest[0]
+            else:
+                return
+            
             
         elif mode == self.EXPEDITION:
             
@@ -490,8 +510,8 @@ class QuestCore(CoreBase):
             if len(com.combat.get_sortie_queue()) <= 0:
                 Log.log_msg("No sortie quests available, cannot activate sortie quest.")
                 return False
-            elif quest.map_context != () and not (com.combat.get_sortie_queue()[0] in quest.map_context):
-                Log.log_debug(f"Quest {quest.name} is not relevant to sortie map {com.combat.get_sortie_queue()[0]}.")
+            elif quest.map_context != () and not (com.combat.get_sortie_queue()[0].world_and_map_enum in quest.map_context):
+                Log.log_debug(f"Quest {quest.name} is not relevant to sortie map {com.combat.get_sortie_queue()[0].world_and_map}.")
                 return False
             #if any combat.map_data.enemy_context in quest.enemy_context:
             elif quest.enemy_context != () and not (set(com.combat.map_data.enemy_context) & set(quest.enemy_context)):
