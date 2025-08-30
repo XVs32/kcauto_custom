@@ -648,7 +648,7 @@ class FleetCore(object):
             elif flag == True:
                 return fleet.fleet_id
         
-        Log.log_warn(f"Failed to get next expedition fleet id, current fleet id: {fleet_id}, return None")        
+        Log.log_debug(f"Failed to get next expedition fleet id, current fleet id: {fleet_id}, return None")        
         return None
 
     def _get_exp_ship_requirement_from_composition(self, composition):
