@@ -324,7 +324,7 @@ class QuestCore(CoreBase):
                         sortie_list.append(next_quest.name +"-"+ map_name)
             
             #patch to turn Bxx-1-6-N from quest to Bxx-1-6
-            for i in len(sortie_list):
+            for i in range(len(sortie_list)):
                 if sortie_list[i][-5:] == "1-6-N":
                     sortie_list[i] = sortie_list[i][:-2]
 
@@ -510,8 +510,8 @@ class QuestCore(CoreBase):
             if len(com.combat.get_sortie_queue()) <= 0:
                 Log.log_msg("No sortie quests available, cannot activate sortie quest.")
                 return False
-            elif quest.map_context != () and not (com.combat.get_sortie_queue()[0].world_and_map_enum in quest.map_context):
-                Log.log_debug(f"Quest {quest.name} is not relevant to sortie map {com.combat.get_sortie_queue()[0].world_and_map}.")
+            elif quest.map_context != () and not (com.combat.get_sortie_queue()[0].without_quest_enum in quest.map_context):
+                Log.log_debug(f"Quest {quest.name} is not relevant to sortie map {com.combat.get_sortie_queue()[0].without_quest}.")
                 return False
             #if any combat.map_data.enemy_context in quest.enemy_context:
             elif quest.enemy_context != () and not (set(com.combat.map_data.enemy_context) & set(quest.enemy_context)):
@@ -523,7 +523,8 @@ class QuestCore(CoreBase):
             if quest.category.is_expedition() == False:
                 Log.log_debug(f"Quest {quest.name} {quest.category} is not an expedition quest.")
                 return False
-            if quest.exp_context != () and not (exp.expedition.cur_exp in quest.exp_context):
+            
+            if quest.exp_context != () and not any(item in exp.expedition.cur_exp for item in quest.exp_context):
                 Log.log_debug(f"Quest {quest.name} is not relevant to expedition {exp.expedition.cur_exp}.")
                 return False
             else:
