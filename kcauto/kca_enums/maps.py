@@ -801,9 +801,11 @@ class MapEnum(EnumBase):
     W1_2_By2 = "By2-1-2"
     W1_3_By2 = "By2-1-3"
     W1_5_By2 = "By2-1-5"
+    W1_6_By2 = "By2-1-6"
     W1_6_N_By2 = "By2-1-6-N"
 
     W1_3_By3 = "By3-1-3"
+    W1_6_By3 = "By3-1-6"
     W1_6_N_By3 = "By3-1-6-N"
     W2_1_By3 = "By3-2-1"
     W2_2_By3 = "By3-2-2"
@@ -823,6 +825,7 @@ class MapEnum(EnumBase):
     W1_4_By6 = "By6-1-4"
 
     W1_5_By7 = "By7-1-5"
+    W1_6_By7 = "By7-1-6"
     W1_6_N_By7 = "By7-1-6-N"
     W2_1_By7 = "By7-2-1"
 
@@ -881,10 +884,25 @@ class MapEnum(EnumBase):
     def without_quest(self):
         if self.value != "auto":
             #find the first "-"
-            return self.value[0] + self.value[self.value.index("-"):]
+            return f'{self.value[0]}{self.value[self.value.index("-"):]}'
         else:
             return "auto"
         
+    @property
+    def without_quest_enum(self):
+        if self.value != "auto":
+            #find the first "-"
+            return MapEnum(self.value[0] + self.value[self.value.index("-"):])
+        else:
+            return MapEnum.auto_map_selete
+        
+    @property
+    def without_quest_and_node(self):
+        if self.value != "auto":
+            return self.value[0] + "-" + self.value.split("-")[1] + "-" + self.value.split("-")[2] 
+        else:
+            return "auto"
+            
     @property
     def is_map_variant(self):
         return len(self.value.split("-")) > 3
