@@ -59,7 +59,7 @@ class Quest(object):
         
     @property
     def map_context(self):
-        return tuple([MapEnum(m) for m in Quest.static_data[self.name].get('map_context', [])])
+        return tuple([MapEnum(m).without_quest_enum for m in Quest.static_data[self.name].get('map_context', [])])
         
     @property
     def exp_context(self):
@@ -68,6 +68,10 @@ class Quest(object):
     @property
     def recommended_map(self):
         return tuple(Quest.static_data[self.name].get('recommended_map', ()))
+    
+    @property
+    def fleet_composition(self):
+        return tuple(Quest.static_data[self.name].get('fleet_composition', ()))
     
     def _get_quest_id(self, name):
         quest = Quest.static_data.get(name, None)
@@ -115,6 +119,6 @@ class Quest(object):
                 return QuestTypeEnum.OTHER
         else:
             return None
-            
+        
     def __repr__(self):
         return f"{self.name} (#{self.quest_id})"
