@@ -173,7 +173,9 @@ class QuestCore(CoreBase):
         
         while i >= 0:
             quest = self.current_quest_list[i]
-            if quest.is_kcauto_support_quest() == False:
+            
+            if not (quest.name in cfg.config.quest.quests):
+                Log.log_debug(f"Quest {quest.quest_id}/{quest.name} is not in config.")
                 if quest.state == QuestStateEnum.DONE:
                     self._turn_in_quest_idx(i)
                     quest_turned_in = True
@@ -234,7 +236,7 @@ class QuestCore(CoreBase):
         for quest in self.quest_priority_library[mode]:
                 
             if not (quest.name in cfg.config.quest.quests):
-                #Log.log_debug(f"Quest {quest.name} is not in config.")
+                Log.log_debug(f"Quest {quest.name} is not in config.")
                 continue
             
             for current_quest in self.current_quest_list:
@@ -527,8 +529,8 @@ class QuestCore(CoreBase):
             
             if quest.exp_context != ():
                 if quest_dict:
-                    if not any(item in quest_dict.keys() for item in quest.exp_context):
-                        Log.log_debug(f"Quest {quest.name} is not relevant to expedition {list(quest_dict.keys())} anymore.")
+                    if not any(expedition in exp.expedition.cur_exp for expedition in quest_dict.keys()):
+                        Log.log_debug(f"Quest {quest.name} is not relevant to expedition {exp.expedition.cur_exp} anymore.")
                         return False
                 elif not any(item in exp.expedition.cur_exp for item in quest.exp_context):
                     Log.log_debug(f"Quest {quest.name} is not relevant to expedition {exp.expedition.cur_exp}.")
