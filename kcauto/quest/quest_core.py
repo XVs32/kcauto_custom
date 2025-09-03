@@ -32,6 +32,8 @@ class QuestCore(CoreBase):
     quest_reset_time = datetime.now()
     max_quests = None
     quest_priority_library : dict[int , list[Quest]] = {}
+    is_quest_dom_cache_dirty = True
+    _quest_dom_cache = None
     _context_cache = None
     _relevant_quests = []
     last_checked_context = 'reset'
@@ -262,10 +264,6 @@ class QuestCore(CoreBase):
             
         for i, quest in enumerate(self.current_quest_list):
             
-            if quest.is_kcauto_support_quest() == False:
-                #do not touch quests that are not supported by kcauto, probably actived by player
-                continue
-            
             if quest.state == QuestStateEnum.DONE:
                 Log.log_warn(f"Quest {quest.name} is done, but not turned in. ")
                 continue
@@ -318,10 +316,10 @@ class QuestCore(CoreBase):
                 sortie_list = list(next_quest.recommended_map)
                 Log.log_debug(f"sortie_list = {sortie_list}")
             else:
-                for map_name in sortie_dict:
-                    for i in range(0, sortie_dict[map_name]):
+                for map_enum in sortie_dict:
+                    for i in range(0, sortie_dict[map_enum]):
                         #sortie_list.append(key+"-"+next_quest)
-                        sortie_list.append(next_quest.name +"-"+ map_name)
+                        sortie_list.append(next_quest.name +"-"+ map_enum.world_and_map_and_node)
             
             #patch to turn Bxx-1-6-N from quest to Bxx-1-6
             for i in range(len(sortie_list)):
@@ -336,7 +334,6 @@ class QuestCore(CoreBase):
         elif mode == self.PVP:
             
             next_quest = self._get_quests_rank_list(self.PVP)
-            quest_dom = kca_u.kca.get_quest_dom()
             
             if next_quest != []:
                 next_quest = next_quest[0]
@@ -348,13 +345,11 @@ class QuestCore(CoreBase):
             
             quest_list = self._get_quests_rank_list(self.EXPEDITION)
             
-            quest_dom = kca_u.kca.get_quest_dom()
-            
             for next_quest in reversed(quest_list):
                 Log.log_debug(f"next_quest = {next_quest.name}")
             
                 """Read quest progress""" 
-                exp_dict = kca_u.kca.get_quest_count(target_quest= next_quest, quest_dom=quest_dom)
+                exp_dict = kca_u.kca.get_quest_count(target_quest= next_quest)
                 
                 Log.log_debug(f'exp_dict {exp_dict}')
                 
@@ -367,9 +362,9 @@ class QuestCore(CoreBase):
                         exp.expedition.cut_expedition_queue(exp_list)
                 else:
                     exp_list = []
-                    for map_name in exp_dict:
-                        if exp_dict[map_name] > 0:
-                            exp_list.append(map_name)
+                    for map_enum in exp_dict:
+                        if exp_dict[map_enum] > 0:
+                            exp_list.append(map_enum)
                     Log.log_debug(f'exp_list: {exp_list}')
                     exp.expedition.cut_expedition_queue(exp_list)
                 
@@ -496,12 +491,14 @@ class QuestCore(CoreBase):
             return False
         
         if not (quest.name in cfg.config.quest.quests):
-            Log.log_debug(f"Quest {quest.name} is not in config.")
+            Log.log_debug(f"Quest {quest.quest_id}/{quest.name} is not in config.")
             return False
         
         if quest.category.is_repair():
-            Log.log_debug(f"Quest {quest.name} is a repair/supply quest, which is always enabled.")
+            Log.log_debug(f"Quest {quest.quest_id}/{quest.name} is a repair/supply quest, which is always enabled.")
             return True
+        
+        quest_dict = kca_u.kca.get_quest_count(target_quest= quest)
         
         if context == "combat":
             if quest.category.is_sortie() == False:
@@ -510,25 +507,34 @@ class QuestCore(CoreBase):
             if len(com.combat.get_sortie_queue()) <= 0:
                 Log.log_msg("No sortie quests available, cannot activate sortie quest.")
                 return False
-            elif quest.map_context != () and not (com.combat.get_sortie_queue()[0].without_quest_enum in quest.map_context):
-                Log.log_debug(f"Quest {quest.name} is not relevant to sortie map {com.combat.get_sortie_queue()[0].without_quest}.")
-                return False
-            #if any combat.map_data.enemy_context in quest.enemy_context:
+            elif quest.map_context != ():
+                if quest_dict:
+                    if not (com.combat.get_sortie_queue()[0].without_quest_enum in quest_dict.keys()):
+                        Log.log_debug(f"Quest {quest.name} is not relevant to sortie map {com.combat.get_sortie_queue()[0].without_quest} anymore.")
+                        return False
+                elif not (com.combat.get_sortie_queue()[0].without_quest_enum in quest.map_context):
+                    Log.log_debug(f"Quest {quest.name} is not relevant to sortie map {com.combat.get_sortie_queue()[0].without_quest}.")
+                    return False
             elif quest.enemy_context != () and not (set(com.combat.map_data.enemy_context) & set(quest.enemy_context)):
                 Log.log_debug(f"Quest {quest.name} is not relevant to enemy context {com.combat.map_data.enemy_context}.")
                 return False
-            else:
-                return True
+            
+            return True
         elif context == "expedition":
             if quest.category.is_expedition() == False:
                 Log.log_debug(f"Quest {quest.name} {quest.category} is not an expedition quest.")
                 return False
             
-            if quest.exp_context != () and not any(item in exp.expedition.cur_exp for item in quest.exp_context):
-                Log.log_debug(f"Quest {quest.name} is not relevant to expedition {exp.expedition.cur_exp}.")
-                return False
-            else:
-                return True
+            if quest.exp_context != ():
+                if quest_dict:
+                    if not any(item in quest_dict.keys() for item in quest.exp_context):
+                        Log.log_debug(f"Quest {quest.name} is not relevant to expedition {list(quest_dict.keys())} anymore.")
+                        return False
+                elif not any(item in exp.expedition.cur_exp for item in quest.exp_context):
+                    Log.log_debug(f"Quest {quest.name} is not relevant to expedition {exp.expedition.cur_exp}.")
+                    return False
+                
+            return True
         elif context == "pvp":
             if quest.category.is_pvp() == False:
                 Log.log_debug(f"Quest {quest.name} {quest.category} is not a PVP quest.")
