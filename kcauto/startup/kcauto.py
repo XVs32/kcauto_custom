@@ -109,6 +109,8 @@ class Kcauto(object):
                 
             exp.expedition.goto()
             exp.expedition.send_expeditions()
+            #Refresh home for exp api data update
+            nav.navigate.to('refresh_home')
             self.run_quest_logic('expedition')
             sts.stats.set_print_loop_end_stats()
 
@@ -188,6 +190,10 @@ class Kcauto(object):
                 return False
             nav.navigate.to('home')
             
+            if cfg.config.pvp.fleet_preset == "auto":
+                self.run_quest_logic('auto_pvp')
+                
+            
             self._run_fleetswitch_logic('pvp')
             
             self.run_quest_logic('pvp', back_to_home=True)
@@ -197,10 +203,12 @@ class Kcauto(object):
             return False
 
         while pvp.pvp.pvp_available():
+            self.run_resupply_logic()
             pvp.pvp.goto()
             pvp.pvp.conduct_pvp()
-            self.run_resupply_logic(back_to_home=True)
-            self.run_quest_logic('pvp', fast_check=True, back_to_home=True)
+            
+            qst.quest.is_quest_dom_cache_dirty = True
+            self.run_quest_logic('pvp', fast_check=True)
             
         sts.stats.set_print_loop_end_stats()
         return True
@@ -235,30 +243,31 @@ class Kcauto(object):
         else:
             #update current sortie_map
             #@todo fix sortie queue map name
-            cfg.config.combat.sortie_map = com.combat.get_sortie_queue()[0].value
+            cfg.config.combat._sortie_map = com.combat.get_sortie_queue()[0]
 
             """Check if multi stage map requested"""
-            MULTI_STAGE_MAPS = {"7-2":["G", "M"], "7-3":["E", "M"], "7-5":["K", "Q", "T"]}
-            GIMMICK_MAPS = {"7-5":["M"]}
-            map_name = cfg.config.combat.sortie_map.value
-            if map_name in MULTI_STAGE_MAPS:
+            MULTI_STAGE_MAPS = {MapEnum.W7_2: [MapEnum.W7_2_G, MapEnum.W7_2_M], 
+                                MapEnum.W7_3: [MapEnum.W7_3_E, MapEnum.W7_3_P], 
+                                MapEnum.W7_5: [MapEnum.W7_5_K, MapEnum.W7_5_Q, MapEnum.W7_5_T]}
+            
+            GIMMICK_MAPS = {MapEnum.W7_5:[MapEnum.W7_5_M]}
+            map_enum = cfg.config.combat.sortie_map.without_quest_and_node_enum
+            if map_enum in MULTI_STAGE_MAPS:
                 nav.navigate.to('combat')
                 Log.log_error(f"com.combat.sortie_map_stage: {com.combat.sortie_map_stage}")
 
                 try:
                     Log.log_debug(f"Gimmick needed to be finish")
-                    stage = GIMMICK_MAPS[map_name][com.combat.check_gimmick()]
-                except TypeError:
-                    stage = MULTI_STAGE_MAPS[map_name][com.combat.sortie_map_stage - 1]
-                except IndexError:
-                    stage = MULTI_STAGE_MAPS[map_name][com.combat.sortie_map_stage - 1]
-                except KeyError:
-                    stage = MULTI_STAGE_MAPS[map_name][com.combat.sortie_map_stage - 1]
+                    current_stage = GIMMICK_MAPS[map_enum][com.combat.check_gimmick()]
+                except:
+                    target_stage = MULTI_STAGE_MAPS[map_enum].index(cfg.config.combat.sortie_map.without_quest_enum)
+                    if com.combat.sortie_map_stage - 1 < target_stage:
+                        current_stage = MULTI_STAGE_MAPS[map_enum][com.combat.sortie_map_stage - 1]
+                    else:
+                        current_stage = cfg.config.combat.sortie_map
 
-
-                Log.log_error(f"stage: {stage}")
-
-                cfg.config.combat.sortie_map = cfg.config.combat.sortie_map.value + "-" + stage
+                Log.log_error(f"stage: {current_stage}")
+                cfg.config.combat._sortie_map = current_stage
 
         #update map_data for combat module
         com.combat.load_map_data(cfg.config.combat.sortie_map)
@@ -313,6 +322,8 @@ class Kcauto(object):
                 
                 sts.stats.set_print_loop_end_stats()
                 exp.expedition.receive_expedition()
+                
+                qst.quest.is_quest_dom_cache_dirty = True
             else:
                 Log.log_error(f"Sortie failed.")
 
