@@ -881,6 +881,13 @@ class MapEnum(EnumBase):
             return "auto"
 
     @property
+    def world_and_map_and_node(self):
+        if self.value != "auto":
+            return self.value[self.value.index("-")+1:]
+        else:
+            return "auto"
+        
+    @property
     def without_quest(self):
         if self.value != "auto":
             #find the first "-"
@@ -902,6 +909,13 @@ class MapEnum(EnumBase):
             return self.value[0] + "-" + self.value.split("-")[1] + "-" + self.value.split("-")[2] 
         else:
             return "auto"
+            
+    @property
+    def without_quest_and_node_enum(self):
+        if self.value != "auto":
+            return MapEnum(self.value[0] + "-" + self.value.split("-")[1] + "-" + self.value.split("-")[2]) 
+        else:
+            return MapEnum.auto_map_selete
             
     @property
     def is_map_variant(self):
