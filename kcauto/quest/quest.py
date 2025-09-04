@@ -71,7 +71,7 @@ class Quest(object):
     
     @property
     def fleet_composition(self):
-        return tuple(Quest.static_data[self.name].get('fleet_composition', ()))
+        return Quest.static_data[self.name].get('fleet_composition', {})
     
     def _get_quest_id(self, name):
         quest = Quest.static_data.get(name, None)
