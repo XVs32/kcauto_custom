@@ -317,6 +317,10 @@ class ExpeditionCore(CoreBase):
                 kca_u.kca.r['top'].hover()
                 received_expeditions = True
                 kca_u.kca.sleep()
+                
+            import quest.quest_core as qst
+            qst.quest.is_quest_dom_cache_dirty = True
+            
         return received_expeditions
 
     def expect_returned_fleets(self):
