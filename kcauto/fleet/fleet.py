@@ -241,6 +241,66 @@ class Fleet(object):
             return 0
         return self.ships[0].level
     
+    def has_stype(self, stype_list, member_id_list):
+        """
+        Check if the fleet contains ships of a specific ship type.
+
+        Args:
+            stype (list[ShipTypeEnum]): list of ship types to check for
+            member_id_list (list[int]): list of ship position in this fleet, id start from 0
+            
+        Returns:
+            count (int): number of ships in the fleet that match the ship type
+        """
+        count = 0
+        for i, ship in enumerate(self.ships):
+            if i not in member_id_list:
+                continue
+            
+            if ship.ship_type in stype_list:
+                count += 1
+        return count
+    
+    def has_ctype(self, ctype_list, member_id_list):
+        """
+        Check if the fleet contains ships of a specific ship class.
+
+        Args:
+            ctype (list[ShipClassEnum]): list of ship classes to check for
+            member_id_list (list[int]): list of ship position in this fleet, id start from 0
+            
+        Returns:
+            count (int): number of ships in the fleet that match the ship class
+        """
+        count = 0
+        for i, ship in enumerate(self.ships):
+            if i not in member_id_list:
+                continue
+            
+            if ship.ship_class in ctype_list:
+                count += 1
+        return count
+    
+    def has_id(self, id_list, member_id_list):
+        """
+        Check if the fleet contains ships of a specific ship id.
+
+        Args:
+            id_list (list[int]): list of ship ids to check for
+            member_id_list (list[int]): list of ship position in this fleet, id start from 0
+            
+        Returns:
+            count (int): number of ships in the fleet that match the ship id
+        """
+        count = 0
+        for i, ship in enumerate(self.ships):
+            if i not in member_id_list:
+                continue
+            
+            if ship.ship_id in id_list:
+                count += 1
+        return count
+    
     def add_ship(self, ship):
         if not isinstance(ship, Ship):
             raise TypeError("ship must be an instance of Ship class.")
