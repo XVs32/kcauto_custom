@@ -30,7 +30,7 @@ Each object within the `requirements` array can have the following keys:
 
 -   `amount`: (Optional) The number of ships required for the condition. Defaults to `1` if not specified.
 
--   `position`: (Optional) The 0-indexed position of the ship in the fleet. If specified, the ship must be in that exact position.
+-   `position`: (Optional) An array of 0-indexed position of the ship in the fleet. If specified, the ship must be in that exact position.
 
 
 ## Examples
@@ -49,8 +49,8 @@ Each object within the `requirements` array can have the following keys:
 
 ```json
 {
-  "stype": 3,
-  "position": 0
+  "stype": [3],
+  "position": [0]
 }
 ```
 
