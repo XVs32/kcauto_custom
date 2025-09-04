@@ -7,6 +7,7 @@ from random import randint
 import api.api_core as api
 import combat.combat_core as com
 import config.config_core as cfg
+import fleet.fleet_core as flt
 import stats.stats_core as sts
 import util.kca as kca_u
 import expedition.expedition_core as exp
@@ -16,6 +17,7 @@ from kca_enums.kcsapi_paths import KCSAPIEnum
 from kca_enums.quest_state import QuestStateEnum
 from kca_enums.maps import MapEnum
 from quest.quest import Quest
+from fleet.fleet import Fleet
 from util.core_base import CoreBase
 from util.json_data import JsonData
 from util.kc_time import KCTime
@@ -23,6 +25,16 @@ from util.logger import Log
 
 
 class QuestCore(CoreBase):
+    ID = "id"
+    CTYPE = "ctype"
+    STYPE = "stype"
+    ALLOWED_SHIP_TYPES = "allowed_ship_types"
+    POSITION = "position"
+    AMOUNT = "amount"
+    COUNT_RULE = "count_rule"
+    AT_LEAST = "at_least"
+    AT_MOST = "at_most"
+    EXACT = "exact"
     QUEST_TYPE_WEIGHTS = {'daily': 1, 'weekly': 2, 'monthly': 3, 'other': 4}
     SORTIE = 1
     EXPEDITION = 2
@@ -520,6 +532,9 @@ class QuestCore(CoreBase):
             elif quest.enemy_context != () and not (set(com.combat.map_data.enemy_context) & set(quest.enemy_context)):
                 Log.log_debug(f"Quest {quest.name} is not relevant to enemy context {com.combat.map_data.enemy_context}.")
                 return False
+            elif quest.fleet_composition != {} and not self._is_fleet_valid_for_quest(quest, flt.fleets.combat_fleets[0]):
+                Log.log_debug(f"Fleet layout is not valid for quest {quest.name}.")
+                return False
             
             return True
         elif context == "expedition":
@@ -561,6 +576,42 @@ class QuestCore(CoreBase):
             return True
         elif context == "reset":
             return False
+        
+    def _is_fleet_valid_for_quest(self, quest : Quest, fleet : flt.Fleet):
+        """Check if a fleet is valid for a given quest."""
+        
+        for composition in quest.fleet_composition:
+            for requirement in quest.fleet_composition[composition] :
+                for condition in quest.fleet_composition[composition][requirement] :
+                    position = [0,1,2,3,4,5,6]
+                    amount = 1
+                    count_rule = self.AT_LEAST
+                    
+                    if self.POSITION in condition:
+                        position = condition[self.POSITION]
+                    if self.AMOUNT in condition:
+                        amount = condition[self.AMOUNT]
+                    if self.COUNT_RULE in condition:
+                        count_rule = condition[self.COUNT_RULE]
+                        
+                    if self.ID in condition:
+                        count = fleet.has_id(condition[self.ID], position)
+                    elif self.STYPE in condition:
+                        count = fleet.has_stype(condition[self.STYPE], position)
+                    elif self.CTYPE in condition:
+                        count = fleet.has_ctype(condition[self.CTYPE], position)
+                    elif self.ALLOWED_SHIP_TYPES in condition:
+                        if fleet.has_stype(condition[self.ALLOWED_SHIP_TYPES], [0,1,2,3,4,5,6]) != fleet.size:
+                            return False
+                                
+                    if count_rule == self.AT_LEAST and count < amount:
+                        return False
+                    elif count_rule == self.AT_MOST and count > amount:
+                        return False
+                    elif count_rule == self.EXACT and count != amount:
+                        return False
+        
+        return True
     
     def is_tracking_quest(self, quest : Quest):
         """Check if a quest is being tracked."""
