@@ -90,6 +90,7 @@ class Kcauto(object):
                     
                 exp.expedition.prerequisite_handling()
                 exp.expedition.on_going_exp_handling()
+                exp.expedition.monthly_exp_handling()
                 
                 Log.log_msg(f'Expedition rank: {[expedition[exp.expedition.EXP_ENUM].display_name for expedition in exp.expedition.exp_rank]}')
 
