@@ -44,7 +44,7 @@ def main():
     """
     try:
         # Load the lookup table from ship_name.json
-        with open('ship_name_api.json', 'r', encoding='utf-8') as f:
+        with open('../../reference/ship_name_api.json', 'r', encoding='utf-8') as f:
             lookup_list = json.load(f)
         
         # Convert the list of dictionaries into a dictionary for faster lookup
