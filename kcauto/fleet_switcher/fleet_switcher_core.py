@@ -6,6 +6,7 @@ from random import randrange
 import api.api_core as api
 import config.config_core as cfg
 import combat.combat_core as com
+import pvp.pvp_core as pvp
 import expedition.expedition_core as exp
 import fleet.fleet_core as flt
 import nav.nav as nav
@@ -126,7 +127,7 @@ class FleetSwitcherCore(object):
             elif context == "pvp":
                 Log.log_msg(f"Switching to PvP Preset.")
 
-                fleet_list = self._get_fleet_preset("C-pvp")
+                fleet_list = self._get_fleet_preset(pvp.pvp.next_pvp_quest.name + "-pvp")
                         
                 if not self.switch_to_costom_fleet_with_equipment(1, fleet_list[1]):
                     return False
@@ -304,7 +305,7 @@ class FleetSwitcherCore(object):
         if key in flt.fleets.fleets:
             return flt.fleets.fleets[key]
         else:
-            if key[0]=="B":
+            if key[0]=="B" or key[0]=="C":
                 
                 quest_end = key.find("-")
                 
