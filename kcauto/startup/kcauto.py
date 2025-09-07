@@ -20,7 +20,7 @@ from util.logger import Log
 from kca_enums.maps import MapEnum
 from quest.quest import Quest
 
-from constants import COMBAT_CONFIG
+from constants import COMBAT_CONFIG, AUTO_PRESET
 
 class Kcauto(object):
     """Primary kcauto class.
@@ -191,15 +191,14 @@ class Kcauto(object):
                 return False
             nav.navigate.to('home')
             
-            if cfg.config.pvp.fleet_preset == "auto":
-                self.run_quest_logic('auto_pvp')
-                
+            if cfg.config.pvp.fleet_preset == AUTO_PRESET:
+                self.run_quest_logic('auto_pvp', fast_check=False, back_to_home=False, force= True)
             
             self._run_fleetswitch_logic('pvp')
+            self.run_repair_logic()
             
             self.run_quest_logic('pvp', back_to_home=True)
             
-            self.run_repair_logic()
         else:
             return False
 
