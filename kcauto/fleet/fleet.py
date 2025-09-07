@@ -297,7 +297,7 @@ class Fleet(object):
             if i not in member_id_list:
                 continue
             
-            if ship.ship_id in id_list:
+            if ship.api_id in id_list:
                 count += 1
         return count
     
