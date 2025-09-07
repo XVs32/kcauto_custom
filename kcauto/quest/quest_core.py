@@ -8,6 +8,7 @@ import api.api_core as api
 import combat.combat_core as com
 import config.config_core as cfg
 import fleet.fleet_core as flt
+import pvp.pvp_core as pvp
 import stats.stats_core as sts
 import util.kca as kca_u
 import expedition.expedition_core as exp
@@ -15,6 +16,8 @@ import nav.nav as nav
 from constants import NEAR_EXACT, PAGE_NAV
 from kca_enums.kcsapi_paths import KCSAPIEnum
 from kca_enums.quest_state import QuestStateEnum
+from kca_enums.ship_types import ShipTypeEnum
+from kca_enums.ship_class import ShipClassEnum 
 from kca_enums.maps import MapEnum
 from quest.quest import Quest
 from fleet.fleet import Fleet
@@ -350,10 +353,11 @@ class QuestCore(CoreBase):
             next_quest = self._get_quests_rank_list(self.PVP)
             
             if next_quest != []:
-                next_quest = next_quest[0]
+                pvp.pvp.next_pvp_quest = next_quest[0]
+                Log.log_success(f"Attempt to finish pvp quest {pvp.pvp.next_pvp_quest.name}.")
             else:
-                return
-            
+                pvp.pvp.next_pvp_quest = Quest(quest_id=303) #mork the next quest as Cd1, so kcauto use default PvP preset
+                Log.log_success(f"No pvp quests available.")
             
         elif mode == self.EXPEDITION:
             
@@ -556,6 +560,9 @@ class QuestCore(CoreBase):
             if quest.category.is_pvp() == False:
                 Log.log_debug(f"Quest {quest.name} {quest.category} is not a PVP quest.")
                 return False
+            elif quest.fleet_composition != {} and not self._is_fleet_valid_for_quest(quest, flt.fleets.pvp_fleets[0]):
+                Log.log_debug(f"Fleet layout is not valid for quest {quest.name}.")
+                return False
             else:
                 return True
         elif context == "factory":
@@ -580,36 +587,37 @@ class QuestCore(CoreBase):
     def _is_fleet_valid_for_quest(self, quest : Quest, fleet : flt.Fleet):
         """Check if a fleet is valid for a given quest."""
         
-        for composition in quest.fleet_composition:
-            for requirement in quest.fleet_composition[composition] :
-                for condition in quest.fleet_composition[composition][requirement] :
-                    position = [0,1,2,3,4,5,6]
-                    amount = 1
-                    count_rule = self.AT_LEAST
+        for requirement_list in quest.fleet_composition:
+            for requirement in quest.fleet_composition[requirement_list] :
+                
+                position = [0,1,2,3,4,5,6]
+                amount = 1
+                count_rule = self.AT_LEAST
+                if self.POSITION in requirement:
+                    position = requirement[self.POSITION]
+                if self.AMOUNT in requirement:
+                    amount = requirement[self.AMOUNT]
+                if self.COUNT_RULE in requirement:
+                    count_rule = requirement[self.COUNT_RULE]
                     
-                    if self.POSITION in condition:
-                        position = condition[self.POSITION]
-                    if self.AMOUNT in condition:
-                        amount = condition[self.AMOUNT]
-                    if self.COUNT_RULE in condition:
-                        count_rule = condition[self.COUNT_RULE]
-                        
-                    if self.ID in condition:
-                        count = fleet.has_id(condition[self.ID], position)
-                    elif self.STYPE in condition:
-                        count = fleet.has_stype(condition[self.STYPE], position)
-                    elif self.CTYPE in condition:
-                        count = fleet.has_ctype(condition[self.CTYPE], position)
-                    elif self.ALLOWED_SHIP_TYPES in condition:
-                        if fleet.has_stype(condition[self.ALLOWED_SHIP_TYPES], [0,1,2,3,4,5,6]) != fleet.size:
-                            return False
+                if self.ID in requirement:
+                    count = fleet.has_id(requirement[self.ID], position)
+                elif self.STYPE in requirement:
+                    count = fleet.has_stype([ShipTypeEnum(ship_type) for ship_type in requirement[self.STYPE]], position)
+                elif self.CTYPE in requirement:
+                    count = fleet.has_ctype([ShipClassEnum(ship_class) for ship_class in requirement[self.CTYPE]], position)
+                elif self.ALLOWED_SHIP_TYPES in requirement:
+                    if fleet.has_stype(requirement[self.ALLOWED_SHIP_TYPES], [0,1,2,3,4,5,6]) != fleet.size:
+                        return False
                                 
-                    if count_rule == self.AT_LEAST and count < amount:
-                        return False
-                    elif count_rule == self.AT_MOST and count > amount:
-                        return False
-                    elif count_rule == self.EXACT and count != amount:
-                        return False
+                if count_rule == self.AT_LEAST and count < amount:
+                    return False
+                elif count_rule == self.AT_MOST and count > amount:
+                    return False
+                elif count_rule == self.EXACT and count != amount:
+                    return False
+                
+                Log.log_error(f'PASS')
         
         return True
     
