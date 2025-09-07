@@ -3,8 +3,8 @@
 This document outlines the structure of the `fleet_composition` object used in `data/quests/quests.json` to define fleet requirements for quests. 
 The actual quest describe and requirement can be found in `reference/quests.json`.
 
-Ship ID can be found in `tool/ship_name_api.json`
-stype and ctype can be found in `tool/apilist_stype_ctype.txt`.
+Ship ID can be found in `reference/ship_name_api.json`
+stype and ctype can be found in `reference/apilist_stype_ctype.txt`.
 
 ## Main Object: `fleet_composition`
 
