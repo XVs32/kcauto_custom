@@ -341,7 +341,9 @@
           "stype": [
             3
           ],
-          "position": 0
+          "position": [
+            0
+          ]
         },
         {
           "stype": [
@@ -475,7 +477,9 @@
           "stype": [
             2
           ],
-          "position": 0
+          "position": [
+            0
+          ]
         },
         {
           "stype": [
@@ -821,7 +825,9 @@
             488,
             629
           ],
-          "position": 0
+          "position": [
+            0
+          ]
         },
         {
           "ctype": [
@@ -838,7 +844,9 @@
             488,
             629
           ],
-          "position": 0
+          "position": [
+            0
+          ]
         },
         {
           "id": [
@@ -1147,7 +1155,9 @@
             11,
             18
           ],
-          "position": 0
+          "position": [
+            0
+          ]
         },
         {
           "stype": [
@@ -1164,6 +1174,616 @@
           ],
           "count_rule": "at_least",
           "amount": 2
+        }
+      ]
+    }
+  },
+  "Cq2": {
+    "id": 337,
+    "type": "other",
+    "fleet_composition": {
+      "requirements": [
+        {
+          "id": [
+            49,
+            253,
+            464,
+            470
+          ],
+          "amount": 1
+        },
+        {
+          "id": [
+            48,
+            252,
+            198
+          ],
+          "amount": 1
+        },
+        {
+          "id": [
+            17,
+            225,
+            566
+          ],
+          "amount": 1
+        },
+        {
+          "id": [
+            18,
+            226,
+            567
+          ],
+          "amount": 1
+        }
+      ]
+    }
+  },
+  "Cq3": {
+    "id": 339,
+    "type": "other",
+    "fleet_composition": {
+      "requirements": [
+        {
+          "id": [
+            12,
+            206,
+            666
+          ],
+          "amount": 1
+        },
+        {
+          "id": [
+            486,
+            368,
+            647
+          ],
+          "amount": 1
+        },
+        {
+          "id": [
+            13,
+            207,
+            195
+          ],
+          "amount": 1
+        },
+        {
+          "id": [
+            14,
+            208,
+            627
+          ],
+          "amount": 1
+        }
+      ]
+    }
+  },
+  "Cq4": {
+    "id": 342,
+    "type": "other",
+    "fleet_composition": {
+      "requirements": [
+        {
+          "stype": [
+            2,
+            1,
+            3,
+            4,
+            21
+          ],
+          "count_rule": "at_least",
+          "amount": 4
+        },
+        {
+          "stype": [
+            3,
+            4,
+            21
+          ],
+          "count_rule": "at_most",
+          "amount": 1
+        }
+      ]
+    }
+  },
+  "Cy1": {
+    "id": 345,
+    "type": "other",
+    "fleet_composition": {
+      "requirements": [
+        {
+          "id": [
+            439,
+            364,
+            78,
+            149,
+            591,
+            515,
+            393,
+            571,
+            576,
+            519,
+            394,
+            520,
+            893,
+            901,
+            906
+          ],
+          "amount": 4
+        }
+      ]
+    }
+  },
+  "Cy2": {
+    "id": 346,
+    "type": "other",
+    "fleet_composition": {
+      "requirements": [
+        {
+          "id": [
+            542
+          ],
+          "amount": 1
+        },
+        {
+          "id": [
+            563
+          ],
+          "amount": 1
+        },
+        {
+          "id": [
+            564
+          ],
+          "amount": 1
+        },
+        {
+          "id": [
+            648
+          ],
+          "amount": 1
+        }
+      ]
+    }
+  },
+  "Cy3": {
+    "id": 348,
+    "type": "other",
+    "fleet_composition": {
+      "requirements": [
+        {
+          "stype": [
+            3,
+            21
+          ],
+          "position": [
+            0
+          ]
+        },
+        {
+          "stype": [
+            3,
+            4,
+            21
+          ],
+          "count_rule": "at_least",
+          "amount": 3
+        },
+        {
+          "stype": [
+            2
+          ],
+          "count_rule": "at_least",
+          "amount": 2
+        }
+      ]
+    }
+  },
+  "Cy4": {
+    "id": 350,
+    "type": "other",
+    "fleet_composition": {
+      "requirements": [
+        {
+          "id": [
+            93,
+            230
+          ]
+        },
+        {
+          "id": [
+            15,
+            231,
+            665
+          ]
+        },
+        {
+          "id": [
+            94,
+            232
+          ]
+        },
+        {
+          "id": [
+            16,
+            233,
+            407
+          ]
+        }
+      ]
+    }
+  },
+  "Cy5": {
+    "id": 353,
+    "type": "other",
+    "fleet_composition": {
+      "requirements": [
+        {
+          "stype": [
+            5,
+            6
+          ],
+          "position": [
+            0
+          ]
+        },
+        {
+          "stype": [
+            5,
+            6
+          ],
+          "count_rule": "at_least",
+          "amount": 4
+        },
+        {
+          "stype": [
+            2
+          ],
+          "count_rule": "at_least",
+          "amount": 2
+        }
+      ]
+    }
+  },
+  "Cy6": {
+    "id": 354,
+    "type": "other",
+    "fleet_composition": {
+      "requirements": [
+        {
+          "ctype": [
+            83
+          ],
+          "position": [
+            0
+          ]
+        },
+        {
+          "ctype": [
+            91,
+            87
+          ],
+          "count_rule": "at_least",
+          "amount": 2
+        }
+      ]
+    }
+  },
+  "Cy7": {
+    "id": 355,
+    "type": "other",
+    "fleet_composition": {
+      "requirements": [
+        {
+          "id": [
+            568,
+            670
+          ],
+          "position": [
+            0,
+            1
+          ],
+          "amount": 2
+        }
+      ]
+    }
+  },
+  "Cy8": {
+    "id": 356,
+    "type": "other",
+    "fleet_composition": {
+      "requirements": [
+        {
+          "id": [
+            195
+          ]
+        },
+        {
+          "id": [
+            647
+          ]
+        },
+        {
+          "id": [
+            666
+          ]
+        },
+        {
+          "id": [
+            627
+          ]
+        }
+      ]
+    }
+  },
+  "Cy9": {
+    "id": 357,
+    "type": "other",
+    "fleet_composition": {
+      "requirements": [
+        {
+          "id": [
+            131,
+            136,
+            911,
+            916
+          ]
+        },
+        {
+          "id": [
+            143,
+            148,
+            546
+          ]
+        },
+        {
+          "stype": [
+            3
+          ]
+        },
+        {
+          "stype": [
+            2
+          ],
+          "amount": 2
+        }
+      ]
+    }
+  },
+  "Cy10": {
+    "id": 362,
+    "type": "other",
+    "fleet_composition": {
+      "requirements": [
+        {
+          "id": [
+            9,
+            201,
+            426
+          ]
+        },
+        {
+          "id": [
+            10,
+            202,
+            986
+          ]
+        },
+        {
+          "id": [
+            32,
+            203,
+            987
+          ]
+        },
+        {
+          "id": [
+            11,
+            204,
+            959
+          ]
+        }
+      ]
+    }
+  },
+  "Cy11": {
+    "id": 368,
+    "type": "other",
+    "fleet_composition": {
+      "requirements": [
+        {
+          "id": [
+            181,
+            316,
+            951,
+            20,
+            28,
+            656,
+            322,
+            186,
+            300,
+            190
+          ],
+          "amount": 2
+        }
+      ]
+    }
+  },
+  "Cy12": {
+    "id": 371,
+    "type": "other",
+    "fleet_composition": {
+      "requirements": [
+        {
+          "id": [
+            405,
+            323,
+            975
+          ],
+          "position": [
+            0
+          ]
+        },
+        {
+          "id": [
+            44,
+            244,
+            498,
+            45,
+            245,
+            144,
+            46,
+            246,
+            42,
+            242,
+            497,
+            43,
+            243,
+            145,
+            961
+          ],
+          "count_rule": "at_least",
+          "amount": 3
+        }
+      ]
+    }
+  },
+  "Cy13": {
+    "id": 372,
+    "type": "other",
+    "fleet_composition": {
+      "requirements": [
+        {
+          "ctype": [
+            54
+          ],
+          "position": [
+            0
+          ]
+        },
+        {
+          "stype": [
+            2
+          ],
+          "count_rule": "at_least",
+          "amount": 3
+        },
+        {
+          "stype": [
+            10
+          ],
+          "count_rule": "at_least",
+          "amount": 2
+        }
+      ]
+    }
+  },
+  "Cy14": {
+    "id": 373,
+    "type": "other",
+    "fleet_composition": {
+      "requirements": [
+        {
+          "ctype": [
+            79,
+            70,
+            128,
+            129
+          ],
+          "position": [
+            0
+          ]
+        },
+        {
+          "ctype": [
+            79,
+            70,
+            128,
+            129
+          ],
+          "count_rule": "at_least",
+          "amount": 3
+        }
+      ]
+    }
+  },
+  "Cy15": {
+    "id": 375,
+    "type": "other",
+    "fleet_composition": {
+      "requirements": [
+        {
+          "id": [
+            86,
+            150,
+            592
+          ],
+          "amount": 1
+        },
+        {
+          "id": [
+            85,
+            152,
+            694
+          ],
+          "amount": 1
+        },
+        {
+          "stype": [
+            3
+          ],
+          "count_rule": "at_least",
+          "amount": 1
+        },
+        {
+          "stype": [
+            2
+          ],
+          "count_rule": "at_least",
+          "amount": 2
+        }
+      ]
+    }
+  },
+  "Cy16": {
+    "id": 377,
+    "type": "other",
+    "fleet_composition": {
+      "requirements": [
+        {
+          "id": [
+            409,
+            324,
+            956,
+            625,
+            695,
+            410,
+            325,
+            955
+          ],
+          "position": [
+            0
+          ],
+          "count_rule": "at_least",
+          "amount": 1
+        },
+        {
+          "id": [
+            409,
+            324,
+            956,
+            625,
+            695,
+            410,
+            325,
+            955,
+            425,
+            344,
+            578
+          ],
+          "count_rule": "at_least",
+          "amount": 3
         }
       ]
     }
