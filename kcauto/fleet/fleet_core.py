@@ -105,6 +105,18 @@ class FleetCore(object):
                     cfg.config.combat.fleet_mode.value):
                 return [self.fleets[self.ACTIVE_FLEET_KEY][1], self.fleets[self.ACTIVE_FLEET_KEY][2]]
         return []
+    
+    @property
+    def pvp_fleets(self):
+        """method to get the pvp fleet
+
+        Returns:
+            List[Fleet]: the pvp fleet if pvp is enabled, List is used to keep consistent with combat_fleets, [] if pvp is not enabled
+        """
+        if cfg.config.pvp.enabled:
+            return [self.fleets[self.ACTIVE_FLEET_KEY][1]]
+        return []
+    
 
     @property
     def combined_fleet(self):
@@ -113,12 +125,6 @@ class FleetCore(object):
     @property
     def strike_force_fleet(self):
         return cfg.config.combat.fleet_mode is FleetModeEnum.STRIKE
-
-    @property
-    def pvp_fleet(self):
-        if cfg.config.pvp.enabled:
-            return self.fleets[self.ACTIVE_FLEET_KEY][1]
-        return []
 
     @property
     def ships_in_fleets(self):
