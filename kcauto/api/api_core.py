@@ -532,7 +532,7 @@ class ApiWrapper(object):
             for i, equipment in enumerate(equ.equipment.equipment_pool[equ.equipment.FREE]):
                 if i %10 == 0:  
                     Log.log_debug(f'Page {i // 10 + 1}')
-                Log.log_debug(f'{i}: {equipment.name}{equipment.stars} (Production id: {equipment.production_id}, Model ID: {equipment.model_id})')
+                Log.log_debug(f'{i}: {equipment.name} {equipment.stars} (Production id: {equipment.production_id}, Model ID: {equipment.model_id})')
             
         except KeyError:
             Log.log_debug("No provisional equipment data found in API response")

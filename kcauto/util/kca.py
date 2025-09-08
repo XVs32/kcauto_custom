@@ -23,6 +23,7 @@ from constants import (
     GAME_W, GAME_H, VISUAL_URL, STRATEGY_ROOM_URL, API_URL, EXACT, DEFAULT, SLEEP_MODIFIER)
 from kca_enums.interaction_modes import InteractionModeEnum
 from kca_enums.kcsapi_paths import KCSAPIEnum
+from kca_enums.maps import MapEnum
 from kca_enums.expeditions import ExpeditionEnum
 
 from util.exceptions import ChromeCrashException
@@ -49,10 +50,19 @@ class Kca(object):
     last_ui = None
     r = {}
     html = None
+    kc3_id = None
 
     def __init__(self):
+        if self.kc3_id ==None:
+            try:
+                with open('data/config/kc3_id.json', 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                    self.kc3_id = data.get('id', "hkgmldnainaglpjngpajnnjfhpdjkohh")
+            except FileNotFoundError:
+                Log.log_warn("kc3_id.json not found, using default value None.")
+                self.kc3_id = "hkgmldnainaglpjngpajnnjfhpdjkohh"
         Log.log_debug("Kca module initialized.")
-
+        
     def hook_chrome(self):
         """Method that initializes the necessary hooks to Chrome using
         PyChromeDevTools. The visual hook connects to the tab that actually
@@ -1016,9 +1026,7 @@ class Kca(object):
         Args:
             subpage (string): The name of sub page to open. (ex. flowchart)
         """
-
-        asyncio.get_event_loop().run_until_complete(self.get_html("chrome-extension://hkgmldnainaglpjngpajnnjfhpdjkohh/pages/strategy/strategy.html"+subpage))
-
+        asyncio.get_event_loop().run_until_complete(self.get_html(f"chrome-extension://{self.kc3_id}/pages/strategy/strategy.html{subpage}"))
         #Wait for quest panel finish closing
         self.find_kancolle()
 
@@ -1031,21 +1039,26 @@ class Kca(object):
             raw html text of KC3 quest page
         """
         
+        import quest.quest_core as qst
+        if qst.quest.is_quest_dom_cache_dirty == False:
+            return qst.quest._quest_dom_cache
+        
         self.reload_kc3_strategy_page(subpage = "#flowchart")
 
         dom = PyQuery(self.html, parser='html')
 
-        quest_tree_dom = dom("ul#questBox_rootFlow.questTree")
-        Log.log_debug(f"kac.quest_tree_dom:{quest_tree_dom}")
+        qst.quest._quest_dom_cache = dom("ul#questBox_rootFlow.questTree")
+        #Log.log_debug(f"kac.quest_tree_dom:{quest_tree_dom}")
+        qst.quest.is_quest_dom_cache_dirty = False
         
-        return quest_tree_dom
+        return qst.quest._quest_dom_cache
         
-    def get_quest_count(self, target_quest: Quest, quest_dom=None):
+    def get_quest_count(self, target_quest: Quest, quest_dom=None) -> dict:
         """ method to get the remaining action needed for the specified quest.
             For example, the remaining sorties needed for quest Bm3 could be {1-4:1, 3-5:0}
 
         Args:
-            target_quest_name (string): The quest to check. (ex. "Bm3")
+            target_quest (Quest): The quest to check, in the form of Quest object.
         
         Return:
             dict with key of quest name, and value of remaining actions needed.
@@ -1054,16 +1067,8 @@ class Kca(object):
         
         target_quest_name = target_quest.name
         
-        if quest_dom == None:
-            self.reload_kc3_strategy_page(subpage = "#flowchart")
-
-            dom = PyQuery(self.html, parser='html')
-
-            quest_tree_dom = dom("ul#questBox_rootFlow.questTree")
-            Log.log_debug(f"kac.quest_tree_dom:{quest_tree_dom}")
-        else:
-            quest_tree_dom = quest_dom
-
+        quest_tree_dom = self.get_quest_dom()
+        
         i = 0
         while True:
 
@@ -1090,13 +1095,13 @@ class Kca(object):
                     sortie_count =      int(action_raw_line[0].split("/")[1]) - int(action_raw_line[0].split("/")[0])
 
                     if s_count > 0:
-                        action["1-1"] = s_count
+                        action[MapEnum.W1_1] = s_count
                     elif boss_win_count > 0:
-                        action["1-5"] = boss_win_count 
+                        action[MapEnum.W1_5] = boss_win_count 
                     elif boss_count > 0:
-                        action["1-5"] = boss_count 
+                        action[MapEnum.W1_5] = boss_count 
                     elif sortie_count > 0:
-                        action["1-1"] = sortie_count
+                        action[MapEnum.W1_1] = sortie_count
 
                 elif quest_name == "Bq8":
                     action_raw_line[0] = action_raw_line[0].replace(' ', '/')
@@ -1109,13 +1114,13 @@ class Kca(object):
                     s_7_2_M_count =      int(action_raw_line[3].split("/")[1]) - int(action_raw_line[3].split("/")[0])
 
                     if s_1_5_count > 0:
-                        action["1-5"] = s_1_5_count
+                        action[MapEnum.W1_5] = s_1_5_count
                     elif s_7_1_count > 0:
-                        action["7-1"] = s_7_1_count
+                        action[MapEnum.W7_1] = s_7_1_count
                     elif s_7_2_G_count > 0:
-                        action["7-2-G"] = s_7_2_G_count
+                        action[MapEnum.W7_2_G] = s_7_2_G_count
                     elif s_7_2_M_count > 0:
-                        action["7-2-M"] = s_7_2_M_count
+                        action[MapEnum.W7_2_M] = s_7_2_M_count
 
                 elif quest_name[0] == "D":
                     for line in action_raw_line:
@@ -1123,7 +1128,8 @@ class Kca(object):
                         count = int(line.split("/")[1]) - int(line.split("/")[0])
                         import expedition.expedition_core as exp
                         map = exp.expedition.get_exp_enum_from_name(line.split("/")[-1])
-                        action[map] = count
+                        if count > 0:
+                            action[map] = count
                 else:
 
                     for line in action_raw_line:
@@ -1131,7 +1137,8 @@ class Kca(object):
                         count = int(line.split("/")[1]) - int(line.split("/")[0])
                         line = line.replace(']', '[')
                         map = line.split("[")[1][1:]
-                        action[map] = count
+                        if count > 0:
+                            action[MapEnum("B-"+map)] = count
 
                 return action
             elif quest_name == "":

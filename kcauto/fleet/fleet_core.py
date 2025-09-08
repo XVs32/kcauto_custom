@@ -105,6 +105,18 @@ class FleetCore(object):
                     cfg.config.combat.fleet_mode.value):
                 return [self.fleets[self.ACTIVE_FLEET_KEY][1], self.fleets[self.ACTIVE_FLEET_KEY][2]]
         return []
+    
+    @property
+    def pvp_fleets(self):
+        """method to get the pvp fleet
+
+        Returns:
+            List[Fleet]: the pvp fleet if pvp is enabled, List is used to keep consistent with combat_fleets, [] if pvp is not enabled
+        """
+        if cfg.config.pvp.enabled:
+            return [self.fleets[self.ACTIVE_FLEET_KEY][1]]
+        return []
+    
 
     @property
     def combined_fleet(self):
@@ -113,12 +125,6 @@ class FleetCore(object):
     @property
     def strike_force_fleet(self):
         return cfg.config.combat.fleet_mode is FleetModeEnum.STRIKE
-
-    @property
-    def pvp_fleet(self):
-        if cfg.config.pvp.enabled:
-            return self.fleets[self.ACTIVE_FLEET_KEY][1]
-        return []
 
     @property
     def ships_in_fleets(self):
@@ -637,21 +643,18 @@ class FleetCore(object):
         
         START_UP = -1
         
-        available_fleets = []
-        for fleet in self.expedition_fleets:
-            if exp.expedition.cur_exp[fleet.fleet_id - 1] == ExpeditionEnum.NULL:
-                available_fleets.append(fleet)
-            
         flag = False
-        for fleet in available_fleets:
-            if fleet_id == START_UP:
-                return fleet.fleet_id
-            
-            if fleet.fleet_id == fleet_id and len(available_fleets) > 1:
+        if fleet_id == START_UP:
+            flag = True 
+        for fleet in self.expedition_fleets:
+            if fleet.at_base == False:
+                continue
+            if fleet.fleet_id == fleet_id:
                 flag = True
             elif flag == True:
                 return fleet.fleet_id
-            
+        
+        Log.log_debug(f"Failed to get next expedition fleet id, current fleet id: {fleet_id}, return None")        
         return None
 
     def _get_exp_ship_requirement_from_composition(self, composition):
