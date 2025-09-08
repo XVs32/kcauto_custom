@@ -3,6 +3,7 @@ from datetime import timedelta
 from kca_enums.damage_states import DamageStateEnum
 from kca_enums.fatigue_states import FatigueStateEnum
 from kca_enums.ship_types import ShipTypeEnum
+from kca_enums.ship_class import ShipClassEnum 
 import ships.equipment_core as equ 
 from ships.equipment import Equipment
 from util.kc_time import KCTime
@@ -30,7 +31,7 @@ class Ship(object):
     sortno = None       #Id used in ship switcher, picture book id 
     sort_id = None      #Sorting Id
     ship_type = None    #stype api
-    ship_family = None  #ctype api
+    ship_class = None   #ctype api
     slot_num = None
     production_id = None     #The production code of a ship
     level = None
@@ -55,7 +56,7 @@ class Ship(object):
         self.name = static_data['api_name']
         self.name_jp = static_data['api_name']
         self.ship_type = ShipTypeEnum(static_data['api_stype'])
-        self.ship_family = static_data['api_ctype']
+        self.ship_class = ShipClassEnum(static_data['api_ctype'])
         self.slot_num = static_data['api_slot_num']
         self.ammo_max = static_data['api_bull_max']
         self.fuel_max = static_data['api_fuel_max']

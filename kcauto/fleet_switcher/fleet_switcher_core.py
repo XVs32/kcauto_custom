@@ -6,6 +6,7 @@ from random import randrange
 import api.api_core as api
 import config.config_core as cfg
 import combat.combat_core as com
+import pvp.pvp_core as pvp
 import expedition.expedition_core as exp
 import fleet.fleet_core as flt
 import nav.nav as nav
@@ -126,7 +127,7 @@ class FleetSwitcherCore(object):
             elif context == "pvp":
                 Log.log_msg(f"Switching to PvP Preset.")
 
-                fleet_list = self._get_fleet_preset("C-pvp")
+                fleet_list = self._get_fleet_preset(pvp.pvp.next_pvp_quest.name + "-pvp")
                         
                 if not self.switch_to_costom_fleet_with_equipment(1, fleet_list[1]):
                     return False
@@ -196,7 +197,7 @@ class FleetSwitcherCore(object):
                 self._set_next_combat_preset()
         return True
 
-    def switch_to_costom_fleet(self, fleet_id, costom_fleet):
+    def switch_to_costom_fleet(self, fleet_id, costom_fleet : Fleet):
         """
             method to switch the ship in {fleet_id} to ships defined in {ship_list}
 
@@ -213,15 +214,25 @@ class FleetSwitcherCore(object):
             
             empty_slot_count = 0
 
-            size = max(len(flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][fleet_id].ship_ids), len(costom_fleet[fleet_id].ship_ids))
+            size = max(flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][fleet_id].size, costom_fleet.size)
+            
+            STRIKE_FLEET_SIZE = 7
+            NORMAL_FLEET_SIZE = 6
+            if size > STRIKE_FLEET_SIZE:
+                Log.log_warn(f"kcauto tries to switch to fleet with size {size}, this may cause unexpected behavior.")
+            
+            if fleet_id == 3:
+                size = min(STRIKE_FLEET_SIZE, size)
+            else:
+                size = min(NORMAL_FLEET_SIZE, size)
 
             any_vaild_switch = False
             retry = False
             for i in range(1,size + 1):
-                if i > len(costom_fleet[fleet_id].ship_ids):
+                if i > costom_fleet.size:
                     id = EMPTY #remove this slot
                 else:
-                    id = costom_fleet[fleet_id].ship_ids[i-1]
+                    id = costom_fleet.ship_ids[i-1]
 
                 if i <= len(flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][fleet_id].ship_ids) and \
                     id == flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][fleet_id].ship_ids[i-1]:
@@ -250,6 +261,7 @@ class FleetSwitcherCore(object):
             else:
                 break
         
+        Log.log_success("load fleet done")
         return True
         
         
@@ -269,53 +281,7 @@ class FleetSwitcherCore(object):
         
         self.goto()
         
-        EMPTY = -1
-        retry = 0
-
-        while True:
-            
-            flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][fleet_id].select()
-            
-            empty_slot_count = 0
-            
-            size = max(flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][fleet_id].size, costom_fleet.size)
-
-            any_vaild_switch = False
-            retry = False
-            for i in range(1,size + 1):
-                if i > costom_fleet.size:
-                    id = EMPTY #remove this slot
-                else:
-                    id = costom_fleet.ship_ids[i-1]
-
-                if i <= len(flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][fleet_id].ship_ids) and \
-                    id == flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][fleet_id].ship_ids[i-1]:
-                    Log.log_debug("Ship loaded already for costom fleet with equipment")
-                    continue
-
-                if not ssw.ship_switcher.switch_slot_by_id(i-empty_slot_count,id):
-                    #fleet data update
-                    if any_vaild_switch == True:
-                        Log.log_msg(f"retrying...")
-                        nav.navigate.to('home')
-                        self.goto()
-                        retry = True 
-                        break
-                    else:
-                        return False
-                    
-                else:
-                    any_vaild_switch = True
-                    
-                if id == EMPTY:
-                    empty_slot_count += 1
-
-            if retry == True:
-                continue
-            else:
-                break
-            
-        Log.log_success("load fleet done")
+        self.switch_to_costom_fleet(fleet_id, costom_fleet) 
             
         self._load_equipment(fleet_id, costom_fleet)    
         Log.log_success("load equipment done")
@@ -339,7 +305,7 @@ class FleetSwitcherCore(object):
         if key in flt.fleets.fleets:
             return flt.fleets.fleets[key]
         else:
-            if key[0]=="B":
+            if key[0]=="B" or key[0]=="C":
                 
                 quest_end = key.find("-")
                 
@@ -404,10 +370,8 @@ class FleetSwitcherCore(object):
             TEMP_FLEET_ID = 1
             temp = (Fleet("unload_equipment", FleetEnum.COMBAT, False))
             temp.ships = unload_ships[start_id:start_id + fleet_size]
-            temp_fleet = {}
-            temp_fleet[TEMP_FLEET_ID] = temp
             
-            if self.switch_to_costom_fleet(TEMP_FLEET_ID, temp_fleet):
+            if self.switch_to_costom_fleet(TEMP_FLEET_ID, temp):
                 nav.navigate.to('refresh_home')
             else:
                 Log.log_error("kcauto failed to load the selected ship, exiting...")
@@ -431,11 +395,9 @@ class FleetSwitcherCore(object):
          
         self.goto()
         
-        temp = (Fleet("unload_equipment", FleetEnum.COMBAT, False))
-        temp.ships = []
-        temp.ships.append(ship)
-        temp_fleet = {}
-        temp_fleet[fleet_id] = temp
+        temp_fleet = (Fleet("unload_equipment", FleetEnum.COMBAT, False))
+        temp_fleet.ships = []
+        temp_fleet.ships.append(ship)
         
         if not self.switch_to_costom_fleet(fleet_id, temp_fleet):
             Log.log_error("kcauto failed to load the selected ship, exiting...")
@@ -547,15 +509,15 @@ class FleetSwitcherCore(object):
                     kca_u.kca.click('5_slot_unload_equipment') 
                     
                 kca_u.kca.wait('lower', 'shipswitcher|equipment_panel.png')
+                api_result = api.api.update_from_api({KCSAPIEnum.FREE_EQUIPMENT}, need_all=True)
                 
                 if flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][fleet_id].ships[i].slot_ex != None and \
                    flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][fleet_id].ships[i].slot_ex != Equipment():
                     Log.log_debug(f"reinforce slot ship")
                     kca_u.kca.click('reinforce_slot_unload_equipment')
-
-                kca_u.kca.wait('lower', 'shipswitcher|equipment_panel.png')
+                    kca_u.kca.wait('lower', 'shipswitcher|equipment_panel.png')
+                    api_result = api.api.update_from_api({KCSAPIEnum.FREE_EQUIPMENT}, need_all=True)
                 
-                api_result = api.api.update_from_api({KCSAPIEnum.FREE_EQUIPMENT}, need_all=True)
                 if api_result != {}:
                     break
                 else:

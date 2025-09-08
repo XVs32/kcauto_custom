@@ -797,11 +797,15 @@ class CombatCore(CoreBase):
         Log.log_msg(f"Set sortie queue {self.sortie_queue}")
 
 
-    def get_sortie_queue(self):
+    def get_sortie_queue(self) -> list[MapEnum]:
         """
             method for other modules to read the sortie_queue in combat module
         """
-        return self.sortie_queue
+        ret = []
+        for sortie_map in self.sortie_queue:
+            ret.append(MapEnum(sortie_map))
+        
+        return ret
     
     def pop_sortie_queue(self):
         """

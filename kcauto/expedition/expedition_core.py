@@ -18,6 +18,11 @@ from util.logger import Log
 from util.json_data import JsonData
 
 class ExpeditionCore(CoreBase):
+    MONTHLY_EXPEDITION = [ExpeditionEnum.E1_A4, ExpeditionEnum.E1_A5, ExpeditionEnum.E1_A6, 
+                          ExpeditionEnum.E2_B2, ExpeditionEnum.E2_B3, ExpeditionEnum.E2_B4, ExpeditionEnum.E2_B5, ExpeditionEnum.E2_B6,
+                          ExpeditionEnum.E7_42, ExpeditionEnum.E7_43, ExpeditionEnum.E7_44, ExpeditionEnum.E7_46,
+                          ExpeditionEnum.E3_D2, ExpeditionEnum.E3_D3, 
+                          ExpeditionEnum.E5_E1, ExpeditionEnum.E5_E2]
     EXP_ENUM = "exp_enum"
     SCORE = "score"
     NUM_VISIBLE_EXPEDITONS = 8
@@ -202,13 +207,13 @@ class ExpeditionCore(CoreBase):
                     for prerequisite in self.get_prerequisite_expedition(exp_rank[self.EXP_ENUM]):
                             
                         if prerequisite in self.available_expeditions:
-                            if self.exp_state[prerequisite.value] in {NEW, NOT_CLEARED}:
-                                Log.log_debug(f'exp {prerequisite} is in {self.exp_state[prerequisite.value]} state, adding into prerequisite')
+                            if self.exp_state[prerequisite] in {NEW, NOT_CLEARED}:
+                                Log.log_debug(f'exp {prerequisite} is in {self.exp_state[prerequisite]} state, adding into prerequisite')
                                 self.exp_rank.append({self.EXP_ENUM:prerequisite,self.SCORE:exp_rank[self.SCORE]})
-                            elif self.exp_state[prerequisite.value] == CLEARED:
+                            elif self.exp_state[prerequisite] == CLEARED:
                                 Log.log_debug(f'exp {prerequisite} cleared already, not adding into prerequisite')
                             else:
-                                Log.log_debug(f"unknown expedition state {self.exp_state[prerequisite.value]}")
+                                Log.log_debug(f"unknown expedition state {self.exp_state[prerequisite]}")
                                 exit(0)
                         else:
                             self.exp_rank.append({self.EXP_ENUM:prerequisite,self.SCORE:exp_rank[self.SCORE]})
@@ -225,6 +230,14 @@ class ExpeditionCore(CoreBase):
             
             seen = set()
             self.exp_rank = [exp for exp in self.exp_rank if exp[self.EXP_ENUM] not in seen and not seen.add(exp[self.EXP_ENUM])]
+            
+    def monthly_exp_handling(self):
+        """method to remove monthly expedition that already completed this month from expedition ranking
+        """
+        FINISHED = 2
+        for exp in self.exp_rank:
+            if exp[self.EXP_ENUM] in self.MONTHLY_EXPEDITION and self.exp_state[exp[self.EXP_ENUM]] == FINISHED:
+                    self.exp_rank.remove(exp)
                     
     def on_going_exp_handling(self):
         self.exp_rank = [exp for exp in self.exp_rank \
@@ -283,10 +296,9 @@ class ExpeditionCore(CoreBase):
         available_expeditions = []
         exp_state = {}
         for exped in value:
-            exped_id = exped['api_mission_id']
-            if ExpeditionEnum.contains_value(exped_id):
-                available_expeditions.append(ExpeditionEnum(exped_id))
-                exp_state[exped_id] = exped['api_state']
+            exp = ExpeditionEnum(exped['api_mission_id'])
+            available_expeditions.append(exp)
+            exp_state[exp] = exped['api_state']
             
         self._available_expeditions = available_expeditions
         self.exp_state = exp_state
@@ -317,6 +329,10 @@ class ExpeditionCore(CoreBase):
                 kca_u.kca.r['top'].hover()
                 received_expeditions = True
                 kca_u.kca.sleep()
+                
+            import quest.quest_core as qst
+            qst.quest.is_quest_dom_cache_dirty = True
+            
         return received_expeditions
 
     def expect_returned_fleets(self):
