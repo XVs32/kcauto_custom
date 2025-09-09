@@ -1162,7 +1162,7 @@ class Kca(object):
                         line = line.replace(']', '[')
                         map = line.split("[")[1][1:]
                         if count > 0:
-                            action[MapEnum("B-"+map)] = count
+                            action[MapEnum("B-"+map).without_quest_and_node_enum] = count
 
                 return action
             elif quest_name == "":
