@@ -27,6 +27,8 @@ class EquipmentCore(object):
     ship_type_static = []
     equipment_special = []
     
+    current_ship_list_page = 1
+    current_fleet = 1
     
     is_custom_fleet_equipment_loaded = False
     
@@ -62,6 +64,8 @@ class EquipmentCore(object):
             
     def goto(self):
         nav.navigate.to('equipment')
+        self.current_ship_list_page = 1
+        self.current_fleet = 1
         
     def goto_fleet(self, fleet_id):
         """method to navigate to the fleet in equipment page, page 'other' as treated as fleet 999
@@ -70,16 +74,18 @@ class EquipmentCore(object):
             fleet_id (_type_): _description_
         """
         
-        clicked = False
-        
         kca_u.kca.wait("left", f"nav|side_menu_equipment_active.png")
         while True:
-            clicked = kca_u.kca.click_existing("upper_left", f"fleet|fleet_{fleet_id}.png")
+            kca_u.kca.click_existing("upper_left", f"fleet|fleet_{fleet_id}.png")
             if  kca_u.kca.exists("upper_left", f"fleet|fleet_{fleet_id}_active.png"):
                 break
             kca_u.kca.sleep(1)
         
-        return clicked
+        if fleet_id != self.current_fleet:
+            self.current_ship_list_page = 1 
+            self.current_fleet = fleet_id
+        
+        return
             
     def _remove_from_pool(self, target_equipment : Equipment, pool):
         
