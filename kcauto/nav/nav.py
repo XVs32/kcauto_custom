@@ -140,10 +140,11 @@ class NavigateList(object):
     # offset of navigation controls, based off of the ship comp UI's ship list,
     # in x, y pixel format
     
-    OP_MODE_SHIPCOMP = 'shipcomp'
-    OP_MODE_REPAIR = 'repair'
-    OP_MODE_EQUIPMENT = 'equipment'
-    OP_MODE_QUEST = 'quest'
+    OP_MODE_SHIPCOMP = 0
+    OP_MODE_REPAIR = 1
+    OP_MODE_EQUIPMENT = 2
+    OP_MODE_EQUIPMENT_SHIP = 3
+    OP_MODE_QUEST = 4
 
     OFFSET = {
         OP_MODE_REPAIR: (0, 0),
@@ -187,12 +188,18 @@ class NavigateList(object):
                              2: (606, 687),
                              3: (688, 687),
                              4: (770, 687),
-                             5: (852, 687)}}
+                             5: (852, 687)},
+        OP_MODE_EQUIPMENT_SHIP: {
+                             "prev": (208, 664),
+                             "next": (413, 664),
+                             1: (243, 664),
+                             2: (303, 664),
+                             3: (363, 664)}}
         
     @classmethod
     def to_page(
             cls, page_count, current_page, target_page,
-            op_mode='shipcomp'):
+            op_mode= OP_MODE_SHIPCOMP):
         """Method that navigates the shiplist to the specified target page from
         the specified current page. Uses _change_page for navigation.
 
@@ -210,56 +217,80 @@ class NavigateList(object):
         """
         # logic that fires off the series of _change_page method calls to
         # navigate to the desired target page from the current page
-        while target_page != current_page:
-            page_delta = target_page - current_page
-            if target_page == 1:
-                # shortcut for first page
-                #Log.log_error("first")
-                cls._change_page('first', op_mode)
-                current_page = 1
-            elif target_page == page_count:
-                # shortcut for last page
-                #Log.log_error("last")
-                cls._change_page('last', op_mode)
-                current_page = page_count
-            elif target_page <= 5 and (current_page <= 3 or page_count <= 5):
-                #Log.log_error("direct 1")
-                cls._change_page(target_page, op_mode)
-                current_page = target_page
-            elif (current_page >= page_count - 2
-                    and target_page >= page_count - 4):
-                #Log.log_error("direct 2")
-                cls._change_page(
-                    abs(page_count - target_page - 5), op_mode)
-                current_page = target_page
-            elif -3 < page_delta < 3:
-                #Log.log_error("direct 3")
-                cls._change_page( 3 + page_delta, op_mode)
-                current_page = current_page + page_delta
-            elif page_delta <= - 3:
-                if target_page <= 5:
-                    #Log.log_error("back to first")
+        
+        if op_mode == cls.OP_MODE_EQUIPMENT_SHIP:
+            # no "first", "last" button in equipment ship list, 3 digits at once only, use 1, 2, 3 in _change_page
+            while target_page != current_page:
+                page_delta = target_page - current_page
+                if target_page <= 3 and (current_page == 1 or page_count <= 3):
+                    cls._change_page(target_page, op_mode)
+                    current_page = target_page
+                elif (current_page == page_count
+                        and target_page >= page_count - 2):
+                    cls._change_page(
+                        abs(page_count - target_page - 3), op_mode)
+                    current_page = target_page
+                elif -2 < page_delta < 2:
+                    cls._change_page( 2 + page_delta, op_mode)
+                    current_page = current_page + page_delta
+                elif page_delta <= - 2:
+                    cls._change_page('prev', op_mode)
+                    current_page -= 3
+                elif page_delta >= 2:
+                    cls._change_page('next', op_mode)
+                    current_page += 3
+                    
+        else:
+            while target_page != current_page:
+                page_delta = target_page - current_page
+                if target_page == 1:
+                    # shortcut for first page
+                    #Log.log_error("first")
                     cls._change_page('first', op_mode)
                     current_page = 1
-                else:
-                    #Log.log_error("prev")
-                    cls._change_page('prev', op_mode)
-                    if op_mode == cls.OP_MODE_QUEST:
-                        current_page -= 1
-                    else:
-                        current_page -= 5
-            elif page_delta >= 3:
-                if target_page > (page_count - 5):
-                    #Log.log_error("go to last")
+                elif target_page == page_count:
+                    # shortcut for last page
+                    #Log.log_error("last")
                     cls._change_page('last', op_mode)
                     current_page = page_count
-                else:
-                    #Log.log_error("next")
-                    cls._change_page('next', op_mode)
-                    if op_mode == cls.OP_MODE_QUEST:
-                        current_page += 1
+                elif target_page <= 5 and (current_page <= 3 or page_count <= 5):
+                    #Log.log_error("direct 1")
+                    cls._change_page(target_page, op_mode)
+                    current_page = target_page
+                elif (current_page >= page_count - 2
+                        and target_page >= page_count - 4):
+                    #Log.log_error("direct 2")
+                    cls._change_page(
+                        abs(page_count - target_page - 5), op_mode)
+                    current_page = target_page
+                elif -3 < page_delta < 3:
+                    #Log.log_error("direct 3")
+                    cls._change_page( 3 + page_delta, op_mode)
+                    current_page = current_page + page_delta
+                elif page_delta <= - 3:
+                    if target_page <= 5:
+                        #Log.log_error("back to first")
+                        cls._change_page('first', op_mode)
+                        current_page = 1
                     else:
-                        current_page += 5
+                        #Log.log_error("prev")
+                        cls._change_page('prev', op_mode)
+                        if op_mode == cls.OP_MODE_QUEST:
+                            current_page -= 1
+                        else:
+                            current_page -= 5
+                elif page_delta >= 3:
+                    if target_page > (page_count - 5):
+                        #Log.log_error("go to last")
+                        cls._change_page('last', op_mode)
+                        current_page = page_count
+                    else:
+                        #Log.log_error("next")
+                        cls._change_page('next', op_mode)
+                        if op_mode == cls.OP_MODE_QUEST:
+                            current_page += 1
+                        else:
+                            current_page += 5
         kca_u.kca.sleep(0.5)
         return current_page
 
