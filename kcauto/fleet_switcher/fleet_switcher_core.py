@@ -394,7 +394,7 @@ class FleetSwitcherCore(object):
         """
         
         if idle_ship_list == None:
-            idle_ship_list = self._idel_ships_sorted_by_equipment() 
+            idle_ship_list = self._idel_ships_sorted_by_equipment
           
         target_fleet = OTHER_FLEET_ID
         
