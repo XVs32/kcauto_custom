@@ -311,30 +311,7 @@ class ExpeditionCore(CoreBase):
                 self.available_expeditions_per_world[world] = [expedition]
             else:
                 self.available_expeditions_per_world[world].append(expedition)
-
-    def receive_expedition(self):
-
-        Log.log_debug("Start receive expedetion")
-        
-        received_expeditions = False
-        while kca_u.kca.find_expedition_flag():
-            Log.log_msg("Expedition received.")
-            kca_u.kca.r['shipgirl'].click()
-            api.api.update_from_api({KCSAPIEnum.PORT})
-            sts.stats.expedition.expeditions_received += 1
-            kca_u.kca.wait('lower_right_corner', 'global|next.png', 20)
-            while kca_u.kca.exists('lower_right_corner', 'global|next.png'):
-                kca_u.kca.sleep()
-                kca_u.kca.r['shipgirl'].click()
-                kca_u.kca.r['top'].hover()
-                received_expeditions = True
-                kca_u.kca.sleep()
                 
-            import quest.quest_core as qst
-            qst.quest.is_quest_dom_cache_dirty = True
-            
-        return received_expeditions
-
     def expect_returned_fleets(self):
         returned_fleets = []
         for fleet in flt.fleets.expedition_fleets:

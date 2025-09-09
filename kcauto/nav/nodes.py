@@ -2,7 +2,6 @@ import api.api_core as api
 import util.kca as kca_u
 from constants import NEAR_EXACT
 from kca_enums.kcsapi_paths import KCSAPIEnum
-import expedition.expedition_core as exp
 from util.logger import Log
 
 
@@ -225,7 +224,7 @@ class NavNode(object):
                 kca_u.kca.r[c['wait_target_region']], c['wait_target'], 20,
                 NEAR_EXACT)
             if target == 'home':
-                exp.expedition.receive_expedition()
+                kca_u.kca.receive_expedition()
             return c['target']
         else:
             Log.log_msg(

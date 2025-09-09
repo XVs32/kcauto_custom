@@ -55,12 +55,12 @@ class Kcauto(object):
     def initialization_check(self):
         if sts.stats.rsc.ammo is None:
             Log.log_msg("kcauto is initializing.")
-            if not exp.expedition.receive_expedition():
+            if not kca_u.kca.receive_expedition():
                 nav.navigate.to('refresh_home')
                 sts.stats.set_print_loop_end_stats()
 
     def check_for_expedition(self):
-        if not exp.expedition.receive_expedition():
+        if not kca_u.kca.receive_expedition():
             if exp.expedition.expect_returned_fleets():
                 nav.navigate.to('refresh_home')
                 sts.stats.set_print_loop_end_stats()
@@ -321,7 +321,7 @@ class Kcauto(object):
                 com.combat.pop_sortie_queue()
                 
                 sts.stats.set_print_loop_end_stats()
-                exp.expedition.receive_expedition()
+                kca_u.kca.receive_expedition()
                 
                 qst.quest.is_quest_dom_cache_dirty = True
             else:
