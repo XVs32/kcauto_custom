@@ -127,11 +127,24 @@ class FleetCore(object):
         return cfg.config.combat.fleet_mode is FleetModeEnum.STRIKE
 
     @property
-    def ships_in_fleets(self):
+    def ships_in_fleets(self) -> list[Ship]:
         ships = []
         for fleet_id in self.fleets[self.ACTIVE_FLEET_KEY]:
-            ships.extend(self.fleets[self.ACTIVE_FLEET_KEY][fleet_id].ship_ids)
+            ships.extend(self.fleets[self.ACTIVE_FLEET_KEY][fleet_id].ships)
         return ships
+
+    @property
+    def ships_not_in_fleets(self) -> list[Ship]:
+        
+        ships_in_fleets = self.ships_in_fleets
+        
+        ship_pool = shp.ships.ship_pool.copy()
+        for ship in ships_in_fleets:
+            if ship.production_id in ship_pool:
+                ship_pool.pop(ship.production_id)
+            else: 
+                Log.log_warn(f"ship {ship.name} not found in ship pool")
+        return ship_pool.values()
 
     @property
     def expedition_fleets(self) -> list[Fleet]:
