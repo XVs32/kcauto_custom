@@ -333,14 +333,9 @@ class ShipSwitcherCore(object):
     @property
     def _local_ships_sorted_by_levels(self):
         
-        temp_list = [value for key, value in sorted(shp.ships.ship_pool.items(), key=lambda item: (item[1].sort_id, item[1].production_id ))]
-
-        #temp_list = sorted(
-        #    [shp.ships.ship_pool[s] for s in shp.ships.ship_pool],
-        #    key=lambda s: (shp.ships.ship_pool[s].sort_id, shp.ships.ship_pool[s].production_id))
+        temp_list = sorted(shp.ships.ship_pool.values(), key=lambda item: (item.sort_id, item.production_id ))
         temp_list = sorted(
-            [s for s in temp_list],
-            key=lambda s: s.level, reverse=True)
+            temp_list, key=lambda s: s.level, reverse=True)
 
         return temp_list
 
