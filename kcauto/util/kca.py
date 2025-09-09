@@ -19,6 +19,7 @@ import args.args_core as arg
 import config.config_core as cfg
 import ships.ships_core as shp
 import util.click_tracker as clt
+import stats.stats_core as sts
 from constants import (
     GAME_W, GAME_H, VISUAL_URL, STRATEGY_ROOM_URL, API_URL, EXACT, DEFAULT, SLEEP_MODIFIER)
 from kca_enums.interaction_modes import InteractionModeEnum
@@ -802,6 +803,29 @@ class Kca(object):
         else:
             flex = base if flex is None else flex
             sleep(uniform(base, base + flex) + SLEEP_MODIFIER)
+            
+    def receive_expedition(self):
+
+        Log.log_debug("Start receive expedetion")
+        
+        received_expeditions = False
+        while self.find_expedition_flag():
+            Log.log_msg("Expedition received.")
+            self.r['shipgirl'].click()
+            api.api.update_from_api({KCSAPIEnum.PORT})
+            sts.stats.expedition.expeditions_received += 1
+            self.wait('lower_right_corner', 'global|next.png', 20)
+            while self.exists('lower_right_corner', 'global|next.png'):
+                self.sleep()
+                self.r['shipgirl'].click()
+                self.r['top'].hover()
+                received_expeditions = True
+                self.sleep()
+                
+            import quest.quest_core as qst
+            qst.quest.is_quest_dom_cache_dirty = True
+            
+        return received_expeditions
 
     def while_wrapper(
             self, conditional_func, internal_func=None, timeout=None,
