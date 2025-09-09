@@ -290,6 +290,8 @@ class ShipSwitcherCore(object):
                 435, 34)
         elif mode == self.EQUIPMENT_SHIP_MODE:    
             
+            self.current_page = equ.equipment.current_ship_list_page
+            equ.equipment.current_ship_list_page = target_page
             Log.log_msg(f"Selecting lvl{ship.level} {ship.name}"
                         f"(From pg{self.current_page} to pg{target_page}#{row_idx}).")
             
