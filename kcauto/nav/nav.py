@@ -236,9 +236,11 @@ class NavigateList(object):
                 elif page_delta <= - 2:
                     cls._change_page('prev', op_mode)
                     current_page -= 3
+                    current_page = max(1, current_page)
                 elif page_delta >= 2:
                     cls._change_page('next', op_mode)
                     current_page += 3
+                    current_page = min(page_count, current_page)
                     
         else:
             while target_page != current_page:
