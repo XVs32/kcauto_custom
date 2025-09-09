@@ -617,8 +617,6 @@ class QuestCore(CoreBase):
                 elif count_rule == self.EXACT and count != amount:
                     return False
                 
-                Log.log_error(f'PASS')
-        
         return True
     
     def is_tracking_quest(self, quest : Quest):
