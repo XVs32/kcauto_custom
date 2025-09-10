@@ -8,7 +8,10 @@ from util.json_data import JsonData
 from util.logger import Log
 from kca_enums.ship_class import ShipClassEnum 
 from kca_enums.ship_types import ShipTypeEnum
+from constants import FLEET_ID_ICON
 
+import nav.nav as nav
+import util.kca as kca_u
 
 class EquipmentCore(object):
     
@@ -25,6 +28,8 @@ class EquipmentCore(object):
     ship_type_static = []
     equipment_special = []
     
+    current_ship_list_page = 1
+    current_fleet = 1
     
     is_custom_fleet_equipment_loaded = False
     
@@ -57,6 +62,31 @@ class EquipmentCore(object):
         except FileNotFoundError:
             Log.log_error("Equipment data not found, please start kcauto from splash screen")
             Log.log_error(e)
+            
+    def goto(self):
+        nav.navigate.to('equipment')
+        self.current_ship_list_page = 1
+        self.current_fleet = 1
+        
+    def goto_fleet(self, fleet_id):
+        """method to navigate to the fleet in equipment page, page 'other' as treated as fleet 999
+
+        Args:
+            fleet_id (_type_): _description_
+        """
+        
+        kca_u.kca.wait("left", f"nav|side_menu_equipment_active.png")
+        while True:
+            kca_u.kca.click_existing("upper_left", f"fleet|fleet_{fleet_id}.png")
+            if  kca_u.kca.exists("upper_left", f"fleet|fleet_{fleet_id}_active.png", similarity=FLEET_ID_ICON):
+                break
+            kca_u.kca.sleep(1)
+        
+        if fleet_id != self.current_fleet:
+            self.current_ship_list_page = 1 
+            self.current_fleet = fleet_id
+        
+        return
             
     def _remove_from_pool(self, target_equipment : Equipment, pool):
         
