@@ -21,6 +21,8 @@ from kca_enums.maps import MapEnum
 from quest.quest import Quest
 
 from constants import COMBAT_CONFIG, AUTO_PRESET
+from constants import CONTEXT_EXPEDITION, CONTEXT_PVP, CONTEXT_SORTIE, CONTEXT_FACTORY
+from constants import CONTEXT_AUTO_EXPEDITION, CONTEXT_AUTO_SORTIE, CONTEXT_AUTO_PVP
 
 class Kcauto(object):
     """Primary kcauto class.
@@ -55,12 +57,12 @@ class Kcauto(object):
     def initialization_check(self):
         if sts.stats.rsc.ammo is None:
             Log.log_msg("kcauto is initializing.")
-            if not exp.expedition.receive_expedition():
+            if not kca_u.kca.receive_expedition():
                 nav.navigate.to('refresh_home')
                 sts.stats.set_print_loop_end_stats()
 
     def check_for_expedition(self):
-        if not exp.expedition.receive_expedition():
+        if not kca_u.kca.receive_expedition():
             if exp.expedition.expect_returned_fleets():
                 nav.navigate.to('refresh_home')
                 sts.stats.set_print_loop_end_stats()
@@ -86,7 +88,7 @@ class Kcauto(object):
                 exp.expedition.goto()
                 exp.expedition.get_expedition_ranking()
                 
-                self.run_quest_logic('auto_expedition')
+                self.run_quest_logic(CONTEXT_AUTO_EXPEDITION)
                     
                 exp.expedition.prerequisite_handling()
                 exp.expedition.on_going_exp_handling()
@@ -112,7 +114,7 @@ class Kcauto(object):
             exp.expedition.send_expeditions()
             #Refresh home for exp api data update
             nav.navigate.to('refresh_home')
-            self.run_quest_logic('expedition')
+            self.run_quest_logic(CONTEXT_EXPEDITION)
             sts.stats.set_print_loop_end_stats()
 
     def run_factory_logic(self):
@@ -120,7 +122,7 @@ class Kcauto(object):
         if not fty.factory.enabled or not fty.factory.disable_time_up():
             return False
 
-        self.run_quest_logic('factory', fast_check=False, force=True)
+        self.run_quest_logic(CONTEXT_FACTORY, fast_check=False, force=True)
         nav.navigate.to('home')
 
         anything_is_done = False
@@ -192,12 +194,12 @@ class Kcauto(object):
             nav.navigate.to('home')
             
             if cfg.config.pvp.fleet_preset == AUTO_PRESET:
-                self.run_quest_logic('auto_pvp', fast_check=False, back_to_home=False, force= True)
+                self.run_quest_logic(CONTEXT_AUTO_PVP, fast_check=False, back_to_home=False, force= True)
             
             self._run_fleetswitch_logic('pvp')
             self.run_repair_logic()
             
-            self.run_quest_logic('pvp', back_to_home=True)
+            self.run_quest_logic(CONTEXT_PVP, back_to_home=True)
             
         else:
             return False
@@ -208,7 +210,7 @@ class Kcauto(object):
             pvp.pvp.conduct_pvp()
             
             qst.quest.is_quest_dom_cache_dirty = True
-            self.run_quest_logic('pvp', fast_check=True)
+            self.run_quest_logic(CONTEXT_PVP, fast_check=True)
             
         sts.stats.set_print_loop_end_stats()
         return True
@@ -226,7 +228,7 @@ class Kcauto(object):
             was_sortie_queue_empty = True
             Log.log_debug(f"cfg.config.combat.sortie_map_read_only:{cfg.config.combat.sortie_map_read_only}")
             if cfg.config.combat.sortie_map_read_only == MapEnum.auto_map_selete:
-                self.run_quest_logic('auto_sortie', fast_check=False, back_to_home=False, force= True) #quest module will call set_sortie_queue
+                self.run_quest_logic(CONTEXT_AUTO_SORTIE, fast_check=False, back_to_home=False, force= True) #quest module will call set_sortie_queue
             else:
                 Log.log_debug(f"Manual sortie mode:{cfg.config.combat.sortie_map_read_only.value}")
 
@@ -309,7 +311,7 @@ class Kcauto(object):
         if com.combat.should_and_able_to_sortie(ignore_supply=True):
 
             #apply for combat queue, assume map_data is up-to-date
-            self.run_quest_logic('combat', fast_check = not was_sortie_queue_empty, force= was_sortie_queue_empty)
+            self.run_quest_logic(CONTEXT_SORTIE, fast_check = not was_sortie_queue_empty, force= was_sortie_queue_empty)
             
             self.run_resupply_logic()
             com.combat.goto()
@@ -321,7 +323,7 @@ class Kcauto(object):
                 com.combat.pop_sortie_queue()
                 
                 sts.stats.set_print_loop_end_stats()
-                exp.expedition.receive_expedition()
+                kca_u.kca.receive_expedition()
                 
                 qst.quest.is_quest_dom_cache_dirty = True
             else:
