@@ -28,7 +28,7 @@ API_URL = 'kcs2/index.php'
 
 # similarity presets
 EXACT = 0.994
-FLEET_NUMBER_ICON = 0.99
+FLEET_ID_ICON = 0.99
 NEAR_EXACT = 0.95
 VISUAL_DAMAGE = 0.95
 DEFAULT = 0.8
