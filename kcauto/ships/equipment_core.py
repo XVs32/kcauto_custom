@@ -8,6 +8,7 @@ from util.json_data import JsonData
 from util.logger import Log
 from kca_enums.ship_class import ShipClassEnum 
 from kca_enums.ship_types import ShipTypeEnum
+from constants import FLEET_ID_ICON
 
 import nav.nav as nav
 import util.kca as kca_u
@@ -77,7 +78,7 @@ class EquipmentCore(object):
         kca_u.kca.wait("left", f"nav|side_menu_equipment_active.png")
         while True:
             kca_u.kca.click_existing("upper_left", f"fleet|fleet_{fleet_id}.png")
-            if  kca_u.kca.exists("upper_left", f"fleet|fleet_{fleet_id}_active.png"):
+            if  kca_u.kca.exists("upper_left", f"fleet|fleet_{fleet_id}_active.png", similarity=FLEET_ID_ICON):
                 break
             kca_u.kca.sleep(1)
         

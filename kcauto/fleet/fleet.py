@@ -7,7 +7,7 @@ import util.kca as kca_u
 from kca_enums.damage_states import DamageStateEnum
 from kca_enums.fatigue_states import FatigueStateEnum
 from kca_enums.fleet import FleetEnum
-from constants import VISUAL_DAMAGE, FLEET_NUMBER_ICON
+from constants import VISUAL_DAMAGE, FLEET_ID_ICON
 from util.kc_time import KCTime
 from util.logger import Log
 
@@ -41,10 +41,10 @@ class Fleet(object):
             'top_submenu', f'fleet|fleet_{self.fleet_id}.png')
         while not kca_u.kca.exists(
                 'top_submenu', f'fleet|fleet_{self.fleet_id}_active.png',
-                FLEET_NUMBER_ICON):
+                FLEET_ID_ICON):
             kca_u.kca.click_existing(
                 'top_submenu', f'fleet|fleet_{self.fleet_id}.png',
-                FLEET_NUMBER_ICON)
+                FLEET_ID_ICON)
         kca_u.kca.sleep()
 
     @property
