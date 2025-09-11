@@ -16,6 +16,7 @@ import cui.ship_switch as ship_switch
 import cui.passive_repair as passive_repair
 import cui.scheduler as scheduler
 import cui.quest as quest 
+import cui.factory as factory
 import cui.util as util
 
 process = None
@@ -54,8 +55,9 @@ def init():
     curses.init_pair(PVP,       curses.COLOR_BLACK, curses.COLOR_GREEN)
     curses.init_pair(EXP,       curses.COLOR_BLACK, curses.COLOR_CYAN)
     curses.init_pair(REPAIR,    curses.COLOR_BLACK, 11) 
-    curses.init_pair(FACTORY,    curses.COLOR_BLACK, 138)
+    curses.init_pair(FACTORY,   curses.COLOR_BLACK, 138)
     curses.init_pair(LOG,       curses.COLOR_WHITE, curses.COLOR_BLACK)
+    curses.init_pair(STEEL,     curses.COLOR_BLACK, 247)
 
     curses.init_pair(SORTIE + COLOR_REVERT,    curses.COLOR_WHITE, curses.COLOR_RED)
     curses.init_pair(SCHEDULER + COLOR_REVERT, curses.COLOR_WHITE, curses.COLOR_MAGENTA)
@@ -160,6 +162,10 @@ def draw_menu(stdscr):
             k = stdscr.getch()
         elif k == ord('?'):
             kc_auto = open_pop_up(kc_auto, stdscr, QUEST)
+            panels[LOG].redrawwin()
+            k = 0
+        elif k == ord('f'):
+            kc_auto = open_pop_up(kc_auto, stdscr, FACTORY)
             panels[LOG].redrawwin()
             k = 0
         else:
@@ -274,6 +280,9 @@ def open_pop_up(thread, stdscr, active_panel):
     elif active_panel == QUEST:
         quest.pop_up_menu(stdscr, popup_win, config)
         quest.set_config(config)
+    elif active_panel == FACTORY:
+        factory.pop_up_menu(stdscr, popup_win, config)
+        
     
     elif active_panel == LOG :
 
