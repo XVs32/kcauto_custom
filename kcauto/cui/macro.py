@@ -6,6 +6,7 @@ LOG = 5
 REPAIR = 6
 FACTORY = 7
 QUEST = 8
+STEEL = 9
      
 LOG_RED         = 21
 LOG_GREEN       = 22
