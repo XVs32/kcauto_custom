@@ -104,12 +104,12 @@ def pop_up_menu(stdscr, panel, config):
     x_secretary, y_secretary = util.get_center_str_location(panel, "Secretary ship XXXX XXXXXXX")
     secretary_col = [x_secretary, x_secretary + len("Secretary ship "), x_secretary + len("Secretary ship XXXX ")]
     
-    x_recipe, y_recipe = util.get_center_str_location(panel, "PRESETNAME  XAMMOX XXXX  BAUXITE  XXXX")
+    x_recipe, y_recipe = util.get_center_str_location(panel, "PRESETNAME  XAMMOX XXXX  XBAUXITEX XXXX")
     recipe_col = [x_recipe, 
                   x_recipe + len("PRESETNAME    "), 
                   x_recipe + len("PRESETNAME    XAMMOX "), 
                   x_recipe + len("PRESETNAME    XAMMOX XXXX  "), 
-                  x_recipe + len("PRESETNAME    XAMMOX XXXX  BAUXITE ")]
+                  x_recipe + len("PRESETNAME    XAMMOX XXXX  XBAUXITEX ")]
     
     secretary_mode = SECRETARY_MODE_ID
     
@@ -119,10 +119,10 @@ def pop_up_menu(stdscr, panel, config):
         panel.border()
         panel.addstr(row[0], tab_col[0], 
                     ("<" if curser[CURSER_Y] == 0 and current_tab == CONSTRUCT else " ")+"Construct"+(">" if curser[CURSER_Y] == 0 and current_tab == CONSTRUCT else " "),
-                    curses.color_pair(SORTIE + (COLOR_REVERT * (int(current_tab == CONTEXT_SORTIE)))))
+                    curses.color_pair(SORTIE + (COLOR_REVERT * (int(current_tab == CONSTRUCT)))))
         panel.addstr(row[0], tab_col[1], 
                     ("<" if curser[CURSER_Y] == 0 and current_tab == DEVELOP else " ")+"Develop"+(">" if curser[CURSER_Y] == 0 and current_tab == DEVELOP else " "),
-                    curses.color_pair(PVP + (COLOR_REVERT * (int(current_tab == CONTEXT_PVP)))))
+                    curses.color_pair(PVP + (COLOR_REVERT * (int(current_tab == DEVELOP)))))
         
         panel.addstr(row[1] + 1, secretary_col[0], "Secretary ship ", curses.color_pair(LOG))
         
