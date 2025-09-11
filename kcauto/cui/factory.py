@@ -42,7 +42,9 @@ COL_NEEDED_WIDTH = 5
 CURSER_X = 0
 CURSER_Y = 1
 
-quest_info = []
+recipe_preset = {}
+recipe_preset[CONSTRUCT] = []
+recipe_preset[DEVELOP] = []
 
 def int_to_list(n, length):
     ret = []
@@ -64,11 +66,16 @@ def list_to_int(lst):
 
 def pop_up_menu(stdscr, panel, config):
     
-    global quest_info
-    if quest_info == []:
-        with open('data/quests/kc3_periodic_quests_en.json', 'r', encoding='utf-8') as f:
+    global recipe_preset
+    if recipe_preset[CONSTRUCT] == []:
+        with open('data/factory/construct_recipe_preset.json', 'r', encoding='utf-8') as f:
             import json
-            quest_info = json.load(f)    
+            recipe_preset[CONSTRUCT] = json.load(f)    
+            
+    if recipe_preset[DEVELOP] == []:
+        with open('data/factory/develop_recipe_preset.json', 'r', encoding='utf-8') as f:
+            import json
+            recipe_preset[DEVELOP] = json.load(f)
     
     current_tab = CONSTRUCT 
     current_active = TOP_MENU 
@@ -78,7 +85,8 @@ def pop_up_menu(stdscr, panel, config):
     
     tab_height = 1
     secretary_height = 2
-    resource_height = 4
+    resource_height = min((height - (tab_height + secretary_height)), 15)
+    y_offset = 0
     
     row = [0, tab_height, tab_height + secretary_height]
     
@@ -96,8 +104,6 @@ def pop_up_menu(stdscr, panel, config):
     secretary = {}
     secretary[CONSTRUCT] = int_to_list(config["factory.build_secretary"], 7)
     secretary[DEVELOP] = int_to_list(config["factory.develop_secretary"], 7)
-    
-    y_offset = 0
     
     tab_col = [width//2//2 - len(" construct ")//2, width//2 + width//2//2 - len(" develop ")//2]
     
@@ -118,7 +124,7 @@ def pop_up_menu(stdscr, panel, config):
         panel.clear()
         panel.border()
         panel.addstr(row[0], tab_col[0], 
-                    ("<" if curser[CURSER_Y] == 0 and current_tab == CONSTRUCT else " ")+"Construct"+(">" if curser[CURSER_Y] == 0 and current_tab == CONSTRUCT else " "),
+                    ("<" if curser[CURSER_Y] == 0 and current_tab == CONSTRUCT else str(y_offset))+"Construct"+(">" if curser[CURSER_Y] == 0 and current_tab == CONSTRUCT else " "),
                     curses.color_pair(SORTIE + (COLOR_REVERT * (int(current_tab == CONSTRUCT)))))
         panel.addstr(row[0], tab_col[1], 
                     ("<" if curser[CURSER_Y] == 0 and current_tab == DEVELOP else " ")+"Develop"+(">" if curser[CURSER_Y] == 0 and current_tab == DEVELOP else " "),
@@ -142,6 +148,19 @@ def pop_up_menu(stdscr, panel, config):
                 panel.addstr(row[1] + 1, secretary_col[2], str(list_to_int(secretary[current_tab])), curses.color_pair(LOG_GREEN))
             else:
                 panel.addstr(row[1] + 1, secretary_col[2], str(list_to_int(secretary[current_tab])), curses.color_pair(LOG))
+        
+        for recipe_idx, preset in enumerate(recipe_preset[current_tab]):
+            
+            if recipe_idx < (y_offset * -1):
+                continue
+            
+            if recipe_idx > resource_height - y_offset - 3:
+                break
+            
+            if curser[CURSER_Y] == recipe_idx + 2 and curser[CURSER_X] == 0:
+                panel.addstr(row[2] + 1 + recipe_idx + y_offset, recipe_col[0], preset, curses.color_pair(LOG_GREEN))
+            else:
+                panel.addstr(row[2] + 1 + recipe_idx + y_offset, recipe_col[0], preset, curses.color_pair(LOG))
         
         for resource_idx, resource in enumerate(RESOURCE_ORDER):
             
@@ -195,8 +214,15 @@ def pop_up_menu(stdscr, panel, config):
         
         if key == curses.KEY_DOWN or key == ord('j'):
             if current_active == TOP_MENU:
-                if curser[CURSER_Y] < 3:
-                    curser[CURSER_Y] += 1
+                if curser[CURSER_X] != 0:
+                    if curser[CURSER_Y] < 3:
+                        curser[CURSER_Y] += 1
+                else:
+                    if curser[CURSER_Y] < 1:
+                        curser[CURSER_Y] += 1
+                    elif curser[CURSER_Y] < recipe_preset[current_tab].__len__() + 1:
+                        curser[CURSER_Y] += 1
+                    y_offset = min(y_offset, (resource_height-2) - (curser[CURSER_Y] -2 +1) )
             elif current_active == SECRETARY_MENU:
                 secretary[current_tab][curser[CURSER_X]] = (secretary[current_tab][curser[CURSER_X]] + 1) %10
             elif current_active == FUEL_MENU or current_active == AMMO_MENU or current_active == STEEL_MENU or current_active == BAUXITE_MENU:
@@ -207,6 +233,8 @@ def pop_up_menu(stdscr, panel, config):
             if current_active == TOP_MENU:
                 if curser[CURSER_Y] > 0:
                     curser[CURSER_Y] -= 1
+                    if curser[CURSER_Y] >1:
+                        y_offset = max(y_offset, -(curser[CURSER_Y] -2))
             elif current_active == SECRETARY_MENU:
                 secretary[current_tab][curser[CURSER_X]] = (secretary[current_tab][curser[CURSER_X]] + 9) %10
             elif current_active == FUEL_MENU or current_active == AMMO_MENU or current_active == STEEL_MENU or current_active == BAUXITE_MENU:
@@ -222,7 +250,10 @@ def pop_up_menu(stdscr, panel, config):
                         curser[CURSER_X] = 1
                 else:
                     if curser[CURSER_X] < 2:
+                        if curser[CURSER_X] == 0:
+                            curser[CURSER_Y] = 2
                         curser[CURSER_X] += 1
+                        
             elif current_active == SECRETARY_MENU:
                 if curser[CURSER_X] < 6:
                     curser[CURSER_X] += 1
@@ -237,7 +268,11 @@ def pop_up_menu(stdscr, panel, config):
                         current_tab = TAB_ORDER[TAB_ORDER.index(current_tab)-1]
                         curser[CURSER_X] = 1
                 else:
-                    if curser[CURSER_X] > 0:
+                        
+                    
+                    if curser[CURSER_X] != 0:
+                        if curser[CURSER_X] == 1:
+                            curser[CURSER_Y] = 2 - y_offset
                         curser[CURSER_X] -= 1
             elif current_active == SECRETARY_MENU:
                 if curser[CURSER_X] > 0:
