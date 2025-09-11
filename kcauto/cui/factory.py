@@ -124,7 +124,7 @@ def pop_up_menu(stdscr, panel, config):
         panel.clear()
         panel.border()
         panel.addstr(row[0], tab_col[0], 
-                    ("<" if curser[CURSER_Y] == 0 and current_tab == CONSTRUCT else str(y_offset))+"Construct"+(">" if curser[CURSER_Y] == 0 and current_tab == CONSTRUCT else " "),
+                    ("<" if curser[CURSER_Y] == 0 and current_tab == CONSTRUCT else " ")+"Construct"+(">" if curser[CURSER_Y] == 0 and current_tab == CONSTRUCT else " "),
                     curses.color_pair(SORTIE + (COLOR_REVERT * (int(current_tab == CONSTRUCT)))))
         panel.addstr(row[0], tab_col[1], 
                     ("<" if curser[CURSER_Y] == 0 and current_tab == DEVELOP else " ")+"Develop"+(">" if curser[CURSER_Y] == 0 and current_tab == DEVELOP else " "),
