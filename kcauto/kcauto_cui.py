@@ -323,7 +323,8 @@ def open_pop_up(thread, stdscr, active_panel):
     
     for log in util.log_buffer:
         util.print_log(panels[LOG], log)
-    log_buffer = []
+    
+    util.log_buffer = []
     
     return thread
 
