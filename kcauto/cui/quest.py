@@ -68,8 +68,7 @@ def pop_up_menu(stdscr, panel, config):
     if quest_info == []:
         with open('data/quests/kc3_periodic_quests_en.json', 'r', encoding='utf-8') as f:
             import json
-            quest_info = json.load(f)
-        
+            quest_info = json.load(f)    
     
     current_tab = CONTEXT_SORTIE
     curser = [0, 0]
@@ -124,6 +123,8 @@ def pop_up_menu(stdscr, panel, config):
         if quest in QUEST_LIST[context][quest_type]:
             QUEST_LIST[context][quest_type][quest] = 1
             
+    y_offset = 0
+    
     while True:
         
         panel.clear()
@@ -152,7 +153,10 @@ def pop_up_menu(stdscr, panel, config):
                 
             for j, quest in enumerate(QUEST_LIST[current_tab][quest_type]):
                 
-                if j > quest_height - 1:
+                if j < (y_offset * -1):
+                    continue
+                
+                if j > quest_height - y_offset - 1:
                     break
                 
                 if curser[CURSER_Y] - 1  == j and curser[CURSER_X] == i:
@@ -166,7 +170,7 @@ def pop_up_menu(stdscr, panel, config):
                     
                 else:
                     color = curses.color_pair(LOG)
-                panel.addstr(row[1] + j, col[i], (" " if QUEST_LIST[current_tab][quest_type][quest] == 0 else "*") + quest.rjust(COL_NEEDED_WIDTH-1, ' '), color)
+                panel.addstr(row[1] + j + y_offset, col[i], (" " if QUEST_LIST[current_tab][quest_type][quest] == 0 else "*") + quest.rjust(COL_NEEDED_WIDTH-1, ' '), color)
                 
         
         
@@ -182,13 +186,17 @@ def pop_up_menu(stdscr, panel, config):
             elif curser[CURSER_Y] == 0:
                 curser[CURSER_X] = 0
                 curser[CURSER_Y] += 1
+                
+            y_offset = min(0, quest_height - curser[CURSER_Y])
             
         elif key == curses.KEY_UP or key == ord('k'):
             if curser[CURSER_Y] > 0:
                 curser[CURSER_Y] -= 1
                 if curser[CURSER_Y] == 0:
                     curser[CURSER_X] = TAB_ORDER.index(current_tab)
-                
+                else:
+                    y_offset = max(y_offset, -(curser[CURSER_Y] - 1))
+                    
         elif key == curses.KEY_RIGHT or key == ord('l'):
             if curser[CURSER_Y] == 0:
                 if current_tab != TAB_ORDER[-1]:
@@ -224,7 +232,7 @@ def pop_up_menu(stdscr, panel, config):
                     QUEST_LIST[current_tab][QUEST_ORDER[curser[CURSER_X]]][quest] = 0
                     
         elif key == ord('?') or key == KEY_ESC or key == ord('q'):
-            return None
+            break
     
     return None
 
