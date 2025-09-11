@@ -6,7 +6,15 @@ from sys import platform, exit
 
 from cui.macro import *
 
+WINDOW_MIN_HEIGHT = 8
+WINDOW_MIN_WIDTH = 45
+
+POP_UP_MAX_HEIGHT = 20
+
 pop_up_lock = False
+
+log_buffer = []
+
 process = None
 
 import re
@@ -24,6 +32,10 @@ def print_string(window, offset_x, offset_y, string):
     window.addstr(y + offset_y, x + offset_x, string)
 
 def print_log(panel, string):
+    
+    if pop_up_lock:
+        log_buffer.append(string)
+        return
 
     # Define regular expression pattern for ANSI color codes
     ansi_color_pattern = re.compile(r'\x1b\[([0-9;]+)m')
