@@ -109,12 +109,12 @@
         "Dy6",
         "Dy7",
         "Dy8",
-        "E3",
-        "E4",
-        "F5",
-        "F6",
-        "F7",
-        "F8"
+        "Fd1",
+        "Fd2",
+        "Fd3",
+        "Fd4",
+        "Ed1",
+        "Ed2"
     ],
     "scheduler.enabled": true,
     "scheduler.rules": [
