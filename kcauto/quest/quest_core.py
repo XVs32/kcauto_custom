@@ -79,6 +79,7 @@ class QuestCore(CoreBase):
         self.quest_priority_library[CONTEXT_SORTIE] = []
         self.quest_priority_library[CONTEXT_EXPEDITION] = []
         self.quest_priority_library[CONTEXT_PVP] = []
+        self.quest_priority_library[CONTEXT_FACTORY] = []
 
         Log.log_msg("Loading Quest priority data.")
         quest_priority = JsonData.load_json('data|quests|sorite_quest_priority.json')
@@ -282,20 +283,23 @@ class QuestCore(CoreBase):
         remain_quest_slot = self.max_quests - len(self.active_quest_list)
         
         self.cur_page = 1
-
         
-        for quest_priority in self.quest_priority_library[context]: 
-            
-            quest = None
-            for current_quest in self.current_quest_list:
+        check_order = list(range(len(self.current_quest_list)))
+        
+        for quest_priority in reversed(self.quest_priority_library[context]): 
+            for i, current_quest in enumerate(self.current_quest_list):
                 if current_quest.quest_id == quest_priority.quest_id:
-                    quest = current_quest
+                    check_order[i] = -1 
+                    check_order.append(i)
                     break
-            if quest is None:
+        check_order.reverse()
+
+        for i in check_order:
+            
+            if i == -1:
                 continue
             
-            if quest.quest_id in [current_quest.quest_id for current_quest in self.current_quest_list]:
-                i = [self.current_quest_list.index(current_quest) for current_quest in self.current_quest_list if current_quest.quest_id == quest.quest_id][0]
+            quest = self.current_quest_list[i]
             
             if quest.state == QuestStateEnum.DONE:
                 Log.log_warn(f"Quest {quest.name} is done, but not turned in. ")
@@ -354,11 +358,6 @@ class QuestCore(CoreBase):
                         #sortie_list.append(key+"-"+next_quest)
                         sortie_list.append(next_quest.name +"-"+ map_enum.world_and_map_and_node)
             
-            #patch to turn Bxx-1-6-N from quest to Bxx-1-6
-            for i in range(len(sortie_list)):
-                if sortie_list[i][-5:] == "1-6-N":
-                    sortie_list[i] = sortie_list[i][:-2]
-
             com.combat.set_sortie_queue(sortie_list)
 
             Log.log_debug(f"_find_next_sorties_quests {next_quest.name}.")
