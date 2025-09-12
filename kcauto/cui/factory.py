@@ -2,12 +2,11 @@ import curses
 
 import cui.util as util
 from cui.macro import *
-from constants import CONTEXT_SORTIE, CONTEXT_EXPEDITION, CONTEXT_PVP, CONTEXT_FACTORY, CONTEXT_REPAIR
 
 from fleet.noro6 import Noro6 
 
-CONSTRUCT = 1
-DEVELOP = 2
+CONSTRUCT_TAB = 1
+DEVELOP_TAB = 2
 
 TOP_MENU = 1
 SECRETARY_MENU = 2
@@ -22,7 +21,7 @@ SECRETARY_MODE_TYPE = 2
 
 MAX_QUEST_COL = 16
 
-TAB_ORDER = [CONSTRUCT, DEVELOP]
+TAB_ORDER = [CONSTRUCT_TAB, DEVELOP_TAB]
 RESOURCE_ORDER = [FUEL_MENU, AMMO_MENU, STEEL_MENU, BAUXITE_MENU]
 RESOURCE_PANEL_LAYOUT = [
     [FUEL_MENU, STEEL_MENU],
@@ -43,8 +42,8 @@ CURSER_X = 0
 CURSER_Y = 1
 
 recipe_preset = {}
-recipe_preset[CONSTRUCT] = []
-recipe_preset[DEVELOP] = []
+recipe = {}
+secretary = {}
 
 def int_to_list(n, length):
     ret = []
@@ -67,17 +66,19 @@ def list_to_int(lst):
 def pop_up_menu(stdscr, panel, config):
     
     global recipe_preset
-    if recipe_preset[CONSTRUCT] == []:
+    recipe_preset[CONSTRUCT_TAB] = []
+    recipe_preset[DEVELOP_TAB] = []
+    if recipe_preset[CONSTRUCT_TAB] == []:
         with open('data/factory/construct_recipe_preset.json', 'r', encoding='utf-8') as f:
             import json
-            recipe_preset[CONSTRUCT] = json.load(f)    
+            recipe_preset[CONSTRUCT_TAB] = json.load(f)    
             
-    if recipe_preset[DEVELOP] == []:
+    if recipe_preset[DEVELOP_TAB] == []:
         with open('data/factory/develop_recipe_preset.json', 'r', encoding='utf-8') as f:
             import json
-            recipe_preset[DEVELOP] = json.load(f)
+            recipe_preset[DEVELOP_TAB] = json.load(f)
     
-    current_tab = CONSTRUCT 
+    current_tab = CONSTRUCT_TAB 
     current_active = TOP_MENU 
     curser = [1, 0]
     
@@ -91,18 +92,21 @@ def pop_up_menu(stdscr, panel, config):
     row = [0, tab_height, tab_height + secretary_height]
     
     #read current quest status from config
-    recipe = {}
-    recipe[CONSTRUCT] = config["factory.build_recipe"]
-    recipe[DEVELOP] = config["factory.develop_recipe"]
+    recipe[CONSTRUCT_TAB] = config["factory.build_recipe"]
+    recipe[DEVELOP_TAB] = config["factory.develop_recipe"]
     
     for tab in TAB_ORDER:
         for i in range(len(recipe[tab])):
             recipe[tab][i] = int_to_list(recipe[tab][i], 4)
             
-    secretary = {}
-    secretary[CONSTRUCT] = int_to_list(config["factory.build_secretary"], 7)
-    secretary[DEVELOP] = int_to_list(config["factory.develop_secretary"], 7)
+    secretary[CONSTRUCT_TAB] = int_to_list(config["factory.build_secretary"], 7)
+    secretary[DEVELOP_TAB] = int_to_list(config["factory.develop_secretary"], 7)
     
+    if secretary[CONSTRUCT_TAB] == [0,0,0,0,0,0,0]:
+        secretary[CONSTRUCT_TAB] = 'on-hand'
+    if secretary[DEVELOP_TAB] == [0,0,0,0,0,0,0]:
+        secretary[DEVELOP_TAB] = 'on-hand'
+        
     tab_col = [width//2//2 - len(" construct ")//2, width//2 + width//2//2 - len(" develop ")//2]
     
     x_secretary, y_secretary = util.get_center_str_location(panel, "Secretary ship XXXX XXXXXXX")
@@ -122,11 +126,11 @@ def pop_up_menu(stdscr, panel, config):
         panel.clear()
         panel.border()
         panel.addstr(row[0], tab_col[0], 
-                    ("<" if curser[CURSER_Y] == 0 and current_tab == CONSTRUCT else " ")+"Construct"+(">" if curser[CURSER_Y] == 0 and current_tab == CONSTRUCT else " "),
-                    curses.color_pair(SORTIE + (COLOR_REVERT * (int(current_tab == CONSTRUCT)))))
+                    ("<" if curser[CURSER_Y] == 0 and current_tab == CONSTRUCT_TAB else " ")+"Construct"+(">" if curser[CURSER_Y] == 0 and current_tab == CONSTRUCT_TAB else " "),
+                    curses.color_pair(CONSTRUCT + (COLOR_REVERT * (int(current_tab == CONSTRUCT_TAB)))))
         panel.addstr(row[0], tab_col[1], 
-                    ("<" if curser[CURSER_Y] == 0 and current_tab == DEVELOP else " ")+"Develop"+(">" if curser[CURSER_Y] == 0 and current_tab == DEVELOP else " "),
-                    curses.color_pair(PVP + (COLOR_REVERT * (int(current_tab == DEVELOP)))))
+                    ("<" if curser[CURSER_Y] == 0 and current_tab == DEVELOP_TAB else " ")+"Develop"+(">" if curser[CURSER_Y] == 0 and current_tab == DEVELOP_TAB else " "),
+                    curses.color_pair(DEVELOP + (COLOR_REVERT * (int(current_tab == DEVELOP_TAB)))))
         
         panel.addstr(row[1] + 1, secretary_col[0], "Secretary ship ", curses.color_pair(LOG))
         
@@ -231,7 +235,7 @@ def pop_up_menu(stdscr, panel, config):
             if current_active == TOP_MENU:
                 if curser[CURSER_Y] > 0:
                     curser[CURSER_Y] -= 1
-                    if curser[CURSER_Y] >1:
+                    if curser[CURSER_Y] >1 and curser[CURSER_X] == 0:
                         y_offset = max(y_offset, -(curser[CURSER_Y] -2))
             elif current_active == SECRETARY_MENU:
                 secretary[current_tab][curser[CURSER_X]] = (secretary[current_tab][curser[CURSER_X]] + 9) %10
@@ -281,38 +285,37 @@ def pop_up_menu(stdscr, panel, config):
             
         elif key == KEY_ENTER:
             if current_active == TOP_MENU:
-                if curser[CURSER_Y] == 0:
-                    current_tab = TAB_ORDER[curser[CURSER_X]]
-                elif curser[CURSER_Y] == 1:
+                if curser[CURSER_Y] == 1:
                     current_active = SECRETARY_MENU
                     curser[CURSER_X] = 6
                     if secretary[current_tab] == 'on-hand':
                         secretary[current_tab] = [0,0,0,0,0,0,0]
-                elif curser[CURSER_Y] >= 2 and curser[CURSER_X] == 0:
+                elif curser[CURSER_Y] >= 2:
+                    if curser[CURSER_X] == 0:
                     
-                    preset_idx = curser[CURSER_Y] -2
-                    
-                    recipe_name = ""
-                    secretary_name = 0
-                    if current_tab == CONSTRUCT:
-                        recipe_name = "factory.build_recipe"
-                        secretary_name = "factory.build_secretary"
-                    elif current_tab == DEVELOP:
-                        recipe_name = "factory.develop_recipe"
-                        secretary_name = "factory.develop_secretary"
-                    
-                    secretary_int = list(recipe_preset[current_tab].items())[preset_idx][1][secretary_name]
-                    if secretary_int == None:
-                        secretary[current_tab] = "on-hand"
-                    else:
-                        secretary[current_tab] = int_to_list(secretary_int, 7)
+                        preset_idx = curser[CURSER_Y] -2
                         
-                    recipe[current_tab] = [int_to_list(n,4) for n in list(recipe_preset[current_tab].items())[preset_idx][1][recipe_name]]
+                        recipe_name = ""
+                        secretary_name = 0
+                        if current_tab == CONSTRUCT_TAB:
+                            recipe_name = "factory.build_recipe"
+                            secretary_name = "factory.build_secretary"
+                        elif current_tab == DEVELOP_TAB:
+                            recipe_name = "factory.develop_recipe"
+                            secretary_name = "factory.develop_secretary"
+                        
+                        secretary_int = list(recipe_preset[current_tab].items())[preset_idx][1][secretary_name]
+                        if secretary_int == 0:
+                            secretary[current_tab] = "on-hand"
+                        else:
+                            secretary[current_tab] = int_to_list(secretary_int, 7)
+                            
+                        recipe[current_tab] = [int_to_list(n,4) for n in list(recipe_preset[current_tab].items())[preset_idx][1][recipe_name]]
                     
-                else:
-                    current_active = RESOURCE_ORDER[(curser[CURSER_Y]-2) + (curser[CURSER_X]-1)*2]
-                    curser[CURSER_Y] = None
-                    curser[CURSER_X] = 3
+                    else:
+                        current_active = RESOURCE_ORDER[(curser[CURSER_Y]-2) + (curser[CURSER_X]-1)*2]
+                        curser[CURSER_Y] = None
+                        curser[CURSER_X] = 3
                     
             elif current_active == SECRETARY_MENU:
                 current_active = TOP_MENU
@@ -326,21 +329,27 @@ def pop_up_menu(stdscr, panel, config):
                 current_active = TOP_MENU
                 
                     
-        elif key == ord('?') or key == KEY_ESC or key == ord('q'):
+        elif key == ord('f') or key == ord('"') or key == KEY_ESC or key == ord('q'):
             break
     return None
 
 def set_config(config):
-    return  
-    config["quest.enabled"] = False
-    config["quest.quests"] = []
+    config["factory.build_recipe"] = []
+    config["factory.build_secretary"] = None
+    config["factory.develop_recipe"] = []
+    config["factory.develop_secretary"] = None
     
-    for i, tab in enumerate(TAB_ORDER): 
-        for j, quest_type in enumerate(QUEST_ORDER):
-            for k, quest in enumerate(QUEST_LIST[tab][quest_type]):
-                
-                if QUEST_LIST[tab][quest_type][quest] == 1:
-                    config["quest.enabled"] = True
-                    config["quest.quests"].append(quest)
-    
+    for resource in recipe[CONSTRUCT_TAB]:
+        config["factory.build_recipe"].append(list_to_int(resource))
+    if secretary[CONSTRUCT_TAB] == 'on-hand':
+        config["factory.build_secretary"] = 0
+    else:   
+        config["factory.build_secretary"] = list_to_int(secretary[CONSTRUCT_TAB])
+        
+    for resource in recipe[DEVELOP_TAB]:
+        config["factory.develop_recipe"].append(list_to_int(resource))
+    if secretary[DEVELOP_TAB] == 'on-hand':
+        config["factory.develop_secretary"] = 0 
+    else:
+        config["factory.develop_secretary"] = list_to_int(secretary[DEVELOP_TAB])
     return
