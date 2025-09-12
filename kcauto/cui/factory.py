@@ -99,8 +99,6 @@ def pop_up_menu(stdscr, panel, config):
         for i in range(len(recipe[tab])):
             recipe[tab][i] = int_to_list(recipe[tab][i], 4)
             
-    print(recipe)
-    
     secretary = {}
     secretary[CONSTRUCT] = int_to_list(config["factory.build_secretary"], 7)
     secretary[DEVELOP] = int_to_list(config["factory.develop_secretary"], 7)
@@ -290,9 +288,27 @@ def pop_up_menu(stdscr, panel, config):
                     curser[CURSER_X] = 6
                     if secretary[current_tab] == 'on-hand':
                         secretary[current_tab] = [0,0,0,0,0,0,0]
-                elif curser[CURSER_Y] == 2 and curser[CURSER_X] == 0:
-                    #preset
-                    pass
+                elif curser[CURSER_Y] >= 2 and curser[CURSER_X] == 0:
+                    
+                    preset_idx = curser[CURSER_Y] -2
+                    
+                    recipe_name = ""
+                    secretary_name = 0
+                    if current_tab == CONSTRUCT:
+                        recipe_name = "factory.build_recipe"
+                        secretary_name = "factory.build_secretary"
+                    elif current_tab == DEVELOP:
+                        recipe_name = "factory.develop_recipe"
+                        secretary_name = "factory.develop_secretary"
+                    
+                    secretary_int = list(recipe_preset[current_tab].items())[preset_idx][1][secretary_name]
+                    if secretary_int == None:
+                        secretary[current_tab] = "on-hand"
+                    else:
+                        secretary[current_tab] = int_to_list(secretary_int, 7)
+                        
+                    recipe[current_tab] = [int_to_list(n,4) for n in list(recipe_preset[current_tab].items())[preset_idx][1][recipe_name]]
+                    
                 else:
                     current_active = RESOURCE_ORDER[(curser[CURSER_Y]-2) + (curser[CURSER_X]-1)*2]
                     curser[CURSER_Y] = None
