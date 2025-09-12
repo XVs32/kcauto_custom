@@ -58,6 +58,8 @@ def init():
     curses.init_pair(FACTORY,   curses.COLOR_BLACK, 138)
     curses.init_pair(LOG,       curses.COLOR_WHITE, curses.COLOR_BLACK)
     curses.init_pair(STEEL,     curses.COLOR_BLACK, 247)
+    curses.init_pair(CONSTRUCT, curses.COLOR_BLACK, 209)
+    curses.init_pair(DEVELOP,   curses.COLOR_BLACK, 35)
 
     curses.init_pair(SORTIE + COLOR_REVERT,    curses.COLOR_WHITE, curses.COLOR_RED)
     curses.init_pair(SCHEDULER + COLOR_REVERT, curses.COLOR_WHITE, curses.COLOR_MAGENTA)
@@ -66,7 +68,8 @@ def init():
     curses.init_pair(REPAIR + COLOR_REVERT,    curses.COLOR_WHITE, 11)
     curses.init_pair(FACTORY + COLOR_REVERT,   curses.COLOR_WHITE, 138)
     curses.init_pair(LOG + COLOR_REVERT,       curses.COLOR_BLACK, curses.COLOR_WHITE)
-
+    curses.init_pair(CONSTRUCT + COLOR_REVERT, curses.COLOR_WHITE, 209)
+    curses.init_pair(DEVELOP + COLOR_REVERT,   curses.COLOR_WHITE, 35)
     
     curses.init_pair(LOG_RED,       curses.COLOR_RED,   curses.COLOR_BLACK)
     curses.init_pair(LOG_GREEN,     curses.COLOR_GREEN, curses.COLOR_BLACK)
@@ -164,7 +167,7 @@ def draw_menu(stdscr):
             kc_auto = open_pop_up(kc_auto, stdscr, QUEST)
             panels[LOG].redrawwin()
             k = 0
-        elif k == ord('f'):
+        elif k == ord('f') or k == ord('"'):
             kc_auto = open_pop_up(kc_auto, stdscr, FACTORY)
             panels[LOG].redrawwin()
             k = 0
@@ -282,6 +285,7 @@ def open_pop_up(thread, stdscr, active_panel):
         quest.set_config(config)
     elif active_panel == FACTORY:
         factory.pop_up_menu(stdscr, popup_win, config)
+        factory.set_config(config)
         
     
     elif active_panel == LOG :
