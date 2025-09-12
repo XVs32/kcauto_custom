@@ -456,12 +456,12 @@ class Kca(object):
 
         # equipment-related regions
         self._create_or_shift_region('equipment_panel', x + 455, y + 226, 125, 268)
-        self._create_or_shift_region('ship_1', x + 205, y + 225, 235, 50)
-        self._create_or_shift_region('ship_2', x + 205, y + 306, 235, 50)
-        self._create_or_shift_region('ship_3', x + 205, y + 387, 235, 50)
-        self._create_or_shift_region('ship_4', x + 205, y + 468, 235, 50)
-        self._create_or_shift_region('ship_5', x + 205, y + 549, 235, 50)
-        self._create_or_shift_region('ship_6', x + 205, y + 630, 235, 50)
+        self._create_or_shift_region('ship_1', x + 210, y + 228, 230, 47)
+        self._create_or_shift_region('ship_2', x + 210, y + 309, 230, 47)
+        self._create_or_shift_region('ship_3', x + 210, y + 390, 230, 47)
+        self._create_or_shift_region('ship_4', x + 210, y + 471, 230, 47)
+        self._create_or_shift_region('ship_5', x + 210, y + 552, 230, 47)
+        self._create_or_shift_region('ship_6', x + 210, y + 633, 230, 47)
         self._create_or_shift_region('1_slot_unload_equipment', x + 478, y + 294, 4, 4)
         self._create_or_shift_region('2_slot_unload_equipment', x + 478, y + 344, 4, 4)
         self._create_or_shift_region('3_slot_unload_equipment', x + 478, y + 394, 4, 4)
