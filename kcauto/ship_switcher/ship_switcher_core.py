@@ -50,6 +50,9 @@ class ShipSwitcherCore(object):
         #@todo upper function has to handle the switched already detection, tho ship switcher does not know what fleet currently is
         #if len(flt.fleets.fleets[1].ship_ids) >= slot and ship_local_id == flt.fleets.fleets[1].ship_ids[slot-1]:
             #return
+            
+        if ship_local_id == 0:
+            Log.log_warn("No ship specified to switch in.")
 
         if not self._select_switch_button(slot):
             return False
