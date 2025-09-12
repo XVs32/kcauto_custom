@@ -301,6 +301,7 @@ class FleetCore(object):
         """
         
         equipment_pool_read_only = equ.equipment.equipment_pool[equ.equipment.ID].copy()
+        equ.equipment.equipment_pool[equ.equipment.NON_NORO6] = equ.equipment.equipment_pool[equ.equipment.ID].copy()
         
         if cfg.config.expedition.is_auto_mode == False:
             Log.log_warn("Expedition mode manual, please make sure expedition fleet doesn't occupy noro6's ship and equipment")
@@ -371,6 +372,7 @@ class FleetCore(object):
                         ship.equipments.append(this_equipment)
                         
                         equ.equipment._remove_from_pool(this_equipment, pool=equ.equipment.ID)
+                        equ.equipment._remove_from_pool(this_equipment, pool=equ.equipment.NON_NORO6)
                         
                     reinforce_equipment = noro6.get_reinforce_equipment()
                     if reinforce_equipment["i"] > 0:
@@ -387,6 +389,7 @@ class FleetCore(object):
                         #remove this equipment from equipment pool
                         if  this_equipment != None and this_equipment.model_id != None:
                             equ.equipment._remove_from_pool(this_equipment, pool=equ.equipment.ID)
+                            equ.equipment._remove_from_pool(this_equipment, pool=equ.equipment.NON_NORO6)
                     elif reinforce_equipment["i"] == 0:
                         ship.slot_ex = None
                     elif reinforce_equipment["i"] == -1:
@@ -399,7 +402,6 @@ class FleetCore(object):
                 
                 ret[preset_name][fleet_id] = temp
 
-            equ.equipment.equipment_pool[equ.equipment.NON_NORO6] = equ.equipment.equipment_pool[equ.equipment.ID].copy()
             #restore equipment pool for next noro6 preset
             equ.equipment.equipment_pool[equ.equipment.ID] = equipment_pool_bak.copy()                    
             
@@ -416,6 +418,14 @@ class FleetCore(object):
                     Log.log_debug(f"{ship.name} ({ship.ship_type.name}) - Level: {ship.level}, \
                         Equipment name and production id: {[f'{eq.name} {eq.production_id}' for eq in ship.equipments]}, \
                         Slot Ex: {f'{ship.slot_ex.name} {ship.slot_ex.production_id}' if ship.slot_ex != None else 'None'}")
+                    
+        #print out the whole NON_NORO6 equipment pool in debug log
+        Log.log_debug(f"NON_NORO6 equipment pool after Noro6 preset load:")
+        for equipment in equ.equipment.equipment_pool[equ.equipment.NON_NORO6]:
+            ret_str = f"Equipment ID {equipment.production_id}: "
+            ret_str += f"{equipment.name} ({equipment.stars}★)"
+            Log.log_debug(ret_str)
+            
                     
         return ret
  
