@@ -2363,7 +2363,7 @@
       110
     ]
   },
-  "E3": {
+  "Ed1": {
     "id": 503,
     "type": "daily",
     "intervals": [
@@ -2372,7 +2372,7 @@
       0
     ]
   },
-  "E4": {
+  "Ed2": {
     "id": 504,
     "type": "daily",
     "intervals": [
@@ -2381,7 +2381,7 @@
       15
     ]
   },
-  "F5": {
+  "Fd1": {
     "id": 605,
     "type": "daily",
     "intervals": [
@@ -2390,7 +2390,7 @@
       0
     ]
   },
-  "F6": {
+  "Fd2": {
     "id": 606,
     "type": "daily",
     "intervals": [
@@ -2399,7 +2399,7 @@
       0
     ]
   },
-  "F7": {
+  "Fd3": {
     "id": 607,
     "type": "daily",
     "intervals": [
@@ -2408,7 +2408,7 @@
       0
     ]
   },
-  "F8": {
+  "Fd4": {
     "id": 608,
     "type": "daily",
     "intervals": [
