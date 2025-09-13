@@ -43,6 +43,7 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+crash_screenshots/
 .screenshot*.png
 *.log
 *.npz
