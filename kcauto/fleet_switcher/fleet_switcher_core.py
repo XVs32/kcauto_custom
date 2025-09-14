@@ -485,9 +485,19 @@ class FleetSwitcherCore(object):
             Log.log_error(f"fleet {fleet_id} ship ids does not match, looks like ship load is failed, exiting...")
             exit(1)
 
-        equ.equipment.goto()
-        
-        equ.equipment.goto_fleet(fleet_id)
+        needed_load = False
+        for i in range(fleet.size):
+            if fleet.ships[i].equipment_ids != flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][fleet_id].ships[i].equipment_ids:
+                needed_load = True
+                break
+            
+        if needed_load == False:
+            Log.log_msg(f"equipment for fleet {fleet_id} is already loaded")
+            return False    
+        else:
+            equ.equipment.goto()
+            
+            equ.equipment.goto_fleet(fleet_id)
         
         for i in range(fleet.size):
 
@@ -509,39 +519,40 @@ class FleetSwitcherCore(object):
 
             ssw.ship_switcher.current_page = 1
             
-            first_load = True
+            available_equipment_list = fleet.ships[i].available_equipments
+            
+            for k, equipment in enumerate(available_equipment_list):
+                if k %10 == 0:  
+                    Log.log_debug(f'Page {k // 10 + 1}')
+                Log.log_debug(f'{k}: {equipment.name} {equipment.stars} (Production id: {equipment.production_id}, Model id: {equipment.model_id}), category id: {equipment.category}')
+            
             for slot in range(fleet.ships[i].equipment_count):
 
                 kca_u.kca.click(str(slot+1) + '_slot_equipment') 
 
-                if first_load == True:
-                    kca_u.kca.click_existing('upper_right', 'shipswitcher|equipment_sort_arrow.png')
-                    kca_u.kca.click('equipment_sort_all')
-                    first_load = False
-                
-                kca_u.kca.wait('upper_right', 'shipswitcher|equipment_sort_all.png')
-                
-                row_id = next((j for j, equipment in enumerate(equ.equipment.equipment_pool[equ.equipment.FREE]) \
+                row_id = next((j for j, equipment in enumerate(available_equipment_list) \
                     if equipment.production_id == fleet.ships[i].equipment_ids[slot]), -1)
                 
                 if row_id == -1:
                     Log.log_error(f"Cannot find equipment {fleet.ships[i].equipments[slot].name} \
                         with production id:{fleet.ships[i].equipments[slot].production_id}, did you scrapped it?")
-                    
                     exit(1)
+                    
+                available_equipment_list.pop(row_id)
+                    
                 Log.log_msg(f'Selecting {fleet.ships[i].equipments[slot].name} {fleet.ships[i].equipments[slot].stars} ★')
                 ssw.ship_switcher.select_replacement_row(row_idx=row_id, mode= ssw.ship_switcher.EQUIPMENT_MODE)
                 kca_u.kca.click_existing(
                     'lower_right', 'shipswitcher|shiplist_shipswitch_button.png')
                 kca_u.kca.wait('lower', 'shipswitcher|equipment_panel.png')
-                api_result = api.api.update_from_api({KCSAPIEnum.FREE_EQUIPMENT}, need_all=True, timeout=30)
+                api.api.update_from_api({KCSAPIEnum.FREE_EQUIPMENT}, need_all=True, timeout=30)
                 
             if fleet.ships[i].slot_ex != None and \
                fleet.ships[i].slot_ex.model_id != Equipment().model_id: 
                     
                 kca_u.kca.click('reinforce_slot_equipment') 
                 
-                reinforce_equipment_list = equ.equipment.get_reinforce_equipment_list(fleet.ships[i])
+                reinforce_equipment_list = fleet.ships[i].available_reinforcement_equipments
 
                 row_id = next((j for j, equipment in enumerate(reinforce_equipment_list) \
                     if equipment.production_id == fleet.ships[i].slot_ex.production_id), -1)
@@ -557,7 +568,7 @@ class FleetSwitcherCore(object):
                 kca_u.kca.click_existing(
                     'lower_right', 'shipswitcher|shiplist_shipswitch_button.png')
                 kca_u.kca.wait('lower', 'shipswitcher|equipment_panel.png')
-                api_result = api.api.update_from_api({KCSAPIEnum.FREE_EQUIPMENT}, need_all=True, timeout=30)
+                api.api.update_from_api({KCSAPIEnum.FREE_EQUIPMENT}, need_all=True, timeout=30)
 
         return True
 

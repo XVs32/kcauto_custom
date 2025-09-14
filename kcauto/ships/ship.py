@@ -47,7 +47,7 @@ class Ship(object):
     slot_ex : Equipment = None
     
     equipments : list[Equipment] = []
-
+    
     def __init__(self, static_data, local_data : dict):
         
         self.api_id = static_data['api_id']
@@ -199,7 +199,13 @@ class Ship(object):
                 count += 1
         return count
     
-    
+    @property
+    def available_equipments(self):
+        return equ.equipment.get_ship_available_equipment_list(self)
+        
+    @property
+    def available_reinforcement_equipments(self):
+        return equ.equipment.get_reinforce_equipment_list(self)
     
     def fill_with_equipment(self, model_id : int, count : int, sort_by_level : bool = False) -> dict[int, list[int]]:
         """
