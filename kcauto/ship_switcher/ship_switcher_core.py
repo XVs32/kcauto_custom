@@ -53,6 +53,7 @@ class ShipSwitcherCore(object):
             
         if ship_local_id == 0:
             Log.log_warn("No ship specified to switch in.")
+            return False
 
         if not self._select_switch_button(slot):
             return False
