@@ -139,7 +139,7 @@ class EquipmentCore(object):
             elif self._is_special_reinforce_equipment(ship, equipment):
                 continue
             
-            Log.log_debug(f"Equipment {equipment.name} ({equipment.production_id}) is not a special reinforce equipment for ship {ship.name}, skipping")
+            Log.log_debug(f"Equipment {equipment.name} ({equipment.production_id}) {equipment.category} is not a special reinforce equipment for ship {ship.name}, skipping")
             available_equipments.pop(i)
 
         return available_equipments
@@ -174,7 +174,7 @@ class EquipmentCore(object):
             and \
                 (str(ship.ship_type.id) in self.reinforce_special[equipment_str_id]["api_stypes"] 
                     or
-                ShipTypeEnum.WILDCARD.id in self.reinforce_special[equipment_str_id]["api_stypes"])):
+                str(ShipTypeEnum.WILDCARD.id) in self.reinforce_special[equipment_str_id]["api_stypes"])):
                 return True
             
         return False
