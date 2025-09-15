@@ -127,7 +127,7 @@ class Kcauto(object):
 
         anything_is_done = False
 
-        if qst.quest.is_tracking_quest(Quest(name="F5")):
+        if qst.quest.is_tracking_quest(Quest(name="Fd1")):
             anything_is_done = True
 
             self._run_fleetswitch_logic('factory_develop')
@@ -136,7 +136,7 @@ class Kcauto(object):
             if fty.factory.develop_logic(1) == True:
                 nav.navigate.to('home')
 
-        if qst.quest.is_tracking_quest(Quest(name="F6")):
+        if qst.quest.is_tracking_quest(Quest(name="Fd2")):
             anything_is_done = True
             fty.factory.goto()
             if fty.factory.any_build_slot_available() == False:
@@ -152,7 +152,7 @@ class Kcauto(object):
                     # disable module for 60 mins
                     fty.factory.set_timer()
 
-        if qst.quest.is_tracking_quest(Quest(name="F7")):
+        if qst.quest.is_tracking_quest(Quest(name="Fd3")):
             anything_is_done = True
 
             self._run_fleetswitch_logic('factory_develop')
@@ -161,7 +161,7 @@ class Kcauto(object):
             if fty.factory.develop_logic(3) == True:
                 nav.navigate.to('home')
         
-        if qst.quest.is_tracking_quest(Quest(name="F8")):
+        if qst.quest.is_tracking_quest(Quest(name="Fd4")):
             anything_is_done = True
 
             if fty.factory.any_build_slot_available() == False:
@@ -171,7 +171,7 @@ class Kcauto(object):
                 self._run_fleetswitch_logic('factory_build')
 
                 fty.factory.goto()
-                """If F8 is already 80% done, one more build could finish the quest"""
+                """If Fd4 is already 80% done, one more build could finish the quest"""
                 """Therefore, no if == True here"""
                 fty.factory.build_logic(3)
                 nav.navigate.to('home')
