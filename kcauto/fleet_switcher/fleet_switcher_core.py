@@ -559,6 +559,12 @@ class FleetSwitcherCore(object):
                 kca_u.kca.click('reinforce_slot_equipment') 
                 
                 reinforce_equipment_list = fleet.ships[i].available_reinforcement_equipments
+                
+                Log.log_debug(f'Reinforcement equipment list:')
+                for k, equipment in enumerate(reinforce_equipment_list):
+                    if k %10 == 0:  
+                        Log.log_debug(f'Page {k // 10 + 1}')
+                    Log.log_debug(f'{k}: {equipment.name} {equipment.stars} (Production id: {equipment.production_id}, Model id: {equipment.model_id}), category id: {equipment.category}')
 
                 row_id = next((j for j, equipment in enumerate(reinforce_equipment_list) \
                     if equipment.production_id == fleet.ships[i].slot_ex.production_id), -1)
