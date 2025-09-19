@@ -38,7 +38,7 @@ def kcauto_main():
                     _.kcauto.run_pvp_logic()
                     _.kcauto.run_combat_logic()
 
-                    _.kcauto.run_repair_logic()
+                    _.kcauto.run_repair_logic(passive_only=True)
                     _.kcauto.run_shipswitch_logic()
                     _.kcauto.check_end_loop_at_port()
                     _.kcauto.print_stats()

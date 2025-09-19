@@ -111,7 +111,7 @@ class RepairCore(object):
             if count >= self.docks_available_count:
                 break
             
-            elif ship in flt.fleets.combat_ships and com.combat.enabled:
+            elif ship in flt.fleets.combat_ships and (com.combat.enabled or pvp.pvp.enabled):
                 
                 if ship.damage >= cfg.config.combat.repair_limit:
                     idx_of_combat_ships[idx] = ship
