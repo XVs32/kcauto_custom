@@ -342,7 +342,7 @@ class QuestCore(CoreBase):
                 com.combat.enabled = False
                 return
                 
-            Log.log_debug(f"next_quest = {next_quest.name}")
+            Log.log_success(f"Attempt to finish sortie quest {next_quest.name}.")
 
             """Read quest progress""" 
             sortie_dict = kca_u.kca.get_quest_count(target_quest=next_quest)
@@ -360,7 +360,6 @@ class QuestCore(CoreBase):
             
             com.combat.set_sortie_queue(sortie_list)
 
-            Log.log_debug(f"_find_next_sorties_quests {next_quest.name}.")
             Log.log_debug(f"get_sortie_queue {com.combat.get_sortie_queue()}.")
             
         elif mode == CONTEXT_AUTO_PVP:
@@ -379,18 +378,17 @@ class QuestCore(CoreBase):
             quest_list = self._get_quests_rank_list(CONTEXT_EXPEDITION)
             
             for next_quest in reversed(quest_list):
-                Log.log_debug(f"next_quest = {next_quest.name}")
-            
+                Log.log_success(f"Attempt to finish expedition quest {next_quest.name}.")
                 """Read quest progress""" 
                 exp_dict = kca_u.kca.get_quest_count(target_quest= next_quest)
                 
                 Log.log_debug(f'exp_dict {exp_dict}')
                 
                 if exp_dict == None:
-                    Log.log_warn(f"Cannot get quest progress from kc3, use default in config file.")
+                    Log.log_debug(f"Cannot get quest progress from kc3, use default in config file.")
                     exp_list = list(next_quest.exp_context)
                     if exp_list == []:
-                        Log.log_error(f"Cannot get quest info from kc3 and default config file, kcauto_custom fail to select corresponding expedition")
+                        Log.log_debug(f"Cannot get quest info from kc3 and default config file, kcauto_custom fail to select corresponding expedition")
                     else:
                         exp.expedition.cut_expedition_queue(exp_list)
                 else:
