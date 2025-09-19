@@ -338,11 +338,18 @@ class Kcauto(object):
                 self.end_loop_at_port = True
             sts.stats.set_print_loop_end_stats()
 
-    def run_repair_logic(self, back_to_home=False):
+    def run_repair_logic(self, back_to_home=False, passive_only=False):
         
         if self.skip_one_repair == True:
             self.skip_one_repair = False
             return
+        
+        if passive_only == True:
+            #passive repair only, temporarily disable combat and pvp module
+            combat_temp = com.combat.enabled
+            com.combat.enabled = False
+            pvp_temp = pvp.pvp.enabled
+            pvp.pvp.enabled = False
         
         if rep.repair.can_conduct_repairs:
             rep.repair.goto()
@@ -353,6 +360,11 @@ class Kcauto(object):
             sts.stats.set_print_loop_end_stats()
         else:
             self.handle_back_to_home(back_to_home)
+            
+        if passive_only == True:
+            #restore combat and pvp module status
+            com.combat.enabled = combat_temp
+            pvp.pvp.enabled = pvp_temp
             
 
     def _run_fleetswitch_logic(self, context):
