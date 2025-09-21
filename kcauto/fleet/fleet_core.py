@@ -540,8 +540,8 @@ class FleetCore(object):
         TYPE_NA = 0
         TYPE_DD = 2
         
-        CATEGORY_DRUM = 30
-        CATEGORY_LC = 24
+        DRUM_MODELS = [75]
+        LC_MODELS = [68, 193]
         
         NAME_ID_DRUM = 75
         NAME_ID_LC = 68
@@ -574,7 +574,7 @@ class FleetCore(object):
                     continue
                 # Check if the ship could load LC first
                 if req_lc > 0:
-                    if equ.equipment.is_available_category(ship, CATEGORY_LC):
+                    if len(equ.equipment.is_available_equipments(ship, [Equipment(model_id= model_id) for model_id in LC_MODELS])) == len(LC_MODELS):
                         
                         #@todo if the ship is kinu kai 2, she has +1 lc
                         
@@ -603,7 +603,7 @@ class FleetCore(object):
                     continue
                 # Check if the ship could load drum, if she can't load LC  
                 if (req_dc > 0 or req_dc_carrier > 0):
-                    if equ.equipment.is_available_category(ship, CATEGORY_DRUM):
+                    if len(equ.equipment.is_available_equipments(ship, [Equipment(model_id= model_id) for model_id in DRUM_MODELS])) == len(DRUM_MODELS):
                             
                         req_dc_carrier = max(req_dc_carrier, 1) #make it at least one dc carrier needed, for easier math
                         

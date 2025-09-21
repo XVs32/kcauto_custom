@@ -127,7 +127,7 @@ class Kcauto(object):
 
         anything_is_done = False
 
-        if qst.quest.is_tracking_quest(Quest(name="F5")):
+        if qst.quest.is_tracking_quest(Quest(name="Fd1")):
             anything_is_done = True
 
             self._run_fleetswitch_logic('factory_develop')
@@ -136,7 +136,7 @@ class Kcauto(object):
             if fty.factory.develop_logic(1) == True:
                 nav.navigate.to('home')
 
-        if qst.quest.is_tracking_quest(Quest(name="F6")):
+        if qst.quest.is_tracking_quest(Quest(name="Fd2")):
             anything_is_done = True
             fty.factory.goto()
             if fty.factory.any_build_slot_available() == False:
@@ -152,7 +152,7 @@ class Kcauto(object):
                     # disable module for 60 mins
                     fty.factory.set_timer()
 
-        if qst.quest.is_tracking_quest(Quest(name="F7")):
+        if qst.quest.is_tracking_quest(Quest(name="Fd3")):
             anything_is_done = True
 
             self._run_fleetswitch_logic('factory_develop')
@@ -161,7 +161,7 @@ class Kcauto(object):
             if fty.factory.develop_logic(3) == True:
                 nav.navigate.to('home')
         
-        if qst.quest.is_tracking_quest(Quest(name="F8")):
+        if qst.quest.is_tracking_quest(Quest(name="Fd4")):
             anything_is_done = True
 
             if fty.factory.any_build_slot_available() == False:
@@ -171,7 +171,7 @@ class Kcauto(object):
                 self._run_fleetswitch_logic('factory_build')
 
                 fty.factory.goto()
-                """If F8 is already 80% done, one more build could finish the quest"""
+                """If Fd4 is already 80% done, one more build could finish the quest"""
                 """Therefore, no if == True here"""
                 fty.factory.build_logic(3)
                 nav.navigate.to('home')
@@ -338,11 +338,18 @@ class Kcauto(object):
                 self.end_loop_at_port = True
             sts.stats.set_print_loop_end_stats()
 
-    def run_repair_logic(self, back_to_home=False):
+    def run_repair_logic(self, back_to_home=False, passive_only=False):
         
         if self.skip_one_repair == True:
             self.skip_one_repair = False
             return
+        
+        if passive_only == True:
+            #passive repair only, temporarily disable combat and pvp module
+            combat_temp = com.combat.enabled
+            com.combat._enabled = False
+            pvp_temp = pvp.pvp.enabled
+            pvp.pvp._enabled = False
         
         if rep.repair.can_conduct_repairs:
             rep.repair.goto()
@@ -353,6 +360,11 @@ class Kcauto(object):
             sts.stats.set_print_loop_end_stats()
         else:
             self.handle_back_to_home(back_to_home)
+            
+        if passive_only == True:
+            #restore combat and pvp module status
+            com.combat._enabled = combat_temp
+            pvp.pvp._enabled = pvp_temp
             
 
     def _run_fleetswitch_logic(self, context):

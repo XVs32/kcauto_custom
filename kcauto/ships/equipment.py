@@ -14,16 +14,28 @@ class Equipment():
     lock = 0
     ace = 0 
     
+    _category = None
+    
     def __init__(self, model_id = -1, production_id = -1, stars = -1, lock = -1, ace = -1):
         self.update(model_id, production_id, stars, lock, ace)
         
         if Equipment.equipment_static_data == {}:
-            try:
-                Log.log_debug("Loading equipment static data.")
-                Equipment.equipment_static_data = JsonData.load_json('data|temp|equipment_static.json')
-            except FileNotFoundError as e:
-                Log.log_error("Equipment data not found, please start kcauto from splash screen")
-                Log.log_error(e)
+            Equipment.staic_data_reload()
+                
+    def staic_data_reload():
+        """
+            method to reload the static data of equipment from json file
+        """
+        try:
+            Log.log_debug("Reloading equipment static data.")
+            temp = JsonData.load_json('data|temp|equipment_static.json')
+            for item in temp:
+                Equipment.equipment_static_data[item['api_id']] = item
+            
+        except FileNotFoundError as e:
+            Equipment.equipment_static_data = None
+            Log.log_error("Equipment data not found, please start kcauto from splash screen")
+            Log.log_error(e)
 
     def update(self, model_id = None, production_id = None, stars = None, lock = None, ace = None):
         if model_id is not None:
@@ -48,10 +60,7 @@ class Equipment():
             input: model_id (int): the equipment model id
             output: equipment static data (dict)
         """
-        
-        for equipment in Equipment.equipment_static_data:
-            if equipment["api_id"] == self.model_id:
-                return equipment
+        return Equipment.equipment_static_data.get(self.model_id, None)
         
         Log.log_error(f"Cannot find model_id:{self.model_id} in equipment static data, something is wrong with the api data")
         Log.log_debug(f"equipment data:")
@@ -60,6 +69,20 @@ class Equipment():
         Log.log_debug(f"stars: {self.stars}")
         Log.log_debug(f"lock: {self.lock}")
         Log.log_debug(f"ace: {self.ace}")
+        
+    def category_patch(model_id, new_category):
+        """
+            method to patch the equipment category, since the api data is wrong for some equipment
+            input: model_id (int): the equipment model id
+                   new_category (ing): the new category to patch
+        """
+        if model_id in Equipment.equipment_static_data:
+            Equipment.equipment_static_data[model_id]['api_type'][2] = new_category
+            Log.log_debug(f"Patched equipment model_id:{model_id} to category:{new_category}")
+        else:
+            Log.log_error(f"Cannot find model_id:{model_id} in equipment static data, cannot patch category")
+            
+        return
         
     @property
     def name(self):
@@ -73,9 +96,15 @@ class Equipment():
     def category(self):
         """
             method to get the equipment category
-            output: equipment category (str)
+            output: equipment category (int)
         """
-        return self.static_data['api_type'][2]
+        if self._category == None:
+            self._category = self.static_data['api_type'][2]
+        return self._category
+    
+    @category.setter
+    def category(self, value):
+        self._category = value
 
     @property
     def is_empty_equipment(self):
