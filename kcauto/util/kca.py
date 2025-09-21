@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 import os
+import atexit
 import json
 import glob
 from sys import platform, exit
@@ -19,6 +20,7 @@ import args.args_core as arg
 import config.config_core as cfg
 import ships.ships_core as shp
 import util.click_tracker as clt
+import stats.stats_core as sts
 from constants import (
     GAME_W, GAME_H, VISUAL_URL, STRATEGY_ROOM_URL, API_URL, EXACT, DEFAULT, SLEEP_MODIFIER)
 from kca_enums.interaction_modes import InteractionModeEnum
@@ -51,6 +53,8 @@ class Kca(object):
     r = {}
     html = None
     kc3_id = None
+    
+    screenshot_log = [None, None, None, None, None]
 
     def __init__(self):
         if self.kc3_id ==None:
@@ -144,6 +148,8 @@ class Kca(object):
         from the get_data api call. Otherwise, it will load the stored data
         from previous startups.
         """
+        atexit.register(Kca.save_screenshots)
+        
         # Create a pattern to match the files
         pattern = os.path.join('.', '.screenshot*.png')
 
@@ -450,12 +456,12 @@ class Kca(object):
 
         # equipment-related regions
         self._create_or_shift_region('equipment_panel', x + 455, y + 226, 125, 268)
-        self._create_or_shift_region('ship_1', x + 205, y + 225, 235, 50)
-        self._create_or_shift_region('ship_2', x + 205, y + 306, 235, 50)
-        self._create_or_shift_region('ship_3', x + 205, y + 387, 235, 50)
-        self._create_or_shift_region('ship_4', x + 205, y + 468, 235, 50)
-        self._create_or_shift_region('ship_5', x + 205, y + 549, 235, 50)
-        self._create_or_shift_region('ship_6', x + 205, y + 630, 235, 50)
+        self._create_or_shift_region('ship_1', x + 210, y + 228, 230, 47)
+        self._create_or_shift_region('ship_2', x + 210, y + 309, 230, 47)
+        self._create_or_shift_region('ship_3', x + 210, y + 390, 230, 47)
+        self._create_or_shift_region('ship_4', x + 210, y + 471, 230, 47)
+        self._create_or_shift_region('ship_5', x + 210, y + 552, 230, 47)
+        self._create_or_shift_region('ship_6', x + 210, y + 633, 230, 47)
         self._create_or_shift_region('1_slot_unload_equipment', x + 478, y + 294, 4, 4)
         self._create_or_shift_region('2_slot_unload_equipment', x + 478, y + 344, 4, 4)
         self._create_or_shift_region('3_slot_unload_equipment', x + 478, y + 394, 4, 4)
@@ -653,16 +659,16 @@ class Kca(object):
         r = self._get_region(region)
         if (cfg.config.general.interaction_mode
                 is InteractionModeEnum.DIRECT_CONTROL):
- 
+            
+            corners = [
+                r.x + pad[0],  
+                r.y + pad[1],
+                r.x + r.w + pad[2],
+                r.y + r.h + pad[3]
+            ]
             if arg.args.parsed_args.debug_output:
-                # Visit corners first
-                corners = [
-                    r.x + pad[0],  
-                    r.y + pad[1],
-                    r.x + r.w + pad[2],
-                    r.y + r.h + pad[3]
-                ]
                 
+                # Visit corners first
                 r.hover(corners[0], corners[1])
                 self.sleep(0.1)
                 r.hover(corners[2], corners[1])
@@ -673,7 +679,7 @@ class Kca(object):
                 self.sleep(0.1)
                     
                 # Draw debug with corners
-                self._draw_debug_visualization(corners)
+            self._draw_debug_visualization(corners, arg.args.parsed_args.debug_output)
             
             r.click(pad=pad)
         elif (cfg.config.general.interaction_mode
@@ -754,7 +760,7 @@ class Kca(object):
         self.sleep(0.5)
 
 
-    def _draw_debug_visualization(self, corners):
+    def _draw_debug_visualization(self, corners, save_as_file):
         """Draw debug visualization showing regions and click points
         
         Args:
@@ -776,14 +782,19 @@ class Kca(object):
                  (0, 255, 0), 
                  2)
         
-        # Save debug image
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        Kca.screenshot_log.pop(0) 
+        Kca.screenshot_log.append(screen)
         
-        #create folder if not exist
-        if not os.path.exists("debug"):
-            os.makedirs("debug")
+        if save_as_file:
             
-        cv2.imwrite(f"debug/click_{timestamp}.png", screen)
+            # Save debug image
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            
+            #create folder if not exist
+            if not os.path.exists("debug"):
+                os.makedirs("debug")
+                
+            cv2.imwrite(f"debug/click_{timestamp}.png", screen)
 
     def sleep(self, base=None, flex=None):
         """Helper method for sleeping the script. Adds in random variance to
@@ -802,6 +813,29 @@ class Kca(object):
         else:
             flex = base if flex is None else flex
             sleep(uniform(base, base + flex) + SLEEP_MODIFIER)
+            
+    def receive_expedition(self):
+
+        Log.log_debug("Start receive expedetion")
+        
+        received_expeditions = False
+        while self.find_expedition_flag():
+            Log.log_msg("Expedition received.")
+            self.r['shipgirl'].click()
+            api.api.update_from_api({KCSAPIEnum.PORT})
+            sts.stats.expedition.expeditions_received += 1
+            self.wait('lower_right_corner', 'global|next.png', 20)
+            while self.exists('lower_right_corner', 'global|next.png'):
+                self.sleep()
+                self.r['shipgirl'].click()
+                self.r['top'].hover()
+                received_expeditions = True
+                self.sleep()
+                
+            import quest.quest_core as qst
+            qst.quest.is_quest_dom_cache_dirty = True
+            
+        return received_expeditions
 
     def while_wrapper(
             self, conditional_func, internal_func=None, timeout=None,
@@ -907,16 +941,16 @@ class Kca(object):
         x = r.x - self.css_x
         y = r.y - self.css_y
  
-        if arg.args.parsed_args.debug_output:
-            # Draw debug visualization
+        # Draw debug visualization
             
-            corners = [
-                r.x + pad[0],  # Top-left corner
-                r.y + pad[1],
-                r.x + r.w + pad[2],
-                r.y + r.h + pad[3]
-            ]
-            self._draw_debug_visualization(corners)
+        corners = [
+            r.x + pad[0],  # Top-left corner
+            r.y + pad[1],
+            r.x + r.w + pad[2],
+            r.y + r.h + pad[3]
+        ]
+            
+        self._draw_debug_visualization(corners, arg.args.parsed_args.debug_output)
 
         #self.visual_hook.Input.synthesizeTapGesture(x= x + offset_x , y=y + offset_y)
         self.visual_hook.Input.dispatchMouseEvent(type = "mouseMoved", x= x + offset_x , y=y + offset_y)
@@ -1138,11 +1172,40 @@ class Kca(object):
                         line = line.replace(']', '[')
                         map = line.split("[")[1][1:]
                         if count > 0:
-                            action[MapEnum("B-"+map)] = count
-
+                            
+                            if MapEnum("B-"+map).without_quest_enum == MapEnum.W1_6_N:
+                                #patch to turn B1-6-N from quest to B1-6
+                                action[MapEnum.W1_6] = count
+                            else:
+                                action[MapEnum("B-"+map).without_quest_enum] = count
+                            
                 return action
             elif quest_name == "":
                 return None
             i = i + 1
+            
+    def save_screenshots():
+        
+        import shutil
+        
+        # Directory to store crash screenshots
+        SAVE_DIR = "crash_screenshots"
+
+        # Remove the directory from the previous run if it exists
+        if os.path.exists(SAVE_DIR):
+            print(f"Removing old screenshots directory: '{SAVE_DIR}'")
+            shutil.rmtree(SAVE_DIR)
+        # Create the directory if it doesn't exist
+        os.makedirs(SAVE_DIR, exist_ok=True)
+        
+        print(f"Saving screenshots to '{SAVE_DIR}'...")
+        
+        for i, screen in enumerate(Kca.screenshot_log):
+            file_path = os.path.join(SAVE_DIR, f"screenshot_{i}.png")
+            try:
+                cv2.imwrite(file_path, screen)
+                print(f"Saved: {file_path}")
+            except Exception as e:
+                print(f"Failed to save screenshot {i}: {e}")
 
 kca = Kca()

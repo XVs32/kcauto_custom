@@ -14,6 +14,8 @@ import util.kca as kca_u
 import expedition.expedition_core as exp
 import nav.nav as nav
 from constants import NEAR_EXACT, PAGE_NAV
+from constants import CONTEXT_EXPEDITION, CONTEXT_PVP, CONTEXT_SORTIE, CONTEXT_FACTORY
+from constants import CONTEXT_AUTO_EXPEDITION, CONTEXT_AUTO_SORTIE, CONTEXT_AUTO_PVP
 from kca_enums.kcsapi_paths import KCSAPIEnum
 from kca_enums.quest_state import QuestStateEnum
 from kca_enums.ship_types import ShipTypeEnum
@@ -28,6 +30,17 @@ from util.logger import Log
 
 
 class QuestCore(CoreBase):
+    
+    CONTEXT_LOOKUP = {
+        CONTEXT_AUTO_EXPEDITION: "auto_expedition",
+        CONTEXT_AUTO_SORTIE: "auto_sortie",
+        CONTEXT_AUTO_PVP: "auto_pvp",
+        CONTEXT_SORTIE: "sortie",
+        CONTEXT_EXPEDITION: "expedition",
+        CONTEXT_PVP: "pvp",
+        CONTEXT_FACTORY: "factory",
+    }   
+    
     ID = "id"
     CTYPE = "ctype"
     STYPE = "stype"
@@ -39,9 +52,6 @@ class QuestCore(CoreBase):
     AT_MOST = "at_most"
     EXACT = "exact"
     QUEST_TYPE_WEIGHTS = {'daily': 1, 'weekly': 2, 'monthly': 3, 'other': 4}
-    SORTIE = 1
-    EXPEDITION = 2
-    PVP = 3
     module_name = 'quest'
     module_display_name = 'Quest'
     quest_reset_time = datetime.now()
@@ -51,7 +61,7 @@ class QuestCore(CoreBase):
     _quest_dom_cache = None
     _context_cache = None
     _relevant_quests = []
-    last_checked_context = 'reset'
+    last_checked_context = None
     next_check_intervals : dict[int, Quest] = {}
     cur_page = None
     tot_page = None
@@ -66,25 +76,26 @@ class QuestCore(CoreBase):
 
     def _load_quest_priority(self):
         self.quest_priority_library = {}
-        self.quest_priority_library[self.SORTIE] = []
-        self.quest_priority_library[self.EXPEDITION] = []
-        self.quest_priority_library[self.PVP] = []
+        self.quest_priority_library[CONTEXT_SORTIE] = []
+        self.quest_priority_library[CONTEXT_EXPEDITION] = []
+        self.quest_priority_library[CONTEXT_PVP] = []
+        self.quest_priority_library[CONTEXT_FACTORY] = []
 
         Log.log_msg("Loading Quest priority data.")
         quest_priority = JsonData.load_json('data|quests|sorite_quest_priority.json')
         for quest_type in quest_priority:
             for quest_name in quest_priority[quest_type]:
-                self.quest_priority_library[self.SORTIE].append(Quest(quest_name))
+                self.quest_priority_library[CONTEXT_SORTIE].append(Quest(quest_name))
                 
         quest_priority = JsonData.load_json('data|quests|expedition_quest_priority.json')
         for quest_type in quest_priority:
             for quest_name in quest_priority[quest_type]:
-                self.quest_priority_library[self.EXPEDITION].append(Quest(quest_name))
+                self.quest_priority_library[CONTEXT_EXPEDITION].append(Quest(quest_name))
                 
         quest_priority = JsonData.load_json('data|quests|pvp_quest_priority.json')
         for quest_type in quest_priority:
             for quest_name in quest_priority[quest_type]:
-                self.quest_priority_library[self.PVP].append(Quest(quest_name))
+                self.quest_priority_library[CONTEXT_PVP].append(Quest(quest_name))
 
     def need_to_check(self, context):
         if datetime.now() > self.quest_reset_time:
@@ -94,7 +105,7 @@ class QuestCore(CoreBase):
         if self._get_quests_to_check_by_interval():
             Log.log_msg("Quest check triggered by interval.")
             return True
-        if context is not None and context != self.last_checked_context:
+        if context != None and context != self.last_checked_context:
             Log.log_msg("Quest check triggered by context change.")
             return True
 
@@ -126,27 +137,21 @@ class QuestCore(CoreBase):
         kca_u.kca.sleep(1)
 
         Log.log_msg(
-            f"Manage {context} quests: ")
+            f"Manage {self.CONTEXT_LOOKUP[context]} quests: ")
 
-        if context and context != self.last_checked_context:
+        if context != None and context != self.last_checked_context:
             fast_check = False
             self.last_checked_context = context
-        if not context and self.last_checked_context:
+        if context == None and self.last_checked_context:
             context = self.last_checked_context
             
-        is_any_quest_turned_in = False
-        if context != "auto_sortie" and context != "auto_expedition" and context != "auto_pvp":
-            is_any_quest_turned_in = self._turn_in_quests(context)
-
+        is_any_quest_turned_in = self._turn_in_quests(context)
         if fast_check == False or is_any_quest_turned_in == True:
-            if context == "auto_sortie":
-                self._auto_target_select(self.SORTIE)
-            elif context == "auto_expedition":
-                self._auto_target_select(self.EXPEDITION)
-            elif context == "auto_pvp":
-                self._auto_target_select(self.PVP)
-            else:
+            if context != CONTEXT_AUTO_SORTIE and context != CONTEXT_AUTO_EXPEDITION and context != CONTEXT_AUTO_PVP:
                 self._toggle_quests(context)
+            else:
+                self._auto_target_select(context)
+                
         Log.log_msg(
             f"Tracked quests: {[self.next_check_intervals[quest_id].name for quest_id in self.next_check_intervals]}")
 
@@ -170,7 +175,7 @@ class QuestCore(CoreBase):
 
     def _turn_in_quests(self, context):
         Log.log_msg(
-            f"Checking for quests to turn in and deactivate with {context} "
+            f"Checking for quests to turn in and deactivate with {self.CONTEXT_LOOKUP[context]} "
             "context.")
         quest_turned_in = False
         Log.log_msg("Navigating to active quests tab.")
@@ -194,7 +199,7 @@ class QuestCore(CoreBase):
                 if quest.state == QuestStateEnum.DONE:
                     self._turn_in_quest_idx(i)
                     quest_turned_in = True
-            elif quest.state == QuestStateEnum.IN_PROGRESS:
+            elif quest.state == QuestStateEnum.IN_PROGRESS and context != CONTEXT_AUTO_SORTIE and context != CONTEXT_AUTO_EXPEDITION and context != CONTEXT_AUTO_PVP:
                 
                 Log.log_msg(f"Checking if quest {quest.name} is relevant to context {context}.")
                 
@@ -202,7 +207,7 @@ class QuestCore(CoreBase):
                 if not self._is_relevent_quest(quest, context=context):
                     
                     deactivate_needed = True
-                    if context != "expedition" and self._is_relevent_quest(quest, context="expedition"):
+                    if context != CONTEXT_EXPEDITION and self._is_relevent_quest(quest, context=CONTEXT_EXPEDITION):
                         deactivate_needed = False
                     
                 if deactivate_needed == True:    
@@ -266,10 +271,10 @@ class QuestCore(CoreBase):
         """Method that active quest to work on
 
             Args:
-                context (str): The current focus/task of kcauto (combat,pvp,factory,reset).
+                context (int): The current focus/task of kcauto (CONTEXT_SORTIE, CONTEXT_EXPETITION, CONTEXT_PVP, etc.).
         """
         Log.log_msg(
-            f"Checking for quests to activate with {context} context.")
+            f"Checking for quests to activate with {self.CONTEXT_LOOKUP[context]} context.")
         # quests should only be activated at this point
         if kca_u.kca.click_existing('left', 'quest|filter_tab_all.png', similarity=NEAR_EXACT) == True:
             kca_u.kca.wait('left', 'quest|filter_tab_all_active.png', similarity=NEAR_EXACT)
@@ -278,8 +283,23 @@ class QuestCore(CoreBase):
         remain_quest_slot = self.max_quests - len(self.active_quest_list)
         
         self.cur_page = 1
+        
+        check_order = list(range(len(self.current_quest_list)))
+        
+        for quest_priority in reversed(self.quest_priority_library[context]): 
+            for i, current_quest in enumerate(self.current_quest_list):
+                if current_quest.quest_id == quest_priority.quest_id:
+                    check_order[i] = -1 
+                    check_order.append(i)
+                    break
+        check_order.reverse()
+
+        for i in check_order:
             
-        for i, quest in enumerate(self.current_quest_list):
+            if i == -1:
+                continue
+            
+            quest = self.current_quest_list[i]
             
             if quest.state == QuestStateEnum.DONE:
                 Log.log_warn(f"Quest {quest.name} is done, but not turned in. ")
@@ -311,10 +331,10 @@ class QuestCore(CoreBase):
                     'left', f'quest|filter_tab_all_active.png',
                     NEAR_EXACT)
             api.api.update_from_api({KCSAPIEnum.QUEST_LIST}) #update quest_list
-            Log.log_msg(f"api update done in #{mode} auto map select.")
+            Log.log_msg(f"api update done in #{self.CONTEXT_LOOKUP[mode]} auto map select.")
 
-        if mode == self.SORTIE and cfg.config.combat.sortie_map_read_only == MapEnum.auto_map_selete:
-            next_quest = self._get_quests_rank_list(self.SORTIE)
+        if mode == CONTEXT_AUTO_SORTIE and cfg.config.combat.sortie_map_read_only == MapEnum.auto_map_selete:
+            next_quest = self._get_quests_rank_list(CONTEXT_SORTIE)
             if next_quest != []:
                 next_quest = next_quest[0]
             else:
@@ -322,7 +342,7 @@ class QuestCore(CoreBase):
                 com.combat.enabled = False
                 return
                 
-            Log.log_debug(f"next_quest = {next_quest.name}")
+            Log.log_success(f"Attempt to finish sortie quest {next_quest.name}.")
 
             """Read quest progress""" 
             sortie_dict = kca_u.kca.get_quest_count(target_quest=next_quest)
@@ -338,19 +358,13 @@ class QuestCore(CoreBase):
                         #sortie_list.append(key+"-"+next_quest)
                         sortie_list.append(next_quest.name +"-"+ map_enum.world_and_map_and_node)
             
-            #patch to turn Bxx-1-6-N from quest to Bxx-1-6
-            for i in range(len(sortie_list)):
-                if sortie_list[i][-5:] == "1-6-N":
-                    sortie_list[i] = sortie_list[i][:-2]
-
             com.combat.set_sortie_queue(sortie_list)
 
-            Log.log_debug(f"_find_next_sorties_quests {next_quest.name}.")
             Log.log_debug(f"get_sortie_queue {com.combat.get_sortie_queue()}.")
             
-        elif mode == self.PVP:
+        elif mode == CONTEXT_AUTO_PVP:
             
-            next_quest = self._get_quests_rank_list(self.PVP)
+            next_quest = self._get_quests_rank_list(CONTEXT_PVP)
             
             if next_quest != []:
                 pvp.pvp.next_pvp_quest = next_quest[0]
@@ -359,23 +373,22 @@ class QuestCore(CoreBase):
                 pvp.pvp.next_pvp_quest = Quest(quest_id=303) #mork the next quest as Cd1, so kcauto use default PvP preset
                 Log.log_success(f"No pvp quests available.")
             
-        elif mode == self.EXPEDITION:
+        elif mode == CONTEXT_AUTO_EXPEDITION:
             
-            quest_list = self._get_quests_rank_list(self.EXPEDITION)
+            quest_list = self._get_quests_rank_list(CONTEXT_EXPEDITION)
             
             for next_quest in reversed(quest_list):
-                Log.log_debug(f"next_quest = {next_quest.name}")
-            
+                Log.log_success(f"Attempt to finish expedition quest {next_quest.name}.")
                 """Read quest progress""" 
                 exp_dict = kca_u.kca.get_quest_count(target_quest= next_quest)
                 
                 Log.log_debug(f'exp_dict {exp_dict}')
                 
                 if exp_dict == None:
-                    Log.log_warn(f"Cannot get quest progress from kc3, use default in config file.")
+                    Log.log_debug(f"Cannot get quest progress from kc3, use default in config file.")
                     exp_list = list(next_quest.exp_context)
                     if exp_list == []:
-                        Log.log_error(f"Cannot get quest info from kc3 and default config file, kcauto_custom fail to select corresponding expedition")
+                        Log.log_debug(f"Cannot get quest info from kc3 and default config file, kcauto_custom fail to select corresponding expedition")
                     else:
                         exp.expedition.cut_expedition_queue(exp_list)
                 else:
@@ -518,7 +531,7 @@ class QuestCore(CoreBase):
         
         quest_dict = kca_u.kca.get_quest_count(target_quest= quest)
         
-        if context == "combat":
+        if context == CONTEXT_SORTIE:
             if quest.category.is_sortie() == False:
                 Log.log_debug(f"Quest {quest.name} {quest.category} is not a combat quest.")
                 return False
@@ -541,7 +554,7 @@ class QuestCore(CoreBase):
                 return False
             
             return True
-        elif context == "expedition":
+        elif context == CONTEXT_EXPEDITION:
             if quest.category.is_expedition() == False:
                 Log.log_debug(f"Quest {quest.name} {quest.category} is not an expedition quest.")
                 return False
@@ -556,7 +569,7 @@ class QuestCore(CoreBase):
                     return False
                 
             return True
-        elif context == "pvp":
+        elif context == CONTEXT_PVP:
             if quest.category.is_pvp() == False:
                 Log.log_debug(f"Quest {quest.name} {quest.category} is not a PVP quest.")
                 return False
@@ -565,23 +578,16 @@ class QuestCore(CoreBase):
                 return False
             else:
                 return True
-        elif context == "factory":
+        elif context == CONTEXT_FACTORY:
             if quest.category.is_factory() == False:
                 Log.log_debug(f"Quest {quest.name} {quest.category} is not a factory quest.")
                 return False
             else:
                 return True
-        elif context == "auto_sortie":
-            if quest.category.is_sortie() == False:
-                Log.log_debug(f"Quest {quest.name} {quest.category} is not a combat quest.")
-                return False
-            return True 
-        elif context == "auto_expedition":
-            if quest.category.is_expedition() == False:
-                Log.log_debug(f"Quest {quest.name} {quest.category} is not an expedition quest.")
-                return False
-            return True
-        elif context == "reset":
+        elif context == None:
+            return False
+        else:
+            Log.log_error(f"Unknown context {self.CONTEXT_LOOKUP[context]}.")
             return False
         
     def _is_fleet_valid_for_quest(self, quest : Quest, fleet : flt.Fleet):
@@ -617,8 +623,6 @@ class QuestCore(CoreBase):
                 elif count_rule == self.EXACT and count != amount:
                     return False
                 
-                Log.log_error(f'PASS')
-        
         return True
     
     def is_tracking_quest(self, quest : Quest):

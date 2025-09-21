@@ -21,6 +21,8 @@ from kca_enums.maps import MapEnum
 from quest.quest import Quest
 
 from constants import COMBAT_CONFIG, AUTO_PRESET
+from constants import CONTEXT_EXPEDITION, CONTEXT_PVP, CONTEXT_SORTIE, CONTEXT_FACTORY
+from constants import CONTEXT_AUTO_EXPEDITION, CONTEXT_AUTO_SORTIE, CONTEXT_AUTO_PVP
 
 class Kcauto(object):
     """Primary kcauto class.
@@ -55,12 +57,12 @@ class Kcauto(object):
     def initialization_check(self):
         if sts.stats.rsc.ammo is None:
             Log.log_msg("kcauto is initializing.")
-            if not exp.expedition.receive_expedition():
+            if not kca_u.kca.receive_expedition():
                 nav.navigate.to('refresh_home')
                 sts.stats.set_print_loop_end_stats()
 
     def check_for_expedition(self):
-        if not exp.expedition.receive_expedition():
+        if not kca_u.kca.receive_expedition():
             if exp.expedition.expect_returned_fleets():
                 nav.navigate.to('refresh_home')
                 sts.stats.set_print_loop_end_stats()
@@ -86,7 +88,7 @@ class Kcauto(object):
                 exp.expedition.goto()
                 exp.expedition.get_expedition_ranking()
                 
-                self.run_quest_logic('auto_expedition')
+                self.run_quest_logic(CONTEXT_AUTO_EXPEDITION)
                     
                 exp.expedition.prerequisite_handling()
                 exp.expedition.on_going_exp_handling()
@@ -112,7 +114,7 @@ class Kcauto(object):
             exp.expedition.send_expeditions()
             #Refresh home for exp api data update
             nav.navigate.to('refresh_home')
-            self.run_quest_logic('expedition')
+            self.run_quest_logic(CONTEXT_EXPEDITION)
             sts.stats.set_print_loop_end_stats()
 
     def run_factory_logic(self):
@@ -120,12 +122,12 @@ class Kcauto(object):
         if not fty.factory.enabled or not fty.factory.disable_time_up():
             return False
 
-        self.run_quest_logic('factory', fast_check=False, force=True)
+        self.run_quest_logic(CONTEXT_FACTORY, fast_check=False, force=True)
         nav.navigate.to('home')
 
         anything_is_done = False
 
-        if qst.quest.is_tracking_quest(Quest(name="F5")):
+        if qst.quest.is_tracking_quest(Quest(name="Fd1")):
             anything_is_done = True
 
             self._run_fleetswitch_logic('factory_develop')
@@ -134,7 +136,7 @@ class Kcauto(object):
             if fty.factory.develop_logic(1) == True:
                 nav.navigate.to('home')
 
-        if qst.quest.is_tracking_quest(Quest(name="F6")):
+        if qst.quest.is_tracking_quest(Quest(name="Fd2")):
             anything_is_done = True
             fty.factory.goto()
             if fty.factory.any_build_slot_available() == False:
@@ -150,7 +152,7 @@ class Kcauto(object):
                     # disable module for 60 mins
                     fty.factory.set_timer()
 
-        if qst.quest.is_tracking_quest(Quest(name="F7")):
+        if qst.quest.is_tracking_quest(Quest(name="Fd3")):
             anything_is_done = True
 
             self._run_fleetswitch_logic('factory_develop')
@@ -159,7 +161,7 @@ class Kcauto(object):
             if fty.factory.develop_logic(3) == True:
                 nav.navigate.to('home')
         
-        if qst.quest.is_tracking_quest(Quest(name="F8")):
+        if qst.quest.is_tracking_quest(Quest(name="Fd4")):
             anything_is_done = True
 
             if fty.factory.any_build_slot_available() == False:
@@ -169,7 +171,7 @@ class Kcauto(object):
                 self._run_fleetswitch_logic('factory_build')
 
                 fty.factory.goto()
-                """If F8 is already 80% done, one more build could finish the quest"""
+                """If Fd4 is already 80% done, one more build could finish the quest"""
                 """Therefore, no if == True here"""
                 fty.factory.build_logic(3)
                 nav.navigate.to('home')
@@ -197,7 +199,13 @@ class Kcauto(object):
             self._run_fleetswitch_logic('pvp')
             self.run_repair_logic()
             
-            self.run_quest_logic('pvp', back_to_home=True)
+            if cfg.config.pvp.fleet_preset == AUTO_PRESET:
+                self.run_quest_logic(CONTEXT_AUTO_PVP, fast_check=False, back_to_home=False, force= True)
+            
+            self._run_fleetswitch_logic('pvp')
+            self.run_repair_logic()
+            
+            self.run_quest_logic(CONTEXT_PVP, back_to_home=True)
             
         else:
             return False
@@ -208,7 +216,7 @@ class Kcauto(object):
             pvp.pvp.conduct_pvp()
             
             qst.quest.is_quest_dom_cache_dirty = True
-            self.run_quest_logic('pvp', fast_check=True)
+            self.run_quest_logic(CONTEXT_PVP, fast_check=True)
             
         sts.stats.set_print_loop_end_stats()
         return True
@@ -226,7 +234,7 @@ class Kcauto(object):
             was_sortie_queue_empty = True
             Log.log_debug(f"cfg.config.combat.sortie_map_read_only:{cfg.config.combat.sortie_map_read_only}")
             if cfg.config.combat.sortie_map_read_only == MapEnum.auto_map_selete:
-                self.run_quest_logic('auto_sortie', fast_check=False, back_to_home=False, force= True) #quest module will call set_sortie_queue
+                self.run_quest_logic(CONTEXT_AUTO_SORTIE, fast_check=False, back_to_home=False, force= True) #quest module will call set_sortie_queue
             else:
                 Log.log_debug(f"Manual sortie mode:{cfg.config.combat.sortie_map_read_only.value}")
 
@@ -309,7 +317,7 @@ class Kcauto(object):
         if com.combat.should_and_able_to_sortie(ignore_supply=True):
 
             #apply for combat queue, assume map_data is up-to-date
-            self.run_quest_logic('combat', fast_check = not was_sortie_queue_empty, force= was_sortie_queue_empty)
+            self.run_quest_logic(CONTEXT_SORTIE, fast_check = not was_sortie_queue_empty, force= was_sortie_queue_empty)
             
             self.run_resupply_logic()
             com.combat.goto()
@@ -321,7 +329,7 @@ class Kcauto(object):
                 com.combat.pop_sortie_queue()
                 
                 sts.stats.set_print_loop_end_stats()
-                exp.expedition.receive_expedition()
+                kca_u.kca.receive_expedition()
                 
                 qst.quest.is_quest_dom_cache_dirty = True
             else:
@@ -336,11 +344,18 @@ class Kcauto(object):
                 self.end_loop_at_port = True
             sts.stats.set_print_loop_end_stats()
 
-    def run_repair_logic(self, back_to_home=False):
+    def run_repair_logic(self, back_to_home=False, passive_only=False):
         
         if self.skip_one_repair == True:
             self.skip_one_repair = False
             return
+        
+        if passive_only == True:
+            #passive repair only, temporarily disable combat and pvp module
+            combat_temp = com.combat.enabled
+            com.combat._enabled = False
+            pvp_temp = pvp.pvp.enabled
+            pvp.pvp._enabled = False
         
         if rep.repair.can_conduct_repairs:
             rep.repair.goto()
@@ -351,6 +366,11 @@ class Kcauto(object):
             sts.stats.set_print_loop_end_stats()
         else:
             self.handle_back_to_home(back_to_home)
+            
+        if passive_only == True:
+            #restore combat and pvp module status
+            com.combat._enabled = combat_temp
+            pvp.pvp._enabled = pvp_temp
             
 
     def _run_fleetswitch_logic(self, context):

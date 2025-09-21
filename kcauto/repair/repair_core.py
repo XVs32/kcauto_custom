@@ -101,38 +101,43 @@ class RepairCore(object):
         idx_of_combat_ships = {}
         idx_of_passive_ships = {}
         
-        TEMP_FLEET_ID = 1
-        temp_fleet = (Fleet("unload_equipment", FleetEnum.COMBAT, False))
-        temp_fleet.ships = []
-        
         count = 0    
+        in_equipment_page = False
         for idx, ship in enumerate(repair_list):
             
             if ship.production_id in self.ships_under_repair:
                 continue
-            elif ship in flt.fleets.combat_ships:
+            
+            if count >= self.docks_available_count:
+                break
+            
+            elif ship in flt.fleets.combat_ships and (com.combat.enabled or pvp.pvp.enabled):
+                
                 if ship.damage >= cfg.config.combat.repair_limit:
                     idx_of_combat_ships[idx] = ship
+                    count += 1
+                    
             elif cfg.config.passive_repair.enabled:
+                
+                if count >= self.docks_available_count - cfg.config.passive_repair.slots_to_reserve:
+                    continue
+                
                 if ship.damage >= cfg.config.passive_repair.repair_threshold:
                     if ship not in flt.fleets.active_ships:
+                        if ship.has_equipment() == True:
+                            
+                            if in_equipment_page == False:
+                                in_equipment_page = True
+                                equ.equipment.goto()
+                                
+                            fsw.fleet_switcher.unload_ship(ship)
+                            
                         idx_of_passive_ships[idx] = ship
-                        if ship.has_no_equipment() == False:
-                            temp_fleet.ships.append(ship)
-                            count += 1
-                            if count >= self.docks_available_count - cfg.config.passive_repair.slots_to_reserve:
-                                break
-                        
-        if temp_fleet.ships != []:
-            fsw.fleet_switcher.goto()
-            if fsw.fleet_switcher.switch_to_costom_fleet(TEMP_FLEET_ID, temp_fleet):
-                nav.navigate.to('refresh_home')
-                nav.navigate.to('equipment')
-                fsw.fleet_switcher.unload_fleet_equipment(fleet_id=TEMP_FLEET_ID, needed_load=False)
-                self.goto()
-            else:
-                Log.log_error("kcauto failed to load the selected ship, exiting...")
-
+                        count += 1
+                            
+        if count > 0:
+            self.goto()
+        
         while self.can_conduct_repairs:
             if len(idx_of_combat_ships) + len(idx_of_passive_ships) == 0:
                 Log.log_debug("No combat or passive ships to repair.")
@@ -151,15 +156,8 @@ class RepairCore(object):
                 self._check_repair_sort()
                 self._select_ship(idx, ship)
                 
-                if status == self.UNLOAD_NEEDED:
-                    fsw.fleet_switcher.unload_ship(1, ship)
-                    status = self._start_repair(ship, "force")
-                else:
-                    status = self._start_repair(ship, context)
+                status = self._start_repair(ship, context)
                     
-                if status == self.UNLOAD_NEEDED:
-                    continue
-                
                 if idx in idx_of_combat_ships:
                     com.combat.set_next_sortie_time(
                         idx_of_combat_ships[idx].repair_time_delta)
@@ -238,9 +236,6 @@ class RepairCore(object):
             kca_u.kca.click_existing(
                 'right', 'repair|bucket_switch.png', cached=True)
             status = self.BUCKET_USED
-        elif context == 'force':
-            status = self.UNLOAD_NEEDED 
-            return status
             
         kca_u.kca.click_existing(
             'right', 'repair|repair_confirm_1.png', cached=True)
@@ -272,7 +267,7 @@ class RepairCore(object):
     @property
     def _local_ships_sorted_by_repair(self):
         return sorted(
-            [shp.ships.ship_pool[s] for s in shp.ships.ship_pool],
+            shp.ships.ship_pool.values(),
             key=lambda ship: (ship.hp_p, ship.sort_id, ship.production_id))
 
     @property
