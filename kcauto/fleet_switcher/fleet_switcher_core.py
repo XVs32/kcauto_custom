@@ -484,7 +484,10 @@ class FleetSwitcherCore(object):
             fleet.ship_ids:
             Log.log_error(f"fleet {fleet_id} ship ids does not match, looks like ship load is failed, exiting...")
             exit(1)
-
+        elif flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][fleet_id].under_repair == True:
+            Log.log_error(f"fleet {fleet_id} is under repair, equipment load process halt")
+            return 
+            
         needed_load = False
         for i in range(fleet.size):
             if fleet.ships[i].equipment_ids != flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][fleet_id].ships[i].equipment_ids:
