@@ -193,14 +193,13 @@ class Kcauto(object):
                 return False
             nav.navigate.to('home')
             
-            next_quest = None
             if cfg.config.pvp.fleet_preset == AUTO_PRESET:
-                next_quest = self.run_quest_logic(CONTEXT_AUTO_PVP, fast_check=False, back_to_home=False, force= True)
+                self.run_quest_logic(CONTEXT_AUTO_PVP, fast_check=False, back_to_home=False, force= True)
             
             self._run_fleetswitch_logic('pvp')
             self.run_repair_logic()
             
-            self.run_quest_logic(CONTEXT_PVP, back_to_home=True, target_quest=next_quest)
+            self.run_quest_logic(CONTEXT_PVP, back_to_home=True)
             
         else:
             return False
@@ -223,14 +222,13 @@ class Kcauto(object):
             #update port api, for _run_fleetswitch_logic
             nav.navigate.to('refresh_home')
 
-        next_quest = None
         was_sortie_queue_empty = False
         #set sortie_queue if it is empty
         if len(com.combat.get_sortie_queue()) == 0:
             was_sortie_queue_empty = True
             Log.log_debug(f"cfg.config.combat.sortie_map_read_only:{cfg.config.combat.sortie_map_read_only}")
             if cfg.config.combat.sortie_map_read_only == MapEnum.auto_map_selete:
-                next_quest = self.run_quest_logic(CONTEXT_AUTO_SORTIE, fast_check=False, back_to_home=False, force= True) #quest module will call set_sortie_queue
+                self.run_quest_logic(CONTEXT_AUTO_SORTIE, fast_check=False, back_to_home=False, force= True) #quest module will call set_sortie_queue
             else:
                 Log.log_debug(f"Manual sortie mode:{cfg.config.combat.sortie_map_read_only.value}")
 
@@ -313,7 +311,7 @@ class Kcauto(object):
         if com.combat.should_and_able_to_sortie(ignore_supply=True):
 
             #apply for combat queue, assume map_data is up-to-date
-            self.run_quest_logic(CONTEXT_SORTIE, fast_check = not was_sortie_queue_empty, force= was_sortie_queue_empty, target_quest=next_quest)
+            self.run_quest_logic(CONTEXT_SORTIE, fast_check = not was_sortie_queue_empty, force= was_sortie_queue_empty)
             
             self.run_resupply_logic()
             com.combat.goto()
@@ -391,18 +389,16 @@ class Kcauto(object):
                 self.end_loop_at_port = True
 
     def run_quest_logic(
-            self, context=None, fast_check=False, back_to_home=False, force=False, target_quest=None):
+            self, context=None, fast_check=False, back_to_home=False, force=False):
         if not qst.quest.enabled:
             return False
-        
-        next_quest = None
+
         if qst.quest.need_to_check(context) or force == True:
             qst.quest.goto()
-            next_quest = qst.quest.manage_quests(context, fast_check, target_quest)
+            qst.quest.manage_quests(context, fast_check)
             sts.stats.quest.times_checked += 1
             self.handle_back_to_home(back_to_home)
             sts.stats.set_print_loop_end_stats()
-        return next_quest
 
     def handle_back_to_home(self, back_to_home):
         if back_to_home:
