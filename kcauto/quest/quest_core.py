@@ -131,7 +131,7 @@ class QuestCore(CoreBase):
         
         Log.log_debug(self.quests_str)
 
-    def manage_quests(self, context=None, fast_check=True):
+    def manage_quests(self, context=None, fast_check=True, target_quest=None):
         # dismiss Ooyodo
         kca_u.kca.r['center'].click()
         kca_u.kca.sleep(1)
@@ -148,12 +148,13 @@ class QuestCore(CoreBase):
         is_any_quest_turned_in = self._turn_in_quests(context)
         if fast_check == False or is_any_quest_turned_in == True:
             if context != CONTEXT_AUTO_SORTIE and context != CONTEXT_AUTO_EXPEDITION and context != CONTEXT_AUTO_PVP:
-                self._toggle_quests(context)
+                self._toggle_quests(context, target_quest)
+                Log.log_msg(
+                    f"Tracked quests: {[self.next_check_intervals[quest_id].name for quest_id in self.next_check_intervals]}")
+                return
             else:
-                self._auto_target_select(context)
+                return self._auto_target_select(context)
                 
-        Log.log_msg(
-            f"Tracked quests: {[self.next_check_intervals[quest_id].name for quest_id in self.next_check_intervals]}")
 
     @property
     def quests_str(self):
@@ -267,7 +268,7 @@ class QuestCore(CoreBase):
                 
         return ret
  
-    def _toggle_quests(self, context):
+    def _toggle_quests(self, context, target_quest:Quest):
         """Method that active quest to work on
 
             Args:
@@ -317,6 +318,14 @@ class QuestCore(CoreBase):
                     if remain_quest_slot <= 0:
                         Log.log_msg("Reached maximum quest slots, stopping activation.")
                         return
+                elif target_quest != None and quest.quest_id == target_quest.quest_id:
+                    self._click_quest_idx(i)
+                    self._track_quest(quest)
+                    Log.log_error(f"Quest {quest.name} is force enabled but current fleet does not seems to be valid.")
+                    remain_quest_slot -= 1
+                    if remain_quest_slot <= 0:
+                        Log.log_msg("Reached maximum quest slots, stopping activation.")
+                        return
                 
     def _auto_target_select(self, mode):
 
@@ -355,7 +364,6 @@ class QuestCore(CoreBase):
             else:
                 for map_enum in sortie_dict:
                     for i in range(0, sortie_dict[map_enum]):
-                        #sortie_list.append(key+"-"+next_quest)
                         sortie_list.append(next_quest.name +"-"+ map_enum.world_and_map_and_node)
             
             com.combat.set_sortie_queue(sortie_list)
@@ -367,7 +375,8 @@ class QuestCore(CoreBase):
             next_quest = self._get_quests_rank_list(CONTEXT_PVP)
             
             if next_quest != []:
-                pvp.pvp.next_pvp_quest = next_quest[0]
+                next_quest = next_quest[0]
+                pvp.pvp.next_pvp_quest = next_quest
                 Log.log_success(f"Attempt to finish pvp quest {pvp.pvp.next_pvp_quest.name}.")
             else:
                 pvp.pvp.next_pvp_quest = Quest(quest_id=303) #mork the next quest as Cd1, so kcauto use default PvP preset
@@ -400,6 +409,10 @@ class QuestCore(CoreBase):
                     exp.expedition.cut_expedition_queue(exp_list)
                 
                 Log.log_debug(f'exp_rank: {exp.expedition.exp_rank}')
+            
+            next_quest = quest_list[0]
+                
+        return next_quest
 
     def _turn_in_quest_idx(self, idx):
         """Method to turn in quest by index in the current quest list.
