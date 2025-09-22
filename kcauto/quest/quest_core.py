@@ -67,6 +67,13 @@ class QuestCore(CoreBase):
     tot_page = None
     current_quest_list : list[Quest] = []
     active_quest_list : list[Quest] = []
+    
+    auto_select_quest : dict[int, Quest] = {
+        CONTEXT_SORTIE: None,
+        CONTEXT_PVP: None,
+        CONTEXT_EXPEDITION: None,
+        CONTEXT_FACTORY: None
+    }
 
     def __init__(self):
         super().__init__()
@@ -341,7 +348,9 @@ class QuestCore(CoreBase):
                 Log.log_error(f"No sortie quests available, cannot auto select sortie map.")
                 com.combat.enabled = False
                 return
-                
+            
+            self.auto_select_quest[CONTEXT_SORTIE] = next_quest    
+            
             Log.log_success(f"Attempt to finish sortie quest {next_quest.name}.")
 
             """Read quest progress""" 
@@ -372,6 +381,8 @@ class QuestCore(CoreBase):
             else:
                 pvp.pvp.next_pvp_quest = Quest(quest_id=303) #mork the next quest as Cd1, so kcauto use default PvP preset
                 Log.log_success(f"No pvp quests available.")
+                
+            self.auto_select_quest[CONTEXT_PVP] = pvp.pvp.next_pvp_quest
             
         elif mode == CONTEXT_AUTO_EXPEDITION:
             
@@ -530,6 +541,10 @@ class QuestCore(CoreBase):
             return True
         
         quest_dict = kca_u.kca.get_quest_count(target_quest= quest)
+
+        force_enable = False
+        if self.auto_select_quest[context] != None and quest.quest_id == self.auto_select_quest[context].quest_id:
+            force_enable = True
         
         if context == CONTEXT_SORTIE:
             if quest.category.is_sortie() == False:
@@ -551,7 +566,11 @@ class QuestCore(CoreBase):
                 return False
             elif quest.fleet_composition != {} and not self._is_fleet_valid_for_quest(quest, flt.fleets.combat_fleets[0]):
                 Log.log_debug(f"Fleet layout is not valid for quest {quest.name}.")
-                return False
+                if force_enable == True:
+                    Log.log_error(f"Fleet layout is not valid for quest {quest.name}.")
+                    Log.log_warn(f"Quest {quest.name} is the current target quest for {self.CONTEXT_LOOKUP[context]}, force enabling it.")
+                else:
+                    return False
             
             return True
         elif context == CONTEXT_EXPEDITION:
@@ -575,7 +594,12 @@ class QuestCore(CoreBase):
                 return False
             elif quest.fleet_composition != {} and not self._is_fleet_valid_for_quest(quest, flt.fleets.pvp_fleets[0]):
                 Log.log_debug(f"Fleet layout is not valid for quest {quest.name}.")
-                return False
+                if force_enable == True:
+                    Log.log_error(f"Fleet layout is not valid for quest {quest.name}.")
+                    Log.log_warn(f"Quest {quest.name} is the current target quest for {self.CONTEXT_LOOKUP[context]}, force enabling it.")
+                    return True
+                else:
+                    return False
             else:
                 return True
         elif context == CONTEXT_FACTORY:
