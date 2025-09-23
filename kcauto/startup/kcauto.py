@@ -205,6 +205,10 @@ class Kcauto(object):
             return False
 
         while pvp.pvp.pvp_available():
+            if flt.fleets.pvp_fleets[0].under_repair == True:
+                pvp.pvp.next_pvp_time = rep.repair.soonest_complete_time
+                Log.log_warn(f"PvP fleet is under repair, next PvP at {pvp.pvp.next_pvp_time}.")
+                break
             self.run_resupply_logic()
             pvp.pvp.goto()
             pvp.pvp.conduct_pvp()
