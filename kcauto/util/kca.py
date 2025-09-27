@@ -1182,7 +1182,7 @@ class Kca(object):
                 return None
             i = i + 1
             
-    def save_screenshots():
+    def save_screenshots(self):
         
         import shutil
         
