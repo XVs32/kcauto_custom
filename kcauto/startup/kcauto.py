@@ -1,4 +1,5 @@
 import os
+import atexit
 import combat.combat_core as com
 import factory.factory_core as fty
 import config.config_core as cfg
@@ -36,6 +37,7 @@ class Kcauto(object):
         kca_u.kca.hook_chrome()
 
     def start_kancolle(self):
+        atexit.register(kca_u.kca.save_screenshots)
         kca_u.kca.start_kancolle()
 
     def find_kancolle(self):

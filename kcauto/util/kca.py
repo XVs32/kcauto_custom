@@ -1,7 +1,6 @@
 import cv2
 import numpy as np
 import os
-import atexit
 import json
 import glob
 from sys import platform, exit
@@ -148,7 +147,6 @@ class Kca(object):
         from the get_data api call. Otherwise, it will load the stored data
         from previous startups.
         """
-        atexit.register(Kca.save_screenshots)
         
         # Create a pattern to match the files
         pattern = os.path.join('.', '.screenshot*.png')
