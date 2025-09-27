@@ -66,7 +66,7 @@ def pop_up_menu(stdscr, panel, config):
     
     global quest_info
     if quest_info == []:
-        with open('data/quests/kc3_periodic_quests_en.json', 'r', encoding='utf-8') as f:
+        with open('data/quests/kc3_quests_en.json', 'r', encoding='utf-8') as f:
             import json
             quest_info = json.load(f)    
         
@@ -178,6 +178,8 @@ def pop_up_menu(stdscr, panel, config):
             quest_type = QUARTERLY
         elif quest[1] == 'y':
             quest_type = YEARLY
+        elif is_time_limit == True:
+            quest_type = DAILY
             
         if quest in QUEST_LIST[context][quest_type]:
             QUEST_LIST[context][quest_type][quest][0] = 1
