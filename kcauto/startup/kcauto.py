@@ -358,7 +358,6 @@ class Kcauto(object):
             pvp.pvp._enabled = False
         
         if rep.repair.can_conduct_repairs:
-            rep.repair.goto()
             rep.repair.repair_ships()
             self.handle_back_to_home(back_to_home)
             if not back_to_home:
