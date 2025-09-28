@@ -53,14 +53,14 @@
     "Bw7"
   ],
   "exact_enemy_type": [
+    "Bw2",
+    "Bw4",
+    "Bw5",
     "Bd4",
     "Bd5",
     "Bd6",
     "Bd8",
-    "Bw2",
-    "Bw3",
-    "Bw4",
-    "Bw5"
+    "Bw3"
   ],
   "any_sortie": [
     "Bd1",
