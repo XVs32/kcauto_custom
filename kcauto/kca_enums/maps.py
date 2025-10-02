@@ -48,7 +48,7 @@ class MapEnum_t(EnumBase):
             #find the first "-"
             return self.__class__(self.value[0] + self.value[self.value.index("-"):])
         else:
-            return self.__class__.auto_map_selete
+            return self.__class__.auto_map_select
         
     @property
     def without_quest_and_node(self):
@@ -62,7 +62,7 @@ class MapEnum_t(EnumBase):
         if self.value != "auto":
             return self.__class__(self.value[0] + "-" + self.value.split("-")[1] + "-" + self.value.split("-")[2]) 
         else:
-            return self.__class__.auto_map_selete
+            return self.__class__.auto_map_select
             
     @property
     def is_map_variant(self):

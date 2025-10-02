@@ -340,7 +340,7 @@ class QuestCore(CoreBase):
             api.api.update_from_api({KCSAPIEnum.QUEST_LIST}) #update quest_list
             Log.log_msg(f"api update done in #{self.CONTEXT_LOOKUP[mode]} auto map select.")
 
-        if mode == CONTEXT_AUTO_SORTIE and cfg.config.combat.sortie_map_read_only == MapEnum.auto_map_selete:
+        if mode == CONTEXT_AUTO_SORTIE and cfg.config.combat.sortie_map_read_only == MapEnum.auto_map_select:
             next_quest = self._get_quests_rank_list(CONTEXT_SORTIE)
             if next_quest != []:
                 next_quest = next_quest[0]
