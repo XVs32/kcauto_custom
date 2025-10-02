@@ -364,7 +364,6 @@ class QuestCore(CoreBase):
             else:
                 for map_enum in sortie_dict:
                     for i in range(0, sortie_dict[map_enum]):
-                        #sortie_list.append(key+"-"+next_quest)
                         sortie_list.append(next_quest.name +"-"+ map_enum.world_and_map_and_node)
             
             com.combat.set_sortie_queue(sortie_list)
