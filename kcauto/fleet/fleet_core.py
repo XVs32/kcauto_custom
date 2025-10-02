@@ -581,7 +581,7 @@ class FleetCore(object):
                         lc_count = min(req_lc, ship.slot_num)
                          
                         temp_ship = copy.deepcopy(ship)
-                        temp_ship.fill_with_equipment(NAME_ID_LC, lc_count)
+                        temp_ship.fill_with_equipment(NAME_ID_LC, lc_count, True)
                         
                         if temp_ship.equipments != []:
                             req_lc -= lc_count
