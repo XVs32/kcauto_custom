@@ -53,6 +53,7 @@ class Noro6(object):
         
         """
         method to get the config by name
+        name(str): map name
         Returns:
         """
         for preset in self.presets:
