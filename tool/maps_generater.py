@@ -160,7 +160,7 @@ f.write('\n\
     W3_2_By12 = "By12-3-2"\n\
     W5_3_By12 = "By12-5-3"\n\
 \n\
-    auto_map_selete = "B-auto"\n\
+    auto_map_select = "B-auto"\n\
 \n\
 \n')
 
