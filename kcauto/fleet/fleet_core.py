@@ -322,6 +322,8 @@ class FleetCore(object):
         ret = {}
         noro6 = Noro6()
         
+        panic_flag = False
+        
         for preset in noro6.presets:
             
             is_first_not_exact_match = True
@@ -363,12 +365,9 @@ class FleetCore(object):
                             
                         if this_equipment == None:
                             Log.log_error(f"Failed finding equipment for {preset['name']}, exit...")
-                            exit(0)
+                            panic_flag = True
+                            break
                         
-                        #check if this_equipment is eq obj
-                        if not isinstance(this_equipment, Equipment):
-                            Log.log_error(f"DEBUG1: hit")
-                            exit(0)
                         ship.equipments.append(this_equipment)
                         
                         equ.equipment._remove_from_pool(this_equipment, pool=equ.equipment.ID)
@@ -403,7 +402,11 @@ class FleetCore(object):
                 ret[preset_name][fleet_id] = temp
 
             #restore equipment pool for next noro6 preset
-            equ.equipment.equipment_pool[equ.equipment.ID] = equipment_pool_bak.copy()                    
+            equ.equipment.equipment_pool[equ.equipment.ID] = equipment_pool_bak.copy()     
+            
+        if panic_flag == True:
+            Log.log_error("Something goes wrong when setting up Noro6 fleet, exiting...")
+            exit()               
             
         equ.equipment.equipment_pool[equ.equipment.ID] = equipment_pool_read_only.copy()
         
