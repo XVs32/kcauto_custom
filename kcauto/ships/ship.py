@@ -225,6 +225,9 @@ class Ship(object):
         count = min(count, self.slot_num)
         
         temp_equipment = equ.equipment._get_match_equipment(equ.equipment.equipment_pool[equ.equipment.NON_NORO6], model_id)
+        #sort by level if needed
+        if sort_by_level:
+            temp_equipment.sort(key=lambda x: x.stars, reverse=True)
         count = min(count, len(temp_equipment))
         
         self.equipments = temp_equipment[:count]

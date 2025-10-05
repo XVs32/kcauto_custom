@@ -233,7 +233,7 @@ class Kcauto(object):
         if len(com.combat.get_sortie_queue()) == 0:
             was_sortie_queue_empty = True
             Log.log_debug(f"cfg.config.combat.sortie_map_read_only:{cfg.config.combat.sortie_map_read_only}")
-            if cfg.config.combat.sortie_map_read_only == MapEnum.auto_map_selete:
+            if cfg.config.combat.sortie_map_read_only == MapEnum.auto_map_select:
                 self.run_quest_logic(CONTEXT_AUTO_SORTIE, fast_check=False, back_to_home=False, force= True) #quest module will call set_sortie_queue
             else:
                 Log.log_debug(f"Manual sortie mode:{cfg.config.combat.sortie_map_read_only.value}")
@@ -358,7 +358,6 @@ class Kcauto(object):
             pvp.pvp._enabled = False
         
         if rep.repair.can_conduct_repairs:
-            rep.repair.goto()
             rep.repair.repair_ships()
             self.handle_back_to_home(back_to_home)
             if not back_to_home:

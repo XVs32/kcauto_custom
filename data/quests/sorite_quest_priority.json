@@ -1,4 +1,8 @@
 {
+  "time_limited": [
+    "2412B5",
+    "2509B5"
+  ],
   "exact_ship_and_map": [
     "Bm1",
     "Bm4",
@@ -48,24 +52,26 @@
     "Bq10"
   ],
   "exact_area": [
-    "Bd7",
     "Bw6",
     "Bw7"
   ],
   "exact_enemy_type": [
+    "Bw2",
+    "Bw4",
+    "Bw5",
     "Bd4",
     "Bd5",
     "Bd6",
     "Bd8",
-    "Bw2",
-    "Bw3",
-    "Bw4",
-    "Bw5"
+    "Bw3"
   ],
   "any_sortie": [
     "Bd1",
     "Bd2",
     "Bd3",
     "Bw1"
+  ],
+  "low_priority": [
+    "Bd7"
   ]
 }

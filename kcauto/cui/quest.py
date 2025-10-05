@@ -19,31 +19,31 @@ QUEST_LIST[CONTEXT_PVP] = {}
 QUEST_LIST[CONTEXT_FACTORY] = {}
 QUEST_LIST[CONTEXT_REPAIR] = {}
 
-QUEST_LIST[CONTEXT_SORTIE][DAILY] = {"Bd1":0, "Bd2":0, "Bd3":0, "Bd4":0, "Bd5":0, "Bd6":0, "Bd7":0, "Bd8":0}
-QUEST_LIST[CONTEXT_SORTIE][WEEKLY] = {"Bw1":0, "Bw2":0, "Bw3":0, "Bw4":0, "Bw5":0, "Bw6":0, "Bw7":0, "Bw8":0, "Bw9":0, "Bw10":0}
-QUEST_LIST[CONTEXT_SORTIE][MONTHLY] = {"Bm1":0, "Bm2":0, "Bm3":0, "Bm4":0, "Bm5":0, "Bm6":0, "Bm7":0, "Bm8":0}
-QUEST_LIST[CONTEXT_SORTIE][QUARTERLY] = {"Bq1":0, "Bq2":0, "Bq3":0, "Bq4":0, "Bq5":0, "Bq6":0, "Bq7":0, "Bq8":0, "Bq9":0, "Bq10":0, "Bq11":0, "Bq12":0, "Bq13":0}
-QUEST_LIST[CONTEXT_SORTIE][YEARLY] = {"By1":0, "By2":0, "By3":0, "By4":0, "By5":0, "By6":0, "By7":0, "By8":0, "By9":0, "By10":0, "By11":0, "By12":0, "By13":0, "By14":0, "By15":0}
+QUEST_LIST[CONTEXT_SORTIE][DAILY] = {}
+QUEST_LIST[CONTEXT_SORTIE][WEEKLY] = {}
+QUEST_LIST[CONTEXT_SORTIE][MONTHLY] = {}
+QUEST_LIST[CONTEXT_SORTIE][QUARTERLY] = {}
+QUEST_LIST[CONTEXT_SORTIE][YEARLY] = {}
 
-QUEST_LIST[CONTEXT_PVP][DAILY] = {"Cd1":0, "Cd2":0}
-QUEST_LIST[CONTEXT_PVP][WEEKLY] = {"Cw1":0}
-QUEST_LIST[CONTEXT_PVP][MONTHLY] = {"Cm1":0, "Cm2":0}
-QUEST_LIST[CONTEXT_PVP][QUARTERLY] = {"Cq1":0, "Cq2":0, "Cq3":0, "Cq4":0}
-QUEST_LIST[CONTEXT_PVP][YEARLY] = {"Cy1":0, "Cy2":0, "Cy3":0, "Cy4":0, "Cy5":0, "Cy6":0, "Cy7":0, "Cy8":0, "Cy9":0, "Cy10":0, "Cy11":0, "Cy12":0, "Cy13":0, "Cy14":0, "Cy15":0, "Cy16":0}
+QUEST_LIST[CONTEXT_PVP][DAILY] = {}
+QUEST_LIST[CONTEXT_PVP][WEEKLY] = {}
+QUEST_LIST[CONTEXT_PVP][MONTHLY] = {}
+QUEST_LIST[CONTEXT_PVP][QUARTERLY] = {}
+QUEST_LIST[CONTEXT_PVP][YEARLY] = {}
 
-QUEST_LIST[CONTEXT_EXPEDITION][DAILY] = {"Dd1":0, "Dd2":0}
-QUEST_LIST[CONTEXT_EXPEDITION][WEEKLY] = {"Dw1":0, "Dw2":0, "Dw3":0}
-QUEST_LIST[CONTEXT_EXPEDITION][MONTHLY] = {"Dm1":0}
-QUEST_LIST[CONTEXT_EXPEDITION][QUARTERLY] = {"Dq1":0, "Dq2":0}
-QUEST_LIST[CONTEXT_EXPEDITION][YEARLY] = {"Dy1":0, "Dy2":0, "Dy3":0, "Dy4":0, "Dy5":0, "Dy6":0, "Dy7":0, "Dy8":0}
+QUEST_LIST[CONTEXT_EXPEDITION][DAILY] = {}
+QUEST_LIST[CONTEXT_EXPEDITION][WEEKLY] = {}
+QUEST_LIST[CONTEXT_EXPEDITION][MONTHLY] = {}
+QUEST_LIST[CONTEXT_EXPEDITION][QUARTERLY] = {}
+QUEST_LIST[CONTEXT_EXPEDITION][YEARLY] = {}
 
-QUEST_LIST[CONTEXT_REPAIR][DAILY] = {"Ed1":0, "Ed2":0}
+QUEST_LIST[CONTEXT_REPAIR][DAILY] = {}
 QUEST_LIST[CONTEXT_REPAIR][WEEKLY] = {}
 QUEST_LIST[CONTEXT_REPAIR][MONTHLY] = {}
 QUEST_LIST[CONTEXT_REPAIR][QUARTERLY] = {}
 QUEST_LIST[CONTEXT_REPAIR][YEARLY] = {}
 
-QUEST_LIST[CONTEXT_FACTORY][DAILY] = {"Fd1":0, "Fd2":0, "Fd3":0, "Fd4":0}
+QUEST_LIST[CONTEXT_FACTORY][DAILY] = {}
 QUEST_LIST[CONTEXT_FACTORY][WEEKLY] = {}
 QUEST_LIST[CONTEXT_FACTORY][MONTHLY] = {}
 QUEST_LIST[CONTEXT_FACTORY][QUARTERLY] = {}
@@ -66,9 +66,62 @@ def pop_up_menu(stdscr, panel, config):
     
     global quest_info
     if quest_info == []:
-        with open('data/quests/kc3_periodic_quests_en.json', 'r', encoding='utf-8') as f:
+        with open('data/quests/kc3_quests_en.json', 'r', encoding='utf-8') as f:
             import json
             quest_info = json.load(f)    
+        
+        with open('data/quests/quests.json', 'r', encoding='utf-8') as f:
+            import json
+            quest_list = json.load(f)    
+            
+        for quest_name in quest_list:
+            context = None
+            
+            is_time_limit = False
+            quest_name_ori = quest_name
+            if quest_name[0:4].isdigit():
+                is_time_limit = True
+                quest_name=quest_name[4:]
+            
+            if quest_name[0] == 'B':
+                context = CONTEXT_SORTIE
+            elif quest_name[0] == 'C':
+                context = CONTEXT_PVP
+            elif quest_name[0] == 'D':
+                context = CONTEXT_EXPEDITION
+            elif quest_name[0] == 'E':
+                context = CONTEXT_REPAIR
+            elif quest_name[0] == 'F':
+                context = CONTEXT_FACTORY
+            else:
+                continue
+            
+            quest_type = None
+            if quest_name[1] == 'd':
+                quest_type = DAILY
+            elif quest_name[1] == 'w':
+                quest_type = WEEKLY
+            elif quest_name[1] == 'm':
+                quest_type = MONTHLY
+            elif quest_name[1] == 'q':
+                quest_type = QUARTERLY
+            elif quest_name[1] == 's':
+                quest_type = QUARTERLY
+            elif quest_name[1] == 'y':
+                quest_type = YEARLY
+            elif is_time_limit==True:
+                quest_type = DAILY
+            else:
+                continue
+                
+            quest_id = None
+            
+            for id in quest_info:
+                if quest_info[id]["code"] == quest_name_ori:
+                    quest_id = id
+                    break
+                
+            QUEST_LIST[context][quest_type][quest_name_ori] = [0, quest_id]
     
     current_tab = CONTEXT_SORTIE
     curser = [0, 0]
@@ -94,7 +147,13 @@ def pop_up_menu(stdscr, panel, config):
     
     #read current quest status from config
     for quest in config["quest.quests"]:
-        context = None
+        
+        is_time_limit = False
+        quest_name_ori = quest
+        if quest[0:4].isdigit():
+            is_time_limit = True
+            quest=quest[4:]
+            
         if quest[0] == 'B':
             context = CONTEXT_SORTIE
         elif quest[0] == 'C':
@@ -119,9 +178,11 @@ def pop_up_menu(stdscr, panel, config):
             quest_type = QUARTERLY
         elif quest[1] == 'y':
             quest_type = YEARLY
+        elif is_time_limit == True:
+            quest_type = DAILY
             
-        if quest in QUEST_LIST[context][quest_type]:
-            QUEST_LIST[context][quest_type][quest] = 1
+        if quest_name_ori in QUEST_LIST[context][quest_type]:
+            QUEST_LIST[context][quest_type][quest_name_ori][0] = 1
             
     y_offset = 0
     
@@ -153,6 +214,8 @@ def pop_up_menu(stdscr, panel, config):
                 
             for j, quest in enumerate(QUEST_LIST[current_tab][quest_type]):
                 
+                quest_id = QUEST_LIST[current_tab][quest_type][quest][1]
+                
                 if j < (y_offset * -1):
                     continue
                 
@@ -162,15 +225,15 @@ def pop_up_menu(stdscr, panel, config):
                 if curser[CURSER_Y] - 1  == j and curser[CURSER_X] == i:
                     color = curses.color_pair(LOG_GREEN)
                     
-                    panel.addstr(row[2], 1, quest_info[quest]["desc"][0:width-2], curses.color_pair(LOG))
-                    if len(quest_info[quest]["desc"]) > width-2:
-                        panel.addstr(row[2]+1, 1, quest_info[quest]["desc"][width-2:width*2-4], curses.color_pair(LOG))
-                    if len(quest_info[quest]["desc"]) > (width-2)*2 and row[2]+2 < height:
-                        panel.addstr(row[2]+2, 1, quest_info[quest]["desc"][(width-2)*2:(width-2)*3], curses.color_pair(LOG))
+                    panel.addstr(row[2], 1, quest_info[quest_id]["desc"][0:width-2], curses.color_pair(LOG))
+                    if len(quest_info[quest_id]["desc"]) > width-2:
+                        panel.addstr(row[2]+1, 1, quest_info[quest_id]["desc"][width-2:width*2-4], curses.color_pair(LOG))
+                    if len(quest_info[quest_id]["desc"]) > (width-2)*2 and row[2]+2 < height:
+                        panel.addstr(row[2]+2, 1, quest_info[quest_id]["desc"][(width-2)*2:(width-2)*3], curses.color_pair(LOG))
                     
                 else:
                     color = curses.color_pair(LOG)
-                panel.addstr(row[1] + j + y_offset, col[i], (" " if QUEST_LIST[current_tab][quest_type][quest] == 0 else "*") + quest.rjust(COL_NEEDED_WIDTH-1, ' '), color)
+                panel.addstr(row[1] + j + y_offset, col[i], (" " if QUEST_LIST[current_tab][quest_type][quest][0] == 0 else "*") + quest.rjust(COL_NEEDED_WIDTH-1, ' '), color)
                 
         
         
@@ -226,10 +289,10 @@ def pop_up_menu(stdscr, panel, config):
         elif key == KEY_ENTER:
             if curser[CURSER_Y] != 0:
                 quest = list(QUEST_LIST[current_tab][QUEST_ORDER[curser[CURSER_X]]].keys())[curser[CURSER_Y]-1]
-                if QUEST_LIST[current_tab][QUEST_ORDER[curser[CURSER_X]]][quest] == 0:
-                    QUEST_LIST[current_tab][QUEST_ORDER[curser[CURSER_X]]][quest] = 1
+                if QUEST_LIST[current_tab][QUEST_ORDER[curser[CURSER_X]]][quest][0] == 0:
+                    QUEST_LIST[current_tab][QUEST_ORDER[curser[CURSER_X]]][quest][0] = 1
                 else:
-                    QUEST_LIST[current_tab][QUEST_ORDER[curser[CURSER_X]]][quest] = 0
+                    QUEST_LIST[current_tab][QUEST_ORDER[curser[CURSER_X]]][quest][0] = 0
                     
         elif key == ord('?') or key == KEY_ESC or key == ord('q'):
             break
@@ -245,7 +308,7 @@ def set_config(config):
         for j, quest_type in enumerate(QUEST_ORDER):
             for k, quest in enumerate(QUEST_LIST[tab][quest_type]):
                 
-                if QUEST_LIST[tab][quest_type][quest] == 1:
+                if QUEST_LIST[tab][quest_type][quest][0] == 1:
                     config["quest.enabled"] = True
                     config["quest.quests"].append(quest)
     
