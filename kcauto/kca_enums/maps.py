@@ -38,7 +38,7 @@ class MapEnum_t(EnumBase):
     def without_quest(self):
         if self.value != "auto":
             #find the first "-"
-            return f'{self.value[0]}{self.value[self.value.index("-"):]}'
+            return f'B{self.value[self.value.index("-"):]}'
         else:
             return "auto"
         
@@ -46,21 +46,21 @@ class MapEnum_t(EnumBase):
     def without_quest_enum(self):
         if self.value != "auto":
             #find the first "-"
-            return self.__class__(self.value[0] + self.value[self.value.index("-"):])
+            return self.__class__("B" + self.value[self.value.index("-"):])
         else:
             return self.__class__.auto_map_select
         
     @property
     def without_quest_and_node(self):
         if self.value != "auto":
-            return self.value[0] + "-" + self.value.split("-")[1] + "-" + self.value.split("-")[2] 
+            return "B-" + self.value.split("-")[1] + "-" + self.value.split("-")[2] 
         else:
             return "auto"
             
     @property
     def without_quest_and_node_enum(self):
         if self.value != "auto":
-            return self.__class__(self.value[0] + "-" + self.value.split("-")[1] + "-" + self.value.split("-")[2]) 
+            return self.__class__("B-" + self.value.split("-")[1] + "-" + self.value.split("-")[2]) 
         else:
             return self.__class__.auto_map_select
             

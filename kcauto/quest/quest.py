@@ -93,15 +93,20 @@ class Quest(object):
  
     def _get_category_from_static_data(self):
         """Get the quest category from static data."""
-        if self.name[0] == "B":
+        
+        name = self.name
+        if self.name[0:4].isdigit() == True:
+            name = self.name[4:]
+        
+        if name[0] == "B":
             return QuestCategoryEnum.SORTIE
-        elif self.name[0] == "C":
+        elif name[0] == "C":
             return QuestCategoryEnum.PVP
-        elif self.name[0] == "D":   
+        elif name[0] == "D":   
             return QuestCategoryEnum.EXPEDITION
-        elif self.name[0] == "E":
+        elif name[0] == "E":
             return QuestCategoryEnum.REPAIR
-        elif self.name[0] == "F":
+        elif name[0] == "F":
             return QuestCategoryEnum.FACTORY
     
     def _get_type_from_static_data(self):
