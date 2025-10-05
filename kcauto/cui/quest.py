@@ -181,8 +181,8 @@ def pop_up_menu(stdscr, panel, config):
         elif is_time_limit == True:
             quest_type = DAILY
             
-        if quest in QUEST_LIST[context][quest_type]:
-            QUEST_LIST[context][quest_type][quest][0] = 1
+        if quest_name_ori in QUEST_LIST[context][quest_type]:
+            QUEST_LIST[context][quest_type][quest_name_ori][0] = 1
             
     y_offset = 0
     
