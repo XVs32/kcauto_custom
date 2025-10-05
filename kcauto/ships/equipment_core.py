@@ -134,9 +134,7 @@ class EquipmentCore(object):
             
             equipment = available_equipments[i]
             
-            if equipment.category in self.reinforce_general_category:
-                continue
-            elif self._is_special_reinforce_equipment(ship, equipment):
+            if self._is_special_reinforce_equipment(ship, equipment):
                 continue
             
             Log.log_debug(f"Equipment {equipment.name} ({equipment.production_id}) {equipment.category} is not a special reinforce equipment for ship {ship.name}, skipping")
@@ -175,6 +173,8 @@ class EquipmentCore(object):
                 (str(ship.ship_type.id) in self.reinforce_special[equipment_str_id]["api_stypes"] 
                     or
                 str(ShipTypeEnum.WILDCARD.id) in self.reinforce_special[equipment_str_id]["api_stypes"])):
+                return True
+        elif equipment.category in self.reinforce_general_category:
                 return True
             
         return False
