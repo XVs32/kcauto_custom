@@ -1,4 +1,8 @@
 {
+  "time_limited": [
+    "2412B5",
+    "2509B5"
+  ],
   "exact_ship_and_map": [
     "Bm1",
     "Bm4",
@@ -48,7 +52,6 @@
     "Bq10"
   ],
   "exact_area": [
-    "Bd7",
     "Bw6",
     "Bw7"
   ],
@@ -67,5 +70,8 @@
     "Bd2",
     "Bd3",
     "Bw1"
+  ],
+  "low_priority": [
+    "Bd7"
   ]
 }
