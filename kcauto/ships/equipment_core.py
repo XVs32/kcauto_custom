@@ -55,12 +55,11 @@ class EquipmentCore(object):
             Log.log_error(e)
 
         try:
-            
             for raw_equipment in JsonData.load_json('data|temp|equipment_list.json'):
                 self.equipment_pool[self.ID].append(Equipment(model_id=raw_equipment["api_slotitem_id"],production_id=raw_equipment["api_id"],
                     stars=raw_equipment["api_level"], lock=raw_equipment["api_locked"], ace=raw_equipment.get("api_alv", Equipment().ace)))
             self.equipment_pool[self.ID].append(Equipment())
-        except FileNotFoundError:
+        except FileNotFoundError as e:
             Log.log_error("Equipment data not found, please start kcauto from splash screen")
             Log.log_error(e)
             
@@ -156,8 +155,6 @@ class EquipmentCore(object):
         equipment_str_id = str(equipment.model_id)
 
         if equipment_str_id in self.reinforce_special:
-            if self.reinforce_special[equipment_str_id]["api_req_level"] > equipment.stars:
-                return False
             
             if \
             (self.reinforce_special[equipment_str_id].get("api_ship_ids", None) != None \
@@ -173,9 +170,14 @@ class EquipmentCore(object):
                 (str(ship.ship_type.id) in self.reinforce_special[equipment_str_id]["api_stypes"] 
                     or
                 str(ShipTypeEnum.WILDCARD.id) in self.reinforce_special[equipment_str_id]["api_stypes"])):
-                return True
-        elif equipment.category in self.reinforce_general_category:
-                return True
+                
+                if self.reinforce_special[equipment_str_id]["api_req_level"] > equipment.stars:
+                    return False
+                else:
+                    return True
+                
+        if equipment.category in self.reinforce_general_category:
+            return True
             
         return False
 
