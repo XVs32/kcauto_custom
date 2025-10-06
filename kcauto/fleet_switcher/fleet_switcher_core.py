@@ -385,7 +385,7 @@ class FleetSwitcherCore(object):
                    
         return any_unload
       
-    def unload_ship(self, ship: Ship, idle_ship_list = None, load_random = False):
+    def unload_ship(self, ship: Ship, idle_ship_list : list[Ship] = None, load_random = False):
         """
             unload a ship in the specified fleet, assume nav in equipment page already
             input: 
@@ -393,8 +393,10 @@ class FleetSwitcherCore(object):
                 ship_id: int, ship production id
         """
         
-        if idle_ship_list == None:
-            idle_ship_list = self._idel_ships_sorted_by_equipment
+        ships_to_check = idle_ship_list
+        
+        if ships_to_check == None:
+            ships_to_check = self._idel_ships_sorted_by_equipment
           
         target_fleet = OTHER_FLEET_ID
         
@@ -408,7 +410,10 @@ class FleetSwitcherCore(object):
         if target_fleet == OTHER_FLEET_ID:
             
             Log.log_msg(f'Ship {ship.name} is not in any fleet, unload from idle fleet')
-            idx = idle_ship_list.index(ship) 
+            for k, idle_ship in enumerate(ships_to_check):
+                if ship.production_id == idle_ship.production_id:
+                    idx = k
+                    break
             ssw.ship_switcher.select_replacement_row(row_idx=idx, ship=ship, mode= ssw.ship_switcher.EQUIPMENT_SHIP_MODE)
              
         else:
