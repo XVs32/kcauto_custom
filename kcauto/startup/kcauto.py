@@ -293,10 +293,10 @@ class Kcauto(object):
             noro6 = Noro6()
             if noro6.get_map(cfg.config.combat.sortie_map.value) == None:
                 if noro6.get_map(cfg.config.combat.sortie_map.without_quest) == None:
-                    Log.log_error(f"Map: {cfg.config.combat.sortie_map.without_quest} not found in Noro6 config")
-                    exit(1)
+                    Log.log_warn(f"Map: {cfg.config.combat.sortie_map.without_quest} not found in Noro6 config")
             
-            cfg.config.combat.config_override({"combat.fleet_mode":noro6.get_fleet_mode().config_name})
+            if noro6.get_fleet_mode() is not None:
+                cfg.config.combat.config_override({"combat.fleet_mode":noro6.get_fleet_mode().config_name})
 
             if os.path.isfile(COMBAT_CONFIG + cfg.config.combat.sortie_map.value + ".json"):
                 default_json = cfg.config.load_json(COMBAT_CONFIG + cfg.config.combat.sortie_map.value + ".json")
