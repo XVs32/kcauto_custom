@@ -1012,9 +1012,8 @@ class Kca(object):
             api (bool): api hook or not(default True)
         """
         
-        
-        chrome = PyChromeDevTools.ChromeInterface(host="localhost", port=9222)
         port = cfg.config.general.chrome_dev_port
+        chrome = PyChromeDevTools.ChromeInterface(host="localhost", port=port)
         if target == "api":
             self.api_hook = PyChromeDevTools.ChromeInterface(
                 host=host, port=port)
@@ -1032,8 +1031,10 @@ class Kca(object):
 
 
     async def get_html(self, url):
+        
+        port = cfg.config.general.chrome_dev_port
         # Connect to the Chrome browser
-        browser = await connect(browserURL='http://localhost:9222')
+        browser = await connect(browserURL='http://localhost:'+str(port))
 
         # Create a new background tab
         page = await browser.newPage()

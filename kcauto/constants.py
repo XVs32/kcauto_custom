@@ -32,7 +32,7 @@ CONTEXT_AUTO_PVP = 8
 
 # chrome hook url targets
 DEFAULT_CHROME_DEV_PORT = 9222
-VISUAL_URL = 'http://www.dmm.com/netgame/social/-/gadgets/=/app_id=854854'
+VISUAL_URL = 'https://play.games.dmm.com/game/kancolle'
 STRATEGY_ROOM_URL = 'chrome-extension://hkgmldnainaglpjngpajnnjfhpdjkohh/pages/strategy/strategy.html'
 API_URL = 'kcs2/index.php'
 
