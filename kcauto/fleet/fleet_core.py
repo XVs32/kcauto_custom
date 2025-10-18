@@ -105,6 +105,18 @@ class FleetCore(object):
                     cfg.config.combat.fleet_mode.value):
                 return [self.fleets[self.ACTIVE_FLEET_KEY][1], self.fleets[self.ACTIVE_FLEET_KEY][2]]
         return []
+    
+    @property
+    def pvp_fleets(self):
+        """method to get the pvp fleet
+
+        Returns:
+            List[Fleet]: the pvp fleet if pvp is enabled, List is used to keep consistent with combat_fleets, [] if pvp is not enabled
+        """
+        if cfg.config.pvp.enabled:
+            return [self.fleets[self.ACTIVE_FLEET_KEY][1]]
+        return []
+    
 
     @property
     def combined_fleet(self):
@@ -115,17 +127,24 @@ class FleetCore(object):
         return cfg.config.combat.fleet_mode is FleetModeEnum.STRIKE
 
     @property
-    def pvp_fleet(self):
-        if cfg.config.pvp.enabled:
-            return self.fleets[self.ACTIVE_FLEET_KEY][1]
-        return []
-
-    @property
-    def ships_in_fleets(self):
+    def ships_in_fleets(self) -> list[Ship]:
         ships = []
         for fleet_id in self.fleets[self.ACTIVE_FLEET_KEY]:
-            ships.extend(self.fleets[self.ACTIVE_FLEET_KEY][fleet_id].ship_ids)
+            ships.extend(self.fleets[self.ACTIVE_FLEET_KEY][fleet_id].ships)
         return ships
+
+    @property
+    def ships_not_in_fleets(self) -> list[Ship]:
+        
+        ships_in_fleets = self.ships_in_fleets
+        
+        ship_pool = shp.ships.ship_pool.copy()
+        for ship in ships_in_fleets:
+            if ship.production_id in ship_pool:
+                ship_pool.pop(ship.production_id)
+            else: 
+                Log.log_warn(f"ship {ship.name} not found in ship pool")
+        return ship_pool.values()
 
     @property
     def expedition_fleets(self) -> list[Fleet]:
@@ -282,6 +301,7 @@ class FleetCore(object):
         """
         
         equipment_pool_read_only = equ.equipment.equipment_pool[equ.equipment.ID].copy()
+        equ.equipment.equipment_pool[equ.equipment.NON_NORO6] = equ.equipment.equipment_pool[equ.equipment.ID].copy()
         
         if cfg.config.expedition.is_auto_mode == False:
             Log.log_warn("Expedition mode manual, please make sure expedition fleet doesn't occupy noro6's ship and equipment")
@@ -301,6 +321,8 @@ class FleetCore(object):
         
         ret = {}
         noro6 = Noro6()
+        
+        panic_flag = False
         
         for preset in noro6.presets:
             
@@ -343,15 +365,13 @@ class FleetCore(object):
                             
                         if this_equipment == None:
                             Log.log_error(f"Failed finding equipment for {preset['name']}, exit...")
-                            exit(0)
+                            panic_flag = True
+                            break
                         
-                        #check if this_equipment is eq obj
-                        if not isinstance(this_equipment, Equipment):
-                            Log.log_error(f"DEBUG1: hit")
-                            exit(0)
                         ship.equipments.append(this_equipment)
                         
                         equ.equipment._remove_from_pool(this_equipment, pool=equ.equipment.ID)
+                        equ.equipment._remove_from_pool(this_equipment, pool=equ.equipment.NON_NORO6)
                         
                     reinforce_equipment = noro6.get_reinforce_equipment()
                     if reinforce_equipment["i"] > 0:
@@ -368,6 +388,7 @@ class FleetCore(object):
                         #remove this equipment from equipment pool
                         if  this_equipment != None and this_equipment.model_id != None:
                             equ.equipment._remove_from_pool(this_equipment, pool=equ.equipment.ID)
+                            equ.equipment._remove_from_pool(this_equipment, pool=equ.equipment.NON_NORO6)
                     elif reinforce_equipment["i"] == 0:
                         ship.slot_ex = None
                     elif reinforce_equipment["i"] == -1:
@@ -380,9 +401,12 @@ class FleetCore(object):
                 
                 ret[preset_name][fleet_id] = temp
 
-            equ.equipment.equipment_pool[equ.equipment.NON_NORO6] = equ.equipment.equipment_pool[equ.equipment.ID].copy()
             #restore equipment pool for next noro6 preset
-            equ.equipment.equipment_pool[equ.equipment.ID] = equipment_pool_bak.copy()                    
+            equ.equipment.equipment_pool[equ.equipment.ID] = equipment_pool_bak.copy()     
+            
+        if panic_flag == True:
+            Log.log_error("Something goes wrong when setting up Noro6 fleet, exiting...")
+            exit()               
             
         equ.equipment.equipment_pool[equ.equipment.ID] = equipment_pool_read_only.copy()
         
@@ -397,6 +421,14 @@ class FleetCore(object):
                     Log.log_debug(f"{ship.name} ({ship.ship_type.name}) - Level: {ship.level}, \
                         Equipment name and production id: {[f'{eq.name} {eq.production_id}' for eq in ship.equipments]}, \
                         Slot Ex: {f'{ship.slot_ex.name} {ship.slot_ex.production_id}' if ship.slot_ex != None else 'None'}")
+                    
+        #print out the whole NON_NORO6 equipment pool in debug log
+        Log.log_debug(f"NON_NORO6 equipment pool after Noro6 preset load:")
+        for equipment in equ.equipment.equipment_pool[equ.equipment.NON_NORO6]:
+            ret_str = f"Equipment ID {equipment.production_id}: "
+            ret_str += f"{equipment.name} ({equipment.stars}★)"
+            Log.log_debug(ret_str)
+            
                     
         return ret
  
@@ -511,8 +543,8 @@ class FleetCore(object):
         TYPE_NA = 0
         TYPE_DD = 2
         
-        CATEGORY_DRUM = 30
-        CATEGORY_LC = 24
+        DRUM_MODELS = [75]
+        LC_MODELS = [68, 193]
         
         NAME_ID_DRUM = 75
         NAME_ID_LC = 68
@@ -545,14 +577,14 @@ class FleetCore(object):
                     continue
                 # Check if the ship could load LC first
                 if req_lc > 0:
-                    if equ.equipment.is_available_category(ship, CATEGORY_LC):
+                    if len(equ.equipment.is_available_equipments(ship, [Equipment(model_id= model_id) for model_id in LC_MODELS])) == len(LC_MODELS):
                         
                         #@todo if the ship is kinu kai 2, she has +1 lc
                         
                         lc_count = min(req_lc, ship.slot_num)
                          
                         temp_ship = copy.deepcopy(ship)
-                        temp_ship.fill_with_equipment(NAME_ID_LC, lc_count)
+                        temp_ship.fill_with_equipment(NAME_ID_LC, lc_count, True)
                         
                         if temp_ship.equipments != []:
                             req_lc -= lc_count
@@ -574,7 +606,7 @@ class FleetCore(object):
                     continue
                 # Check if the ship could load drum, if she can't load LC  
                 if (req_dc > 0 or req_dc_carrier > 0):
-                    if equ.equipment.is_available_category(ship, CATEGORY_DRUM):
+                    if len(equ.equipment.is_available_equipments(ship, [Equipment(model_id= model_id) for model_id in DRUM_MODELS])) == len(DRUM_MODELS):
                             
                         req_dc_carrier = max(req_dc_carrier, 1) #make it at least one dc carrier needed, for easier math
                         
@@ -637,21 +669,18 @@ class FleetCore(object):
         
         START_UP = -1
         
-        available_fleets = []
-        for fleet in self.expedition_fleets:
-            if exp.expedition.cur_exp[fleet.fleet_id - 1] == ExpeditionEnum.NULL:
-                available_fleets.append(fleet)
-            
         flag = False
-        for fleet in available_fleets:
-            if fleet_id == START_UP:
-                return fleet.fleet_id
-            
-            if fleet.fleet_id == fleet_id and len(available_fleets) > 1:
+        if fleet_id == START_UP:
+            flag = True 
+        for fleet in self.expedition_fleets:
+            if fleet.at_base == False:
+                continue
+            if fleet.fleet_id == fleet_id:
                 flag = True
             elif flag == True:
                 return fleet.fleet_id
-            
+        
+        Log.log_debug(f"Failed to get next expedition fleet id, current fleet id: {fleet_id}, return None")        
         return None
 
     def _get_exp_ship_requirement_from_composition(self, composition):

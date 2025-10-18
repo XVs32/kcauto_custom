@@ -19,6 +19,7 @@ class PvPCore(CoreBase):
     module_display_name = 'PvP'
     available_pvp = []
     next_pvp_time = None
+    next_pvp_quest = None
 
     def __init__(self):
         self.update_from_config()

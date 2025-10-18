@@ -116,7 +116,7 @@ class Recovery(object):
 
             elif kca_u.kca.exists(screen, 'nav|home_menu_sortie.png'):
                 kca_u.kca.find_kancolle()
-                exp.expedition.receive_expedition()
+                kca_u.kca.receive_expedition()
                 return True
 
             else:

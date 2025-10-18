@@ -15,6 +15,8 @@ import cui.sortie as sortie
 import cui.ship_switch as ship_switch
 import cui.passive_repair as passive_repair
 import cui.scheduler as scheduler
+import cui.quest as quest 
+import cui.factory as factory
 import cui.util as util
 
 process = None
@@ -52,14 +54,23 @@ def init():
     curses.init_pair(SCHEDULER, curses.COLOR_BLACK, curses.COLOR_MAGENTA)
     curses.init_pair(PVP,       curses.COLOR_BLACK, curses.COLOR_GREEN)
     curses.init_pair(EXP,       curses.COLOR_BLACK, curses.COLOR_CYAN)
+    curses.init_pair(REPAIR,    curses.COLOR_BLACK, 11) 
+    curses.init_pair(FACTORY,   curses.COLOR_BLACK, 138)
     curses.init_pair(LOG,       curses.COLOR_WHITE, curses.COLOR_BLACK)
+    curses.init_pair(STEEL,     curses.COLOR_BLACK, 247)
+    curses.init_pair(CONSTRUCT, curses.COLOR_BLACK, 209)
+    curses.init_pair(DEVELOP,   curses.COLOR_BLACK, 35)
 
-    curses.init_pair(SORTIE + len(panels),    curses.COLOR_WHITE, curses.COLOR_RED)
-    curses.init_pair(SCHEDULER + len(panels), curses.COLOR_WHITE, curses.COLOR_MAGENTA)
-    curses.init_pair(PVP + len(panels),       curses.COLOR_WHITE, curses.COLOR_GREEN)
-    curses.init_pair(EXP + len(panels),       curses.COLOR_WHITE, curses.COLOR_CYAN)
-    curses.init_pair(LOG + len(panels),       curses.COLOR_BLACK, curses.COLOR_WHITE)
-
+    curses.init_pair(SORTIE + COLOR_REVERT,    curses.COLOR_WHITE, curses.COLOR_RED)
+    curses.init_pair(SCHEDULER + COLOR_REVERT, curses.COLOR_WHITE, curses.COLOR_MAGENTA)
+    curses.init_pair(PVP + COLOR_REVERT,       curses.COLOR_WHITE, curses.COLOR_GREEN)
+    curses.init_pair(EXP + COLOR_REVERT,       curses.COLOR_WHITE, curses.COLOR_CYAN)
+    curses.init_pair(REPAIR + COLOR_REVERT,    curses.COLOR_WHITE, 11)
+    curses.init_pair(FACTORY + COLOR_REVERT,   curses.COLOR_WHITE, 138)
+    curses.init_pair(LOG + COLOR_REVERT,       curses.COLOR_BLACK, curses.COLOR_WHITE)
+    curses.init_pair(CONSTRUCT + COLOR_REVERT, curses.COLOR_WHITE, 209)
+    curses.init_pair(DEVELOP + COLOR_REVERT,   curses.COLOR_WHITE, 35)
+    
     curses.init_pair(LOG_RED,       curses.COLOR_RED,   curses.COLOR_BLACK)
     curses.init_pair(LOG_GREEN,     curses.COLOR_GREEN, curses.COLOR_BLACK)
     curses.init_pair(LOG_YELLOW,    curses.COLOR_YELLOW,curses.COLOR_BLACK)
@@ -68,9 +79,9 @@ def init():
 
 
 def resize_panel():
-    if curses.LINES < 8:
+    if curses.LINES < util.WINDOW_MIN_HEIGHT:
         raise ValueError("Error: Window too small(make it taller)")
-    if curses.COLS < 45:
+    if curses.COLS < util.WINDOW_MIN_WIDTH:
         raise ValueError("Error: Window too small(make it wider)")
 
     # Define the sub-panels
@@ -103,12 +114,11 @@ def resize_panel():
 
     # Turn on scrolling for the log window
     log_panel.scrollok(True)
-
+    
     global panels
     # Define the panels list
     panels = {EXP:expedition_panel, SORTIE: sortie_panel, SCHEDULER: scheduler_panel, PVP: pvp_panel, LOG: log_panel}
-
-
+    
 def draw_menu(stdscr):
 
     init()
@@ -153,6 +163,14 @@ def draw_menu(stdscr):
 
             # Wait for next input
             k = stdscr.getch()
+        elif k == ord('?'):
+            kc_auto = open_pop_up(kc_auto, stdscr, QUEST)
+            panels[LOG].redrawwin()
+            k = 0
+        elif k == ord('f') or k == ord('"'):
+            kc_auto = open_pop_up(kc_auto, stdscr, FACTORY)
+            panels[LOG].redrawwin()
+            k = 0
         else:
             # Wait for next input
             k = stdscr.getch()
@@ -214,7 +232,7 @@ def update_active_panel(active_panel):
 
     for panel in panels:
         if panel == active_panel:
-            panels[panel].bkgd(curses.color_pair(panel + 5))
+            panels[panel].bkgd(curses.color_pair(panel + COLOR_REVERT))
         else:
             panels[panel].bkgd(curses.color_pair(panel))
 
@@ -224,8 +242,8 @@ def open_pop_up(thread, stdscr, active_panel):
     util.pop_up_lock = True
 
     # Create the pop-up window
-    height =  max(3 * curses.LINES // 5, 7)
-    width = max(3 * curses.COLS // 7, 25)
+    height =  min(max(3 * curses.LINES // 5, util.WINDOW_MIN_HEIGHT), util.POP_UP_MAX_HEIGHT)
+    width = max(3 * curses.COLS // 7, util.WINDOW_MIN_WIDTH)
     top = curses.LINES // 2 - height // 2 
     left = curses.COLS // 2 - width // 2
     popup_win = curses.newwin(height, width, top, left)
@@ -255,29 +273,37 @@ def open_pop_up(thread, stdscr, active_panel):
             passive_repair.set_config(config, 0)
         else:
             ship_switch.set_config(config, {})
-            passive_repair.set_config(config, 2)
+            passive_repair.set_config(config, 1)
 
     elif active_panel == SCHEDULER :
         end_time = scheduler.get_end_time(config)
         sortie_count = scheduler.get_sortie_count(config)
         end_time, sortie_count = scheduler.pop_up_menu(stdscr, popup_win, end_time, sortie_count)
         scheduler.set_config(config, end_time, sortie_count)
+    elif active_panel == QUEST:
+        quest.pop_up_menu(stdscr, popup_win, config)
+        quest.set_config(config)
+    elif active_panel == FACTORY:
+        factory.pop_up_menu(stdscr, popup_win, config)
+        factory.set_config(config)
+        
+    
     elif active_panel == LOG :
 
-        isYes=False
+        is_yes=False
         while 1:
             x, y = util.get_center_str_location(popup_win, "Reload config?")
-            popup_win.addstr(y-1, x, "Reload config?", curses.color_pair(5))
-            if isYes:
+            popup_win.addstr(y-1, x, "Reload config?", curses.color_pair(LOG))
+            if is_yes:
                 x, y = util.get_center_str_location(popup_win, "Yes")
-                popup_win.addstr(y, x, "Yes", curses.color_pair(12))
+                popup_win.addstr(y, x, "Yes", curses.color_pair(LOG_GREEN_ACTIVE))
                 x, y = util.get_center_str_location(popup_win, "No")
-                popup_win.addstr(y + 1, x, "No", curses.color_pair(5))
+                popup_win.addstr(y + 1, x, "No", curses.color_pair(LOG))
             else:
                 x, y = util.get_center_str_location(popup_win, "Yes")
-                popup_win.addstr(y, x, "Yes", curses.color_pair(5))
+                popup_win.addstr(y, x, "Yes", curses.color_pair(LOG))
                 x, y = util.get_center_str_location(popup_win, "No")
-                popup_win.addstr(y + 1, x, "No", curses.color_pair(12))
+                popup_win.addstr(y + 1, x, "No", curses.color_pair(LOG_GREEN_ACTIVE))
             popup_win.refresh()
             for panel in panels:
                 # Refresh the sub-panels
@@ -287,11 +313,11 @@ def open_pop_up(thread, stdscr, active_panel):
             key = stdscr.getch()
 
             if key == curses.KEY_DOWN or key == ord('j'):
-                isYes = False
+                is_yes = False
             elif key == curses.KEY_UP or key == ord('k'):
-                isYes = True
+                is_yes = True
             elif key == KEY_ENTER:
-                if isYes == True:
+                if is_yes == True:
                     # open the file for writing
                     with open('configs/config_cui.json', 'w', encoding='utf-8') as output:
                         # parse the JSON data using json.load()
@@ -307,6 +333,12 @@ def open_pop_up(thread, stdscr, active_panel):
                 break
 
     util.pop_up_lock = False
+    
+    for log in util.log_buffer:
+        util.print_log(panels[LOG], log)
+    
+    util.log_buffer = []
+    
     return thread
 
 def get_next_active_panel(active_panel, key):

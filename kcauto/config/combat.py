@@ -14,7 +14,7 @@ import combat.lbas_core as lbas
 class ConfigCombat(ConfigBase):
     _enabled = False
     _fleet_presets = []
-    _sortie_map = None
+    _sortie_map : MapEnum = None
     _sortie_map_read_only = None
     _fleet_mode = None
     _retreat_points = []
@@ -164,11 +164,11 @@ class ConfigCombat(ConfigBase):
         return False
 
     @property
-    def sortie_map(self):
+    def sortie_map(self) -> MapEnum:
         return self._sortie_map
 
     @sortie_map.setter
-    def sortie_map(self, value):
+    def sortie_map(self, value : str):
         """ 
             Method that set the value of _sortie_map
         

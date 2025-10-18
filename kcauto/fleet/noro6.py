@@ -1,6 +1,6 @@
 from kca_enums.fleet import FleetEnum
 
-from constants import VISUAL_DAMAGE, FLEET_NUMBER_ICON
+from constants import VISUAL_DAMAGE, FLEET_ID_ICON
 from util.logger import Log
 import json
 from util.json_data import JsonData
@@ -53,6 +53,7 @@ class Noro6(object):
         
         """
         method to get the config by name
+        name(str): map name
         Returns:
         """
         for preset in self.presets:

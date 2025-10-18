@@ -130,7 +130,7 @@ class CombatCore(CoreBase):
                 MULTI_STAGE_MAP_ID = [72, 73, 75]
                 if api_id in MULTI_STAGE_MAP_ID:
                     self.available_maps[map_enum.world_and_map] = {
-                    'gauge_num': map_data['api_gauge_num']
+                    'gauge_num': (map_data['api_gauge_num'] if "api_required_defeat_count" in map_data else 0),
                     }
 
             else:
@@ -159,7 +159,7 @@ class CombatCore(CoreBase):
                 Log.log_msg("Port is full.")
                 self.set_next_sortie_time(15)
                 return False
-        if cfg.config.combat.sortie_map == MapEnum.auto_map_selete: #No map available in auto sortie map select mode
+        if cfg.config.combat.sortie_map == MapEnum.auto_map_select: #No map available in auto sortie map select mode
                 return False
         if cfg.config.combat.sortie_map.world == 'E':
             if shp.ships.ship_count >= shp.ships.max_ship_count - 5:
@@ -797,11 +797,15 @@ class CombatCore(CoreBase):
         Log.log_msg(f"Set sortie queue {self.sortie_queue}")
 
 
-    def get_sortie_queue(self):
+    def get_sortie_queue(self) -> list[MapEnum]:
         """
             method for other modules to read the sortie_queue in combat module
         """
-        return self.sortie_queue
+        ret = []
+        for sortie_map in self.sortie_queue:
+            ret.append(MapEnum(sortie_map))
+        
+        return ret
     
     def pop_sortie_queue(self):
         """

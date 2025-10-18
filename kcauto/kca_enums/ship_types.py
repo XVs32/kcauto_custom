@@ -25,6 +25,8 @@ class ShipTypeEnum(EnumBase):
     AS = 20
     CT = 21
     AO = 22
+    
+    WILDCARD = 99 #Has to be 99 for api compatibility
 
     @property
     def type(self):

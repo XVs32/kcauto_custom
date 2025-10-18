@@ -3,6 +3,7 @@ from util.pyvisauto import Region
 
 import api.api_core as api
 import combat.combat_core as com
+import pvp.pvp_core as pvp
 import config.config_core as cfg
 import fleet.fleet_core as flt
 from fleet.fleet import Fleet
@@ -52,6 +53,9 @@ class RepairCore(object):
             if self.is_passive_repair_needed:
                 if (    cfg.config.passive_repair.slots_to_reserve
                         >= self.docks_available_count):
+                    
+                    Log.log_debug(f"Not enough docks {self.docks_available_count} withour reserve {cfg.config.passive_repair.slots_to_reserve}.")
+                    
                     return False
                 return True
         return False
@@ -97,34 +101,43 @@ class RepairCore(object):
         idx_of_combat_ships = {}
         idx_of_passive_ships = {}
         
-        TEMP_FLEET_ID = 1
-        temp_fleet = (Fleet("unload_equipment", FleetEnum.COMBAT, False))
-        temp_fleet.ships = []
-            
+        count = 0    
+        in_equipment_page = False
         for idx, ship in enumerate(repair_list):
             
             if ship.production_id in self.ships_under_repair:
                 continue
-            elif ship in flt.fleets.combat_ships:
+            
+            if count >= self.docks_available_count:
+                break
+            
+            elif ship in flt.fleets.combat_ships and (com.combat.enabled or pvp.pvp.enabled):
+                
                 if ship.damage >= cfg.config.combat.repair_limit:
                     idx_of_combat_ships[idx] = ship
+                    count += 1
+                    
             elif cfg.config.passive_repair.enabled:
+                
+                if count >= self.docks_available_count - cfg.config.passive_repair.slots_to_reserve:
+                    continue
+                
                 if ship.damage >= cfg.config.passive_repair.repair_threshold:
                     if ship not in flt.fleets.active_ships:
+                        if ship.has_equipment() == True:
+                            
+                            if in_equipment_page == False:
+                                in_equipment_page = True
+                                equ.equipment.goto()
+                                
+                            fsw.fleet_switcher.unload_ship(ship)
+                            
                         idx_of_passive_ships[idx] = ship
-                        if ship.has_no_equipment() == False:
-                            temp_fleet.ships.append(ship)
-                        
-        if temp_fleet.ships != []:
-            fsw.fleet_switcher.goto()
-            if fsw.fleet_switcher.switch_to_costom_fleet(TEMP_FLEET_ID, {TEMP_FLEET_ID:temp_fleet}):
-                nav.navigate.to('refresh_home')
-                nav.navigate.to('equipment')
-                fsw.fleet_switcher.unload_fleet_equipment(fleet_id=TEMP_FLEET_ID, needed_load=False)
-                self.goto()
-            else:
-                Log.log_error("kcauto failed to load the selected ship, exiting...")
-
+                        count += 1
+                            
+        if count > 0:
+            self.goto()
+        
         while self.can_conduct_repairs:
             if len(idx_of_combat_ships) + len(idx_of_passive_ships) == 0:
                 Log.log_debug("No combat or passive ships to repair.")
@@ -143,15 +156,8 @@ class RepairCore(object):
                 self._check_repair_sort()
                 self._select_ship(idx, ship)
                 
-                if status == self.UNLOAD_NEEDED:
-                    fsw.fleet_switcher.unload_ship(1, ship)
-                    status = self._start_repair(ship, "force")
-                else:
-                    status = self._start_repair(ship, context)
+                status = self._start_repair(ship, context)
                     
-                if status == self.UNLOAD_NEEDED:
-                    continue
-                
                 if idx in idx_of_combat_ships:
                     com.combat.set_next_sortie_time(
                         idx_of_combat_ships[idx].repair_time_delta)
@@ -208,11 +214,9 @@ class RepairCore(object):
         Log.log_msg(f"Selecting lvl{ship.level} {ship.name} (pg{page}#{idx}).")
         if page > 1:
             tot_pages = shp.ships.ship_count // 10
-            list_control_region = Region(
-                kca_u.kca.game_x + 610, kca_u.kca.game_y + 660, 490, 45)
             nav.navigate_list.to_page(
-                list_control_region, tot_pages, self.current_repair_list_page,
-                page, 'repair')
+                tot_pages, self.current_repair_list_page,
+                page, nav.navigate_list.OP_MODE_REPAIR)
             self.current_repair_list_page = page
         repair_list_region = Region(
             kca_u.kca.game_x + 596,
@@ -232,9 +236,6 @@ class RepairCore(object):
             kca_u.kca.click_existing(
                 'right', 'repair|bucket_switch.png', cached=True)
             status = self.BUCKET_USED
-        elif context == 'force':
-            status = self.UNLOAD_NEEDED 
-            return status
             
         kca_u.kca.click_existing(
             'right', 'repair|repair_confirm_1.png', cached=True)
@@ -266,12 +267,15 @@ class RepairCore(object):
     @property
     def _local_ships_sorted_by_repair(self):
         return sorted(
-            [shp.ships.ship_pool[s] for s in shp.ships.ship_pool],
+            shp.ships.ship_pool.values(),
             key=lambda ship: (ship.hp_p, ship.sort_id, ship.production_id))
 
     @property
     def is_combat_repair_needed(self):
-        if cfg.config.combat.enabled:
+        if com.combat.enabled or pvp.pvp.enabled:
+            
+            #@todo this function do not know if combat fleet or pvp fleet needs repair
+            
             for fleet in flt.fleets.combat_fleets:
                 if fleet.under_repair:
                     return False

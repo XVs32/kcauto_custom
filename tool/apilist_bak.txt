@@ -301,8 +301,10 @@ api_start2/getData	：艦娘・装備固有データその他
 				57=噴式戦闘爆撃機
 				58=噴式攻撃機
 				59=噴式偵察機
+				91=噴式戦闘爆撃機(II)
 				93=大型電探(II)
 				94=艦上偵察機(II)
+				95=副砲(II)
 
 			[3]：アイコンID
 				 1=小口径主砲
@@ -1031,7 +1033,7 @@ api_get_member/picture_book	：艦船図鑑　図鑑登録済みのもののみ�
 			46=三式潜航輸送艇
 			47=Bismarck級
 			48=Z1型
-			49=工作艦
+			49=明石型
 			50=大鯨型
 			51=龍鳳型
 			52=大淀型
@@ -1091,6 +1093,30 @@ api_get_member/picture_book	：艦船図鑑　図鑑登録済みのもののみ�
 			106=St. Louis級
 			107=North Carolina級
 			108=Town級
+			109=潜高型
+			110=Brooklyn級
+			111=耐氷型雑用運送艦
+			112=Illustrious級
+			113=Conte di Cavour級
+			114=Gato級
+			115=特2TL型
+			116=Independence級
+			117=鵜来型
+			118=Ranger級
+			119=特種船M丙型
+			120=二等輸送艦
+			121=New Orleans級
+			122=Salmon級
+			123=改敷島型
+			124=Marcello級
+			125=Nevada級
+			126=改氷川丸級
+			127=巡潜乙型改一
+			128=La Galissonnière級
+			129=Mogador級
+			130=大泊型
+			131=Киров級
+			132=特1TL型
 		api_cnum			：艦番
 		api_taik			：耐久
 		api_souk			：装甲

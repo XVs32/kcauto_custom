@@ -1,0 +1,22 @@
+{
+  "exact_expedition": [
+    "Dw2",
+    "Dw3",
+    "Dm1",
+    "Dq1",
+    "Dq2",
+    "Dy1",
+    "Dy2",
+    "Dy3",
+    "Dy4",
+    "Dy5",
+    "Dy6",
+    "Dy7",
+    "Dy8"
+  ],
+  "any_expedition": [
+    "Dd1",
+    "Dd2",
+    "Dw1"
+  ]
+}
