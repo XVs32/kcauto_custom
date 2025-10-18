@@ -1,6 +1,6 @@
 # kcauto_custom
 
-### ***Latest download(2025/07/10)*** [***here***](https://github.com/XVs32/kcauto_custom/releases/tag/v3.1.2) 
+### ***Latest download(2025/10/19)*** [***here***](https://github.com/XVs32/kcauto_custom/releases/tag/v3.1.3) 
 
 **[kcauto_custom](https://github.com/XVs32/kcauto_custom)** is a linux customized version of an archived project [kcauto](https://github.com/perryhuynh/kcauto) that includes additional features and functionality.  
 In comparison with **kcauto**, **kcauto_custom** is less flexible while being more automatic for easy daily use.  
