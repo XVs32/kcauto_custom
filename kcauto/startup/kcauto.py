@@ -34,10 +34,10 @@ class Kcauto(object):
     skip_one_repair = False
 
     def __init__(self):
+        atexit.register(kca_u.kca.save_screenshots)
         kca_u.kca.hook_chrome()
 
     def start_kancolle(self):
-        atexit.register(kca_u.kca.save_screenshots)
         kca_u.kca.start_kancolle()
 
     def find_kancolle(self):
