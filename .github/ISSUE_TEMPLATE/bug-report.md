@@ -6,7 +6,7 @@ about: Basic bug report template
 
 #### Environment details
 
-* kcauto version (version on first line of `CHANGELOG.md`):
+* kcauto version (version shown on startup):
 * Operating system and/or VM:
 
 #### Issue variability
@@ -19,9 +19,12 @@ Please provide a thorough description of the issue. Screenshots, videos, or at l
 #### Log
 ```
 [insert ~50 lines of console log (or more) here; remove section if irrelevant]
+[Log can be found under `log` folder]
 ```
 
 #### Config
 ```
 [insert relevant config sections here; remove section if irrelevant]
+[Upload `configs/config_cui.json` for CUI user]
 ```
+
