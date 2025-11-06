@@ -344,6 +344,7 @@ class CombatCore(CoreBase):
         # Next node listener start
         self.combat_api_listener_enable = True
         next_node_listener = threading.Thread(target=self._next_node_handler)
+        next_node_listener.daemon = True 
         next_node_listener.start()
 
         conducting_sortie = True
