@@ -4,11 +4,12 @@
 
 **[kcauto_custom](https://github.com/XVs32/kcauto_custom)** is a linux customized version of an archived project [kcauto](https://github.com/perryhuynh/kcauto) that includes additional features and functionality.  
 In comparison with **kcauto**, **kcauto_custom** is less flexible while being more automatic for easy daily use.  
+User can setup their fleet and equipment configuration in [Noro6](https://noro6.github.io/kc-web/#/aircalc), then excute the plan with kcauto_custom.  
 This tool is designed to help users automate repetitive tasks such as Expedition, Combat, PvP, Repair & Resupply, ultimately saving time and improving efficiency. 
 
 ***Warnning*** : kcauto_custom is not made for Windows(althought it could theoretically run on Windows), I might or might not fix any compatibility issues.
 
-![Screenshot from 2023-05-05 23-42-59](https://user-images.githubusercontent.com/16824564/236490338-2930fada-2a0b-47da-958c-7d150b421c48.png)
+<img width="1340" height="1080" alt="image" src="https://github.com/user-attachments/assets/c5c4f4eb-55d4-4842-8502-7cd3efa4226a" />
 
 ---
 
@@ -39,7 +40,7 @@ This tool is designed to help users automate repetitive tasks such as Expedition
 * CUI(Character User Interface) for daily use cases
 * Akashi repair Module &mdash; Repair ships with akashi
 * Factory Module &mdash; Runs daily develop and ship building 
-* Noro6 support &mdash; Plan your fleet and equipemtn setup in Noro6, kcauto_custom runs it for you
+* Noro6 support &mdash; Plan your fleet and equipment setup in Noro6, kcauto_custom runs it for you
 * Equipment Switcher module &mdash; automatic switching of equipment presets for PvP, combat and expedition
 * Sortie mdoe: Auto &mdash; Automatically complete daily/weekly/monthly quest (KC3 is needed)
 * Expedition mode: Auto &mdash; Self balance expedition with auto ship switch
