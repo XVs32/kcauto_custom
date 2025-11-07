@@ -1,18 +1,16 @@
 {
-    "combat.clear_stop": true,
     "combat.repair_limit": 2,
     "combat.node_selects": [
         "A>F",
-        "F>J",
-        "L>M"
+        "F>J"
     ],
     "combat.lbas_groups": [
         1,
         2
     ],
     "combat.lbas_group_1_nodes": [
-        "O",
-        "O"
+        "N",
+        "N"
     ],
     "combat.lbas_group_2_nodes": []
 }
