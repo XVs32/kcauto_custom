@@ -71,7 +71,7 @@ def init():
 def getKc3kaiEdges():
     #read json file from kc3kai github
     import requests
-    url = 'https://raw.githubusercontent.com/KC3Kai/KC3Kai/refs/heads/master/src/data/edges.json'
+    url = 'https://raw.githubusercontent.com/KC3Kai/KC3Kai/refs/heads/develop/src/data/edges.json'
     response = requests.get(url)
     return response.json()
         
