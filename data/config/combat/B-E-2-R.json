@@ -1,8 +1,7 @@
 {
     "combat.repair_limit": 2,
     "combat.node_selects": [
-        "B>D",
-        "E>F"
+        "A>F"
     ],
     "combat.lbas_groups": [
         1,
@@ -10,7 +9,5 @@
     ],
     "combat.lbas_group_1_nodes": [],
     "combat.lbas_group_2_nodes": [],
-    "combat.retreat_points": [
-        "F"
-    ]
+    "combat.retreat_points": []
 }
