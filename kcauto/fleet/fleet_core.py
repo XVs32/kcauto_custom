@@ -199,14 +199,14 @@ class FleetCore(object):
             gets trigger on the first time when port api received
         """
         
-        if self.is_custom_fleet_loaded == False:
+        if not cfg.config.combat.is_auto_mode and not cfg.config.expedition.is_auto_mode and not cfg.config.pvp.is_auto_mode:
+            Log.log_success("Manual mode kcauto, noro6 config ignored")
+            self.is_custom_fleet_loaded = True
+            return
+        elif self.is_custom_fleet_loaded == False:
             self.is_custom_fleet_loaded = True
         elif self.is_custom_fleet_loaded == True:
             Log.log_debug("Custom fleets setting is already loaded")
-            return
-        elif not cfg.config.combat.is_auto_mode and not cfg.config.expedition.is_auto_mode and not cfg.config.pvp.is_auto_mode:
-            Log.log_success("Manual mode kcauto, noro6 config ignored")
-            self.is_custom_fleet_loaded = True
             return
         else:
             Log.log_error("Unexpected state for noro6 config load, exiting...")
