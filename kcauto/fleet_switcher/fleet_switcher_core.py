@@ -418,9 +418,10 @@ class FleetSwitcherCore(object):
              
         else:
             Log.log_debug(f'Ship {ship.name} is in fleet {fleet_id}, unload from there')
-            row_id = flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][fleet_id].ship_ids.index(ship.production_id)
-            kca_u.kca.click('ship_'+ str(row_id + 1)) 
+            ship_position = flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][fleet_id].ship_ids.index(ship.production_id)
             
+            click_ship_in_equipment_page(ship_position)
+      
         if load_random == True:
             #unload a ship to update equipment list
             kca_u.kca.click('1_slot_equipment') 
@@ -513,17 +514,7 @@ class FleetSwitcherCore(object):
                 Log.log_debug(f"equipment for ship {load_ship_id[i]} is already loaded")
                 continue
             
-            Log.log_debug(f"load the {i+1} ship")
-            
-            if i+1 == 7:
-                next_region = Region(
-                    kca_u.kca.game_x + 262,
-                    kca_u.kca.game_y + 676,
-                    32, 25)
-                kca_u.kca.click(next_region)
-                kca_u.kca.click('ship_'+ str(6)) 
-            else:
-                kca_u.kca.click('ship_'+ str(i + 1))
+            click_ship_in_equipment_page(i)
 
             first_load = True
             ssw.ship_switcher.current_page = 1
@@ -592,7 +583,25 @@ class FleetSwitcherCore(object):
                 api.api.update_from_api({KCSAPIEnum.FREE_EQUIPMENT}, need_all=True, timeout=30)
 
         return True
-
+    
+def click_ship_in_equipment_page(ship_position):
+    """
+        method to click a ship in equipment page
+        input: 
+            ship_position(int): position of the ship in the fleet, starts from 0
+    """
+    
+    Log.log_debug(f"Selecting the #{ship_position+1} ship")
+    
+    if ship_position+1 == 7:
+        next_region = Region(
+            kca_u.kca.game_x + 262,
+            kca_u.kca.game_y + 676,
+            32, 25)
+        kca_u.kca.click(next_region)
+        kca_u.kca.click('ship_'+ str(6)) 
+    else:
+        kca_u.kca.click('ship_'+ str(ship_position + 1))
 
         
 fleet_switcher = FleetSwitcherCore()
