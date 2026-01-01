@@ -140,11 +140,11 @@ class ExpeditionCore(CoreBase):
             for exp in self.exp_data:
                 
                 horuly_rsc = {}
-                horuly_rsc["fuel"] = exp["fuel"] / math.ceil(exp["time"] / pooling_interval) * pooling_interval 
-                horuly_rsc["ammo"] = exp["ammo"] / math.ceil(exp["time"] / pooling_interval) * pooling_interval 
-                horuly_rsc["steel"] = exp["steel"] / math.ceil(exp["time"] / pooling_interval) * pooling_interval 
-                horuly_rsc["baux"] = exp["baux"] / math.ceil(exp["time"] / pooling_interval) * pooling_interval 
-                horuly_rsc["bucket"] = (1 if exp["item"] == "bucket" else 0) / math.ceil(exp["time"] / pooling_interval) * pooling_interval 
+                horuly_rsc["fuel"] = exp["fuel"] / (math.ceil(exp["time"] / pooling_interval) * pooling_interval)
+                horuly_rsc["ammo"] = exp["ammo"] / (math.ceil(exp["time"] / pooling_interval) * pooling_interval)
+                horuly_rsc["steel"] = exp["steel"] / (math.ceil(exp["time"] / pooling_interval) * pooling_interval)
+                horuly_rsc["baux"] = exp["baux"] / (math.ceil(exp["time"] / pooling_interval) * pooling_interval) 
+                horuly_rsc["bucket"] = (1 if exp["item"] == "bucket" else 0) / (math.ceil(exp["time"] / pooling_interval) * pooling_interval)
                 
                 # Check and nullify overflowed resources
                 if sts.stats.rsc.fuel >= cfg.config.expedition.desire_oil:
