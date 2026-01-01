@@ -27,6 +27,15 @@ class ShipsCore(object):
         self.ship_library = data
         
     def get_ship_static_data(self,api_sortno, api_id = None):
+        """get ship static data from ship library with api_sortno or api_id
+
+        Args:
+            api_sortno (int): Picture book number of the ship
+            api_id (int, optional): model id of the ship. Defaults to None.
+
+        Returns:
+            ship static data (dict): ship static data from ship library, return none if not found
+        """
         
         search_key = "api_sortno"
         id = api_sortno
@@ -77,10 +86,16 @@ class ShipsCore(object):
             input: noro6 ship info
             output: kcauto ship obj
         """
-        ret = self.get_ship_from_production_id(noro_ship["un"])
-        if ret == None:
-            Log.log_error(f"Ship {self.get_ship_static_data(None, api_id=noro_ship['i'])['api_name']} #{noro_ship['i']} not found in ship pool, exiting...")
+        
+        ret = self.get_ship_from_production_id(noro_ship.get("un", 0))
+        
+        if ret is None:
+            static_data = self.get_ship_static_data(None, api_id=noro_ship['i'])
             
+            ship_name = static_data['api_name'] if static_data else "Unknown"
+            
+            Log.log_error(f"Ship {ship_name} #{noro_ship.get('i','Unknown')} not found in ship pool, exiting...")
+                
         return ret
 
 ships = ShipsCore()
