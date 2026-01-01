@@ -367,6 +367,8 @@ class FleetCore(object):
                             Log.log_error(f"Failed finding equipment for {preset['name']}, exit...")
                             panic_flag = True
                             break
+                        elif this_equipment.model_id == -1 and fleet_type == FleetEnum.COMBAT:
+                            Log.log_warn(f'In Noro6 preset {preset["name"]}, ship {ship.name} has empty equipment slot')
                         
                         ship.equipments.append(this_equipment)
                         
