@@ -6,15 +6,19 @@
         2
     ],
     "combat.lbas_group_1_nodes": [
-        "Q",
-        "Q"
+        "V",
+        "V"
     ],
     "combat.lbas_group_2_nodes": [
         "X",
-        "X"
+        "Q"
     ],
     "combat.node_smoke": [
         "V"
     ],
-    "combat.node_formations": []
+    "combat.node_formations": [
+        "O:combined_fleet_2",
+        "Q:combined_fleet_2",
+        "V:combined_fleet_2"
+    ]
 }
