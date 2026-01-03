@@ -352,6 +352,7 @@ class Kcauto(object):
         
         if passive_only == True:
             #passive repair only, temporarily disable combat and pvp module
+            log_temp = Log.enabled
             Log.enabled = False
             combat_temp = com.combat.enabled
             com.combat.enabled = False
@@ -371,7 +372,7 @@ class Kcauto(object):
             #restore combat and pvp module status
             com.combat.enabled = combat_temp
             pvp.pvp.enabled = pvp_temp
-            Log.enabled = True 
+            Log.enabled = log_temp 
             
 
     def _run_fleetswitch_logic(self, context):
