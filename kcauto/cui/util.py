@@ -2,6 +2,7 @@ import os
 import time
 import curses
 import subprocess
+import psutil
 from sys import platform, exit
 
 from cui.macro import *
@@ -16,6 +17,7 @@ pop_up_lock = False
 log_buffer = []
 
 process = None
+psutil_proc = None
 
 import re
 
@@ -68,58 +70,42 @@ def print_log(panel, string):
 
 def run_external_program(panel):
     # Start the external program and redirect its output
-    global process
     
-    if platform == "linux" or platform == "linux2":
+    global process, psutil_proc
+    
+    if platform.startswith("linux"):
         filename = "kcauto_custom"
-        if os.path.isfile(filename):
-            process = subprocess.Popen(
-                [f'./{filename}', '--cli', '--cfg', 'config_cui'],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                text=True,  # Enable text mode
-                encoding='utf-8'  # Ensure UTF-8 decoding
-            )
-            time.sleep(1)
-            print_log(panel, f"Starting from {filename}\n")
-        else:
-            process = subprocess.Popen(
-                ['python3', 'kcauto', '--cli', '--cfg', 'config_cui'],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                text=True,  # Enable text mode
-                encoding='utf-8'  # Ensure UTF-8 decoding
-            )
-            time.sleep(1)
-            print_log(panel, f"{filename} does not exist\n")
-            print_log(panel, "Start kcauto in Python instead\n")
-            
-    elif platform == "darwin" or platform == "win32": 
+        python_cmd = "python3"
+        exec_path = f"./{filename}"
+    elif platform in ["darwin", "win32"]:
         filename = "kcauto_custom.exe"
-        if os.path.isfile(filename):
-            process = subprocess.Popen(
-                [filename, '--cli', '--cfg', 'config_cui'],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                text=True,  # Enable text mode
-                encoding='utf-8'  # Ensure UTF-8 decoding
-            )
-            time.sleep(1)
-            print_log(panel, f"Starting from {filename}\n")
-        else:
-            process = subprocess.Popen(
-                ['python', 'kcauto', '--cli', '--cfg', 'config_cui'],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                text=True,  # Enable text mode
-                encoding='utf-8'  # Ensure UTF-8 decoding
-            )
-            time.sleep(1)
-            print_log(panel, f"{filename} does not exist\n")
-            print_log(panel, "Start kcauto in Python instead\n")
+        python_cmd = "python"
+        exec_path = filename
     else:
         raise TypeError("Non-supported OS.")
+
+    common_args = ['--cli', '--cfg', 'config_cui']
     
+    if os.path.isfile(filename):
+        cmd = [exec_path] + common_args
+        msg = f"Starting from {filename}\n"
+    else:
+        cmd = [python_cmd, "kcauto"] + common_args
+        msg = f"{filename} does not exist\nStart kcauto in Python instead\n"
+
+    # 3. 統一執行 subprocess
+    process = subprocess.Popen(
+        cmd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        encoding='utf-8'
+    )
+    psutil_proc = psutil.Process(process.pid)
+    
+    time.sleep(1)
+    print_log(panel, msg)
+      
     global pop_up_lock
     # Read and write the output to the desired panel
     for line in iter(process.stdout.readline, b''):
@@ -129,6 +115,9 @@ def run_external_program(panel):
 
     # Final log after the process ends
     print_log(panel, "kcauto ended\n")
+    
+    
+    
 
 def signal_handler(signal = None, frame = None):
     exit(0)
