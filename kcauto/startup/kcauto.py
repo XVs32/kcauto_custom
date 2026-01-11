@@ -13,6 +13,8 @@ import repair.repair_core as rep
 import resupply.resupply_core as res
 import scheduler.scheduler_core as sch
 import ship_switcher.ship_switcher_core as ssw
+import ships.ships_core as shp
+import ships.equipment_core as equ
 import stats.stats_core as sts
 import util.kca as kca_u
 from fleet.noro6 import Noro6 
@@ -129,7 +131,7 @@ class Kcauto(object):
 
         anything_is_done = False
 
-        if qst.quest.is_tracking_quest(Quest(name="Fd1")):
+        if qst.quest.is_tracking_quest(Quest(name="Fd1")) and not equ.equipment.is_equipment_pool_full():
             anything_is_done = True
 
             self._run_fleetswitch_logic('factory_develop')
@@ -138,7 +140,7 @@ class Kcauto(object):
             if fty.factory.develop_logic(1) == True:
                 nav.navigate.to('home')
 
-        if qst.quest.is_tracking_quest(Quest(name="Fd2")):
+        if qst.quest.is_tracking_quest(Quest(name="Fd2")) and not shp.ships.is_ship_pool_full():
             anything_is_done = True
             fty.factory.goto()
             if fty.factory.any_build_slot_available() == False:
@@ -154,7 +156,7 @@ class Kcauto(object):
                     # disable module for 60 mins
                     fty.factory.set_timer()
 
-        if qst.quest.is_tracking_quest(Quest(name="Fd3")):
+        if qst.quest.is_tracking_quest(Quest(name="Fd3")) and not equ.equipment.is_equipment_pool_full():
             anything_is_done = True
 
             self._run_fleetswitch_logic('factory_develop')
@@ -162,8 +164,8 @@ class Kcauto(object):
             fty.factory.goto()
             if fty.factory.develop_logic(3) == True:
                 nav.navigate.to('home')
-        
-        if qst.quest.is_tracking_quest(Quest(name="Fd4")):
+
+        if qst.quest.is_tracking_quest(Quest(name="Fd4")) and not shp.ships.is_ship_pool_full():
             anything_is_done = True
 
             if fty.factory.any_build_slot_available() == False:
