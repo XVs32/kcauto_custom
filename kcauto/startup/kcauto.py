@@ -130,57 +130,42 @@ class Kcauto(object):
         nav.navigate.to('home')
 
         anything_is_done = False
+        
+        quest_configs = [
+            {"id": "Fd1", "type": "develop", "count": 1, "is_full": equ.equipment.is_equipment_pool_full},
+            {"id": "Fd3", "type": "develop", "count": 3, "is_full": equ.equipment.is_equipment_pool_full},
+            {"id": "Fd2", "type": "build",   "count": 1, "is_full": shp.ships.is_ship_pool_full},
+            {"id": "Fd4", "type": "build",   "count": 3, "is_full": shp.ships.is_ship_pool_full},
+        ]
+        
+        for cfg in quest_configs:
+            if qst.quest.is_tracking_quest(Quest(name=cfg["id"])) and not cfg["is_full"]():
+                anything_is_done = True
+                
+                if cfg["type"] == "develop":
+                    self._run_fleetswitch_logic('factory_develop')
 
-        if qst.quest.is_tracking_quest(Quest(name="Fd1")) and not equ.equipment.is_equipment_pool_full():
-            anything_is_done = True
-
-            self._run_fleetswitch_logic('factory_develop')
-
-            fty.factory.goto()
-            if fty.factory.develop_logic(1) == True:
-                nav.navigate.to('home')
-
-        if qst.quest.is_tracking_quest(Quest(name="Fd2")) and not shp.ships.is_ship_pool_full():
-            anything_is_done = True
-            fty.factory.goto()
-            if fty.factory.any_build_slot_available() == False:
-                #slot not ready yet
-                fty.factory.set_timer()
-            else:
-                self._run_fleetswitch_logic('factory_build')
-
-                fty.factory.goto()
-                if fty.factory.build_logic(1) == True:
-                    nav.navigate.to('home')
+                    fty.factory.goto()
+                    if fty.factory.develop_logic(cfg["count"]) == True:
+                        nav.navigate.to('home')
                 else:
-                    # disable module for 60 mins
-                    fty.factory.set_timer()
+                    self._run_fleetswitch_logic('factory_build')
+                    
+                    fty.factory.goto()
 
-        if qst.quest.is_tracking_quest(Quest(name="Fd3")) and not equ.equipment.is_equipment_pool_full():
-            anything_is_done = True
+                    if not fty.factory.any_build_slot_available():
+                        fty.factory.set_timer()
+                        return
 
-            self._run_fleetswitch_logic('factory_develop')
-
-            fty.factory.goto()
-            if fty.factory.develop_logic(3) == True:
-                nav.navigate.to('home')
-
-        if qst.quest.is_tracking_quest(Quest(name="Fd4")) and not shp.ships.is_ship_pool_full():
-            anything_is_done = True
-
-            if fty.factory.any_build_slot_available() == False:
-                #slot not ready yet
-                fty.factory.set_timer()
-            else:
-                self._run_fleetswitch_logic('factory_build')
-
-                fty.factory.goto()
-                """If Fd4 is already 80% done, one more build could finish the quest"""
-                """Therefore, no if == True here"""
-                fty.factory.build_logic(3)
-                nav.navigate.to('home')
-                #always disable module for 60 mins
-                fty.factory.set_timer()
+                    success = fty.factory.build_logic(cfg["count"])
+                    
+                    if cfg["id"] == "Fd4":
+                        nav.navigate.to('home')
+                        fty.factory.set_timer()
+                    elif success:
+                        nav.navigate.to('home')
+                    else:
+                        fty.factory.set_timer()                    
 
         if anything_is_done == False:
             """Daily factory process done, disable from now"""
