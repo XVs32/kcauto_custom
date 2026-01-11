@@ -26,6 +26,17 @@ class ShipsCore(object):
         Log.log_debug("Updating ship library data.")
         self.ship_library = data
         
+    def is_ship_pool_full(self, is_event = False):
+        """check if ship pool is full
+
+        Args:
+            is_event (bool, optional): whether in event mode, event require 5 more free slots then usual. Defaults to False.
+        Returns:
+            bool: True if ship pool is full, False otherwise
+        """
+        required_free_slots = 5 if is_event else 0
+        return len(self.ship_pool) >= (self.max_ship_count - required_free_slots)
+        
     def get_ship_static_data(self,api_sortno, api_id = None):
         """get ship static data from ship library with api_sortno or api_id
 
