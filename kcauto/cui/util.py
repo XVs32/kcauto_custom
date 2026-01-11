@@ -18,6 +18,7 @@ log_buffer = []
 
 process = None
 psutil_proc = None
+is_running = False
 
 import re
 
@@ -71,7 +72,7 @@ def print_log(panel, string):
 def run_external_program(panel):
     # Start the external program and redirect its output
     
-    global process, psutil_proc
+    global process, psutil_proc, is_running
     
     if platform.startswith("linux"):
         filename = "kcauto_custom"
@@ -102,6 +103,7 @@ def run_external_program(panel):
         encoding='utf-8'
     )
     psutil_proc = psutil.Process(process.pid)
+    is_running = True
     
     time.sleep(1)
     print_log(panel, msg)
@@ -116,8 +118,21 @@ def run_external_program(panel):
     # Final log after the process ends
     print_log(panel, "kcauto ended\n")
     
+def pause_external_program(panel):
     
+    global psutil_proc, is_running
+    if psutil_proc and psutil_proc.is_running():
+        psutil_proc.suspend()
+        is_running = False
+        print_log(panel, "kcauto paused\n")
+        
+def resume_external_program(panel):
     
+    global psutil_proc, is_running
+    if psutil_proc and psutil_proc.is_running():
+        psutil_proc.resume()
+        is_running = True
+        print_log(panel, "kcauto resumed\n")
 
 def signal_handler(signal = None, frame = None):
     exit(0)

@@ -121,6 +121,7 @@ def resize_panel():
     
 def draw_menu(stdscr):
 
+    global panels
     init()
 
     k = 0
@@ -171,6 +172,13 @@ def draw_menu(stdscr):
             kc_auto = open_pop_up(kc_auto, stdscr, FACTORY)
             panels[LOG].redrawwin()
             k = 0
+        elif k == KEY_SPACE:
+            # Pause or resume the external program
+            if util.is_running:
+                util.pause_external_program(panels[LOG])
+            else:
+                util.resume_external_program(panels[LOG])
+            k = stdscr.getch()
         else:
             # Wait for next input
             k = stdscr.getch()
