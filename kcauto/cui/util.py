@@ -122,9 +122,9 @@ def run_external_program(panel):
     
     global pop_up_lock
     # Read and write the output to the desired panel
-    while process.poll() is None:
-        output = process.stdout.readline().strip()  # Read line and remove extra whitespace
-        if output:  # Only process non-empty lines
+    for line in iter(process.stdout.readline, b''):
+        output = line.strip()
+        if output:
             print_log(panel, f"{output}\n")
 
     # Final log after the process ends
