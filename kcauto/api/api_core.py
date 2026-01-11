@@ -292,6 +292,9 @@ class ApiWrapper(object):
         try:
             max_ships = data['api_data']['api_basic']['api_max_chara']
             shp.ships.max_ship_count = max_ships
+            max_equipment = data['api_data']['api_basic']['api_max_slotitem']
+            equ.equipment.max_equipment_count = max_equipment
+            
         except KeyError:
             Log.log_debug("No ship count data found in API response.")
 
