@@ -31,6 +31,8 @@ class EquipmentCore(object):
     current_ship_list_page = 1
     current_fleet = 1
     
+    max_equipment_count = 0
+    
     is_custom_fleet_equipment_loaded = False
     
     EQUIPMENT_NAME_KEY = "api_name"
@@ -277,5 +279,17 @@ class EquipmentCore(object):
         
         
         return self.is_available_equipments(ship, self.equipment_pool[self.FREE])
+    
+    def is_equipment_pool_full(self):
+        """method to check if the equipment pool is full, 
+        due to current equipment count api limitation, this could be inaccurate
+        Returns:
+            bool: True if the equipment pool is full, False otherwise
+        """
+        
+        if len(self.equipment_pool[self.ID]) >= self.max_equipment_count:
+            return True
+        else:
+            return False
     
 equipment = EquipmentCore()

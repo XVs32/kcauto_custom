@@ -333,9 +333,10 @@ def open_pop_up(thread, stdscr, active_panel):
                     output.close()
                     
                     # send a SIGTERM signal to terminate the subprocess
-                    if thread.is_alive() == True:
-                        util.process.send_signal(subprocess.signal.SIGTERM)
-                        thread.join()
+                    if util.psutil_proc and util.psutil_proc.is_running():
+                        util.psutil_proc.kill()
+                        util.psutil_proc.wait(timeout=5)
+                        util.print_log(panels[LOG], "kcauto terminated\n")
 
                     thread = kc_auto_kick_start(panels[LOG])
                 break
