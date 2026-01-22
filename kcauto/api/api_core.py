@@ -250,7 +250,7 @@ class ApiWrapper(object):
 
     def _process_require_info(self, data):
         try:
-            JsonData.dump_json(data['api_data']['api_slot_item'], 'data|temp|equipment_list.json')
+            JsonData.dump_json(self._filter_equipment(data['api_data']['api_slot_item']), 'data|temp|equipment_list.json')
         except KeyError:
             Log.log_debug("No equipment found in API response.")
             
@@ -461,7 +461,7 @@ class ApiWrapper(object):
 
     def _process_equipment_data(self, data):
         try:
-            JsonData.dump_json(data['api_data'], 'data|temp|equipment_list.json')
+            JsonData.dump_json(self._filter_equipment(data['api_data']), 'data|temp|equipment_list.json')
         except KeyError:
             Log.log_debug("No equipment found in API response.")
 
@@ -537,5 +537,32 @@ class ApiWrapper(object):
             
         except KeyError:
             Log.log_debug("No provisional equipment data found in API response")
+            
+    def _filter_equipment(self, equipment_data : list):
+        """Filter equipment based on ignore_equipment.json
+            This is a workaround to ignore certain equipment from being processed, 
+            due to Kancolle API providing ghost equipment entries that do not exist in the game.
+            See [record on Github](https://github.com/XVs32/kcauto_custom/discussions/123#discussioncomment-13599782) for more details.
+            args:
+                equipment_data (list): List of equipment data from API, ex.[{"api_id": 1, "api_slotitem_id": 33, "api_locked": 0, "api_level": 0},...]
+            returns:
+                filtered_equipment_data (list): List of equipment data after filtering
+        """
+         
+        try:
+            ignore_equipment_data = JsonData.load_json('data|equipment|ignore_equipment.json')
+        except FileNotFoundError:
+            ignore_equipment_data = {"equipment_production_id": []}
+            JsonData.dump_json(ignore_equipment_data, 'data|equipment|ignore_equipment.json')
+        ignored_equipment_production_id = ignore_equipment_data["equipment_production_id"]
+        
+        for i in range(len(equipment_data) -1 , -1, -1):
+            if equipment_data[i]['api_id'] in ignored_equipment_production_id:
+                Log.log_debug(f"Ignoring equipment with production id {equipment_data[i]['api_id']}")
+                equipment_data.pop(i)
+        
+        return equipment_data
+        
+            
 
 api = ApiWrapper()
