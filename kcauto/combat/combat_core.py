@@ -787,6 +787,15 @@ class CombatCore(CoreBase):
         Log.log_msg(f"self.map_data.name {self.map_data.name}")
         # print("Debug:"+ str( self.map_data.name))
         return self.map_data.edges[edge][1]
+    
+    def push_sortie_queue(self, sortie_map: MapEnum):
+        """
+            method for other modules to push a sortie_map to the start of sortie_queue in combat module
+            Args:
+                sortie_map (str): A sortie_map, ex: "1-1"
+        """
+        self.sortie_queue.insert(0, sortie_map.world_and_map)
+        Log.log_msg(f"Pushed {sortie_map.world_and_map} to sortie queue {self.sortie_queue}")
 
     def set_sortie_queue(self, sortie_queue = []):
         """
@@ -825,39 +834,42 @@ class CombatCore(CoreBase):
         data = JsonData.load_json(f'data|temp|gimmick.json')
 
         try:
-            data[self.sortie_queue]["gimmick_level"] += 1
+            data[self.sortie_queue[0]]["gimmick_level"] += 1
             JsonData.dump_json(data, 'data|temp|gimmick.json')
             
         except KeyError:
             Log.log_debug("Invalid gimmick update requested.")
-    def check_gimmick(self):
+    def check_gimmick(self, map_enum: MapEnum):
         """
             method to check what gimmick to go next for the current sortie map
-            return None if no gimmick is availble
+            return None if no gimmick is available
         """
         data = JsonData.load_json(f'data|temp|gimmick.json')
-        map_name = cfg.config.combat.sortie_map.value
+        map = map_enum.world_and_map_and_node
 
         """Reset gimmick each month"""
         try:
-            if not KCTime.is_same_month(data[map_name]["timestamp"], time.time()):
+            if not KCTime.is_same_month(data[map]["timestamp"], time.time()):
                 Log.log_debug("Gimmick renew")
-                data[map_name]["timestamp"] = time.time()
-                data[map_name]["gimmick_level"] = 0
+                data[map]["timestamp"] = time.time()
+                data[map]["gimmick_level"] = 0
                 JsonData.dump_json(data, 'data|temp|gimmick.json')
         except KeyError:
+            Log.log_debug("No gimmick data found, skipping...")
             pass
-
-        gimmick_level = None
-
+        
         """gimmick_level rules for each map(7-5 only for now)"""
-        if map_name == "7-5"\
-        and (self.sortie_map_stage - 1) >= 1:
-            try:
-                gimmick_level = data[map_name]["gimmick_level"]
-            except KeyError:
-                pass
+        if map_enum == MapEnum.W7_5_M and (self.sortie_map_stage ) > 1:
+            gimmick_level = data[map]["gimmick_level"]
+            
+            if gimmick_level == 0:
+                return map_enum
+            
+            Log.log_success(f'Gimmick already solved for map {map_enum}.')
+            pass
+        else:
+            Log.log_error(f'No gimmick for map {map_enum.world_and_map}.')
 
-        return gimmick_level
+        return None
 
 combat = CombatCore()
