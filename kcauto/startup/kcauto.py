@@ -249,15 +249,25 @@ class Kcauto(object):
             map_enum = cfg.config.combat.sortie_map.without_quest_and_node_enum
             if map_enum in MULTI_STAGE_MAPS:
                 nav.navigate.to('combat')
-                Log.log_error(f"com.combat.sortie_map_stage: {com.combat.sortie_map_stage}")
+                Log.log_success(f"Multi map stage: {com.combat.sortie_map_stage}")
 
-                try:
+                
+                if map_enum in GIMMICK_MAPS:
                     Log.log_debug(f"Gimmick needed to be finish")
-                    current_stage = GIMMICK_MAPS[map_enum][com.combat.check_gimmick()]
-                except:
+                    for gimmick_map in GIMMICK_MAPS[map_enum]:
+                        next_gimmick_map = com.combat.check_gimmick(gimmick_map)
+                        if next_gimmick_map is not None:
+                            Log.log_warn(f'Gimmick not finished')
+                            current_stage = next_gimmick_map
+                            com.combat.push_sortie_queue(current_stage)
+                            break
+                        
+                        current_stage = cfg.config.combat.sortie_map
+                else: 
                     target_stage = MULTI_STAGE_MAPS[map_enum].index(cfg.config.combat.sortie_map.without_quest_enum)
                     if com.combat.sortie_map_stage - 1 < target_stage:
                         current_stage = MULTI_STAGE_MAPS[map_enum][com.combat.sortie_map_stage - 1]
+                        com.combat.push_sortie_queue(current_stage)
                     else:
                         current_stage = cfg.config.combat.sortie_map
 
@@ -288,8 +298,11 @@ class Kcauto(object):
             if os.path.isfile(COMBAT_CONFIG + cfg.config.combat.sortie_map.value + ".json"):
                 default_json = cfg.config.load_json(COMBAT_CONFIG + cfg.config.combat.sortie_map.value + ".json")
                 cfg.config.combat.config_override(default_json)
-            elif os.path.isfile(COMBAT_CONFIG + cfg.config.combat.sortie_map.world_and_map + ".json"):
-                default_json = cfg.config.load_json(COMBAT_CONFIG + cfg.config.combat.sortie_map.world_and_map + ".json")
+            elif os.path.isfile(COMBAT_CONFIG + cfg.config.combat.sortie_map.without_quest + ".json"):
+                default_json = cfg.config.load_json(COMBAT_CONFIG + cfg.config.combat.sortie_map.without_quest + ".json")
+                cfg.config.combat.config_override(default_json)
+            elif os.path.isfile(COMBAT_CONFIG + cfg.config.combat.sortie_map.without_quest_and_node + ".json"):
+                default_json = cfg.config.load_json(COMBAT_CONFIG + cfg.config.combat.sortie_map.without_quest_and_node + ".json")
                 cfg.config.combat.config_override(default_json)
             else:
                 Log.log_warn(f"{cfg.config.combat.sortie_map.value} combat config not found, use default combat config instead.")
