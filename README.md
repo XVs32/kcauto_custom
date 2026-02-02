@@ -2,9 +2,9 @@
 
 ### ***Latest download(2025/10/19)*** [***here***](https://github.com/XVs32/kcauto_custom/releases/tag/v3.1.3) 
 
-***Warnning*** : kcauto_custom is not made for Windows(althought it could theoretically run on Windows), I might or might not fix any compatibility issues.
+***Warnning*** : Althought kcauto_custom could theoretically run on Windows, it was original made for Linux, I might or might not fix any compatibility issues.
 
-**[kcauto_custom](https://github.com/XVs32/kcauto_custom)** is a linux customized version of an archived project [kcauto](https://github.com/perryhuynh/kcauto) that includes additional features and functionality.  
+**[kcauto_custom](https://github.com/XVs32/kcauto_custom)** is a customized version of an archived project [kcauto](https://github.com/perryhuynh/kcauto) that includes additional features and functionality.  
 In comparison with **kcauto**, **kcauto_custom** is less flexible while being more automatic for easy daily use.  
 User can setup their fleet and equipment configuration in [Noro6](https://noro6.github.io/kc-web/#/aircalc), then excute the plan with kcauto_custom.  
 This tool is designed to help users automate repetitive tasks such as Expedition, Combat, PvP, Repair & Resupply, ultimately saving time and improving efficiency. 
