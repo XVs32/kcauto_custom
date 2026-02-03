@@ -52,6 +52,7 @@ crash_screenshots/
 data/temp/
 !configs/template/*.json
 !configs/template/sortie_mode_auto/*.json
+!data/temp/gimmick.json
 !log/01-11-1995-00-00-00.log
 data/factory/construct_recipe_preset.json
 data/factory/develop_recipe_preset.json
