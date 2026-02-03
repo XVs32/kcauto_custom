@@ -21,17 +21,24 @@ class LBASCore(object):
             self.groups[group.value] = LBASGroup(int(group.value))
 
     def update_lbas_groups(self, data):
+        """
+            method to read the LBAS info from "api_air_base"
+            into LBAS module
+        """
         Log.log_debug("Updating LBAS group data from API.")
         for group in LBASGroupEnum:
             self.groups[group.value].api_enabled = False
 
         sortie_world = cfg.config.combat.sortie_map.world
+        sortie_map = cfg.config.combat.sortie_map.map
         for group in data:
+            Log.log_debug(f"group['api_area_id']:{group['api_area_id']}")
+            Log.log_debug(f"sortie_map:{sortie_map}")
+            
+            #Pick the LBAS group that is in the same world as the sortie map
             if sortie_world == 'E' and group['api_area_id'] < 40:
                 continue
-            elif sortie_world == '6' and group['api_area_id'] != 6:
-                continue
-            elif sortie_world == '7' and group['api_area_id'] != 7:
+            elif sortie_world != 'E' and sortie_world != group['api_area_id']:
                 continue
 
             group_id = group['api_rid']
@@ -106,8 +113,8 @@ class LBASCore(object):
                         (panel_pos == 'l' and node_instance.x < 420)
                         or (panel_pos == 'r' and node_instance.x > 780)):
                     kca_u.kca.hover(panel)
+                kca_u.kca.sleep(3)
                 node_instance.select()
-                kca_u.kca.sleep(1.3)
             kca_u.kca.r['lbas'].hover()
             kca_u.kca.click_existing('upper', 'combat|lbas_assign_confirm.png')
             kca_u.kca.r['lbas'].hover()

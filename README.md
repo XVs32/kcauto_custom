@@ -1,14 +1,15 @@
 # kcauto_custom
 
-### ***Latest download link(2023/7/20): [Windows](https://github.com/XVs32/kcauto_custom/releases/tag/Windows_v2.0.0), [Linux](https://github.com/XVs32/kcauto_custom/releases/tag/Linux_v2.0.0)***
+### ***Latest download(2025/10/19)*** [***here***](https://github.com/XVs32/kcauto_custom/releases/tag/v3.1.3) 
 
-**[kcauto_custom](https://github.com/XVs32/kcauto_custom)** is a linux customized version of an archived project [kcauto](https://github.com/perryhuynh/kcauto) that includes additional features and functionality.  
+***Warnning*** : Althought kcauto_custom could theoretically run on Windows, it was originally made for Linux, I might or might not fix any compatibility issues.
+
+**[kcauto_custom](https://github.com/XVs32/kcauto_custom)** is a customized version of an archived project [kcauto](https://github.com/perryhuynh/kcauto) that includes additional features and functionality.  
 In comparison with **kcauto**, **kcauto_custom** is less flexible while being more automatic for easy daily use.  
+User can setup their fleet and equipment configuration in [Noro6](https://noro6.github.io/kc-web/#/aircalc), then excute the plan with kcauto_custom.  
 This tool is designed to help users automate repetitive tasks such as Expedition, Combat, PvP, Repair & Resupply, ultimately saving time and improving efficiency. 
 
-***Warnning*** : kcauto_custom is not made for Windows(althought it could theoretically run on Windows), I might or might not fix any compatibility problems.
-
-![Screenshot from 2023-05-05 23-42-59](https://user-images.githubusercontent.com/16824564/236490338-2930fada-2a0b-47da-958c-7d150b421c48.png)
+<img width="1340" height="1080" alt="image" src="https://github.com/user-attachments/assets/c5c4f4eb-55d4-4842-8502-7cd3efa4226a" />
 
 ---
 
@@ -33,45 +34,25 @@ This tool is designed to help users automate repetitive tasks such as Expedition
 * Scheduled and manual sleeping and pausing of individual modules or entire script
 * Automatic catbomb and script recovery
 * Random variations in navigation, timers, and click positions to combat bot detection
-* Hot-reload config files
-* Open-source codebase
 
 ### Features form kcauto_custom
 
 * CUI(Character User Interface) for daily use cases
 * Akashi repair Module &mdash; Repair ships with akashi
 * Factory Module &mdash; Runs daily develop and ship building 
-* More fleet presets &mdash; Unlimited fleet presets that you can define in a config file
+* Noro6 support &mdash; Plan your fleet and equipment setup in Noro6, kcauto_custom runs it for you
+* Equipment Switcher module &mdash; automatic switching of equipment presets for PvP, combat and expedition
 * Sortie mdoe: Auto &mdash; Automatically complete daily/weekly/monthly quest (KC3 is needed)
 * Expedition mode: Auto &mdash; Self balance expedition with auto ship switch
 * Support for 7-4, events
-* Bug fix(Fleet Switcher Module, interaction_mode, quest handling etc.)
-
-## Installation
-
-[wiki](https://github.com/XVs32/kcauto_custom/wiki/Ch1:-Setup-guide)  
-For non-developer:
-* Windows
-    * Double click `kcauto_cui.exe` 
-        * Or, run `.\kcauto_cui.exe` in Powershell for better user experience
-* Linux
-    * Run `./kcauto_cui`
-    
----
-
-For developer(Those who know what they are doing):
-* Install Python 3.7.3
-* (Unix only) Install additional pacakges `python3-tk scrot`
-* Install pip if not already installed
-* (Optional, but recommended) Install `pipenv` using `pip install pipenv`
-* Install dependencies:
-  * `pip`-mode: `pip install -r requirements.txt`
-  * `pipenv`-mode: `pipenv shell`, then `pipenv install --ignore-pipfile`
+* Bug fix(Fleet Switcher Module, interaction_mode, quest handling, LBAS Module etc.)
 
 ## Wiki page
 ### [Setup guide](https://github.com/XVs32/kcauto_custom/wiki/Ch1:-Setup-guide)  
-### [Beginner user guide](https://github.com/XVs32/kcauto_custom/wiki/Ch2.1:-Beginner-user-guide)  
-### [Gamer user guide](https://github.com/XVs32/kcauto_custom/wiki/Ch2.2:-Gamer-user-guide)  
+### [Beginner user guide](https://github.com/XVs32/kcauto_custom/wiki/Ch2:-Beginner-user-guide)  
+### [Gamer user guide ‐‐ Sortie](https://github.com/XVs32/kcauto_custom/wiki/Ch3.1:-Gamer-user-guide-%E2%80%90%E2%80%90-Sortie)  
+### [Gamer user guide ‐‐ Expedition](https://github.com/XVs32/kcauto_custom/wiki/Ch3.2:-Gamer-user-guide-%E2%80%90%E2%80%90-Expedition)  
+
 ---
 *You will need a github account for the following*
 ### [Wishing pool](https://github.com/XVs32/kcauto_custom/discussions/categories/ideas): Wish/Idea for new functions

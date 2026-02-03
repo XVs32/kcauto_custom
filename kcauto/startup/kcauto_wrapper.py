@@ -1,13 +1,15 @@
 import traceback
-from pyvisauto import FindFailed
+from util.pyvisauto import FindFailed
 from time import sleep
 
 import startup.kcauto as _
+import args.args_core as arg
 from constants import LOOP_BREAK_SECONDS
 from util.exceptions import (
     ApiException, Catbomb201Exception, ChromeCrashException)
 from util.logger import Log
 from util.recovery import Recovery
+import ships.equipment_core as equ 
 
 
 def kcauto_main():
@@ -18,7 +20,6 @@ def kcauto_main():
     while active_loop:
         try:
             # startup methods
-            _.kcauto.find_browser()
             _.kcauto.start_kancolle()
             _.kcauto.find_kancolle()
 
@@ -37,7 +38,7 @@ def kcauto_main():
                     _.kcauto.run_pvp_logic()
                     _.kcauto.run_combat_logic()
 
-                    _.kcauto.run_repair_logic()
+                    _.kcauto.run_repair_logic(passive_only=True)
                     _.kcauto.run_shipswitch_logic()
                     _.kcauto.check_end_loop_at_port()
                     _.kcauto.print_stats()

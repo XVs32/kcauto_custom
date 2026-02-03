@@ -37,20 +37,21 @@ ipython_config.py
 # Environments
 .env
 .venv
+tool/.mapCoorUpdater
 env/
 venv/
 ENV/
 env.bak/
 venv.bak/
+crash_screenshots/
 .screenshot*.png
 *.log
 *.npz
 *.json
-!data/combat/*.json
-!data/combat/*/*.json
-!data/quests/*.json
-!data/expedition/*.json
+!data/**
+data/temp/
 !configs/template/*.json
 !configs/template/sortie_mode_auto/*.json
-!data/config/*.json
-!data/config/*/*.json
+!log/01-11-1995-00-00-00.log
+data/factory/construct_recipe_preset.json
+data/factory/develop_recipe_preset.json

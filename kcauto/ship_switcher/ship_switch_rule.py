@@ -79,10 +79,10 @@ class ShipSwitchRule(object):
     @property
     def ship_in_slot(self):
         """Return None if the slot is empty -- XVs32"""
-        if len(flt.fleets.fleets[1].ship_data) < self.slot_id:
+        if len(flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][1].ships) < self.slot_id:
             return None
             
-        return flt.fleets.fleets[1].ship_data[self.slot_id - 1]
+        return flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][1].ships[self.slot_id - 1]
 
     def is_switch_out(self):
         slot_ship = self.ship_in_slot
@@ -125,11 +125,11 @@ class ShipSwitchRule(object):
                     return True
             return False
         
-        if ship.local_id in flt.fleets.ships_in_fleets:
+        if ship.production_id in [ship_in_fleet.production_id for ship_in_fleet in flt.fleets.ships_in_fleets]:
             return False
-        """load the ship even if it is under repair -- XVs32"""
-        """if ship.local_id in rep.repair.ships_under_repair:
-            return False"""
+        
+        if ship.production_id in rep.repair.ships_under_repair:
+            return False
         
         for criterion in self.criteria:
             if criterion[0] is ShipSwitcherCriteriaSlot0Enum.SHIP:

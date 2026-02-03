@@ -1,4 +1,4 @@
-from pyvisauto import Region
+from util.pyvisauto import Region
 
 import fleet.fleet_core as flt
 
@@ -7,6 +7,7 @@ from kca_enums.kcsapi_paths import KCSAPIEnum
 import combat.combat_core as com
 import config.config_core as cfg
 import nav.nav as nav
+import ships.equipment_core as equ 
 import ships.ships_core as shp
 import stats.stats_core as sts
 import util.kca as kca_u
@@ -17,8 +18,13 @@ from util.logger import Log
 
 class ShipSwitcherCore(object):
     rules = {}
-    current_shipcomp_page = 1
+    current_page = 1
     DUMMY = -1
+    
+    SHIP_MODE = 1
+    EQUIPMENT_MODE = 2
+    EQUIPMENT_SHIP_MODE = 3
+    REINFORCEMENT_MODE = 4
 
     def __init__(self):
         Log.log_debug("Initializing Ship Switcher core.")
@@ -41,9 +47,13 @@ class ShipSwitcherCore(object):
         """
 
         # The slot has the specified ship already
-        #@todo upper function has to handle the switched already detection
+        #@todo upper function has to handle the switched already detection, tho ship switcher does not know what fleet currently is
         #if len(flt.fleets.fleets[1].ship_ids) >= slot and ship_local_id == flt.fleets.fleets[1].ship_ids[slot-1]:
             #return
+            
+        if ship_local_id == 0:
+            Log.log_warn("No ship specified to switch in.")
+            return False
 
         if not self._select_switch_button(slot):
             return False
@@ -55,7 +65,7 @@ class ShipSwitcherCore(object):
             ship_idx = self._get_ship_idx_by_local_id(ship_local_id)
             kca_u.kca.sleep(1)
             self._reset_shiplist()
-            self._select_replacement_ship(ship_idx)
+            self.select_replacement_row(ship_idx)
             kca_u.kca.sleep(1)
             if not self._switch_ship():
                 return False
@@ -67,7 +77,7 @@ class ShipSwitcherCore(object):
             
             """The rule says remove the ship in this slot -- XVs32"""
             if switch_info["idx"] < 0:
-                j = len(flt.fleets.fleets[1].ship_data) - switch_info["slot_id"] + 1
+                j = len(flt.fleets.fleets[1].ships) - switch_info["slot_id"] + 1
                 while j > 0:
                     self._select_switch_button(switch_info["slot_id"])
                     self._select_remove_button()
@@ -75,7 +85,7 @@ class ShipSwitcherCore(object):
                 """End the switching process since the slots after this slot are empty"""
                 break
 
-            self.switch_slot_by_id(switch_info["slot_id"], switch_info["ship"].local_id)
+            self.switch_slot_by_id(switch_info["slot_id"], switch_info["ship"].production_id)
 
             """self._select_switch_button(switch_info["slot_id"])
             kca_u.kca.sleep(2)
@@ -146,9 +156,9 @@ class ShipSwitcherCore(object):
     def _get_ship_idx_by_local_id(self, local_id = 0):
 
         ship_list = self._local_ships_sorted_by_levels
-
+        
         for i in range(len(ship_list)):
-            if ship_list[i].local_id == local_id:
+            if ship_list[i].production_id == local_id:
                 return i
 
         raise ValueError("Can not find the specified ship")
@@ -167,10 +177,22 @@ class ShipSwitcherCore(object):
 
     def goto(self):
         nav.navigate.to('fleetcomp')
-        self.current_shipcomp_page = 1
+        self.current_page = 1
         
     def _select_switch_button(self, slot_id):
+        
+        Log.log_debug(f"Selecting switch button for slot {slot_id}.")
+        
+        if slot_id == 7:
+            next_region = Region(
+                kca_u.kca.game_x + 668,
+                kca_u.kca.game_y + 650,
+                32, 32)
+            kca_u.kca.click(next_region)
+            slot_id = 5
+            
         zero_idx = slot_id - 1
+        
         slot_button_region = Region(
             kca_u.kca.game_x + 550 + ((zero_idx % 2) * 513),
             kca_u.kca.game_y + 295 + ((zero_idx // 2) * 168),
@@ -213,81 +235,134 @@ class ShipSwitcherCore(object):
                 cached=True)
             kca_u.kca.sleep(0.1)
 
-    def _select_replacement_ship(self, ship_idx, ship = None):
+    def select_replacement_row(self, row_idx, ship : shp.Ship = None, mode = SHIP_MODE):
         
         """ship_idx // 10 gives 0 when ship_idx < 10, the "if" statement is not needed---XVs32"""
         """target_page = (ship_idx // 10) + 1 if ship_idx > 9 else 1"""
-        target_page = (ship_idx // 10) + 1
-        if ship == None:
-            Log.log_msg(f"Selecting {ship_idx}"
-                        f"(From pg{self.current_shipcomp_page} to pg{target_page}).")
-        else:
-            Log.log_msg(
-                f"Selecting lvl{ship.level} {ship.name} "
-                f"(pg{target_page}#{ship_idx}).")
-        
+
         """Floor division gives 9 pages when ship count == 96, which should be 10 pages ---XVs32"""
         """tot_pages = shp.ships.current_ship_count // 10"""
         """Since "current_ship_count" could never goes under 1, this could be"""
         """tot_pages = (shp.ships.current_ship_count - 1) // 10 + 1"""
         """Which is a bit cleaner and faster"""
-        tot_pages = shp.ships.current_ship_count // 10 + min(1, shp.ships.current_ship_count%10) 
+        
+        target_page = (row_idx // 10) + 1
 
-        list_control_region = Region(
-            kca_u.kca.game_x + 625, kca_u.kca.game_y + 655, 495, 45)
+        if mode == self.SHIP_MODE:
+            if ship == None:
+                Log.log_msg(f"Selecting {row_idx}"
+                            f"(From pg{self.current_page} to pg{target_page}).")
+            else:
+                Log.log_msg(
+                    f"Selecting lvl{ship.level} {ship.name} "
+                    f"(pg{target_page}#{row_idx}).")
+                
+            tot_pages = (shp.ships.ship_count -1) // 10 + 1
+            offset_mode = nav.navigate_list.OP_MODE_SHIPCOMP
+            
+            row_region = Region(
+                kca_u.kca.game_x + 590,
+                kca_u.kca.game_y + 225 + (row_idx % 10 * 43),
+                435, 34)
+            
+        elif mode == self.EQUIPMENT_MODE:
+            Log.log_msg(f"Selecting {row_idx}"
+                        f"(From pg{self.current_page} to pg{target_page}).")
+            
+            tot_pages = (len(equ.equipment.equipment_pool[equ.equipment.FREE]) -1) // 10 + 1
+            offset_mode = nav.navigate_list.OP_MODE_EQUIPMENT
+            
+            row_region = Region(
+                kca_u.kca.game_x + 590,
+                kca_u.kca.game_y + 195 + 5 + (row_idx % 10 * 45),
+                435, 34)
+            
+        elif mode == self.REINFORCEMENT_MODE:
+            self.current_page = 1
+            Log.log_msg(f"Selecting {row_idx}"
+                        f"(From pg{self.current_page} to pg{target_page}).")
+            if ship == None:
+                Log.log_error("Ship must be specified for reinforcement mode.")
+            tot_pages = (len(equ.equipment.get_reinforce_equipment_list(ship)) -1) // 10 + 1
+            Log.log_debug(f"Total pages for reinforcement equipment: {tot_pages}")
+                 
+            offset_mode = nav.navigate_list.OP_MODE_EQUIPMENT
+
+            row_region = Region(
+                kca_u.kca.game_x + 590,
+                kca_u.kca.game_y + 195 + 5 + (row_idx % 10 * 45),
+                435, 34)
+        elif mode == self.EQUIPMENT_SHIP_MODE:    
+            
+            self.current_page = equ.equipment.current_ship_list_page
+            equ.equipment.current_ship_list_page = target_page
+            Log.log_msg(f"Selecting lvl{ship.level} {ship.name}"
+                        f"(From pg{self.current_page} to pg{target_page}#{row_idx}).")
+            
+            tot_pages = (len(flt.fleets.ships_not_in_fleets) - 1) // 10 + 1
+            
+            offset_mode = nav.navigate_list.OP_MODE_EQUIPMENT_SHIP
+            
+            row_region = Region(
+                kca_u.kca.game_x + 187 ,
+                kca_u.kca.game_y + 201 + (row_idx % 10 * 45),
+                260, 37)
+            
         kca_u.kca.sleep(0.5)
+
         nav.navigate_list.to_page(
-            list_control_region, tot_pages, self.current_shipcomp_page,
-            target_page, 'shipcomp')
-        self.current_shipcomp_page = target_page
+            tot_pages, self.current_page,
+            target_page, offset_mode)
+        self.current_page = target_page
         
-        
-        shipcomp_list_region = Region(
-            kca_u.kca.game_x + 590,
-            kca_u.kca.game_y + 225 + (ship_idx % 10 * 43),
-            435, 34)
-        kca_u.kca.click(shipcomp_list_region)
+        kca_u.kca.click(row_region)
         kca_u.kca.r['top'].hover()
-        kca_u.kca.wait(
-            'lower_right', 'shipswitcher|shiplist_shipmenu.png')
+        
+        if mode == self.SHIP_MODE:
+            kca_u.kca.wait(
+                'lower_right', 'shipswitcher|shiplist_shipmenu.png')
+        elif mode == self.EQUIPMENT_MODE:
+            kca_u.kca.wait(
+                'lower_right', 'shipswitcher|shiplist_shipswitch_button.png')
+        elif mode == self.REINFORCEMENT_MODE:
+            kca_u.kca.wait(
+                'lower_right', 'shipswitcher|shiplist_shipswitch_button.png')
 
     def _switch_ship(self):
 
-        flag = False 
         retry = 0
-
-        if kca_u.kca.click_existing(
-                'lower_right', 'shipswitcher|shiplist_shipswitch_button.png', cached = True):
-            kca_u.kca.r['top'].hover()
-            while retry < 5:
-                if kca_u.kca.exists('right', 'shipswitcher|shiplist_button.png'):
-                    flag = True
-                    break
-                else:
-                    retry += 1
-                    kca_u.kca.sleep(1)
+        
+        while retry < 5:
+            if kca_u.kca.exists(
+                'lower_right', 'shipswitcher|shiplist_shipswitch_button_unable.png', similarity=NEAR_EXACT):
+                Log.log_warn("Could not switch to selected ship.")
+                return False
+            elif kca_u.kca.exists(
+                    'lower_right', 'shipswitcher|shiplist_shipswitch_button.png', cached = True, similarity=NEAR_EXACT):
+                kca_u.kca.click_existing(
+                    'lower_right', 'shipswitcher|shiplist_shipswitch_button.png', cached = True, similarity=NEAR_EXACT)
+                kca_u.kca.r['top'].hover()
+                kca_u.kca.wait(
+                    'right', 'shipswitcher|shiplist_button.png')
+            else:
+                kca_u.kca.sleep(1)
+                retry += 1
             
-        if not flag:
-            Log.log_warn("Could not switch to selected ship.")
-
-        return flag
+        return True
 
     @property
     def _local_ships_sorted_by_levels(self):
+        
+        temp_list = sorted(shp.ships.ship_pool.values(), key=lambda item: (item.sort_id, item.production_id ))
         temp_list = sorted(
-            [s for s in shp.ships.local_ships],
-            key=lambda s: (s.sort_id, s.local_id))
-        temp_list = sorted(
-            [s for s in temp_list],
-            key=lambda s: s.level, reverse=True)
+            temp_list, key=lambda s: s.level, reverse=True)
 
         return temp_list
 
     @property
     def _local_ships_sorted_by_class(self):
         return sorted(
-            [s for s in shp.ships.local_ships],
-            key=lambda s: (s.sort_id, s.local_id))
-
+            [shp.ships.ship_pool[s] for s in shp.ships.ship_pool],
+            key=lambda ship: (ship.sort_id, ship.production_id))
 
 ship_switcher = ShipSwitcherCore()

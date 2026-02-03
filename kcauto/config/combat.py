@@ -14,15 +14,17 @@ import combat.lbas_core as lbas
 class ConfigCombat(ConfigBase):
     _enabled = False
     _fleet_presets = []
-    _sortie_map = None
+    _sortie_map : MapEnum = None
     _sortie_map_read_only = None
     _fleet_mode = None
     _retreat_points = []
+    _node_smoke = []
     _node_selects = {}
     _node_formations = {}
     _node_night_battles = {}
     _push_nodes = []
     _retreat_limit = None
+    _repair_bucket_threshold = None
     _repair_limit = None
     _repair_timelimit_hours = None
     _repair_timelimit_minutes = None
@@ -46,11 +48,13 @@ class ConfigCombat(ConfigBase):
         self.sortie_map_read_only = config['combat.sortie_map']
         self.fleet_mode = config['combat.fleet_mode']
         self.retreat_points = config['combat.retreat_points']
+        self.node_smoke = config['combat.node_smoke']
         self.node_selects = config['combat.node_selects']
         self.node_formations = config['combat.node_formations']
         self.node_night_battles = config['combat.node_night_battles']
         self.push_nodes = config['combat.push_nodes']
         self.retreat_limit = config['combat.retreat_limit']
+        self.repair_bucket_threshold = config['combat.repair_bucket_threshold']
         self.repair_limit = config['combat.repair_limit']
         self.repair_timelimit_hours = config['combat.repair_timelimit_hours']
         self.repair_timelimit_minutes = config[
@@ -71,6 +75,8 @@ class ConfigCombat(ConfigBase):
             self.fleet_mode = config['combat.fleet_mode']
         if "combat.retreat_points" in config:
             self.retreat_points = config['combat.retreat_points']
+        if "combat.node_smoke" in config:
+            self.node_smoke = config['combat.node_smoke']
         if "combat.node_selects" in config:
             self.node_selects = config['combat.node_selects']
         if "combat.node_formations" in config:
@@ -81,6 +87,8 @@ class ConfigCombat(ConfigBase):
             self.push_nodes = config['combat.push_nodes']
         if "combat.retreat_limit" in config:
             self.retreat_limit = config['combat.retreat_limit']
+        if "combat.repair_bucket_threshold" in config:
+            self.repair_bucket_threshold = config['combat.repair_bucket_threshold']
         if "combat.repair_limit" in config:
             self.repair_limit = config['combat.repair_limit']
         if "combat.repair_timelimit_hours" in config:
@@ -147,19 +155,30 @@ class ConfigCombat(ConfigBase):
             if not 0 < value[i] <= MAX_FLEET_PRESETS:
                 raise ValueError("Invalid value specified for fleet preset")
         self._fleet_presets = value
+        
+    @property
+    def is_auto_mode(self):
+        for preset in self.fleet_presets:
+            if preset == AUTO_PRESET:
+                return True
+        return False
 
     @property
-    def sortie_map(self):
+    def sortie_map(self) -> MapEnum:
         return self._sortie_map
 
     @sortie_map.setter
-    def sortie_map(self, value):
+    def sortie_map(self, value : str):
         """ 
             Method that set the value of _sortie_map
         
             args: 
                 value (str): The Id of a map, ex 1-1, 3-5, 6-4 
         """
+        
+        if value[0] != "B":
+            value = "B-" + value
+            
         if not MapEnum.contains_value(value):
             raise ValueError("Invalid map specified:" + str(value))
         self._sortie_map = MapEnum(value)
@@ -176,6 +195,9 @@ class ConfigCombat(ConfigBase):
             args: 
                 value (str): The Id of a map, ex 1-1, 3-5, 6-4 
         """
+        
+        if value[0] != "B":
+            value = "B-" + value
         if not MapEnum.contains_value(value):
             raise ValueError("Invalid map specified:" + str(value))
         Log.log_debug("SET _sortie_map_read_only: {MapEnum(value)}")
@@ -190,11 +212,6 @@ class ConfigCombat(ConfigBase):
         if not FleetModeEnum.contains_value(value):
             raise ValueError("Invalid fleet mode specified.")
         fleet_mode = FleetModeEnum(value)
-        if (
-                fleet_mode is not FleetModeEnum.STANDARD
-                and len(self.fleet_presets) > 0):
-            raise ValueError(
-                "Fleet mode must be standard for use with fleet presets.")
         if (
                 self._config['combat.enabled']
                 and self._config['pvp.enabled']
@@ -212,6 +229,15 @@ class ConfigCombat(ConfigBase):
         self._fleet_mode = fleet_mode
 
     @property
+    def repair_bucket_threshold(self):
+        return self._repair_bucket_threshold
+
+    @repair_bucket_threshold.setter
+    def repair_bucket_threshold(self, value):
+        self._repair_bucket_threshold = value
+        Log.log_debug(f"_repair_bucket_threshold set {self._repair_bucket_threshold}")
+
+    @property
     def retreat_points(self):
         return self._retreat_points
 
@@ -221,6 +247,19 @@ class ConfigCombat(ConfigBase):
             if not NodeEnum.contains_value(node):
                 raise ValueError("Invalid node specified")
         self._retreat_points = [NodeEnum(node) for node in value]
+
+    @property
+    def node_smoke(self):
+        return self._node_smoke
+
+    @node_smoke.setter
+    def node_smoke(self, value):
+        node_smoke = [] 
+        for node in value:
+            if not NodeEnum.contains_value(node):
+                raise ValueError("Bad node specified in node select.")
+            node_smoke.append(NodeEnum(node)) 
+        self._node_smoke = node_smoke
 
     @property
     def node_selects(self):

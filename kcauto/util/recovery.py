@@ -1,6 +1,5 @@
 import pyautogui
-from pyvisauto import Region, FindFailed
-from time import sleep
+from util.pyvisauto import Region, FindFailed
 
 import config.config_core as cfg
 import stats.stats_core as sts
@@ -117,7 +116,7 @@ class Recovery(object):
 
             elif kca_u.kca.exists(screen, 'nav|home_menu_sortie.png'):
                 kca_u.kca.find_kancolle()
-                exp.expedition.receive_expedition()
+                kca_u.kca.receive_expedition()
                 return True
 
             else:

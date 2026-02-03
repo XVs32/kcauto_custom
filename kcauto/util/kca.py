@@ -1,3 +1,5 @@
+import cv2
+import numpy as np
 import os
 import json
 import glob
@@ -7,19 +9,23 @@ from pyquery import PyQuery
 from sys import path_hooks
 import PyChromeDevTools
 from datetime import datetime, timedelta
-from pyvisauto import Region, FindFailed, ImageMatch
+from util.pyvisauto import Region, FindFailed, ImageMatch
 from random import randint, uniform
 from time import sleep
 
+from quest.quest import Quest
 import api.api_core as api
 import args.args_core as arg
 import config.config_core as cfg
 import ships.ships_core as shp
 import util.click_tracker as clt
+import stats.stats_core as sts
 from constants import (
     GAME_W, GAME_H, VISUAL_URL, STRATEGY_ROOM_URL, API_URL, EXACT, DEFAULT, SLEEP_MODIFIER)
 from kca_enums.interaction_modes import InteractionModeEnum
 from kca_enums.kcsapi_paths import KCSAPIEnum
+from kca_enums.maps import MapEnum
+from kca_enums.expeditions import ExpeditionEnum
 
 from util.exceptions import ChromeCrashException
 from util.logger import Log
@@ -30,6 +36,9 @@ from pyppeteer import connect
 class Kca(object):
     """Primary kcauto utility class.
     """
+    
+    KC_REF_OFFSET = (-144, 0)
+    
     ASSETS_FOLDER = 'assets'
     visual_tab_id = None
     visual_hook = None
@@ -42,10 +51,21 @@ class Kca(object):
     last_ui = None
     r = {}
     html = None
+    kc3_id = None
+    
+    screenshot_log = [None, None, None, None, None]
 
     def __init__(self):
+        if self.kc3_id ==None:
+            try:
+                with open('data/config/kc3_id.json', 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                    self.kc3_id = data.get('id', "hkgmldnainaglpjngpajnnjfhpdjkohh")
+            except FileNotFoundError:
+                Log.log_warn("kc3_id.json not found, using default value None.")
+                self.kc3_id = "hkgmldnainaglpjngpajnnjfhpdjkohh"
         Log.log_debug("Kca module initialized.")
-
+        
     def hook_chrome(self):
         """Method that initializes the necessary hooks to Chrome using
         PyChromeDevTools. The visual hook connects to the tab that actually
@@ -68,7 +88,7 @@ class Kca(object):
         api_tab = None
         api_tab_id = None
         for n, tab in enumerate(self.visual_hook.tabs):
-            if tab['url'] in VISUAL_URL:
+            if VISUAL_URL in tab['url']:
                 visual_tab = n
                 visual_tab_id = tab['id']
                 self.visual_tab_id = visual_tab_id
@@ -93,7 +113,8 @@ class Kca(object):
         self.api_hook.Network.enable()
         Log.log_debug(f"Connected to API tab ({api_tab}:{api_tab_id})")
         Log.log_success("Connected to Chrome")
-
+        
+        self.find_game_window_offset()
 
     def hook_health_check(self):
         """Method that runs through the different events reported to the api
@@ -126,6 +147,7 @@ class Kca(object):
         from the get_data api call. Otherwise, it will load the stored data
         from previous startups.
         """
+        
         # Create a pattern to match the files
         pattern = os.path.join('.', '.screenshot*.png')
 
@@ -150,7 +172,8 @@ class Kca(object):
             api.api.update_ship_library_from_json()
 
         local_ships_json = {"ship": []}
-        for ship in shp.ships.local_ships:
+        for id in shp.ships.ship_pool:
+            ship = shp.ships.ship_pool[id]
             local_ships_json["ship"].append({"name": ship.name, \
                                              "name_jp": ship.name_jp,
                                              "id":ship.api_id,\
@@ -164,26 +187,69 @@ class Kca(object):
 
         return True
 
-    def find_browser(self):
-        """Method that finds the dmm logo on-screen and provide the offset for chrome driver"""
-        Log.log_msg("Finding browser.")
-
-        window_info = self.visual_hook.Browser.getWindowForTarget(target_id=self.visual_tab_id)[0]["result"]["bounds"]
-
-        viewport_size = self.visual_hook.Page.getLayoutMetrics()[0]["result"]["cssLayoutViewport"]
+    def find_game_window_offset(self):
+        """Method that finds the game window offset for chrome driver"""
+        Log.log_msg("Finding browser offset")
         
-        top_left_x = window_info["left"]
-        top_left_y = window_info["top"] + window_info["height"] - viewport_size["clientHeight"]
-
-        Log.log_debug(top_left_x)
-        Log.log_debug(top_left_y)
-
-        self.css_x = top_left_x
-        self.css_y = top_left_y
-
-        return True
-
-
+        whole_screen = Region().capture()
+        whole_screen_rgb = np.array(whole_screen)
+        whole_screen_gray = cv2.cvtColor(whole_screen_rgb, cv2.COLOR_BGR2GRAY)
+        
+        retry = 0
+        max_retries = 5
+        retry_delay = 1
+        
+        import base64
+        while retry < max_retries:
+            try:
+                screenshot_raw = self.visual_hook.Page.captureScreenshot()
+                
+                if screenshot_raw is None or not screenshot_raw:
+                    raise ValueError("Failed to capture screenshot from Chrome")
+                    
+                if len(screenshot_raw) == 0 or "result" not in screenshot_raw[0]:
+                    raise ValueError("Invalid screenshot data structure")
+                    
+                result = screenshot_raw[0]["result"]
+                if "data" not in result:
+                    raise ValueError("No image data in screenshot result")
+                    
+                screenshot_data = base64.b64decode(result['data'])
+                ref = cv2.imdecode(np.frombuffer(screenshot_data, np.uint8), cv2.IMREAD_GRAYSCALE)
+                
+                clip_height = int(ref.shape[0] * 0.1)
+                clip_width = int(ref.shape[1] * 0.1)
+                
+                start_y = (ref.shape[0] - clip_height) // 2
+                start_x = (ref.shape[1] - clip_width) // 2
+                
+                ref = ref[start_y:start_y + clip_height, start_x:start_x + clip_width]
+                
+                match = cv2.matchTemplate(whole_screen_gray, ref, cv2.TM_CCOEFF_NORMED)
+                min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(match)
+                
+                if max_val < 0.9:
+                    raise ValueError(f"Match value {max_val} is below threshold")
+                    
+                self.css_x = max_loc[0] - start_x
+                self.css_y = max_loc[1] - start_y
+                Log.log_success(f"Browser offset found at X: {self.css_x}, Y: {self.css_y}")
+                return True
+                
+            except Exception as e:
+                Log.log_error(f"Attempt {retry + 1}/{max_retries} failed: {str(e)}")
+                retry += 1
+                if retry < max_retries:
+                    self.sleep(retry_delay)
+                    continue
+                else:
+                    Log.log_error("Failed to find browser offset after max retries")
+                    
+                    if self.css_x is None or self.css_y is None:
+                        Log.log_error("Browser offset not found. Please check your Chrome setup.")
+                        exit(1)
+                    
+                    return False
 
     def find_kancolle(self):
         """Method that finds the Kancolle game on-screen and determine the UI
@@ -238,8 +304,8 @@ class Kca(object):
                 Log.log_error("Could not find Kancolle reference point.")
                 raise FindFailed()
 
-        new_game_x = ref_r.x - 144
-        new_game_y = ref_r.y
+        new_game_x = ref_r.x + self.KC_REF_OFFSET[0]
+        new_game_y = ref_r.y + self.KC_REF_OFFSET[1]
         Log.log_debug(f"Game X:{new_game_x}, Y:{new_game_y}")
 
         # define click callback as needed
@@ -260,6 +326,8 @@ class Kca(object):
             self.game_x = new_game_x
             self.game_y = new_game_y
             self._update_regions()
+            
+        self.find_game_window_offset()
 
         return True
 
@@ -360,29 +428,53 @@ class Kca(object):
         self._create_or_shift_region(
             "develop_region", x + 215, y + 480, 200, 50)
         self._create_or_shift_region(
-            "order_oil_region_1", x + 547, y + 227, 10, 5)
+            "order_oil_region_1", x + 552, y + 226, 10, 10)
         self._create_or_shift_region(
-            "order_oil_region_10", x + 742, y + 207, 5, 5)
+            "order_oil_region_10", x + 742, y + 194, 10, 10)
         self._create_or_shift_region(
-            "order_oil_region_100", x + 742, y + 247, 5, 5)
+            "order_oil_region_100", x + 742, y + 236, 10, 10)
         self._create_or_shift_region(
-            "order_ammo_region_1", x + 547, y + 422, 10, 5)
+            "order_ammo_region_1", x + 552, y + 420, 10, 10)
         self._create_or_shift_region(
-            "order_ammo_region_10", x + 742, y + 407, 5, 5)
+            "order_ammo_region_10", x + 742, y + 390, 10, 10)
         self._create_or_shift_region(
-            "order_ammo_region_100", x + 742, y + 447, 5, 5)
+            "order_ammo_region_100", x + 742, y + 430, 10, 10)
         self._create_or_shift_region(
-            "order_steel_region_1", x + 887, y + 227, 10, 5)
+            "order_steel_region_1", x + 890, y + 226, 10, 10)
         self._create_or_shift_region(
-            "order_steel_region_10", x + 1082, y + 207, 5, 5)
+            "order_steel_region_10", x + 1085, y + 194, 10, 10)
         self._create_or_shift_region(
-            "order_steel_region_100", x + 1082, y + 247, 5, 5)
+            "order_steel_region_100", x + 1085, y + 236, 10, 10) 
         self._create_or_shift_region(
-            "order_bauxite_region_1", x + 887, y + 422, 10, 5)
+            "order_bauxite_region_1", x + 890, y + 420, 10, 10)
         self._create_or_shift_region(
-            "order_bauxite_region_10", x + 1082, y + 407, 5, 5)
+            "order_bauxite_region_10", x + 1085, y + 390, 10, 10)
         self._create_or_shift_region(
-            "order_bauxite_region_100", x + 1082, y + 447, 5, 5)
+            "order_bauxite_region_100", x + 1085, y + 430, 10, 10)
+
+        # equipment-related regions
+        self._create_or_shift_region('equipment_panel', x + 455, y + 226, 125, 268)
+        self._create_or_shift_region('ship_1', x + 210, y + 228, 230, 47)
+        self._create_or_shift_region('ship_2', x + 210, y + 309, 230, 47)
+        self._create_or_shift_region('ship_3', x + 210, y + 390, 230, 47)
+        self._create_or_shift_region('ship_4', x + 210, y + 471, 230, 47)
+        self._create_or_shift_region('ship_5', x + 210, y + 552, 230, 47)
+        self._create_or_shift_region('ship_6', x + 210, y + 633, 230, 47)
+        self._create_or_shift_region('1_slot_unload_equipment', x + 478, y + 294, 4, 4)
+        self._create_or_shift_region('2_slot_unload_equipment', x + 478, y + 344, 4, 4)
+        self._create_or_shift_region('3_slot_unload_equipment', x + 478, y + 394, 4, 4)
+        self._create_or_shift_region('4_slot_unload_equipment', x + 478, y + 444, 4, 4)
+        self._create_or_shift_region('5_slot_unload_equipment', x + 478, y + 494, 4, 4)
+        self._create_or_shift_region('reinforce_slot_unload_equipment', x + 1162, y + 481, 4, 4)
+
+        self._create_or_shift_region('1_slot_equipment', x + 530, y + 260, 270, 20)
+        self._create_or_shift_region('2_slot_equipment', x + 530, y + 307, 270, 20)
+        self._create_or_shift_region('3_slot_equipment', x + 530, y + 354, 270, 20)
+        self._create_or_shift_region('4_slot_equipment', x + 530, y + 401, 270, 20)
+        self._create_or_shift_region('5_slot_equipment', x + 530, y + 448, 270, 20)
+        self._create_or_shift_region('reinforce_slot_equipment', x + 1117, y + 471, 20, 20)
+
+        self._create_or_shift_region('equipment_sort_all', x + 783, y + 646, 50, 12)
 
     def _create_or_shift_region(self, key, x, y, w, h):
         """Helper method for generating or shifting an existing Region's x
@@ -508,6 +600,7 @@ class Kca(object):
             Match: Match instance of best asset match.
         """
         r = self._get_region(region)
+        r.SCAN_RATE = 0.5 #slow down SCAN_RATE to 0.5 for lower CPU usage
         return r.wait(self._create_asset_path(asset), wait, similarity)
 
     def wait_vanish(self, region, asset, wait=30, similiarity=DEFAULT):
@@ -526,6 +619,7 @@ class Kca(object):
             bool: True when asset no longer exists on-screen.
         """
         r = self._get_region(region)
+        r.SCAN_RATE = 0.5 #slow down SCAN_RATE to 0.5 for lower CPU usage
         return r.wait_vanish(self._create_asset_path(asset), wait, similiarity)
 
     def hover(self, region):
@@ -536,6 +630,8 @@ class Kca(object):
             region (Region, Match, str): Region/Match object or pre-defined
                 region key.
         """
+        self.sleep(0.5)
+
         r = self._get_region(region)
         if (cfg.config.general.interaction_mode
                 is InteractionModeEnum.DIRECT_CONTROL):
@@ -543,6 +639,8 @@ class Kca(object):
         elif (cfg.config.general.interaction_mode
                 is InteractionModeEnum.CHROME_DRIVER):
             self._chrome_driver_hover_method(r)
+
+        self.sleep(0.5)
 
     def click(self, region, pad=(0, 0, 0, 0)):
         """Helper method that clicks a passed in region. The pad parameter
@@ -552,15 +650,41 @@ class Kca(object):
             region (Region, Match, str): Region/Match object or pre-defined
                 region key.
             pad (tuple, optional): click region modifier. Defaults to
-                (0, 0, 0, 0).
+                (0, 0, 0, 0) as offset of (X1, Y1, X2, Y2)
         """
+        self.sleep(0.5)
+
         r = self._get_region(region)
         if (cfg.config.general.interaction_mode
                 is InteractionModeEnum.DIRECT_CONTROL):
+            
+            corners = [
+                r.x + pad[0],  
+                r.y + pad[1],
+                r.x + r.w + pad[2],
+                r.y + r.h + pad[3]
+            ]
+            if arg.args.parsed_args.debug_output:
+                
+                # Visit corners first
+                r.hover(corners[0], corners[1])
+                self.sleep(0.1)
+                r.hover(corners[2], corners[1])
+                self.sleep(0.1)
+                r.hover(corners[0], corners[3])
+                self.sleep(0.1)
+                r.hover(corners[2], corners[3])
+                self.sleep(0.1)
+                    
+                # Draw debug with corners
+            self._draw_debug_visualization(corners, arg.args.parsed_args.debug_output)
+            
             r.click(pad=pad)
         elif (cfg.config.general.interaction_mode
                 is InteractionModeEnum.CHROME_DRIVER):
             self._chrome_driver_click_method(r, pad)
+
+        self.sleep(0.5)
 
     def click_existing(
             self, region, asset, similarity=DEFAULT, pad=(0, 0, 0, 0),
@@ -586,7 +710,6 @@ class Kca(object):
         try:
             match = r.find(self._create_asset_path(asset), similarity, cached)
             self.click(match, pad=pad)
-            self.sleep()
             return True
         except FindFailed:
             return False
@@ -604,8 +727,72 @@ class Kca(object):
                 DEFAULT.
         """
         r = self._get_region(region)
+        r.SCAN_RATE = 0.5 #slow down SCAN_RATE to 0.5 for lower CPU usage
         match = r.wait(self._create_asset_path(asset), wait, similarity)
         self.click(match)
+
+    def drag(self, start_region, end_region, pad=(0, 0, 0, 0)):
+        """Helper method that clicks a passed in region. The pad parameter
+        allows for further tweaking of the valid click region.
+
+        Args:
+            region (Region, Match, str): Region/Match object or pre-defined
+                region key.
+            pad (tuple, optional): click region modifier. Defaults to
+                (0, 0, 0, 0).
+        """
+        self.sleep(0.5)
+
+        r_a = self._get_region(start_region)
+        r_b = self._get_region(end_region)
+        if (cfg.config.general.interaction_mode
+                is InteractionModeEnum.DIRECT_CONTROL):
+            r_a.hover()
+            self.sleep(0.5)
+            r_b.drag(pad=pad)
+            
+        elif (cfg.config.general.interaction_mode
+                is InteractionModeEnum.CHROME_DRIVER):
+            self._chrome_driver_drag_method(r_a, pad, r_b, pad)
+
+        self.sleep(0.5)
+
+
+    def _draw_debug_visualization(self, corners, save_as_file):
+        """Draw debug visualization showing regions and click points
+        
+        Args:
+            r (Region): Region to highlight
+            click_x (int, optional): X coordinate of click point
+            click_y (int, optional): Y coordinate of click point 
+            corners (list, optional): List of corner points visited
+        """
+        
+        if self.game_x is None or self.game_y is None:
+            return
+        screen = Region(self.game_x, self.game_y, GAME_W, GAME_H)
+        screen = screen.capture()
+        screen = cv2.cvtColor(np.array(screen), cv2.COLOR_RGB2BGR)
+        
+        cv2.rectangle(screen, 
+                 (int(corners[0] - self.game_x), int(corners[1] - self.game_y)),  # Top-left point 
+                 (int(corners[2] - self.game_x), int(corners[3] - self.game_y)),  # Bottom-right point
+                 (0, 255, 0), 
+                 2)
+        
+        Kca.screenshot_log.pop(0) 
+        Kca.screenshot_log.append(screen)
+        
+        if save_as_file:
+            
+            # Save debug image
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            
+            #create folder if not exist
+            if not os.path.exists("debug"):
+                os.makedirs("debug")
+                
+            cv2.imwrite(f"debug/click_{timestamp}.png", screen)
 
     def sleep(self, base=None, flex=None):
         """Helper method for sleeping the script. Adds in random variance to
@@ -624,6 +811,29 @@ class Kca(object):
         else:
             flex = base if flex is None else flex
             sleep(uniform(base, base + flex) + SLEEP_MODIFIER)
+            
+    def receive_expedition(self):
+
+        Log.log_debug("Start receive expedetion")
+        
+        received_expeditions = False
+        while self.find_expedition_flag():
+            Log.log_msg("Expedition received.")
+            self.r['shipgirl'].click()
+            api.api.update_from_api({KCSAPIEnum.PORT})
+            sts.stats.expedition.expeditions_received += 1
+            self.wait('lower_right_corner', 'global|next.png', 20)
+            while self.exists('lower_right_corner', 'global|next.png'):
+                self.sleep()
+                self.r['shipgirl'].click()
+                self.r['top'].hover()
+                received_expeditions = True
+                self.sleep()
+                
+            import quest.quest_core as qst
+            qst.quest.is_quest_dom_cache_dirty = True
+            
+        return received_expeditions
 
     def while_wrapper(
             self, conditional_func, internal_func=None, timeout=None,
@@ -724,16 +934,58 @@ class Kca(object):
             pad (tuple): padding parameter used to modify click coordinate
         """
 
-        self.sleep(0.5) #Prevent kcauto form clicking too fast
-
-        offset_x = randint(-pad[3], r.w + pad[1])
-        offset_y = randint(-pad[0], r.h + pad[2])
+        offset_x = randint(pad[0], r.w + pad[2])
+        offset_y = randint(pad[1], r.h + pad[3])
         x = r.x - self.css_x
         y = r.y - self.css_y
+ 
+        # Draw debug visualization
+            
+        corners = [
+            r.x + pad[0],  # Top-left corner
+            r.y + pad[1],
+            r.x + r.w + pad[2],
+            r.y + r.h + pad[3]
+        ]
+            
+        self._draw_debug_visualization(corners, arg.args.parsed_args.debug_output)
 
         #self.visual_hook.Input.synthesizeTapGesture(x= x + offset_x , y=y + offset_y)
+        self.visual_hook.Input.dispatchMouseEvent(type = "mouseMoved", x= x + offset_x , y=y + offset_y)
+        self.sleep()
         self.visual_hook.Input.dispatchMouseEvent(type = "mousePressed", x= x + offset_x , y=y + offset_y, clickCount = 1, button = "left")
+        self.sleep()
         self.visual_hook.Input.dispatchMouseEvent(type = "mouseReleased", x= x + offset_x , y=y + offset_y, clickCount = 1, button = "left")
+        self.sleep()
+
+    def _chrome_driver_drag_method(self, r_a, pad_a, r_b, pad_b):
+        """Click method used in Chrome Driver interaction mode.
+
+        Args:
+            r (Region, Match): Region/Match region to click
+            pad (tuple): padding parameter used to modify click coordinate
+        """
+
+        offset_x = randint(-pad_a[3], r_a.w + pad_a[1])
+        offset_y = randint(-pad_a[0], r_a.h + pad_a[2])
+        x = r_a.x - self.css_x
+        y = r_a.y - self.css_y
+
+        self.visual_hook.Input.dispatchMouseEvent(type = "mouseMoved", x= x + offset_x , y=y + offset_y)
+        self.sleep()
+        self.visual_hook.Input.dispatchMouseEvent(type = "mousePressed", x= x + offset_x , y=y + offset_y, clickCount = 1, button = "left")
+        self.sleep()
+        
+        offset_x = randint(-pad_b[3], r_b.w + pad_b[1])
+        offset_y = randint(-pad_b[0], r_b.h + pad_b[2])
+        x = r_b.x - self.css_x
+        y = r_b.y - self.css_y
+        
+        self.visual_hook.Input.dispatchMouseEvent(type = "mouseMoved", x= x + offset_x , y=y + offset_y)
+        self.sleep()
+        self.visual_hook.Input.dispatchMouseEvent(type = "mouseReleased", x= x + offset_x , y=y + offset_y, clickCount = 1, button = "left")
+        self.sleep()
+
 
     def _chrome_driver_hover_method(self, r):
         """hover method used in Chrome Driver interaction mode.
@@ -741,7 +993,6 @@ class Kca(object):
         Args:
             r (Region, Match): Region/Match region to hover 
         """
-        self.sleep(1) #Prevent kcauto form clicking too fast
 
         offset_x = randint(0, r.w)
         offset_y = randint(0, r.h)
@@ -760,7 +1011,9 @@ class Kca(object):
                 9222.
             api (bool): api hook or not(default True)
         """
+        
         port = cfg.config.general.chrome_dev_port
+        chrome = PyChromeDevTools.ChromeInterface(host="localhost", port=port)
         if target == "api":
             self.api_hook = PyChromeDevTools.ChromeInterface(
                 host=host, port=port)
@@ -778,8 +1031,10 @@ class Kca(object):
 
 
     async def get_html(self, url):
+        
+        port = cfg.config.general.chrome_dev_port
         # Connect to the Chrome browser
-        browser = await connect(browserURL='http://localhost:9222')
+        browser = await connect(browserURL='http://localhost:'+str(port))
 
         # Create a new background tab
         page = await browser.newPage()
@@ -804,37 +1059,49 @@ class Kca(object):
         Args:
             subpage (string): The name of sub page to open. (ex. flowchart)
         """
-
-        asyncio.get_event_loop().run_until_complete(self.get_html("chrome-extension://hkgmldnainaglpjngpajnnjfhpdjkohh/pages/strategy/strategy.html"+subpage))
-
+        asyncio.get_event_loop().run_until_complete(self.get_html(f"chrome-extension://{self.kc3_id}/pages/strategy/strategy.html{subpage}"))
         #Wait for quest panel finish closing
         self.find_kancolle()
 
         return
+    
+    def get_quest_dom(self):
+        """ method to get the raw quest info form KC3.
 
-    def get_quest_count(self, target_quest_name):
+        Return:
+            raw html text of KC3 quest page
+        """
+        
+        import quest.quest_core as qst
+        if qst.quest.is_quest_dom_cache_dirty == False:
+            return qst.quest._quest_dom_cache
+        
+        self.reload_kc3_strategy_page(subpage = "#flowchart")
+
+        dom = PyQuery(self.html, parser='html')
+
+        qst.quest._quest_dom_cache = dom("ul#questBox_rootFlow.questTree")
+        #Log.log_debug(f"kac.quest_tree_dom:{quest_tree_dom}")
+        qst.quest.is_quest_dom_cache_dirty = False
+        
+        return qst.quest._quest_dom_cache
+        
+    def get_quest_count(self, target_quest: Quest, quest_dom=None) -> dict:
         """ method to get the remaining action needed for the specified quest.
             For example, the remaining sorties needed for quest Bm3 could be {1-4:1, 3-5:0}
 
-        Note:
-            Expect reload_kc3_strategy_page() is excuted
-
         Args:
-            target_quest_name (string): The quest to check. (ex. "Bm3")
+            target_quest (Quest): The quest to check, in the form of Quest object.
         
         Return:
             dict with key of quest name, and value of remaining actions needed.
             return None if quest is not combat type.
         """
-
-        self.reload_kc3_strategy_page(subpage = "#flowchart")
-
-        dom = PyQuery(self.html, parser='html')
-        #Log.log_debug(f"kac.dom:{dom}")
-
-        quest_tree_dom = dom("ul#questBox_rootFlow.questTree")
-        #Log.log_debug(f"kac.quest_tree_dom:{quest_tree_dom}")
-
+        
+        target_quest_name = target_quest.name
+        
+        quest_tree_dom = self.get_quest_dom()
+        
         i = 0
         while True:
 
@@ -850,9 +1117,7 @@ class Kca(object):
                 action_raw_line = action_raw.split('\n')
                 action = {}
 
-                if quest_name[0] != "B":
-                    return None
-                elif quest_name == "Bw1":
+                if quest_name == "Bw1":
                     action_raw_line[3] = action_raw_line[3].replace(' ', '/')
                     s_count =           int(action_raw_line[3].split("/")[1]) - int(action_raw_line[3].split("/")[0])
                     action_raw_line[2] = action_raw_line[2].replace(' ', '/')
@@ -863,13 +1128,13 @@ class Kca(object):
                     sortie_count =      int(action_raw_line[0].split("/")[1]) - int(action_raw_line[0].split("/")[0])
 
                     if s_count > 0:
-                        action["1-1"] = s_count
+                        action[MapEnum.W1_1] = s_count
                     elif boss_win_count > 0:
-                        action["1-5"] = boss_win_count 
+                        action[MapEnum.W1_5] = boss_win_count 
                     elif boss_count > 0:
-                        action["1-5"] = boss_count 
+                        action[MapEnum.W1_5] = boss_count 
                     elif sortie_count > 0:
-                        action["1-1"] = sortie_count
+                        action[MapEnum.W1_1] = sortie_count
 
                 elif quest_name == "Bq8":
                     action_raw_line[0] = action_raw_line[0].replace(' ', '/')
@@ -882,26 +1147,64 @@ class Kca(object):
                     s_7_2_M_count =      int(action_raw_line[3].split("/")[1]) - int(action_raw_line[3].split("/")[0])
 
                     if s_1_5_count > 0:
-                        action["1-5"] = s_1_5_count
+                        action[MapEnum.W1_5] = s_1_5_count
                     elif s_7_1_count > 0:
-                        action["7-1"] = s_7_1_count
+                        action[MapEnum.W7_1] = s_7_1_count
                     elif s_7_2_G_count > 0:
-                        action["7-2-G"] = s_7_2_G_count
+                        action[MapEnum.W7_2_G] = s_7_2_G_count
                     elif s_7_2_M_count > 0:
-                        action["7-2-M"] = s_7_2_M_count
+                        action[MapEnum.W7_2_M] = s_7_2_M_count
 
+                elif quest_name[0] == "D":
+                    for line in action_raw_line:
+                        line = line.replace(' ', '/')
+                        count = int(line.split("/")[1]) - int(line.split("/")[0])
+                        import expedition.expedition_core as exp
+                        map = exp.expedition.get_exp_enum_from_name(line.split("/")[-1])
+                        if count > 0:
+                            action[map] = count
                 else:
 
                     for line in action_raw_line:
                         line = line.replace(' ', '/')
                         count = int(line.split("/")[1]) - int(line.split("/")[0])
                         line = line.replace(']', '[')
-                        map_name = line.split("[")[1][1:]
-                        action[map_name] = count
-
+                        map = line.split("[")[1][1:]
+                        if count > 0:
+                            
+                            if MapEnum("B-"+map).without_quest_enum == MapEnum.W1_6_N:
+                                #patch to turn B1-6-N from quest to B1-6
+                                action[MapEnum.W1_6] = count
+                            else:
+                                action[MapEnum("B-"+map).without_quest_enum] = count
+                            
                 return action
             elif quest_name == "":
                 return None
             i = i + 1
+            
+    def save_screenshots(self):
+        
+        import shutil
+        
+        # Directory to store crash screenshots
+        SAVE_DIR = "crash_screenshots"
+
+        # Remove the directory from the previous run if it exists
+        if os.path.exists(SAVE_DIR):
+            print(f"Removing old screenshots directory: '{SAVE_DIR}'")
+            shutil.rmtree(SAVE_DIR)
+        # Create the directory if it doesn't exist
+        os.makedirs(SAVE_DIR, exist_ok=True)
+        
+        print(f"Saving screenshots to '{SAVE_DIR}'...")
+        
+        for i, screen in enumerate(Kca.screenshot_log):
+            file_path = os.path.join(SAVE_DIR, f"screenshot_{i}.png")
+            try:
+                cv2.imwrite(file_path, screen)
+                print(f"Saved: {file_path}")
+            except Exception as e:
+                print(f"Failed to save screenshot {i}: {e}")
 
 kca = Kca()
