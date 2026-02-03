@@ -788,14 +788,14 @@ class CombatCore(CoreBase):
         # print("Debug:"+ str( self.map_data.name))
         return self.map_data.edges[edge][1]
     
-    def push_sortie_queue(self, sortie_map: MapEnum):
+    def insert_sortie_queue(self, sortie_map: MapEnum):
         """
             method for other modules to push a sortie_map to the start of sortie_queue in combat module
             Args:
                 sortie_map (str): A sortie_map, ex: "1-1"
         """
-        self.sortie_queue.insert(0, sortie_map.world_and_map)
-        Log.log_msg(f"Pushed {sortie_map.world_and_map} to sortie queue {self.sortie_queue}")
+        self.sortie_queue.insert(0, sortie_map.value)
+        Log.log_msg(f"Inserted {sortie_map.value} to sortie queue {self.sortie_queue}")
 
     def set_sortie_queue(self, sortie_queue = []):
         """
@@ -838,14 +838,14 @@ class CombatCore(CoreBase):
             JsonData.dump_json(data, 'data|temp|gimmick.json')
             
         except KeyError:
-            Log.log_debug("Invalid gimmick update requested.")
+            Log.log_debug(f"Invalid gimmick update for map {self.sortie_queue[0]} requested.")
     def check_gimmick(self, map_enum: MapEnum):
         """
             method to check what gimmick to go next for the current sortie map
             return None if no gimmick is available
         """
         data = JsonData.load_json(f'data|temp|gimmick.json')
-        map = map_enum.world_and_map_and_node
+        map = map_enum.value
 
         """Reset gimmick each month"""
         try:
@@ -865,10 +865,10 @@ class CombatCore(CoreBase):
             if gimmick_level == 0:
                 return map_enum
             
-            Log.log_success(f'Gimmick already solved for map {map_enum}.')
+            Log.log_success(f'Gimmick already solved for map {map_enum.value}.')
             pass
         else:
-            Log.log_error(f'No gimmick for map {map_enum.world_and_map}.')
+            Log.log_error(f'No gimmick for map {map_enum.value}.')
 
         return None
 
