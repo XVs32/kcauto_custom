@@ -4,7 +4,7 @@ import cui.util as util
 from cui.macro import *
 
 from fleet.noro6 import Noro6 
-from kcauto.config.macro import RECIPE_PRESET_CONSTRUCT, RECIPE_PRESET_DEVELOP, RECIPE_PRESET_CONSTRUCT_TEMPLATE, RECIPE_PRESET_DEVELOP_TEMPLATE
+from config.macro import RECIPE_PRESET_CONSTRUCT, RECIPE_PRESET_DEVELOP, RECIPE_PRESET_CONSTRUCT_TEMPLATE, RECIPE_PRESET_DEVELOP_TEMPLATE
 
 CONSTRUCT_TAB = 1
 DEVELOP_TAB = 2
@@ -74,7 +74,7 @@ def pop_up_menu(stdscr, panel, config):
             file = open(RECIPE_PRESET_CONSTRUCT, 'r', encoding='utf-8')
         except FileNotFoundError:
         
-            template_file = open(RECIPE_PRESET_DEVELOP_TEMPLATE, 'r', encoding='utf-8')
+            template_file = open(RECIPE_PRESET_CONSTRUCT_TEMPLATE, 'r', encoding='utf-8')
             #create preset file from template
             file = open(RECIPE_PRESET_CONSTRUCT, 'w', encoding='utf-8')
             file.write(template_file.read())
