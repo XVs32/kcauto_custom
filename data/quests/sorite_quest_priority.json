@@ -1,0 +1,84 @@
+{
+  "time_limited": [
+    "2601B5",
+    "2601B6",
+    "2601B7",
+    "2412B5",
+    "2509B5"
+  ],
+  "exact_ship_and_map": [
+    "Bm1",
+    "Bm4",
+    "Bq6",
+    "Bq7",
+    "Bq13",
+    "By1",
+    "By3",
+    "By5",
+    "By12",
+    "By13",
+    "By14",
+    "By15"
+  ],
+  "exact_ship_type_and_map": [
+    "Bm3",
+    "Bm7",
+    "Bm8",
+    "Bq5",
+    "Bq9",
+    "Bq11",
+    "Bq12",
+    "By2",
+    "By4",
+    "By6",
+    "By7",
+    "By8",
+    "By9",
+    "By10",
+    "By11"
+  ],
+  "any_ship_with_exact_map": [
+    "Bm8",
+    "Bm2",
+    "Bw10",
+    "Bq1",
+    "Bq2",
+    "Bq10"
+  ],
+  "exact_area": [],
+  "exact_enemy_type": [],
+  "processBw2": [
+    "Bd4",
+    "Bw2"
+  ],
+  "processBw5": [
+    "Bq4",
+    "Bq3",
+    "Bq8",
+    "Bm5",
+    "Bd8",
+    "Bw5"
+  ],
+  "processBw1": [
+    "Bd5",
+    "Bd6",
+    "Bw1"
+  ],
+  "processBw4": [
+    "Bm6",
+    "Bw6",
+    "Bw7",
+    "Bw8",
+    "Bw9",
+    "Bw3",
+    "Bw4"
+  ],
+  "any_sortie": [
+    "Bd1",
+    "Bd2",
+    "Bd3"
+  ],
+  "low_priority": [
+    "Bd7"
+  ]
+}
