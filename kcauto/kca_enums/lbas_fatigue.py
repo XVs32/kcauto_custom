@@ -7,7 +7,8 @@ from kca_enums.enum_base import EnumBase
 class LBASFatigueEnum(EnumBase):
     HEAVY_FATIGUE = 3
     MEDIUM_FATIGUE = 2
-    NO_FATIGUE = 1
+    NORMAL_FATIGUE = 1
+    NO_FATIGUE = 0
 
     def display_name(self):
         return self.name.replace('_', ' ').title()

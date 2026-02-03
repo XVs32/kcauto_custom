@@ -1,5 +1,6 @@
-from pyvisauto import Region
+from util.pyvisauto import Region
 from random import choice
+import math
 
 from constants import MAX_RESOURCE, PASSIVE_TIME_INTERVAL, OVERNIGHT_TIME_INTERVAL
 import api.api_core as api
@@ -17,6 +18,13 @@ from util.logger import Log
 from util.json_data import JsonData
 
 class ExpeditionCore(CoreBase):
+    MONTHLY_EXPEDITION = [ExpeditionEnum.E1_A4, ExpeditionEnum.E1_A5, ExpeditionEnum.E1_A6, 
+                          ExpeditionEnum.E2_B2, ExpeditionEnum.E2_B3, ExpeditionEnum.E2_B4, ExpeditionEnum.E2_B5, ExpeditionEnum.E2_B6,
+                          ExpeditionEnum.E7_42, ExpeditionEnum.E7_43, ExpeditionEnum.E7_44, ExpeditionEnum.E7_46,
+                          ExpeditionEnum.E3_D2, ExpeditionEnum.E3_D3, 
+                          ExpeditionEnum.E5_E1, ExpeditionEnum.E5_E2]
+    EXP_ENUM = "exp_enum"
+    SCORE = "score"
     NUM_VISIBLE_EXPEDITONS = 8
     SUPPORT_EXPEDITIONS = [
         ExpeditionEnum.E5_33, ExpeditionEnum.E5_34, ExpeditionEnum.EE_S1,
@@ -26,12 +34,14 @@ class ExpeditionCore(CoreBase):
     module_name = 'expedition'
     module_display_name = 'Expedition'
     available_expeditions_per_world = {}
+    exp_state = {}
     exp_data = None
     exp_rank = []
     exp_for_fleet = []
     TYPE_PRIORITY = [""]
-    cur_exp = [0,0,0,0]
+    cur_exp = [ExpeditionEnum.NULL,ExpeditionEnum.NULL,ExpeditionEnum.NULL,ExpeditionEnum.NULL]
     timer = None
+    prerequisite_table = {}
 
     def __init__(self):
         """
@@ -40,18 +50,63 @@ class ExpeditionCore(CoreBase):
         super().__init__()
         self.timer = Timer()
         self.exp_data = JsonData.load_json('data|expedition|expedition.json')
+        self.prerequisite_table = JsonData.load_json('data|expedition|expedition_unlock_table.json')
+        
+    def get_expedition_static_data(self, exp_enum):
+        """read expedition data from json file
+
+        Args:
+            id (int): api id of target expedition
+
+        Returns:
+            dict: expedition static data, check data|expedition|expedition.json
+        """
+        
+        for exp in self.exp_data:
+            if exp["id"] == exp_enum.value:
+                return exp
+        return None
+    
+    def is_noro6_in_use(self):
+        import pvp.pvp_core as pvp
+        if com.combat.enabled == True or pvp.pvp.enabled == True:
+            return True
+            
+        for exp in self.cur_exp:
+            if exp == ExpeditionEnum.NULL:
+                continue
+            if self.is_noro6_exp(exp):
+                return True
+        
+        return False
+    
+    def is_noro6_exp(self, exp_enum):
+        return self.get_expedition_static_data(exp_enum)==None
 
     def is_fleetswitch_needed(self):
-        flag = False
         if cfg.config.expedition.fleet_preset == "auto":
-            flag = True
-        return flag
+            return True 
+        else:
+            return False 
         
+    def get_prerequisite_expedition(self, exp_enum):
+        """
+        get the prerequisite expedition of the given expedition
         
+        Args:
+            exp_enum(expeditionEnum): current exp
+        """
+        ret = []
+        if str(exp_enum.value) in self.prerequisite_table:
+            for prerequisite in self.prerequisite_table[str(exp_enum.value)]:
+                ret.append(ExpeditionEnum(prerequisite))
+            return ret
+        else:
+            return [ExpeditionEnum(exp_enum.value-1) ]
 
    # With a normal function
     def cmp(self, item):
-        return item["score"]
+        return item[self.SCORE]
 
     def get_expedition_ranking(self):
         
@@ -60,70 +115,177 @@ class ExpeditionCore(CoreBase):
             or ExpeditionEnum.PASSIVE in cfg.config.expedition.all_expeditions\
             or ExpeditionEnum.OVERNIGHT in cfg.config.expedition.all_expeditions:
 
-            min_time = 0x7fffffff
-            max_time = 0x00000000
+            pooling_interval = 1
 
             if ExpeditionEnum.AUTO in cfg.config.expedition.all_expeditions:
                 if com.combat.enabled == False:
                     #Passive mode
-                    min_time = 0
-                    max_time = PASSIVE_TIME_INTERVAL
+                    pooling_interval = PASSIVE_TIME_INTERVAL
                 else:
                     #Active mode
-                    min_time = 0
-                    max_time = 0x7fffffff
+                    pooling_interval = 1
             elif ExpeditionEnum.ACTIVE in cfg.config.expedition.all_expeditions:
                 #Active mode
-                min_time = 0
-                max_time = 0x7fffffff
+                pooling_interval = 1
             elif ExpeditionEnum.PASSIVE in cfg.config.expedition.all_expeditions:
                 #Passive mode
-                min_time = 0
-                max_time = PASSIVE_TIME_INTERVAL
+                pooling_interval = PASSIVE_TIME_INTERVAL
             elif ExpeditionEnum.OVERNIGHT in cfg.config.expedition.all_expeditions:
                 #Active mode
-                min_time = 0
-                max_time = OVERNIGHT_TIME_INTERVAL
+                pooling_interval = OVERNIGHT_TIME_INTERVAL
 
-
-
-            fuel_weight = max(MAX_RESOURCE - sts.stats.rsc.fuel, 0)
-            ammo_weight = max(MAX_RESOURCE - sts.stats.rsc.ammo, 0)
-            steel_weight = max(MAX_RESOURCE - sts.stats.rsc.steel, 0)
-            bauxite_weight = max(MAX_RESOURCE - sts.stats.rsc.bauxite, 0)
-
+            DESIRE_BUCKET = 2000
             self.exp_rank = []
 
             for exp in self.exp_data:
-
-                if exp["time"] > max_time or exp["time"] < min_time:
-                    continue
-
-                id = exp["id"]
-
-                score =(exp["fuel"]  * fuel_weight +\
-                        exp["ammo"]  * ammo_weight +\
-                        exp["steel"] * steel_weight +\
-                        exp["baux"]  * bauxite_weight)
                 
-                if (ExpeditionEnum.AUTO in cfg.config.expedition.all_expeditions\
-                    and com.combat.enabled == True)\
-                    or ExpeditionEnum.ACTIVE in cfg.config.expedition.all_expeditions:
-                    #Active mode
-                    score /= exp["time"]
-                #else:
-                    #Passive mode
-                    #score /= PASSIVE_TIME_INTERVAL #Does not affect ranking
+                horuly_rsc = {}
+                horuly_rsc["fuel"] = exp["fuel"] / (math.ceil(exp["time"] / pooling_interval) * pooling_interval)
+                horuly_rsc["ammo"] = exp["ammo"] / (math.ceil(exp["time"] / pooling_interval) * pooling_interval)
+                horuly_rsc["steel"] = exp["steel"] / (math.ceil(exp["time"] / pooling_interval) * pooling_interval)
+                horuly_rsc["baux"] = exp["baux"] / (math.ceil(exp["time"] / pooling_interval) * pooling_interval) 
+                horuly_rsc["bucket"] = (1 if exp["item"] == "bucket" else 0) / (math.ceil(exp["time"] / pooling_interval) * pooling_interval)
                 
-                self.exp_rank.append({"id":id, "score":score})
+                # Check and nullify overflowed resources
+                if sts.stats.rsc.fuel >= cfg.config.expedition.desire_oil:
+                    horuly_rsc["fuel"] = 0
+                if sts.stats.rsc.ammo >= cfg.config.expedition.desire_ammo:
+                    horuly_rsc["ammo"] = 0
+                if sts.stats.rsc.steel >= cfg.config.expedition.desire_steel:
+                    horuly_rsc["steel"] = 0
+                if sts.stats.rsc.bauxite >= cfg.config.expedition.desire_bauxite:
+                    horuly_rsc["baux"] = 0
+                if sts.stats.rsc.bucket >= cfg.config.expedition.desire_bucket:
+                    horuly_rsc["bucket"] = 0
 
+                exp_enum = ExpeditionEnum(exp["id"])
+                
+                avg_fill_rate = (
+                    (horuly_rsc["fuel"]  + sts.stats.rsc.fuel)  / cfg.config.expedition.desire_oil +
+                    (horuly_rsc["ammo"]  + sts.stats.rsc.ammo)  / cfg.config.expedition.desire_ammo +
+                    (horuly_rsc["steel"] + sts.stats.rsc.steel) / cfg.config.expedition.desire_steel +
+                    (horuly_rsc["baux"]  + sts.stats.rsc.bauxite) / cfg.config.expedition.desire_bauxite +
+                    (horuly_rsc["bucket"] + sts.stats.rsc.bucket) / cfg.config.expedition.desire_bucket
+                ) / 5
+                
+                balace_score = (
+                    abs((horuly_rsc["fuel"]  + sts.stats.rsc.fuel)  / cfg.config.expedition.desire_oil   - avg_fill_rate) +
+                    abs((horuly_rsc["ammo"]  + sts.stats.rsc.ammo)  / cfg.config.expedition.desire_ammo  - avg_fill_rate) +
+                    abs((horuly_rsc["steel"] + sts.stats.rsc.steel) / cfg.config.expedition.desire_steel - avg_fill_rate) +
+                    abs((horuly_rsc["baux"]  + sts.stats.rsc.bauxite) / cfg.config.expedition.desire_bauxite - avg_fill_rate) +
+                    abs((horuly_rsc["bucket"] + sts.stats.rsc.bucket) / cfg.config.expedition.desire_bucket - avg_fill_rate)
+                ) * (-1)
+                
+                self.exp_rank.append({self.EXP_ENUM:exp_enum,self.SCORE:balace_score})
             self.exp_rank.sort(key=self.cmp, reverse=True)
 
         else:
             self.exp_rank = []
 
-            for id in cfg.config.expedition.all_expeditions:
-                self.exp_rank.append({"id":int(id.value), "score":0})
+            for exp_enum in cfg.config.expedition.all_expeditions:
+                self.exp_rank.append({self.EXP_ENUM:exp_enum,self.SCORE:0})
+
+    def prerequisite_handling(self):
+        
+        NEW = 0
+        NOT_CLEARED = 1
+        CLEARED = 2
+        
+        flag = True
+        while flag == True:
+            flag = False
+            
+            to_remove = set()  # Store IDs of elements to remove
+            
+            for exp_rank in self.exp_rank:
+                
+                if exp_rank[self.EXP_ENUM] not in self.available_expeditions:
+                    Log.log_debug(f'expEnum not available {exp_rank}')
+                    
+                    # Can not use dict in set, use ENUM instead
+                    to_remove.add(exp_rank[self.EXP_ENUM])
+                    for prerequisite in self.get_prerequisite_expedition(exp_rank[self.EXP_ENUM]):
+                            
+                        if prerequisite in self.available_expeditions:
+                            if self.exp_state[prerequisite] in {NEW, NOT_CLEARED}:
+                                Log.log_debug(f'exp {prerequisite} is in {self.exp_state[prerequisite]} state, adding into prerequisite')
+                                self.exp_rank.append({self.EXP_ENUM:prerequisite,self.SCORE:exp_rank[self.SCORE]})
+                            elif self.exp_state[prerequisite] == CLEARED:
+                                Log.log_debug(f'exp {prerequisite} cleared already, not adding into prerequisite')
+                            else:
+                                Log.log_debug(f"unknown expedition state {self.exp_state[prerequisite]}")
+                                exit(0)
+                        else:
+                            self.exp_rank.append({self.EXP_ENUM:prerequisite,self.SCORE:exp_rank[self.SCORE]})
+                            Log.log_debug(f'exp {prerequisite} is not available, but adding into prerequisite, handle next round')
+                            flag = True
+                            
+                if flag == True:
+                    #run next round immediately
+                    break
+            
+            self.exp_rank = [exp for exp in self.exp_rank if exp[self.EXP_ENUM] not in to_remove]
+            self.exp_rank.sort(key=self.cmp, reverse=True)
+            #remove duplicate, keep the element with higher score
+            
+            seen = set()
+            self.exp_rank = [exp for exp in self.exp_rank if exp[self.EXP_ENUM] not in seen and not seen.add(exp[self.EXP_ENUM])]
+            
+    def monthly_exp_handling(self):
+        """method to remove monthly expedition that already completed this month from expedition ranking
+        """
+        FINISHED = 2
+        for exp in self.exp_rank:
+            if exp[self.EXP_ENUM] in self.MONTHLY_EXPEDITION and self.exp_state[exp[self.EXP_ENUM]] == FINISHED:
+                    self.exp_rank.remove(exp)
+                    
+    def on_going_exp_handling(self):
+        self.exp_rank = [exp for exp in self.exp_rank \
+            if exp[self.EXP_ENUM] not in {on_going_exp for on_going_exp in self.cur_exp}]
+        return
+
+    def cut_expedition_queue(self, exp_list):
+        
+        remaining_exp_list = exp_list[:]
+        new_exp_rank = self.exp_rank[:]
+        
+        #cut queue for normal exp first (those exist in exp_rank already)
+        for prior_exp in exp_list:
+            for exp in self.exp_rank:
+                if exp[self.EXP_ENUM] == prior_exp:
+                    
+                    # Move this exp to first of queue
+                    new_exp_rank.remove(exp)
+                    new_exp_rank.insert(0, exp)
+
+                    # Prevent index error by checking if there's a second element
+                    if len(new_exp_rank) > 1:
+                        new_exp_rank[0][self.SCORE] = new_exp_rank[1][self.SCORE] + 1
+
+                    remaining_exp_list.remove(prior_exp)  # Remove safely from a copied list
+                    break  # Stop checking further for this `prior_exp`
+                
+        # Process remaining expeditions that were not in `self.exp_rank`
+        for prior_exp in remaining_exp_list:
+            if new_exp_rank:
+                new_exp_rank.insert(0, {self.EXP_ENUM: prior_exp, self.SCORE: new_exp_rank[0][self.SCORE] + 1})
+
+        self.exp_rank = new_exp_rank
+            
+    def get_exp_enum_from_name(self, exp_id):
+        """
+        Args:
+            exp_id (int): the name of the expedition
+
+        Returns:
+            _type_: the id of the expedition
+        """
+        for exp in ExpeditionEnum:
+            if exp.expedition == exp_id:
+                return exp
+            
+        Log.log_error(f"Expedition {exp_id} not found")
+        return -1
 
     @property
     def available_expeditions(self):
@@ -132,11 +294,14 @@ class ExpeditionCore(CoreBase):
     @available_expeditions.setter
     def available_expeditions(self, value):
         available_expeditions = []
+        exp_state = {}
         for exped in value:
-            exped_id = exped['api_mission_id']
-            if ExpeditionEnum.contains_value(exped_id):
-                available_expeditions.append(ExpeditionEnum(exped_id))
+            exp = ExpeditionEnum(exped['api_mission_id'])
+            available_expeditions.append(exp)
+            exp_state[exp] = exped['api_state']
+            
         self._available_expeditions = available_expeditions
+        self.exp_state = exp_state
 
     def populate_available_expeditions_per_world(self):
         self.available_expeditions_per_world = {}
@@ -146,26 +311,7 @@ class ExpeditionCore(CoreBase):
                 self.available_expeditions_per_world[world] = [expedition]
             else:
                 self.available_expeditions_per_world[world].append(expedition)
-
-    def receive_expedition(self):
-
-        Log.log_debug("Start receive expedetion")
-        
-        received_expeditions = False
-        while kca_u.kca.find_expedition_flag():
-            Log.log_msg("Expedition received.")
-            kca_u.kca.r['shipgirl'].click()
-            api.api.update_from_api({KCSAPIEnum.PORT})
-            sts.stats.expedition.expeditions_received += 1
-            kca_u.kca.wait('lower_right_corner', 'global|next.png', 20)
-            while kca_u.kca.exists('lower_right_corner', 'global|next.png'):
-                kca_u.kca.sleep()
-                kca_u.kca.r['shipgirl'].click()
-                kca_u.kca.r['top'].hover()
-                received_expeditions = True
-                kca_u.kca.sleep()
-        return received_expeditions
-
+                
     def expect_returned_fleets(self):
         returned_fleets = []
         for fleet in flt.fleets.expedition_fleets:
@@ -225,11 +371,15 @@ class ExpeditionCore(CoreBase):
             
             if any(s in cfg.config.expedition.expeditions_for_fleet(fleet.fleet_id)\
                 for s in (ExpeditionEnum.AUTO, ExpeditionEnum.ACTIVE, ExpeditionEnum.PASSIVE, ExpeditionEnum.OVERNIGHT)):
-                expedition = ExpeditionEnum(self.exp_for_fleet[fleet.fleet_id])
+                expedition = self.exp_for_fleet[fleet.fleet_id]
             else:
                 expedition = choice(
                     cfg.config.expedition.expeditions_for_fleet(
                         fleet.fleet_id))
+                
+            if expedition not in self.available_expeditions:
+                continue
+            
             Log.log_msg(
                 f"Sending fleet {fleet.fleet_id} to expedition "
                 f"{expedition.expedition}.")
@@ -290,6 +440,7 @@ class ExpeditionCore(CoreBase):
 
     def _dispatch_expedition(self, fleet, expedition):
         if kca_u.kca.click_existing('lower_right', 'global|sortie_select.png'):
+            kca_u.kca.sleep(1) #wait for fleet select panel anime to finish
             fleet.select()
             kca_u.kca.r['top'].hover()
 

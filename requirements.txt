@@ -1,19 +1,42 @@
-# use "sudo apt-get install python3.7-dev" first if needed
-# use "sudo apt install python3.7-distutils" first if needed
-# use "sudo apt-get install python3.7-tk" first if needed
+# use "sudo apt-get install python3.11-dev" first if needed
+# use "sudo apt install python3.11-distutils" first if needed
+# use "sudo apt-get install python3.11-tk" first if needed
 # use "sudo apt-get install scrot" first if needed
+# use "pip install windows-curses" for windows system
 
-tk
-click==6.7
-matplotlib==3.1.2
-numpy==1.17.4
-PyAutoGUI==0.9.53
-PyChromeDevTools==0.4
-pynput==1.7.6
-pyquery==2.0.0
-PySimpleGUI==4.60.4
-pyvisauto==1.0.3
-requests
-lxml==4.2.5
-flake8==3.7.8
-pyppeteer==1.0.2
+appdirs==1.4.4
+certifi==2025.6.15
+charset-normalizer==3.4.2
+cssselect==1.3.0
+idna==3.10
+importlib_metadata==8.7.0
+lxml==6.0.0
+MouseInfo==0.1.3
+mss==10.0.0
+numpy==2.3.1
+opencv-python==4.11.0.86
+packaging==25.0
+pillow==11.3.0
+PyAutoGUI==0.9.54
+PyChromeDevTools==1.0.4
+pyee==11.1.1
+PyGetWindow==0.0.9
+PyMsgBox==1.0.9
+pyperclip==1.9.0
+pyppeteer==2.0.0
+pyquery==2.0.1
+PyRect==0.2.0
+PyScreeze==1.0.1
+pytesseract==0.3.13
+python-dateutil==2.9.0.post0
+python3-xlib==0.15
+pytweening==1.2.0
+requests==2.32.4
+six==1.17.0
+tqdm==4.67.1
+typing_extensions==4.14.0
+urllib3==1.26.20
+websocket-client==1.8.0
+websockets==10.4
+zipp==3.23.0
+psutil==7.2.1

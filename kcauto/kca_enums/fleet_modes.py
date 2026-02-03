@@ -13,7 +13,10 @@ class FleetModeEnum(EnumBase):
         if self is self.STANDARD:
             return self.name.title()
         return self.name
-
+    
+    @property
+    def config_name(self):
+        return self.value
 
 class CombinedFleetModeEnum(EnumBase):
     TCF = 'tcf'

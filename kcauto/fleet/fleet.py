@@ -2,10 +2,12 @@ from datetime import datetime
 
 import config.config_core as cfg
 import ships.ships_core as shp
+from ships.ship import Ship
 import util.kca as kca_u
 from kca_enums.damage_states import DamageStateEnum
 from kca_enums.fatigue_states import FatigueStateEnum
-from constants import VISUAL_DAMAGE, FLEET_NUMBER_ICON
+from kca_enums.fleet import FleetEnum
+from constants import VISUAL_DAMAGE, FLEET_ID_ICON
 from util.kc_time import KCTime
 from util.logger import Log
 
@@ -15,18 +17,23 @@ class Fleet(object):
     _fleet_type = None
     _enabled = False
     _at_base = True
-    _ship_ids = []
     _return_time = None
-    ship_data = []
+    _expedition_id = None
+    ships: list[Ship] = []
     visual_health = []
 
     def __init__(self, fleet_id, fleet_type, enabled=True):
+        Log.log_debug(f"Fleet {fleet_id} with type {fleet_type} init.")
         self.fleet_id = fleet_id
         self.enabled = enabled
         self.fleet_type = fleet_type
+        self.ships: list[Ship] = []
 
     def update_ship_data(self):
-        self.ship_data = shp.ships.get_local_ships(self.ship_ids)
+        ship_ids = self.ship_ids
+        self.ships = []
+        for id in ship_ids:
+            self.ships.append(shp.ships.get_ship_from_production_id(id))
 
     def select(self):
         Log.log_debug(f"Selecting fleet {self.fleet_id}.")
@@ -34,10 +41,10 @@ class Fleet(object):
             'top_submenu', f'fleet|fleet_{self.fleet_id}.png')
         while not kca_u.kca.exists(
                 'top_submenu', f'fleet|fleet_{self.fleet_id}_active.png',
-                FLEET_NUMBER_ICON):
+                FLEET_ID_ICON):
             kca_u.kca.click_existing(
                 'top_submenu', f'fleet|fleet_{self.fleet_id}.png',
-                FLEET_NUMBER_ICON)
+                FLEET_ID_ICON)
         kca_u.kca.sleep()
 
     @property
@@ -46,9 +53,11 @@ class Fleet(object):
 
     @fleet_type.setter
     def fleet_type(self, value):
-        if self.fleet_id == 1 and value != 'combat':
+        Log.log_debug(f"value {value}.")
+        
+        if self.fleet_id == 1 and value != FleetEnum.COMBAT:
             raise ValueError("Fleet 1 can only be a combat fleet.")
-        if value not in ('combat', 'expedition'):
+        if value not in [e for e in FleetEnum]:
             raise ValueError("Invalid value for fleet type.")
         self._fleet_type = value
 
@@ -65,10 +74,6 @@ class Fleet(object):
             Log.log_success(f"Fleet {self.fleet_id} activated.")
         elif value is False and print_log:
             Log.log_success(f"Fleet {self.fleet_id} deactivated.")
-            self._at_base = True
-            self._ships = []
-            self._return_time = None
-            self.ship_data = []
         self._enabled = value
 
     @property
@@ -82,22 +87,33 @@ class Fleet(object):
         print_log = True if value != self._enabled else False
         if value is True and print_log:
             Log.log_msg(f"Fleet {self.fleet_id} has arrived at base!")
-            for ship in self.ship_data:
+            
+            ship : Ship
+            for ship in self.ships:
                 ship.needs_resupply = True
         elif value is False and print_log:
             Log.log_msg(f"Fleet {self.fleet_id} is away on assignment.")
         self._at_base = value
 
     @property
-    def ship_ids(self):
-        return self._ship_ids
-
-    @ship_ids.setter
-    def ship_ids(self, value):
-        if type(value) is not list:
-            raise TypeError("Not a list!")
-        self._ship_ids = [ship_id for ship_id in value if ship_id > -1]
-        self.update_ship_data()
+    def ship_ids(self) -> list[int]:
+        
+        ret = []
+        
+        for ship in self.ships:
+            ret.append(ship.production_id)
+        
+        return ret
+    
+    @property
+    def equipment_ids(self) -> list[int]:
+        
+        ret = []
+        
+        for ship in self.ships:
+            ret += ship.equipment_ids
+        
+        return ret
 
     @property
     def return_time(self):
@@ -119,7 +135,7 @@ class Fleet(object):
 
     @property
     def needs_resupply(self):
-        for ship in self.ship_data:
+        for ship in self.ships:
             if ship.needs_resupply:
                 return True
         return False
@@ -128,7 +144,7 @@ class Fleet(object):
     def needs_resupply(self, value):
         if type(value) is not bool:
             raise ValueError("Needs resupply flag is not bool")
-        for ship in self.ship_data:
+        for ship in self.ships:
             if value is True:
                 ship.needs_resupply = True
             else:
@@ -136,22 +152,24 @@ class Fleet(object):
 
     @property
     def needs_repair(self):
-        for ship in self.ship_data:
+        for ship in self.ships:
             if ship.damage >= cfg.config.combat.repair_limit:
                 return True
         return False
 
     @property
     def under_repair(self):
-        for ship in self.ship_data:
-            if ship.under_repair:
+        import repair.repair_core as rep
+        
+        for ship in self.ships:
+            if ship.production_id in rep.repair.ships_under_repair:
                 return True
         return False
 
     @property
     def weakest_state(self):
         weakest_state = DamageStateEnum.NO
-        for ship in self.ship_data:
+        for ship in self.ships:
             if ship.damage > weakest_state:
                 weakest_state = ship.damage
         return weakest_state
@@ -159,7 +177,7 @@ class Fleet(object):
     @property
     def highest_fatigue(self):
         highest_fatigue = FatigueStateEnum.SPARKLED
-        for ship in self.ship_data:
+        for ship in self.ships:
             if ship.fatigue > highest_fatigue:
                 highest_fatigue = ship.fatigue
         return highest_fatigue
@@ -167,7 +185,7 @@ class Fleet(object):
     @property
     def lowest_morale(self):
         lowest_morale = 100
-        for ship in self.ship_data:
+        for ship in self.ships:
             if ship.morale < lowest_morale:
                 lowest_morale = ship.morale
         return lowest_morale
@@ -183,7 +201,7 @@ class Fleet(object):
         return (
             f"Fleet {self.fleet_id} / "
             f"{self.weakest_state.display_name} fleet damage / "
-            f"{self.highest_fatigue.display_name}")
+            f"{self.highest_fatigue.display_name} ")
 
     @property
     def expedition_fleet_status(self):
@@ -196,18 +214,115 @@ class Fleet(object):
         return (
             f"Fleet {self.fleet_id} / "
             f"{'At base' if self.at_base else 'On expedition'}"
-            f"{return_time_string}")
-
+            f"{return_time_string }")
+        
     @property
     def detailed_fleet_status(self):
         ship_strings = []
-        for ship in self.ship_data:
+        for ship in self.ships:
             ship_strings.append(
                 f"{ship.name} ({ship.damage.display_name} damage)")
         return " : ".join(ship_strings)
 
+    @property
+    def size(self):
+        return len(self.ships)
+            
+    @property
+    def sum_level(self):
+        level_sum = 0
+        for ship in self.ships:
+            level_sum += ship.level
+        return level_sum
+            
+    @property
+    def flag_level(self):
+        if self.size == 0:
+            return 0
+        return self.ships[0].level
+    
+    def has_stype(self, stype_list, member_id_list):
+        """
+        Check if the fleet contains ships of a specific ship type.
+
+        Args:
+            stype (list[ShipTypeEnum]): list of ship types to check for
+            member_id_list (list[int]): list of ship position in this fleet, id start from 0
+            
+        Returns:
+            count (int): number of ships in the fleet that match the ship type
+        """
+        count = 0
+        for i, ship in enumerate(self.ships):
+            if i not in member_id_list:
+                continue
+            
+            if ship.ship_type in stype_list:
+                count += 1
+        return count
+    
+    def has_ctype(self, ctype_list, member_id_list):
+        """
+        Check if the fleet contains ships of a specific ship class.
+
+        Args:
+            ctype (list[ShipClassEnum]): list of ship classes to check for
+            member_id_list (list[int]): list of ship position in this fleet, id start from 0
+            
+        Returns:
+            count (int): number of ships in the fleet that match the ship class
+        """
+        count = 0
+        for i, ship in enumerate(self.ships):
+            if i not in member_id_list:
+                continue
+            
+            if ship.ship_class in ctype_list:
+                count += 1
+        return count
+    
+    def has_id(self, id_list, member_id_list):
+        """
+        Check if the fleet contains ships of a specific ship id.
+
+        Args:
+            id_list (list[int]): list of ship ids to check for
+            member_id_list (list[int]): list of ship position in this fleet, id start from 0
+            
+        Returns:
+            count (int): number of ships in the fleet that match the ship id
+        """
+        count = 0
+        for i, ship in enumerate(self.ships):
+            if i not in member_id_list:
+                continue
+            
+            if ship.api_id in id_list:
+                count += 1
+        return count
+    
+    def add_ship(self, ship):
+        if not isinstance(ship, Ship):
+            raise TypeError("ship must be an instance of Ship class.")
+        self.ships.append(ship)
+        return
+            
+    def remove_ship(self, ship):
+        for i, ship in enumerate(self.ships):
+            if ship.production_id == ship.production_id:
+                del self.ships[i]
+                Log.log_debug(f"Removed ship {ship.name} from fleet {self.fleet_id}.")
+                return
+        Log.log_debug(f"Ship {ship.name} not found in fleet {self.fleet_id}.")
+    
+    def get_ship_by_production_id(self, production_id):
+        for ship in self.ships:
+            if ship.production_id == production_id:
+                return ship
+        return None
+            
     def update_ship_hps(self, hps):
-        for idx, ship in enumerate(self.ship_data):
+        for idx, ship in enumerate(self.ships):
             ship.hp = hps[idx]
 
     def visual_health_check(self, region):
@@ -234,30 +349,15 @@ class Fleet(object):
         return self.visual_health
 
     def get_fleet_id_and_name(self):
-        # print("Fleet data:")
-
-        ship_type = self.ship_data[0].ship_type.name
-        for ship in self.ship_data:
+        ship_type = self.ships[0].ship_type.name
+        for ship in self.ships:
             if ship.ship_type.name != ship_type:
                 ship_type = ""
                 break
-        # print("\t\"" + ship_type + "\":" , end ="\t")
-
-        # print("[" , end ="")
-        # for ship in self.ship_data:
-            # print(str(ship.sortno) + ",", end ="")
-        # print("\b],")
-
-        # print("\t\"" + ship_type + "_NAME\":" , end ="")
-        # print("[" , end ="")
-        # for ship in self.ship_data:
-            # print("\"" + ship.name_jp + "\",", end ="")
-        # print("\b],")
-
         return
 
     def __str__(self):
-        if self.fleet_type == 'combat':
+        if self.fleet_type == FleetEnum.COMBAT:
             return self.combat_fleet_status
         else:
             return self.expedition_fleet_status

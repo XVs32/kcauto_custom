@@ -2,7 +2,6 @@ import api.api_core as api
 import util.kca as kca_u
 from constants import NEAR_EXACT
 from kca_enums.kcsapi_paths import KCSAPIEnum
-import expedition.expedition_core as exp
 from util.logger import Log
 
 
@@ -212,6 +211,8 @@ class NavNode(object):
             if c['click_target'] == 'QUEST_MENU':
                 kca_u.kca.click('top_menu_quest')
             else:
+                Log.log_debug(f"Navigating from '{self.name}' to '{target}'")
+                Log.log_debug(f"click {c['click_target']} in {c['click_target_region']}")
                 kca_u.kca.wait_and_click(
                     kca_u.kca.r[c['click_target_region']], c['click_target'])
 
@@ -223,10 +224,10 @@ class NavNode(object):
                 kca_u.kca.r[c['wait_target_region']], c['wait_target'], 20,
                 NEAR_EXACT)
             if target == 'home':
-                exp.expedition.receive_expedition()
+                kca_u.kca.receive_expedition()
             return c['target']
         else:
-            Log.log_error(
+            Log.log_msg(
                 f"Not possible to navigate to '{target}' from {self.name} "
                 "screen.")
             return False

@@ -6,8 +6,7 @@ from util.wctf import WhoCallsTheFleetData
 
 class ShipsCore(object):
     max_ship_count = 0
-    local_ships = []
-    local_ships_by_local_id = {}
+    ship_pool : dict[int, Ship] = {}
     ship_library = []
     name_db = {}
 
@@ -15,20 +14,53 @@ class ShipsCore(object):
         Log.log_debug("Initializing Ship core.")
         self.load_wctf_names()
 
-    def update_local_ships(self, data):
+    def update_ship_pool(self, data):
         # from this api call, api_id = local_api_id, and api_ship_id = api_id
         Log.log_debug("Updating ship data from API.")
-        self.local_ships = []
-        self.local_ships_by_local_id = {}
+        self.ship_pool = {}
         for ship in data:
-            ship_instance = self.get_ship_from_api_id(
-                ship['api_ship_id'], ship)
-            self.local_ships.append(ship_instance)
-            self.local_ships_by_local_id[ship['api_id']] = ship_instance
+            self.ship_pool[ship['api_id']] = self.create_ship(
+                self.get_ship_static_data(ship["api_sortno"]), ship)
 
     def update_ship_library(self, data):
         Log.log_debug("Updating ship library data.")
         self.ship_library = data
+        
+    def is_ship_pool_full(self, is_event = False):
+        """check if ship pool is full
+
+        Args:
+            is_event (bool, optional): whether in event mode, event require 5 more free slots then usual. Defaults to False.
+        Returns:
+            bool: True if ship pool is full, False otherwise
+        """
+        required_free_slots = 5 if is_event else 0
+        return len(self.ship_pool) >= (self.max_ship_count - required_free_slots)
+        
+    def get_ship_static_data(self,api_sortno, api_id = None):
+        """get ship static data from ship library with api_sortno or api_id
+
+        Args:
+            api_sortno (int): Picture book number of the ship
+            api_id (int, optional): model id of the ship. Defaults to None.
+
+        Returns:
+            ship static data (dict): ship static data from ship library, return none if not found
+        """
+        
+        search_key = "api_sortno"
+        id = api_sortno
+        
+        if api_id != None:
+            id = api_id
+            search_key = "api_id"
+        
+        for ship in self.ship_library:
+            if search_key not in ship:
+                continue
+            
+            if ship[search_key] == id:
+                return ship
 
     def load_wctf_names(self, force_update=False):
         if force_update:
@@ -45,20 +77,36 @@ class ShipsCore(object):
             self.name_db[int(key)] = temp_db[key]
 
     @property
-    def current_ship_count(self):
-        return len(self.local_ships)
+    def ship_count(self):
+        return len(self.ship_pool)
 
-    def get_local_ships(self, req_ships):
-        ships = []
-        for local_id in req_ships:
-            ships.append(self.local_ships_by_local_id[local_id])
-        return ships
+    def get_ship_from_production_id(self, ship_id) -> Ship:
+        
+        if ship_id not in self.ship_pool:
+            Log.log_error(f"Ship #{ship_id} not found in port.")
+            return None
+        
+        return self.ship_pool[ship_id]
 
-    def get_ship_from_api_id(self, api_id, local_ship_data=None):
-        return Ship(api_id, local_data=local_ship_data)
-
-    def get_ship_from_sortno(self, sortno):
-        return Ship(sortno, id_type='sortno')
-
+    def create_ship(self, static_data, local_data = Ship.EMPTY_LOCAL_DATA):
+        return Ship(static_data, local_data)
+     
+    def get_ship_from_noro6_ship(self, noro_ship):
+        """
+            method to find the most match ship in ship_pool from noro6 ship info
+            input: noro6 ship info
+            output: kcauto ship obj
+        """
+        
+        ret = self.get_ship_from_production_id(noro_ship.get("un", 0))
+        
+        if ret is None:
+            static_data = self.get_ship_static_data(None, api_id=noro_ship['i'])
+            
+            ship_name = static_data['api_name'] if static_data else "Unknown"
+            
+            Log.log_error(f"Ship {ship_name} #{noro_ship.get('i','Unknown')} not found in ship pool, exiting...")
+                
+        return ret
 
 ships = ShipsCore()
