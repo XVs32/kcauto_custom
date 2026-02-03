@@ -62,7 +62,7 @@ class Kca(object):
                     data = json.load(f)
                     self.kc3_id = data.get('id', "hkgmldnainaglpjngpajnnjfhpdjkohh")
             except FileNotFoundError:
-                Log.log_warn("kc3_id.json not found, using default value None.")
+                Log.log_warn("kc3_id.json not found, using default KC3 id.")
                 self.kc3_id = "hkgmldnainaglpjngpajnnjfhpdjkohh"
         Log.log_debug("Kca module initialized.")
         
