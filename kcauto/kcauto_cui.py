@@ -18,6 +18,7 @@ import cui.scheduler as scheduler
 import cui.quest as quest 
 import cui.factory as factory
 import cui.util as util
+from config.macro import CONFIG_DEFAULT, CONFIG_CUI
 
 process = None
 panels = None
@@ -32,12 +33,12 @@ def init():
     global config
     # open the file for reading
     try:
-        with open('configs/config_cui.json', encoding='utf-8') as f:
+        with open(CONFIG_CUI, encoding='utf-8') as f:
             # Load configuration file values
             config = json.load(f)
         f.close()
     except FileNotFoundError:
-        with open('data/config/config_cui_template.json', encoding='utf-8') as f:
+        with open(CONFIG_DEFAULT, encoding='utf-8') as f:
             # Load configuration file values
             config = json.load(f)
         f.close()
