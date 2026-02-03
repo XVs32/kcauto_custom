@@ -4,6 +4,7 @@ import cui.util as util
 from cui.macro import *
 
 from fleet.noro6 import Noro6 
+from kcauto.config.macro import RECIPE_PRESET_CONSTRUCT, RECIPE_PRESET_DEVELOP, RECIPE_PRESET_CONSTRUCT_TEMPLATE, RECIPE_PRESET_DEVELOP_TEMPLATE
 
 CONSTRUCT_TAB = 1
 DEVELOP_TAB = 2
@@ -69,14 +70,35 @@ def pop_up_menu(stdscr, panel, config):
     recipe_preset[CONSTRUCT_TAB] = []
     recipe_preset[DEVELOP_TAB] = []
     if recipe_preset[CONSTRUCT_TAB] == []:
-        with open('data/factory/construct_recipe_preset.json', 'r', encoding='utf-8') as f:
-            import json
-            recipe_preset[CONSTRUCT_TAB] = json.load(f)    
-            
+        try:
+            file = open(RECIPE_PRESET_CONSTRUCT, 'r', encoding='utf-8')
+        except FileNotFoundError:
+        
+            template_file = open(RECIPE_PRESET_DEVELOP_TEMPLATE, 'r', encoding='utf-8')
+            #create preset file from template
+            file = open(RECIPE_PRESET_CONSTRUCT, 'w', encoding='utf-8')
+            file.write(template_file.read())
+            template_file.close()
+            file.close()
+        
     if recipe_preset[DEVELOP_TAB] == []:
-        with open('data/factory/develop_recipe_preset.json', 'r', encoding='utf-8') as f:
-            import json
-            recipe_preset[DEVELOP_TAB] = json.load(f)
+        try:
+            file = open(RECIPE_PRESET_DEVELOP, 'r', encoding='utf-8')
+        except FileNotFoundError:
+            template_file = open(RECIPE_PRESET_DEVELOP_TEMPLATE, 'r', encoding='utf-8')
+            #create preset file from template
+            file = open(RECIPE_PRESET_DEVELOP, 'w', encoding='utf-8')
+            file.write(template_file.read())
+            template_file.close()
+            file.close()
+            
+    import json
+    file = open(RECIPE_PRESET_CONSTRUCT, 'r', encoding='utf-8')
+    recipe_preset[CONSTRUCT_TAB] = json.load(file)
+    file.close()
+    file = open(RECIPE_PRESET_DEVELOP, 'r', encoding='utf-8')
+    recipe_preset[DEVELOP_TAB] = json.load(file)
+    file.close()
     
     current_tab = CONSTRUCT_TAB 
     current_active = TOP_MENU 
