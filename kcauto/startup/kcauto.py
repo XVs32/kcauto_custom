@@ -252,18 +252,19 @@ class Kcauto(object):
                 Log.log_success(f"Multi map stage: {com.combat.sortie_map_stage}")
 
                 
+                is_gimmick_await = False
                 if map_enum in GIMMICK_MAPS:
-                    Log.log_debug(f"Gimmick needed to be finish")
+                    Log.log_debug(f"Gimmick, needed to be finish")
                     for gimmick_map in GIMMICK_MAPS[map_enum]:
                         next_gimmick_map = com.combat.check_gimmick(gimmick_map)
                         if next_gimmick_map is not None:
                             Log.log_warn(f'Gimmick not finished')
                             current_stage = next_gimmick_map
                             com.combat.push_sortie_queue(current_stage)
+                            is_gimmick_await = True
                             break
                         
-                        current_stage = cfg.config.combat.sortie_map
-                else: 
+                if is_gimmick_await == False:
                     target_stage = MULTI_STAGE_MAPS[map_enum].index(cfg.config.combat.sortie_map.without_quest_enum)
                     if com.combat.sortie_map_stage - 1 < target_stage:
                         current_stage = MULTI_STAGE_MAPS[map_enum][com.combat.sortie_map_stage - 1]
