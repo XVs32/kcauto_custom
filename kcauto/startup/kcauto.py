@@ -228,7 +228,7 @@ class Kcauto(object):
                 sortie_queue = [cfg.config.combat.sortie_map_read_only.value]
                 com.combat.set_sortie_queue(sortie_queue)
         else:
-            Log.log_msg(f"Sortie queue:{com.combat.get_sortie_queue()}")
+            Log.log_msg(f"Sortie queue:{com.combat.sortie_queue}")
 
 
         if len(com.combat.get_sortie_queue()) == 0: #If no combat map available, turn off combat module
@@ -260,7 +260,7 @@ class Kcauto(object):
                         if next_gimmick_map is not None:
                             Log.log_warn(f'Gimmick not finished')
                             current_stage = next_gimmick_map
-                            com.combat.push_sortie_queue(current_stage)
+                            com.combat.insert_sortie_queue(current_stage)
                             is_gimmick_await = True
                             break
                         
@@ -268,7 +268,7 @@ class Kcauto(object):
                     target_stage = MULTI_STAGE_MAPS[map_enum].index(cfg.config.combat.sortie_map.without_quest_enum)
                     if com.combat.sortie_map_stage - 1 < target_stage:
                         current_stage = MULTI_STAGE_MAPS[map_enum][com.combat.sortie_map_stage - 1]
-                        com.combat.push_sortie_queue(current_stage)
+                        com.combat.insert_sortie_queue(current_stage)
                     else:
                         current_stage = cfg.config.combat.sortie_map
 
@@ -327,6 +327,7 @@ class Kcauto(object):
 
                 Log.log_debug(f"conduct sortie end")
                 #sortie success, pop the head of sortie_queue
+                
                 com.combat.pop_sortie_queue()
                 
                 sts.stats.set_print_loop_end_stats()
