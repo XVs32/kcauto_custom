@@ -18,7 +18,7 @@ import cui.scheduler as scheduler
 import cui.quest as quest 
 import cui.factory as factory
 import cui.util as util
-from kcauto.config.macro import CONFIG_DEFAULT, CONFIG_CUI
+from config.macro import CONFIG_DEFAULT, CONFIG_CUI
 
 process = None
 panels = None
