@@ -89,11 +89,26 @@
       0
     ],
     "map_context": [
-      "B-2-1",
-      "B-2-2",
-      "B-2-3",
-      "B-2-4",
-      "B-2-5"
+      {
+        "name": "B-2-1",
+        "min_rank": "B"
+      },
+      {
+        "name": "B-2-2",
+        "min_rank": "B"
+      },
+      {
+        "name": "B-2-3",
+        "min_rank": "B"
+      },
+      {
+        "name": "B-2-4",
+        "min_rank": "B"
+      },
+      {
+        "name": "B-2-5",
+        "min_rank": "B"
+      }
     ],
     "recommended_map": [
       "B-2-1"
@@ -195,11 +210,26 @@
       0
     ],
     "map_context": [
-      "B-4-1",
-      "B-4-2",
-      "B-4-3",
-      "B-4-4",
-      "B-4-5"
+      {
+        "name": "B-4-1",
+        "min_rank": "B"
+      },
+      {
+        "name": "B-4-2",
+        "min_rank": "B"
+      },
+      {
+        "name": "B-4-3",
+        "min_rank": "B"
+      },
+      {
+        "name": "B-4-4",
+        "min_rank": "B"
+      },
+      {
+        "name": "B-4-5",
+        "min_rank": "B"
+      }
     ],
     "recommended_map": [
       "B-4-2"
@@ -214,9 +244,18 @@
       0
     ],
     "map_context": [
-      "B-3-3",
-      "B-3-4",
-      "B-3-5"
+      {
+        "name": "B-3-3",
+        "min_rank": "B"
+      },
+      {
+        "name": "B-3-4",
+        "min_rank": "B"
+      },
+      {
+        "name": "B-3-5",
+        "min_rank": "B"
+      }
     ],
     "recommended_map": [
       "B-3-5"
@@ -231,7 +270,10 @@
       0
     ],
     "map_context": [
-      "B-4-4"
+      {
+        "name": "B-4-4",
+        "min_rank": "B"
+      }
     ],
     "recommended_map": [
       "B-4-4"
@@ -246,7 +288,10 @@
       0
     ],
     "map_context": [
-      "B-5-2"
+      {
+        "name": "B-5-2",
+        "min_rank": "S"
+      }
     ],
     "recommended_map": [
       "B-5-2"
@@ -261,7 +306,10 @@
       0
     ],
     "map_context": [
-      "B-1-5"
+      {
+        "name": "B-1-5",
+        "min_rank": "A"
+      }
     ],
     "recommended_map": [
       "B-1-5"
@@ -271,7 +319,10 @@
     "id": 249,
     "type": "monthly",
     "map_context": [
-      "Bm1-2-5"
+      {
+        "name": "Bm1-2-5",
+        "min_rank": "S"
+      }
     ],
     "recommended_map": [
       "Bm1-2-5"
@@ -314,7 +365,10 @@
       0
     ],
     "map_context": [
-      "B-6-1"
+      {
+        "name": "B-6-1",
+        "min_rank": "S"
+      }
     ],
     "recommended_map": [
       "B-6-1"
@@ -324,7 +378,10 @@
     "id": 257,
     "type": "monthly",
     "map_context": [
-      "Bm3-1-4"
+      {
+        "name": "Bm3-1-4",
+        "min_rank": "S"
+      }
     ],
     "recommended_map": [
       "Bm3-1-4"
@@ -373,7 +430,10 @@
     "id": 259,
     "type": "monthly",
     "map_context": [
-      "Bm4-5-1"
+      {
+        "name": "Bm4-5-1",
+        "min_rank": "S"
+      }
     ],
     "recommended_map": [
       "Bm4-5-1"
@@ -407,7 +467,10 @@
       0
     ],
     "map_context": [
-      "B-1-5"
+      {
+        "name": "B-1-5",
+        "min_rank": "A"
+      }
     ],
     "recommended_map": [
       "B-1-5"
@@ -417,7 +480,10 @@
     "id": 264,
     "type": "monthly",
     "map_context": [
-      "Bm6-4-2"
+      {
+        "name": "Bm6-4-2",
+        "min_rank": "S"
+      }
     ],
     "recommended_map": [
       "Bm6-4-2"
@@ -447,7 +513,10 @@
     "id": 266,
     "type": "monthly",
     "map_context": [
-      "Bm7-2-5"
+      {
+        "name": "Bm7-2-5",
+        "min_rank": "S"
+      }
     ],
     "recommended_map": [
       "Bm7-2-5"
@@ -490,10 +559,22 @@
     "id": 280,
     "type": "monthly",
     "map_context": [
-      "Bm8-1-2",
-      "Bm8-1-3",
-      "Bm8-1-4",
-      "Bm8-2-1"
+      {
+        "name": "Bm8-1-2",
+        "min_rank": "S"
+      },
+      {
+        "name": "Bm8-1-3",
+        "min_rank": "S"
+      },
+      {
+        "name": "Bm8-1-4",
+        "min_rank": "S"
+      },
+      {
+        "name": "Bm8-2-1",
+        "min_rank": "S"
+      }
     ],
     "recommended_map": [
       "Bm8-1-2",
@@ -527,7 +608,10 @@
     "id": 822,
     "type": "other",
     "map_context": [
-      "B-2-4"
+      {
+        "name": "B-2-4",
+        "min_rank": "S"
+      }
     ],
     "recommended_map": [
       "B-2-4"
@@ -537,10 +621,22 @@
     "id": 854,
     "type": "other",
     "map_context": [
-      "B-2-4",
-      "B-6-1",
-      "B-6-3",
-      "B-6-4"
+      {
+        "name": "B-2-4",
+        "min_rank": "A"
+      },
+      {
+        "name": "B-6-1",
+        "min_rank": "A"
+      },
+      {
+        "name": "B-6-3",
+        "min_rank": "A"
+      },
+      {
+        "name": "B-6-4",
+        "min_rank": "S"
+      }
     ],
     "recommended_map": [
       "B-2-4",
@@ -553,7 +649,9 @@
     "id": 861,
     "type": "other",
     "map_context": [
-      "Bq3-1-6"
+      {
+        "name": "Bq3-1-6"
+      }
     ],
     "recommended_map": [
       "Bq3-1-6"
@@ -575,7 +673,10 @@
     "id": 862,
     "type": "other",
     "map_context": [
-      "Bq4-6-3"
+      {
+        "name": "Bq4-6-3",
+        "min_rank": "A"
+      }
     ],
     "recommended_map": [
       "Bq4-6-3"
@@ -602,9 +703,18 @@
     "id": 873,
     "type": "other",
     "map_context": [
-      "Bq5-3-1",
-      "Bq5-3-2",
-      "Bq5-3-3"
+      {
+        "name": "Bq5-3-1",
+        "min_rank": "A"
+      },
+      {
+        "name": "Bq5-3-2",
+        "min_rank": "A"
+      },
+      {
+        "name": "Bq5-3-3",
+        "min_rank": "A"
+      }
     ],
     "recommended_map": [
       "Bq5-3-3",
@@ -627,7 +737,10 @@
     "id": 875,
     "type": "other",
     "map_context": [
-      "Bq6-5-4"
+      {
+        "name": "Bq6-5-4",
+        "min_rank": "S"
+      }
     ],
     "recommended_map": [
       "Bq6-5-4"
@@ -658,9 +771,18 @@
     "id": 888,
     "type": "other",
     "map_context": [
-      "Bq7-5-1",
-      "Bq7-5-3",
-      "Bq7-5-4"
+      {
+        "name": "Bq7-5-1",
+        "min_rank": "S"
+      },
+      {
+        "name": "Bq7-5-3",
+        "min_rank": "S"
+      },
+      {
+        "name": "Bq7-5-4",
+        "min_rank": "S"
+      }
     ],
     "recommended_map": [
       "Bq7-5-1",
@@ -704,11 +826,26 @@
     "id": 893,
     "type": "other",
     "map_context": [
-      "B-1-5",
-      "B-7-1",
-      "B-7-2",
-      "B-7-2-G",
-      "B-7-2-M"
+      {
+        "name": "B-1-5",
+        "min_rank": "S"
+      },
+      {
+        "name": "B-7-1",
+        "min_rank": "S"
+      },
+      {
+        "name": "B-7-2",
+        "min_rank": "S"
+      },
+      {
+        "name": "B-7-2-G",
+        "min_rank": "S"
+      },
+      {
+        "name": "B-7-2-M",
+        "min_rank": "S"
+      }
     ],
     "recommended_map": [
       "B-7-2-G",
@@ -729,11 +866,26 @@
     "id": 894,
     "type": "other",
     "map_context": [
-      "Bq9-1-3",
-      "Bq9-1-4",
-      "Bq9-2-1",
-      "Bq9-2-2",
-      "Bq9-2-3"
+      {
+        "name": "Bq9-1-3",
+        "min_rank": "S"
+      },
+      {
+        "name": "Bq9-1-4",
+        "min_rank": "S"
+      },
+      {
+        "name": "Bq9-2-1",
+        "min_rank": "S"
+      },
+      {
+        "name": "Bq9-2-2",
+        "min_rank": "S"
+      },
+      {
+        "name": "Bq9-2-3",
+        "min_rank": "S"
+      }
     ],
     "recommended_map": [
       "Bq9-1-3",
@@ -761,11 +913,26 @@
     "id": 872,
     "type": "other",
     "map_context": [
-      "B-5-5",
-      "B-6-2",
-      "B-6-5",
-      "B-7-2",
-      "B-7-2-M"
+      {
+        "name": "B-5-5",
+        "min_rank": "S"
+      },
+      {
+        "name": "B-6-2",
+        "min_rank": "S"
+      },
+      {
+        "name": "B-6-5",
+        "min_rank": "S"
+      },
+      {
+        "name": "B-7-2",
+        "min_rank": "S"
+      },
+      {
+        "name": "B-7-2-M",
+        "min_rank": "S"
+      }
     ],
     "recommended_map": [
       "B-5-5",
@@ -778,10 +945,22 @@
     "id": 284,
     "type": "other",
     "map_context": [
-      "Bq11-1-4",
-      "Bq11-2-1",
-      "Bq11-2-2",
-      "Bq11-2-3"
+      {
+        "name": "Bq11-1-4",
+        "min_rank": "S"
+      },
+      {
+        "name": "Bq11-2-1",
+        "min_rank": "S"
+      },
+      {
+        "name": "Bq11-2-2",
+        "min_rank": "S"
+      },
+      {
+        "name": "Bq11-2-3",
+        "min_rank": "S"
+      }
     ],
     "recommended_map": [
       "Bq11-1-4",
@@ -815,11 +994,26 @@
     "id": 845,
     "type": "other",
     "map_context": [
-      "B-4-1",
-      "B-4-2",
-      "B-4-3",
-      "B-4-4",
-      "B-4-5"
+      {
+        "name": "B-4-1",
+        "min_rank": "S"
+      },
+      {
+        "name": "B-4-2",
+        "min_rank": "S"
+      },
+      {
+        "name": "B-4-3",
+        "min_rank": "S"
+      },
+      {
+        "name": "B-4-4",
+        "min_rank": "S"
+      },
+      {
+        "name": "B-4-5",
+        "min_rank": "S"
+      }
     ],
     "recommended_map": [
       "B-4-1",
@@ -833,10 +1027,22 @@
     "id": 903,
     "type": "other",
     "map_context": [
-      "B-5-1",
-      "B-5-4",
-      "B-6-4",
-      "B-6-5"
+      {
+        "name": "B-5-1",
+        "min_rank": "S"
+      },
+      {
+        "name": "B-5-4",
+        "min_rank": "S"
+      },
+      {
+        "name": "B-6-4",
+        "min_rank": "S"
+      },
+      {
+        "name": "B-6-5",
+        "min_rank": "S"
+      }
     ],
     "recommended_map": [
       "Bq13-5-1",
@@ -900,10 +1106,22 @@
     "id": 904,
     "type": "other",
     "map_context": [
-      "B-2-5",
-      "B-3-4",
-      "B-4-5",
-      "B-5-3"
+      {
+        "name": "B-2-5",
+        "min_rank": "S"
+      },
+      {
+        "name": "B-3-4",
+        "min_rank": "S"
+      },
+      {
+        "name": "B-4-5",
+        "min_rank": "S"
+      },
+      {
+        "name": "B-5-3",
+        "min_rank": "S"
+      }
     ],
     "recommended_map": [
       "B-2-5",
@@ -927,11 +1145,26 @@
     "id": 905,
     "type": "other",
     "map_context": [
-      "B-1-1",
-      "B-1-2",
-      "B-1-3",
-      "B-1-5",
-      "B-1-6"
+      {
+        "name": "B-1-1",
+        "min_rank": "A"
+      },
+      {
+        "name": "B-1-2",
+        "min_rank": "A"
+      },
+      {
+        "name": "B-1-3",
+        "min_rank": "A"
+      },
+      {
+        "name": "B-1-5",
+        "min_rank": "A"
+      },
+      {
+        "name": "B-1-6",
+        "min_rank": "A"
+      }
     ],
     "recommended_map": [
       "B-1-1",
@@ -984,11 +1217,26 @@
     "id": 912,
     "type": "other",
     "map_context": [
-      "B-1-3",
-      "B-2-1",
-      "B-2-2",
-      "B-2-3",
-      "B-1-6"
+      {
+        "name": "B-1-3",
+        "min_rank": "A"
+      },
+      {
+        "name": "B-2-1",
+        "min_rank": "A"
+      },
+      {
+        "name": "B-2-2",
+        "min_rank": "A"
+      },
+      {
+        "name": "B-2-3",
+        "min_rank": "A"
+      },
+      {
+        "name": "B-1-6",
+        "min_rank": "A"
+      }
     ],
     "recommended_map": [
       "B-1-3",
@@ -1022,10 +1270,22 @@
     "id": 914,
     "type": "other",
     "map_context": [
-      "B-4-1",
-      "B-4-2",
-      "B-4-3",
-      "B-4-4"
+      {
+        "name": "B-4-1",
+        "min_rank": "A"
+      },
+      {
+        "name": "B-4-2",
+        "min_rank": "A"
+      },
+      {
+        "name": "B-4-3",
+        "min_rank": "A"
+      },
+      {
+        "name": "B-4-4",
+        "min_rank": "A"
+      }
     ],
     "recommended_map": [
       "B-4-1",
@@ -1056,11 +1316,26 @@
     "id": 928,
     "type": "other",
     "map_context": [
-      "B-7-2",
-      "B-7-2-M",
-      "B-7-3-P",
-      "B-7-3",
-      "B-4-2"
+      {
+        "name": "B-7-2",
+        "min_rank": "S"
+      },
+      {
+        "name": "B-7-2-M",
+        "min_rank": "S"
+      },
+      {
+        "name": "B-7-3-P",
+        "min_rank": "S"
+      },
+      {
+        "name": "B-7-3",
+        "min_rank": "S"
+      },
+      {
+        "name": "B-4-2",
+        "min_rank": "S"
+      }
     ],
     "recommended_map": [
       "B-7-2-M",
@@ -1095,9 +1370,18 @@
     "id": 944,
     "type": "other",
     "map_context": [
-      "B-1-2",
-      "B-1-3",
-      "B-1-4"
+      {
+        "name": "B-1-2",
+        "min_rank": "A"
+      },
+      {
+        "name": "B-1-3",
+        "min_rank": "A"
+      },
+      {
+        "name": "B-1-4",
+        "min_rank": "A"
+      }
     ],
     "recommended_map": [
       "B-1-2",
@@ -1137,9 +1421,18 @@
     "id": 945,
     "type": "other",
     "map_context": [
-      "B-1-5",
-      "B-2-1",
-      "B-1-6"
+      {
+        "name": "B-1-5",
+        "min_rank": "A"
+      },
+      {
+        "name": "B-2-1",
+        "min_rank": "A"
+      },
+      {
+        "name": "B-1-6",
+        "min_rank": "A"
+      }
     ],
     "recommended_map": [
       "B-1-5",
@@ -1180,9 +1473,18 @@
     "id": 946,
     "type": "other",
     "map_context": [
-      "B-2-2",
-      "B-2-3",
-      "B-2-4"
+      {
+        "name": "B-2-2",
+        "min_rank": "S"
+      },
+      {
+        "name": "B-2-3",
+        "min_rank": "S"
+      },
+      {
+        "name": "B-2-4",
+        "min_rank": "S"
+      }
     ],
     "recommended_map": [
       "B-2-2",
@@ -1216,10 +1518,22 @@
     "id": 947,
     "type": "other",
     "map_context": [
-      "B-3-1",
-      "B-3-3",
-      "B-3-4",
-      "B-3-5"
+      {
+        "name": "B-3-1",
+        "min_rank": "S"
+      },
+      {
+        "name": "B-3-3",
+        "min_rank": "S"
+      },
+      {
+        "name": "B-3-4",
+        "min_rank": "S"
+      },
+      {
+        "name": "B-3-5",
+        "min_rank": "S"
+      }
     ],
     "recommended_map": [
       "B-3-1",
@@ -1243,10 +1557,22 @@
     "id": 948,
     "type": "other",
     "map_context": [
-      "B-5-2",
-      "B-5-5",
-      "B-6-4",
-      "B-6-5"
+      {
+        "name": "B-5-2",
+        "min_rank": "S"
+      },
+      {
+        "name": "B-5-5",
+        "min_rank": "S"
+      },
+      {
+        "name": "B-6-4",
+        "min_rank": "A"
+      },
+      {
+        "name": "B-6-5",
+        "min_rank": "S"
+      }
     ],
     "recommended_map": [
       "B-5-2",
@@ -1273,11 +1599,26 @@
     "id": 973,
     "type": "other",
     "map_context": [
-      "B-3-1",
-      "B-3-3",
-      "B-4-3",
-      "B-7-3",
-      "B-7-3-P"
+      {
+        "name": "B-3-1",
+        "min_rank": "A"
+      },
+      {
+        "name": "B-3-3",
+        "min_rank": "A"
+      },
+      {
+        "name": "B-4-3",
+        "min_rank": "A"
+      },
+      {
+        "name": "B-7-3",
+        "min_rank": "A"
+      },
+      {
+        "name": "B-7-3-P",
+        "min_rank": "A"
+      }
     ],
     "recommended_map": [
       "B-3-1",
@@ -1334,10 +1675,22 @@
     "id": 975,
     "type": "other",
     "map_context": [
-      "B-1-5",
-      "B-2-3",
-      "B-3-2",
-      "B-5-3"
+      {
+        "name": "B-1-5",
+        "min_rank": "S"
+      },
+      {
+        "name": "B-2-3",
+        "min_rank": "S"
+      },
+      {
+        "name": "B-3-2",
+        "min_rank": "S"
+      },
+      {
+        "name": "B-5-3",
+        "min_rank": "S"
+      }
     ],
     "recommended_map": [
       "B-1-5",
@@ -1374,10 +1727,22 @@
     "id": 1005,
     "type": "other",
     "map_context": [
-      "B-1-2",
-      "B-1-3",
-      "B-1-5",
-      "B-3-2"
+      {
+        "name": "B-1-2",
+        "min_rank": "A"
+      },
+      {
+        "name": "B-1-3",
+        "min_rank": "A"
+      },
+      {
+        "name": "B-1-5",
+        "min_rank": "A"
+      },
+      {
+        "name": "B-3-2",
+        "min_rank": "A"
+      }
     ],
     "recommended_map": [
       "By13-1-2",
@@ -1416,9 +1781,18 @@
     "id": 1012,
     "type": "other",
     "map_context": [
-      "B-1-1",
-      "B-1-2",
-      "B-1-5"
+      {
+        "name": "B-1-1",
+        "min_rank": "A"
+      },
+      {
+        "name": "B-1-2",
+        "min_rank": "A"
+      },
+      {
+        "name": "B-1-5",
+        "min_rank": "A"
+      }
     ],
     "recommended_map": [
       "By14-1-2",
@@ -1461,10 +1835,22 @@
     "id": 1018,
     "type": "other",
     "map_context": [
-      "B-5-1",
-      "B-5-3",
-      "B-5-4",
-      "B-5-5"
+      {
+        "name": "B-5-1",
+        "min_rank": "A"
+      },
+      {
+        "name": "B-5-3",
+        "min_rank": "A"
+      },
+      {
+        "name": "B-5-4",
+        "min_rank": "A"
+      },
+      {
+        "name": "B-5-5",
+        "min_rank": "A"
+      }
     ],
     "recommended_map": [
       "By15-5-1",
