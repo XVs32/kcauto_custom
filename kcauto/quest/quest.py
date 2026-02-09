@@ -59,7 +59,7 @@ class Quest(object):
         
     @property
     def map_context(self):
-        return tuple([MapEnum(m).without_quest_enum for m in Quest.static_data[self.name].get('map_context', [])])
+        return tuple([MapEnum(m.get('name','')).without_quest_enum for m in Quest.static_data[self.name].get('map_context', [])])
         
     @property
     def exp_context(self):
