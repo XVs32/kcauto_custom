@@ -43,14 +43,25 @@ class ApiWrapper(object):
         kcapi_received = False
         kcapi_requests = {}
         results = {}
-        if timeout:
-            timeout_time = datetime.now() + timedelta(seconds=timeout)
+        end_time = datetime.now() + timedelta(seconds=timeout)
 
         while (
                 not kcapi_received
                 or len(kcapi_requests) > 0
                 or len(target_apis) > 0):
-            messages = kca_u.kca.api_hook.pop_messages()
+            # Block waiting for a message. Use the remaining overall timeout
+            # when one is set so we don't wake unnecessarily.
+            remaining = (end_time - datetime.now()).total_seconds()
+            if remaining <= 0:
+                break
+            wait_timeout = remaining
+
+            message = kca_u.kca.api_hook.wait_message(timeout=wait_timeout)
+            if not message:
+                # timed out waiting for a message; re-evaluate loop conditions
+                continue
+            # process the received message and any that have queued up
+            messages = [message] + kca_u.kca.api_hook.pop_messages()
             for message in messages:
                 if message['method'] == 'Network.responseReceived':
                     request_url = message['params']['response']['url']
@@ -110,7 +121,7 @@ class ApiWrapper(object):
                         if not need_all:
                             return results
             if timeout:
-                if datetime.now() > timeout_time:
+                if datetime.now() > end_time:
                     break
 
         self._check_for_chrome_crash()
