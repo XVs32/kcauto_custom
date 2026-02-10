@@ -17,7 +17,9 @@ class MapData(object):
         self.subworld = data['subworld']
         self.panel = data.get('panel', data['subworld'])
         self.page = data.get('page', 1)
-        self.enemy_context = data.get('enemy_context', [])
+        self.enemy_context = list(data.get('enemy_context', []))
+        self.nodes = {}
+        self.edges = {}
         for node in data['nodes']:
             node_instance = MapNode(node, data['nodes'][node])
             self.nodes[node_instance.name] = node_instance

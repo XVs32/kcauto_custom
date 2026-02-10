@@ -25,6 +25,7 @@ from kca_enums.kcsapi_paths import KCSAPIEnum
 from kca_enums.maps import MapEnum
 from kca_enums.nodes import NodeEnum
 from kca_enums.ship_types import ShipTypeEnum
+from kca_enums.sorite_rank import SortieRankEnum
 
 
 class CombatCore(CoreBase):
@@ -74,6 +75,7 @@ class CombatCore(CoreBase):
     sortie_queue = []
     first_init = True
     combat_api_listener_enable = True
+    last_sortie_result: SortieRankEnum = None
    
     def __init__(self):
         """
@@ -220,9 +222,8 @@ class CombatCore(CoreBase):
         return self.available_maps[cfg.config.combat.sortie_map.world_and_map]['gauge_num']
 
     def load_map_data(self, sortie_map):
-        Log.log_debug("Debug:load_map_data called")
         if self.map_data is None or self.map_data.name != sortie_map.world_and_map:
-            Log.log_debug("Debug:load_map excute with " + str(sortie_map.world_and_map))
+            Log.log_debug("Load_map excute with " + str(sortie_map.world_and_map))
             data = JsonData.load_json(f'data|combat|{sortie_map.world_and_map}.json')
             self.map_data = MapData(sortie_map, data)
 
@@ -739,6 +740,9 @@ class CombatCore(CoreBase):
             self.rescued_ships.append(ship)
             Log.log_success(f"Rescued {ship.name} (#{ship.sortno}).")
             sts.stats.combat.ships_rescued += 1
+            
+        if 'api_win_rank' in data:
+            self.last_sortie_result = SortieRankEnum[data['api_win_rank']]
 
     def _calculate_hps(self, new_hps, data):
         for phase in self.API_COMBAT_PHASES_TYPE1:
@@ -784,8 +788,7 @@ class CombatCore(CoreBase):
         self.nodes_run.append(next_node)
 
     def _get_next_node_from_edge(self, edge):
-        Log.log_msg(f"self.map_data.name {self.map_data.name}")
-        # print("Debug:"+ str( self.map_data.name))
+        Log.log_msg(f"current map: {self.map_data.name}, edge: {self.map_data.edges[edge]}")
         return self.map_data.edges[edge][1]
     
     def insert_sortie_queue(self, sortie_map: MapEnum):
@@ -828,6 +831,21 @@ class CombatCore(CoreBase):
             Log.log_error(f"cannot pop an empty queue(sortie_queue)")
 
         return self.sortie_queue
+    
+    def check_quest_rerun(self, sortie_map: MapEnum) -> bool:
+        """
+            method to check if the sortie_map is in the sortie_queue, which means it is needed for quest rerun
+            Args:
+                sortie_map (str): A sortie_map, ex: "1-1"
+            return:
+                bool: True if the sortie_map is in the sortie_queue, False otherwise
+        """
+        if sortie_map.value in self.sortie_queue:
+            Log.log_msg(f"{sortie_map.value} is in the sortie queue, needed for quest rerun.")
+            return True
+        else:
+            Log.log_msg(f"{sortie_map.value} is not in the sortie queue.")
+            return False
 
     def solve_gimmick(self):
 
