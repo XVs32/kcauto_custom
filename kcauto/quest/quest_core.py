@@ -20,6 +20,7 @@ from kca_enums.kcsapi_paths import KCSAPIEnum
 from kca_enums.quest_state import QuestStateEnum
 from kca_enums.ship_types import ShipTypeEnum
 from kca_enums.ship_class import ShipClassEnum 
+from kca_enums.sorite_rank import SortieRankEnum
 from kca_enums.maps import MapEnum
 from quest.quest import Quest
 from fleet.fleet import Fleet
@@ -456,6 +457,18 @@ class QuestCore(CoreBase):
         self.next_check_intervals[quest.quest_id].next_intervals = self._generate_intervals(quest)
         
         return
+    
+    def meets_min_sortie_rank(self, current_context, last_sortie_result: SortieRankEnum = None) -> bool:
+        """Return True if sortie_rank (or last_sortie_result) meets quest.min_sortie_rank."""
+        
+        if current_context == CONTEXT_PVP:
+            pass
+        elif current_context == CONTEXT_SORTIE:
+            return last_sortie_result.is_at_least(
+                self.auto_select_quest[CONTEXT_SORTIE].rank_requirement.get(
+                    com.combat.get_sortie_queue()[0].without_quest_enum, 
+                    SortieRankEnum.E))
+            self.auto_select_quest[CONTEXT_PVP] = pvp.pvp.next_pvp_quest
 
     def _generate_intervals(self, quest :Quest):
         next_combat = (

@@ -4,6 +4,7 @@ from util.json_data import JsonData
 from kca_enums.maps import MapEnum
 from kca_enums.quest_type import QuestTypeEnum
 from kca_enums.quest_state import QuestStateEnum
+from kca_enums.sorite_rank import SortieRankEnum
 from util.logger import Log
 
 
@@ -59,11 +60,19 @@ class Quest(object):
         
     @property
     def map_context(self):
-        return tuple([MapEnum(m.get('name','')).without_quest_enum for m in Quest.static_data[self.name].get('map_context', [])])
+        return tuple(MapEnum(m.get('name','')).without_quest_enum for m in Quest.static_data[self.name].get('map_context', []))
+    
+    @property
+    def rank_requirement(self):
+        ret = {}
+        for map in Quest.static_data[self.name].get('map_context', []):
+            ret[MapEnum(map.get('name',''))] = SortieRankEnum(map.get('min_rank','E'))
+        
+        return ret
         
     @property
     def exp_context(self):
-        return tuple([ExpeditionEnum(e) for e in Quest.static_data[self.name].get('expedition_context', [])])
+        return tuple(ExpeditionEnum(e) for e in Quest.static_data[self.name].get('expedition_context', []))
         
     @property
     def recommended_map(self):
