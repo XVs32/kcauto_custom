@@ -330,13 +330,13 @@ class Kcauto(object):
                 
                 com.combat.pop_sortie_queue()
                 
-                sts.stats.set_print_loop_end_stats()
-                kca_u.kca.receive_expedition()
-                
                 qst.quest.is_quest_dom_cache_dirty = True
             else:
                 Log.log_error(f"Sortie failed.")
 
+            sts.stats.set_print_loop_end_stats()
+            kca_u.kca.receive_expedition()
+                
     def run_resupply_logic(self, back_to_home=False):
         if res.resupply.need_to_resupply:
             res.resupply.goto()
