@@ -236,9 +236,20 @@ class CombatCore(CoreBase):
     def conduct_sortie(self):
         return self._conduct_sortie(cfg.config.combat.sortie_map)
 
-    def _conduct_sortie(self, sortie_map):
+    def _conduct_sortie(self, sortie_map:MapEnum):
         if not self._validate_sortie_map(sortie_map):
             Log.log_warn(f"Map {sortie_map.world_and_map} is not available.")
+            
+            if sortie_map.is_eo:
+                Log.log_warn(f"EO map {sortie_map.world_and_map} is not available, likely due to not meeting requirements.")
+                
+                if cfg.config.combat.sortie_map_read_only == MapEnum.auto_map_select:
+                    Log.log_msg("Auto map select mode is on, attemp to finish precondition map.")
+                    self.insert_sortie_queue(MapEnum("B-" + str(sortie_map.world) + "-" + str(sortie_map.map-1)))
+            else:
+                Log.log_error(f'Disabling combat module')
+                self.enabled = False
+            
             return False
         if cfg.config.combat.clear_stop and self._sortie_map_is_cleared:
             Log.log_msg(f"Map {sortie_map.world_and_map} has been cleared.")

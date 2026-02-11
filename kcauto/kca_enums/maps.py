@@ -74,6 +74,10 @@ class MapEnum_t(EnumBase):
             return self.value.split("-")[3]
         else:
             return None
+        
+    @property
+    def is_eo(self):
+        return self.map >= 5
             
 try:
     with open('data/combat/map_enum.json', 'r', encoding='utf-8') as f:
