@@ -76,7 +76,10 @@ class Quest(object):
         
     @property
     def recommended_map(self):
-        return tuple(Quest.static_data[self.name].get('recommended_map', ()))
+        ret = []
+        for map in Quest.static_data[self.name].get('recommended_map', []):
+            ret.append(MapEnum(map))
+        return tuple(ret)
     
     @property
     def fleet_composition(self):
