@@ -1,5 +1,6 @@
 
 from kca_enums.enum_base import EnumBase
+from util.logger import Log
 import json
 class MapEnum_t(EnumBase):
     @property
@@ -78,6 +79,11 @@ class MapEnum_t(EnumBase):
     @property
     def is_eo(self):
         return self.map >= 5
+    
+    @classmethod
+    def _missing_(cls, value):
+        Log.log_error(f"MapEnum: Unknown map value '{value}' encountered.")
+        return None
             
 try:
     with open('data/combat/map_enum.json', 'r', encoding='utf-8') as f:
