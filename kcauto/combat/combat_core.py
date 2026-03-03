@@ -758,7 +758,7 @@ class CombatCore(CoreBase):
             
         if 'api_win_rank' in data:
             self.last_battle[self.RANKENUM] = SortieRankEnum[data['api_win_rank']]
-            #self.last_battle[self.MAP_NODE] = 
+            self.last_battle[self.MAP_NODE] = self.current_node
 
     def _calculate_hps(self, new_hps, data):
         for phase in self.API_COMBAT_PHASES_TYPE1:
