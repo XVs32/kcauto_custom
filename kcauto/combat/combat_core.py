@@ -13,6 +13,7 @@ import ships.ships_core as shp
 import stats.stats_core as sts
 import util.kca as kca_u
 from combat.map_data import MapData
+from combat.node import MapNode, EmptyNode
 from util.core_base import CoreBase
 from util.json_data import JsonData
 from util.kc_time import KCTime
@@ -59,6 +60,9 @@ class CombatCore(CoreBase):
     NODE_TYPE_SELECT = 3
     NODE_TYPE_NOTHING = 4
     NODE_TYPE_FORMATION_SKIP = 5
+    MAP_NODE = 0
+    RANKENUM = 1
+    
     module_name = 'combat'
     module_display_name = 'Combat'
     available_maps = {}
@@ -75,7 +79,7 @@ class CombatCore(CoreBase):
     sortie_queue = []
     first_init = True
     combat_api_listener_enable = True
-    last_sortie_result: SortieRankEnum = None
+    last_battle: dict[str, SortieRankEnum | MapNode] = {}
    
     def __init__(self):
         """
@@ -753,7 +757,8 @@ class CombatCore(CoreBase):
             sts.stats.combat.ships_rescued += 1
             
         if 'api_win_rank' in data:
-            self.last_sortie_result = SortieRankEnum[data['api_win_rank']]
+            self.last_battle[self.RANKENUM] = SortieRankEnum[data['api_win_rank']]
+            #self.last_battle[self.MAP_NODE] = 
 
     def _calculate_hps(self, new_hps, data):
         for phase in self.API_COMBAT_PHASES_TYPE1:
