@@ -326,8 +326,8 @@ class Kcauto(object):
             if com.combat.conduct_sortie():
 
                 Log.log_debug(f"conduct sortie end")
-                #sortie success, pop the head of sortie_queue
                 
+                #sortie success, pop the head of sortie_queue
                 com.combat.pop_sortie_queue()
                 
                 qst.quest.is_quest_dom_cache_dirty = True
