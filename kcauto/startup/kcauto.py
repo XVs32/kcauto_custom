@@ -326,7 +326,29 @@ class Kcauto(object):
             if com.combat.conduct_sortie():
 
                 Log.log_debug(f"conduct sortie end")
-                
+
+                selected_quest = qst.quest.auto_select_quest[CONTEXT_SORTIE]
+                if selected_quest is not None:
+                    last_node = com.combat.last_battle.get(com.combat.MAP_NODE)
+                    current_map = cfg.config.combat.sortie_map.without_quest_enum
+                    map_is_required = (
+                        selected_quest.map_context == ()
+                        or current_map in selected_quest.map_context)
+                    if last_node is not None and last_node.boss_node:
+                        last_rank = com.combat.last_battle.get(com.combat.RANKENUM)
+                        if last_rank is not None and qst.quest.meets_min_sortie_rank(CONTEXT_SORTIE, last_rank):
+                            Log.log_success(
+                                f"Quest {selected_quest.name} condition met: "
+                                f"map {current_map} boss node {last_node} with rank {last_rank}.")
+                        else:
+                            Log.log_warn(
+                                f"Quest {selected_quest.name} condition NOT met: "
+                                f"map {current_map} boss node {last_node} with rank {last_rank}.")
+                    elif last_node is not None and not last_node.boss_node and map_is_required:
+                        Log.log_warn(
+                            f"Quest {selected_quest.name} condition NOT met: "
+                            f"map {current_map} did not reach boss node (ended at node {last_node}).")
+
                 #sortie success, pop the head of sortie_queue
                 com.combat.pop_sortie_queue()
                 
