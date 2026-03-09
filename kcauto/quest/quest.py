@@ -66,7 +66,7 @@ class Quest(object):
     def rank_requirement(self):
         ret = {}
         for map in Quest.static_data[self.name].get('map_context', []):
-            ret[MapEnum(map.get('name',''))] = SortieRankEnum(map.get('min_rank','E'))
+            ret[MapEnum(map.get('name',''))] = SortieRankEnum[map.get('min_rank','E')]
         
         return ret
         
