@@ -348,6 +348,16 @@ class Kcauto(object):
                         Log.log_warn(
                             f"Quest {selected_quest.name} condition NOT met: "
                             f"map {current_map} did not reach boss node (ended at node {last_node}).")
+                    elif not map_is_required:
+                        Log.log_warn(
+                            f"Quest {selected_quest.name} condition NOT met: "
+                            f"map {current_map} is not in quest map context {selected_quest.map_context}.")
+                    else:
+                         Log.log_error(
+                            f"Quest {selected_quest.name} condition NOT met(exception): "
+                            f"map {current_map} did not reach boss node (ended at node {last_node}).")
+                else:
+                    Log.log_warn(f"No sortie quest selected, unable to verify sortie success.")
 
                 #sortie success, pop the head of sortie_queue
                 com.combat.pop_sortie_queue()
