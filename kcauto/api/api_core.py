@@ -67,7 +67,9 @@ class ApiWrapper(object):
                     request_url = message['params']['response']['url']
                     found_target = None
                     for target_api in target_apis:
-                        if target_api.value in request_url:
+                        if (target_api.value in request_url
+                                and request_url.split('?')[0].endswith(
+                                    target_api.value.split('/')[-1])):
                             found_target = target_api
                             request_id = message['params']['requestId']
                             Log.log_debug(
