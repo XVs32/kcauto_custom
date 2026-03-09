@@ -483,7 +483,7 @@ class CombatCore(CoreBase):
 
         while self.combat_api_listener_enable:
             api_result = api.api.update_from_api(
-                self.COMBAT_APIS | self.RESULT_APIS | self.SHIPDECK_API | self.EQUIP_API, need_all=True, timeout=5)
+                self.COMBAT_APIS | self.RESULT_APIS | self.SHIPDECK_API | self.EQUIP_API, need_all=False, timeout=5)
             if KCSAPIEnum.SORTIE_NEXT.name in api_result:
                 self._find_next_node(
                     api_result[KCSAPIEnum.SORTIE_NEXT.name][0])
@@ -759,6 +759,7 @@ class CombatCore(CoreBase):
         if 'api_win_rank' in data:
             self.last_battle[self.RANKENUM] = SortieRankEnum[data['api_win_rank']]
             self.last_battle[self.MAP_NODE] = self.current_node
+            Log.log_msg(f"Battle rank in node {self.current_node}: {self.last_battle[self.RANKENUM].display_name}")
 
     def _calculate_hps(self, new_hps, data):
         for phase in self.API_COMBAT_PHASES_TYPE1:
