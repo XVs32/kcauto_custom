@@ -29,9 +29,10 @@ from constants import EMPTY_EQUIPMENT_API, TEMP_EQUIPMENT_API
 class ApiWrapper(object):
     def __init__(self):
         Log.log_debug("API Wrapper module initialized.")
+        self._pending_messages = []
 
     def update_from_api(
-            self, target_apis={KCSAPIEnum.ANY}, need_all=True, timeout=30):
+            self, target_apis={KCSAPIEnum.ANY}, process_all=True, timeout=30):
         """
             method to read the APIs in queue, all APIs in queue currently will be removed after this method is finished
         """
@@ -61,8 +62,9 @@ class ApiWrapper(object):
                 # timed out waiting for a message; re-evaluate loop conditions
                 continue
             # process the received message and any that have queued up
-            messages = [message] + kca_u.kca.api_hook.pop_messages()
-            for message in messages:
+            self._pending_messages = self._pending_messages + [message] + kca_u.kca.api_hook.pop_messages()
+                
+            for idx, message in enumerate(self._pending_messages):
                 if message['method'] == 'Network.responseReceived':
                     request_url = message['params']['response']['url']
                     found_target = None
@@ -120,7 +122,10 @@ class ApiWrapper(object):
                         else:
                             results[request_data['type'].name] = [res]
 
-                        if not need_all:
+                        if not process_all:
+                            # Save any messages not yet processed in this
+                            # batch so the next call can pick them up.
+                            self._pending_messages = self._pending_messages[idx + 1:]
                             return results
             if timeout:
                 if datetime.now() > end_time:
