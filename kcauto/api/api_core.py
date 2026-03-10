@@ -36,7 +36,7 @@ class ApiWrapper(object):
             method to read the APIs in queue, all APIs in queue currently will be removed after this method is finished
         """
         if KCSAPIEnum.NONE in target_apis:
-            return
+            return {}
 
         target_apis = set(target_apis)
         Log.log_debug("Begin waiting for API payload(s).")
