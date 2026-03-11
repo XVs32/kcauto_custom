@@ -67,12 +67,12 @@ class ApiWrapper(object):
             for idx, message in enumerate(self._pending_messages):
                 if message['method'] == 'Network.responseReceived':
                     request_url = message['params']['response']['url']
-                    found_target = None
+                    #found_target = None
                     for target_api in target_apis:
                         if (target_api.value in request_url
                                 and request_url.split('?')[0].endswith(
                                     target_api.value.split('/')[-1])):
-                            found_target = target_api
+                            #found_target = target_api
                             request_id = message['params']['requestId']
                             Log.log_debug(
                                 f"Waiting for request {request_id} "
@@ -81,8 +81,9 @@ class ApiWrapper(object):
                                 'type': target_api,
                                 'url': request_url
                             }
-                    if found_target:
-                        target_apis.remove(found_target)
+                            break
+                    #if found_target:
+                    #    target_apis.remove(found_target)
                 elif message['method'] == 'Network.loadingFinished':
                     message_request_id = message['params']['requestId']
                     if message_request_id in kcapi_requests:
@@ -127,6 +128,9 @@ class ApiWrapper(object):
                             # batch so the next call can pick them up.
                             self._pending_messages = self._pending_messages[idx + 1:]
                             return results
+            # All messages in this batch have been processed; clear the list
+            # so they are not re-processed on the next while-loop iteration.
+            self._pending_messages = []
             if timeout:
                 if datetime.now() > end_time:
                     break
@@ -378,15 +382,20 @@ class ApiWrapper(object):
             Log.log_debug("No select node data found in API response.")
 
         try:
-            next_node = data['api_data']['api_no']
-            return next_node
+            edge_id = data['api_data']['api_no']
+            com.combat.goto_next_node(edge_id)
+            Log.log_msg(f"Moving to Node {com.combat.current_node}")
+            return edge_id
         except KeyError:
             Log.log_debug("No next node data found in API response.")
 
     def _process_sortie_next(self, data):
         try:
-            next_node = data['api_data']['api_no']
-            return next_node
+            edge_id = data['api_data']['api_no']
+            com.combat.goto_next_node(edge_id)
+            Log.log_msg(f"Moving to Node {com.combat.current_node}")
+            
+            return edge_id
         except KeyError:
             Log.log_debug("No next node data found in API response.")
 
