@@ -357,12 +357,6 @@ class CombatCore(CoreBase):
         self._find_next_node(result[KCSAPIEnum.SORTIE_START.name][0])
         lbas.lbas.assign_lbas(self.map_data)
 
-        # Next node listener start
-        self.combat_api_listener_enable = True
-        next_node_listener = threading.Thread(target=self._next_node_handler)
-        next_node_listener.daemon = True 
-        next_node_listener.start()
-
         conducting_sortie = True
         while conducting_sortie == True:
 
@@ -454,18 +448,14 @@ class CombatCore(CoreBase):
                     raise ValueError("Node select not defined.")
                 else:
                     Log.log_msg(f"Selecting node {next_node.value}")
-                    old_node = self.current_node
-                    while old_node == self.current_node:
-                        self.map_data.nodes[next_node.value].select()
-                        kca_u.kca.sleep()
+                    self.map_data.nodes[next_node.value].select()
+                    kca_u.kca.sleep()
             elif node_type == self.NODE_TYPE_NOTHING:
                 pass
             elif node_type == self.NODE_TYPE_END:
                 conducting_sortie = False
                 continue
 
-        self.combat_api_listener_enable = False
-        next_node_listener.join()
         self._click_until_port()
         Log.log_msg(f"sortie handle end")
 
@@ -479,23 +469,25 @@ class CombatCore(CoreBase):
             if KCSAPIEnum.PORT.name not in api_result:
                 kca_u.kca.r['combat_click'].click()
 
-    def _next_node_handler(self):
-
-        while self.combat_api_listener_enable:
-            api_result = api.api.update_from_api(
-                self.COMBAT_APIS | self.RESULT_APIS | self.SHIPDECK_API | self.EQUIP_API, need_all=False, timeout=5)
-            if KCSAPIEnum.SORTIE_NEXT.name in api_result:
-                self._find_next_node(
-                    api_result[KCSAPIEnum.SORTIE_NEXT.name][0])
-                Log.log_msg(f"Moving to Node {self.current_node}")
-            elif KCSAPIEnum.PORT.name in api_result:
-                Log.log_debug("Sortie ended after battle.")
-                break
-
     def _cycle_between_nodes(self, sortie_map):
         Log.log_debug("Between nodes.")
 
         while True:
+            
+            api_result = {"mock": "data"} 
+            while api_result != {}:
+                api_result = api.api.update_from_api(
+                    self.COMBAT_APIS | self.RESULT_APIS | self.SHIPDECK_API | self.EQUIP_API, need_all=False, timeout=5)
+                if KCSAPIEnum.SORTIE_NEXT.name in api_result:
+                    self._find_next_node(
+                        api_result[KCSAPIEnum.SORTIE_NEXT.name][0])
+                    Log.log_msg(f"Moving to Node {self.current_node}")
+                elif KCSAPIEnum.PORT.name in api_result:
+                    Log.log_debug("Sortie ended after battle.")
+                    break
+                
+                print(api_result)
+            
             if kca_u.kca.exists('kc', 'combat|compass.png'):
                 Log.log_msg("Spinning compass.")
                 kca_u.kca.click_existing(
