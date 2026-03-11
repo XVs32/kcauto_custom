@@ -443,7 +443,7 @@ class QuestCore(CoreBase):
             830, 30)
         quest_list_region.click()
         api.api.update_from_api(
-            {KCSAPIEnum.QUEST_LIST, KCSAPIEnum.QUEST_TURN_IN}, need_all=False)
+            {KCSAPIEnum.QUEST_LIST, KCSAPIEnum.QUEST_TURN_IN}, process_all=False)
         kca_u.kca.sleep(1)
 
     def _untrack_quest(self, quest:Quest):
