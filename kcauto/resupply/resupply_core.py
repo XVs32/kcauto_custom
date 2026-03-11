@@ -38,7 +38,7 @@ class ResupplyCore(object):
                 kca_u.kca.click_existing(
                     'upper_left', 'resupply|resupply_all.png')
                 api_result = api.api.update_from_api(
-                    {KCSAPIEnum.RESUPPLY_ACTION}, need_all=False, timeout=1)
+                    {KCSAPIEnum.RESUPPLY_ACTION}, process_all=False, timeout=1)
                 kca_u.kca.sleep()
             sts.stats.resupply.resupplies_done += 1
 

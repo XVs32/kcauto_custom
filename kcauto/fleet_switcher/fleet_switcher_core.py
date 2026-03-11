@@ -431,7 +431,7 @@ class FleetSwitcherCore(object):
             kca_u.kca.click_existing(
                 'lower_right', 'shipswitcher|shiplist_shipswitch_button.png')
             kca_u.kca.wait('lower', 'shipswitcher|equipment_panel.png')
-            api_result = api.api.update_from_api({KCSAPIEnum.FREE_EQUIPMENT}, need_all=True, timeout=30)
+            api_result = api.api.update_from_api({KCSAPIEnum.FREE_EQUIPMENT}, process_all=True, timeout=30)
         
         if ship.slot_num == 1:
             Log.log_debug(f"1 slot ship")
@@ -461,7 +461,7 @@ class FleetSwitcherCore(object):
 
         kca_u.kca.wait('lower', 'shipswitcher|equipment_panel.png')
         
-        api_result = api.api.update_from_api({KCSAPIEnum.FREE_EQUIPMENT}, need_all=True)
+        api_result = api.api.update_from_api({KCSAPIEnum.FREE_EQUIPMENT}, process_all=True)
         if api_result == {}:
             Log.log_error(f"Something goes wrong, skipping this round...")
             exit(1)
@@ -550,7 +550,7 @@ class FleetSwitcherCore(object):
                 kca_u.kca.click_existing(
                     'lower_right', 'shipswitcher|shiplist_shipswitch_button.png')
                 kca_u.kca.wait('lower', 'shipswitcher|equipment_panel.png')
-                api.api.update_from_api({KCSAPIEnum.FREE_EQUIPMENT}, need_all=True, timeout=30)
+                api.api.update_from_api({KCSAPIEnum.FREE_EQUIPMENT}, process_all=True, timeout=30)
                 
             if fleet.ships[i].slot_ex != None and \
                fleet.ships[i].slot_ex.model_id != Equipment().model_id: 
@@ -580,7 +580,7 @@ class FleetSwitcherCore(object):
                 kca_u.kca.click_existing(
                     'lower_right', 'shipswitcher|shiplist_shipswitch_button.png')
                 kca_u.kca.wait('lower', 'shipswitcher|equipment_panel.png')
-                api.api.update_from_api({KCSAPIEnum.FREE_EQUIPMENT}, need_all=True, timeout=30)
+                api.api.update_from_api({KCSAPIEnum.FREE_EQUIPMENT}, process_all=True, timeout=30)
 
         return True
     

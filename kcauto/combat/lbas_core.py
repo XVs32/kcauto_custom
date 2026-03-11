@@ -161,7 +161,7 @@ class LBASCore(object):
             kca_u.kca.click_existing(
                 'upper_right', 'combat|lbas_resupply.png')
             api_result = api.api.update_from_api(
-                {KCSAPIEnum.LBAS_RESUPPLY_ACTION}, need_all=False, timeout=1)
+                {KCSAPIEnum.LBAS_RESUPPLY_ACTION}, process_all=False, timeout=1)
             kca_u.kca.sleep()
 
         kca_u.kca.wait_vanish(

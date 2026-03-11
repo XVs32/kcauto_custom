@@ -465,7 +465,7 @@ class CombatCore(CoreBase):
     def _click_until_port(self):
         while not kca_u.kca.exists('left', 'nav|home_menu_sortie.png'):
             api_result = api.api.update_from_api(
-                {KCSAPIEnum.PORT} | self.SHIPDECK_API | self.EQUIP_API, need_all=False, timeout=3)
+                {KCSAPIEnum.PORT} | self.SHIPDECK_API | self.EQUIP_API, process_all=False, timeout=3)
             if KCSAPIEnum.PORT.name not in api_result:
                 kca_u.kca.r['combat_click'].click()
 
@@ -477,7 +477,7 @@ class CombatCore(CoreBase):
             api_result = {"mock": "data"} 
             while api_result != {}:
                 api_result = api.api.update_from_api(
-                    self.COMBAT_APIS | self.RESULT_APIS | self.SHIPDECK_API | self.EQUIP_API, need_all=False, timeout=5)
+                    self.COMBAT_APIS | self.RESULT_APIS | self.SHIPDECK_API | self.EQUIP_API, process_all=False, timeout=5)
                 if KCSAPIEnum.SORTIE_NEXT.name in api_result:
                     self._find_next_node(
                         api_result[KCSAPIEnum.SORTIE_NEXT.name][0])
