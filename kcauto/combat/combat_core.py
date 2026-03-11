@@ -354,7 +354,6 @@ class CombatCore(CoreBase):
         # Sortie start
         kca_u.kca.r['top'].hover()
         result = api.api.update_from_api({KCSAPIEnum.SORTIE_START})
-        self._find_next_node(result[KCSAPIEnum.SORTIE_START.name][0])
         lbas.lbas.assign_lbas(self.map_data)
 
         conducting_sortie = True
@@ -460,15 +459,21 @@ class CombatCore(CoreBase):
         Log.log_msg(f"sortie handle end")
 
         return 
-
-
+ 
     def _click_until_port(self):
-        while not kca_u.kca.exists('left', 'nav|home_menu_sortie.png'):
-            api_result = api.api.update_from_api(
-                {KCSAPIEnum.PORT} | self.SHIPDECK_API | self.EQUIP_API, process_all=False, timeout=3)
-            if KCSAPIEnum.PORT.name not in api_result:
-                kca_u.kca.r['combat_click'].click()
-
+        
+        while True:
+            api_result = {"mock": "data"} 
+            while api_result != {}:
+                api_result = api.api.update_from_api(
+                    {KCSAPIEnum.PORT} |self.COMBAT_APIS | self.RESULT_APIS | self.SHIPDECK_API | self.EQUIP_API, process_all=True, timeout=3)
+                
+                if KCSAPIEnum.PORT.name not in api_result:
+                    kca_u.kca.r['combat_click'].click()
+            
+            if kca_u.kca.exists('left', 'nav|home_menu_sortie.png'):
+                break
+            
     def _cycle_between_nodes(self, sortie_map):
         Log.log_debug("Between nodes.")
 
@@ -478,13 +483,6 @@ class CombatCore(CoreBase):
             while api_result != {}:
                 api_result = api.api.update_from_api(
                     self.COMBAT_APIS | self.RESULT_APIS | self.SHIPDECK_API | self.EQUIP_API, process_all=False, timeout=5)
-                if KCSAPIEnum.SORTIE_NEXT.name in api_result:
-                    self._find_next_node(
-                        api_result[KCSAPIEnum.SORTIE_NEXT.name][0])
-                    Log.log_msg(f"Moving to Node {self.current_node}")
-                elif KCSAPIEnum.PORT.name in api_result:
-                    Log.log_debug("Sortie ended after battle.")
-                    break
                 
                 print(api_result)
             
@@ -790,7 +788,7 @@ class CombatCore(CoreBase):
             else list(api_data['api_stage3']['api_fdam']))
         return list(map(sub, hps, dmgs))
 
-    def _find_next_node(self, edge):
+    def goto_next_node(self, edge):
         next_node = self._get_next_node_from_edge(edge)
         Log.log_msg(f"Going to Node {next_node}")
         self.current_node = next_node
