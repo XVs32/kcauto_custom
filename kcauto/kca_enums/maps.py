@@ -89,13 +89,9 @@ try:
     with open('data/combat/map_enum.json', 'r', encoding='utf-8') as f:
         data_dict = json.load(f)
 except FileNotFoundError:
-    print("Warning: config_status.json not found, using hardcoded defaults.")
-    data_dict = {
-        "STATUS_OK": 200,
-        "STATUS_ERROR": 500,
-        "STATUS_PENDING": 100
-    }
-
+    Log.log_error(f"MapEnum: data/combat/map_enum.json not found.")
+    exit(1)
+    
 MapEnum = MapEnum_t(
     'MapEnum', 
     data_dict             
