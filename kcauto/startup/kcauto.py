@@ -329,35 +329,47 @@ class Kcauto(object):
 
                 selected_quest = qst.quest.auto_select_quest[CONTEXT_SORTIE]
                 if selected_quest is not None:
-                    last_node = com.combat.last_battle.get(com.combat.MAP_NODE)
                     current_map = cfg.config.combat.sortie_map.without_quest_enum
                     map_is_required = (
                         selected_quest.map_context == ()
                         or current_map in selected_quest.map_context)
-                    if last_node is not None and last_node.boss_node:
-                        last_rank = com.combat.last_battle.get(com.combat.RANKENUM)
-                        if last_rank is not None and qst.quest.meets_min_sortie_rank(CONTEXT_SORTIE, last_rank):
-                            Log.log_success(
-                                f"Quest {selected_quest.name} condition met: "
-                                f"map {current_map} boss node {last_node} with rank {last_rank}.")
-                        else:
+                    if map_is_required:
+                        
+                        last_node = com.combat.last_battle.get(com.combat.MAP_NODE)
+                        """
+                        if last_node is not None:
+                            
+                            required_node = 
+                        """
+                        
+                        if last_node.boss_node:
+                            last_rank = com.combat.last_battle.get(com.combat.RANKENUM)
+                            if last_rank is not None and qst.quest.meets_min_sortie_rank(CONTEXT_SORTIE, last_rank):
+                                Log.log_success(
+                                    f"Quest {selected_quest.name} condition met: "
+                                    f"map {current_map} boss node {last_node} with rank {last_rank}.")
+                            else:
+                                Log.log_warn(
+                                    f"Quest {selected_quest.name} condition NOT met: "
+                                    f"map {current_map} boss node {last_node} with rank {last_rank}.")
+                        elif last_node is not None and not last_node.boss_node and map_is_required:
                             Log.log_warn(
                                 f"Quest {selected_quest.name} condition NOT met: "
-                                f"map {current_map} boss node {last_node} with rank {last_rank}.")
-                    elif last_node is not None and not last_node.boss_node and map_is_required:
-                        Log.log_warn(
-                            f"Quest {selected_quest.name} condition NOT met: "
-                            f"map {current_map} did not reach boss node (ended at node {last_node}).")
-                    elif not map_is_required:
+                                f"map {current_map} did not reach boss node (ended at node {last_node}).")
+                        elif not map_is_required:
+                            Log.log_warn(
+                                f"Quest {selected_quest.name} condition NOT met: "
+                                f"map {current_map} is not in quest map context {selected_quest.map_context}.")
+                        else:
+                            Log.log_error(
+                                f"Quest {selected_quest.name} condition NOT met(exception): "
+                                f"map {current_map} did not reach boss node (ended at node {last_node}).")
+                    else:
                         Log.log_warn(
                             f"Quest {selected_quest.name} condition NOT met: "
                             f"map {current_map} is not in quest map context {selected_quest.map_context}.")
-                    else:
-                         Log.log_error(
-                            f"Quest {selected_quest.name} condition NOT met(exception): "
-                            f"map {current_map} did not reach boss node (ended at node {last_node}).")
                 else:
-                    Log.log_warn(f"No sortie quest selected, unable to verify sortie success.")
+                    Log.log_warn(f"No sortie quest selected, thus no quest is progressed.")
 
                 #sortie success, pop the head of sortie_queue
                 com.combat.pop_sortie_queue()
