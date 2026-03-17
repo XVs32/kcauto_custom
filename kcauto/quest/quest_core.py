@@ -167,7 +167,7 @@ class QuestCore(CoreBase):
     def quests_str(self):
         return_string = f"Visible quests: pg{self.tot_page}"
         for q in self.current_quest_list:
-            return_string += f", {q.quest_id}:{q.name} (state:{q.state.display_name})"
+            return_string += f", {q.quest_id}:{q.name}:{q.state.name})"
         return return_string
     
     def _to_tab(self, tab_name):
