@@ -629,6 +629,9 @@ class Kca(object):
             region (Region, Match, str): Region/Match object or pre-defined
                 region key.
         """
+        
+        Log.log_debug(f"Hovering over region: {region}")
+        
         self.sleep()
 
         r = self._get_region(region)
@@ -652,6 +655,9 @@ class Kca(object):
             pad (tuple, optional): click region modifier. Defaults to
                 (0, 0, 0, 0) as offset of (X1, Y1, X2, Y2)
         """
+        
+        Log.log_debug(f"Clicking region: {region} with pad: {pad}")
+        
         self.sleep()
 
         r = self._get_region(region)
@@ -741,6 +747,9 @@ class Kca(object):
             pad (tuple, optional): click region modifier. Defaults to
                 (0, 0, 0, 0).
         """
+        
+        Log.log_debug(f"Dragging from region: {start_region} to region: {end_region} with pad: {pad}")
+        
         self.sleep()
 
         r_a = self._get_region(start_region)
