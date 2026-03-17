@@ -333,6 +333,8 @@ class Kcauto(object):
                     current_map = cfg.config.combat.sortie_map.without_quest_and_node_enum
                     
                     map_is_required = False
+                    required_node = None
+                    required_rank = SortieRankEnum("E")
                     for required_map in selected_quest.map_context:
                         if current_map == required_map.without_quest_and_node_enum:
                             map_is_required = True
