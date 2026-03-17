@@ -279,10 +279,8 @@ class CombatCore(CoreBase):
         return False
 
     def _select_world(self, sortie_map):
-        kca_u.kca.sleep()
         kca_u.kca.click_existing(
             'lower', f'combat|c_world_{sortie_map.world}.png')
-        kca_u.kca.sleep()
 
     def _select_map(self, sortie_map):
         if sortie_map.world == 'E':
@@ -303,7 +301,6 @@ class CombatCore(CoreBase):
         if sortie_map.world == 'E':
             while cur_page < self.map_data.page:
                 kca_u.kca.r['top'].hover()
-                kca_u.kca.sleep(0.5)
                 kca_u.kca.click_existing(
                     'kc', f'combat|_event_next_page_{cur_page}.png')
                 cur_page += 1
@@ -315,7 +312,6 @@ class CombatCore(CoreBase):
         else:
             while not kca_u.kca.exists(
                     'lower_right', 'global|sortie_select.png'):
-                kca_u.kca.sleep(1)
                 kca_u.kca.r['center'].click()
                 kca_u.kca.sleep(1)
         kca_u.kca.r['top'].hover()
@@ -331,7 +327,6 @@ class CombatCore(CoreBase):
 
             if flt.fleets.strike_force_fleet:
                 kca_u.kca.wait_and_click('upper_right', 'fleet|fleet_3.png')
-                kca_u.kca.sleep()
 
             if kca_u.kca.click_existing('lower_right', sortie_button_asset):
                 for fleet in flt.fleets.combat_fleets:
@@ -402,7 +397,6 @@ class CombatCore(CoreBase):
                     kca_u.kca.r['center'].click()
                     kca_u.kca.r['lbas'].hover()
                     kca_u.kca.wait('kc', 'combat|mvp_marker.png')
-                    kca_u.kca.sleep()
                     fleet.visual_health_check(
                         kca_u.kca.r['check_damage_combat'])
                     Log.log_msg(fleet)
@@ -416,7 +410,6 @@ class CombatCore(CoreBase):
                         or kca_u.kca.exists(
                             'kc', 'combat|combat_retreat.png')):
                     kca_u.kca.r['combat_click'].click()
-                    kca_u.kca.sleep()
 
                 if kca_u.kca.exists('lower', 'combat|fcf_retreat_ship.png'):
                     Log.log_error("FCF prompt is not supported yet. T^T")
@@ -438,7 +431,6 @@ class CombatCore(CoreBase):
                     conducting_sortie = False
 
             elif node_type == self.NODE_TYPE_SELECT:
-                kca_u.kca.sleep()
                 Log.log_msg(f"Node select node.")
                 next_node = cfg.config.combat.node_selects.get(
                     self.current_node.name, None)
@@ -447,7 +439,6 @@ class CombatCore(CoreBase):
                 else:
                     Log.log_msg(f"Selecting node {next_node.value}")
                     self.map_data.nodes[next_node.value].select()
-                    kca_u.kca.sleep()
             elif node_type == self.NODE_TYPE_NOTHING:
                 pass
             elif node_type == self.NODE_TYPE_END:
@@ -483,8 +474,6 @@ class CombatCore(CoreBase):
                 api_result = api.api.update_from_api(
                     self.COMBAT_APIS | self.RESULT_APIS | self.SHIPDECK_API | self.EQUIP_API, process_all=False, timeout=5)
                 
-                print(api_result)
-            
             if kca_u.kca.exists('kc', 'combat|compass.png'):
                 Log.log_msg("Spinning compass.")
                 kca_u.kca.click_existing(
@@ -510,7 +499,6 @@ class CombatCore(CoreBase):
                 # back at home already
                 return self.NODE_TYPE_END
 
-            kca_u.kca.sleep(1)
 
     def _resolve_smoke_prompt(self):
         
