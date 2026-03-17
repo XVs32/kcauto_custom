@@ -1,5 +1,5 @@
 from combat.node import MapNode, EmptyNode
-from kca_enums.maps import MapEnum_t
+from kca_enums.maps import MapEnum
 
 
 class MapData(object):
@@ -9,7 +9,7 @@ class MapData(object):
     nodes = {} # key(str) , value(MapNode)
     edges = {}
 
-    def __init__(self, enum: MapEnum_t, data: dict):
+    def __init__(self, enum: MapEnum, data: dict):
         self.enum = enum
         self.page = data.get('page', 1)
         self.enemy_context = list(data.get('enemy_context', []))
