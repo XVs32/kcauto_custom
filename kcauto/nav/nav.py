@@ -41,7 +41,6 @@ class Navigate(object):
 
             sidestep = bool(randint(0, max_sidestep))
             kca_u.kca.hover('top')
-            kca_u.kca.sleep()
             # Figure out where we are
             current_location = None
             if kca_u.kca.exists('home_menu', 'nav|home_menu_sortie.png'):
@@ -59,7 +58,6 @@ class Navigate(object):
                 raise FindFailed()
 
             kca_u.kca.hover('top')
-            kca_u.kca.sleep()
             
             if current_location.name == 'home':
                 # Starting from home screen

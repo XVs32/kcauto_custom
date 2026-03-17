@@ -45,7 +45,6 @@ class Fleet(object):
             kca_u.kca.click_existing(
                 'top_submenu', f'fleet|fleet_{self.fleet_id}.png',
                 FLEET_ID_ICON)
-        kca_u.kca.sleep()
 
     @property
     def fleet_type(self):

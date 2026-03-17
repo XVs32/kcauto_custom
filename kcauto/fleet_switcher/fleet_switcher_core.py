@@ -175,11 +175,9 @@ class FleetSwitcherCore(object):
             list_idx = (preset_id if preset_id < 5 else 5) - 1
             idx_offset = preset_id - 5
             if idx_offset > 0:
-                kca_u.kca.sleep()
                 self._scroll_preset_list(idx_offset)
 
             kca_u.kca.r['top'].hover()
-            kca_u.kca.sleep()
             preset_idx_region = Region(
                 kca_u.kca.game_x + 410,
                 kca_u.kca.game_y + 275 + (list_idx * 76),
@@ -294,7 +292,6 @@ class FleetSwitcherCore(object):
         clicks = 0
         while clicks < target_clicks:
             kca_u.kca.click_existing('lower_left', 'global|scroll_next.png')
-            kca_u.kca.sleep(0.1)
             clicks += 1
     
     def _get_fleet_preset(self, key):
