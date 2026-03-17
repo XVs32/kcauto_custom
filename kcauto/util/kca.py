@@ -629,7 +629,7 @@ class Kca(object):
             region (Region, Match, str): Region/Match object or pre-defined
                 region key.
         """
-        self.sleep(0.5)
+        self.sleep()
 
         r = self._get_region(region)
         if (cfg.config.general.interaction_mode
@@ -639,7 +639,8 @@ class Kca(object):
                 is InteractionModeEnum.CHROME_DRIVER):
             self._chrome_driver_hover_method(r)
 
-        self.sleep(0.5)
+        self.sleep()
+                
 
     def click(self, region, pad=(0, 0, 0, 0)):
         """Helper method that clicks a passed in region. The pad parameter
@@ -651,7 +652,7 @@ class Kca(object):
             pad (tuple, optional): click region modifier. Defaults to
                 (0, 0, 0, 0) as offset of (X1, Y1, X2, Y2)
         """
-        self.sleep(0.5)
+        self.sleep()
 
         r = self._get_region(region)
         if (cfg.config.general.interaction_mode
@@ -683,7 +684,7 @@ class Kca(object):
                 is InteractionModeEnum.CHROME_DRIVER):
             self._chrome_driver_click_method(r, pad)
 
-        self.sleep(0.5)
+        self.sleep()
 
     def click_existing(
             self, region, asset, similarity=DEFAULT, pad=(0, 0, 0, 0),
@@ -740,21 +741,21 @@ class Kca(object):
             pad (tuple, optional): click region modifier. Defaults to
                 (0, 0, 0, 0).
         """
-        self.sleep(0.5)
+        self.sleep()
 
         r_a = self._get_region(start_region)
         r_b = self._get_region(end_region)
         if (cfg.config.general.interaction_mode
                 is InteractionModeEnum.DIRECT_CONTROL):
             r_a.hover()
-            self.sleep(0.5)
+            self.sleep()
             r_b.drag(pad=pad)
             
         elif (cfg.config.general.interaction_mode
                 is InteractionModeEnum.CHROME_DRIVER):
             self._chrome_driver_drag_method(r_a, pad, r_b, pad)
 
-        self.sleep(0.5)
+        self.sleep()
 
 
     def _draw_debug_visualization(self, corners, save_as_file):
