@@ -624,7 +624,6 @@ class Kca(object):
 
     def hover(self, region):
         """Helper method that hovers the mouse cursor over the defined region.
-        This method is a no-op if using the Chrome Driver interaction mode.
 
         Args:
             region (Region, Match, str): Region/Match object or pre-defined
