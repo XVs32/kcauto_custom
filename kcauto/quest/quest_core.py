@@ -209,7 +209,7 @@ class QuestCore(CoreBase):
                     quest_turned_in = True
             elif quest.state == QuestStateEnum.IN_PROGRESS and context != CONTEXT_AUTO_SORTIE and context != CONTEXT_AUTO_EXPEDITION and context != CONTEXT_AUTO_PVP:
                 
-                Log.log_msg(f"Checking if quest {quest.name} is relevant to context {context}.")
+                Log.log_msg(f"Checking if quest {quest.name} is relevant to {self.CONTEXT_LOOKUP[context]}.")
                 
                 deactivate_needed = False 
                 if not self._is_relevent_quest(quest, context=context):
