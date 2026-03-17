@@ -797,14 +797,19 @@ class CombatCore(CoreBase):
         Log.log_msg(f"current map: {self.map_data.enum}, edge: {self.map_data.edges[edge]}")
         return self.map_data.edges[edge][1]
     
+    def duplicate_front_to_back_sortie_queue(self):
+        if self.sortie_queue:
+            self.sortie_queue.append(self.sortie_queue[0])
+            Log.log_debug(f"Duplicated front to back in sortie queue: {self.sortie_queue}")
+
     def insert_sortie_queue(self, sortie_map: MapEnum):
         """
             method for other modules to push a sortie_map to the start of sortie_queue in combat module
             Args:
                 sortie_map (str): A sortie_map, ex: "1-1"
         """
-        self.sortie_queue.insert(0, sortie_map.value)
-        Log.log_msg(f"Inserted {sortie_map.value} to sortie queue {self.sortie_queue}")
+        self.sortie_queue.insert(0, sortie_map)
+        Log.log_debug(f"Inserted {sortie_map.value} to sortie queue {self.sortie_queue}")
 
     def set_sortie_queue(self, sortie_queue = []):
         """
@@ -813,18 +818,14 @@ class CombatCore(CoreBase):
                 sortie_queue (str list): A list of sortie_map, ex: ["1-1", "2-3"]
         """
         self.sortie_queue = sortie_queue.copy()
-        Log.log_msg(f"Set sortie queue {self.sortie_queue}")
+        Log.log_debug(f"Set sortie queue {self.sortie_queue}")
 
 
     def get_sortie_queue(self) -> list[MapEnum]:
         """
             method for other modules to read the sortie_queue in combat module
         """
-        ret = []
-        for sortie_map in self.sortie_queue:
-            ret.append(MapEnum(sortie_map))
-        
-        return ret
+        return self.sortie_queue
     
     def pop_sortie_queue(self):
         """
@@ -832,27 +833,12 @@ class CombatCore(CoreBase):
         """
         if len(self.sortie_queue) > 0:
             self.sortie_queue.pop(0)
-            Log.log_msg(f"Sortie queue updated:{self.sortie_queue}")
+            Log.log_debug(f"Sortie queue updated:{self.sortie_queue}")
         else:
-            Log.log_error(f"cannot pop an empty queue(sortie_queue)")
+            Log.log_error(f"cannot pop an empty sortie queue")
 
         return self.sortie_queue
     
-    def check_quest_rerun(self, sortie_map: MapEnum) -> bool:
-        """
-            method to check if the sortie_map is in the sortie_queue, which means it is needed for quest rerun
-            Args:
-                sortie_map (str): A sortie_map, ex: "1-1"
-            return:
-                bool: True if the sortie_map is in the sortie_queue, False otherwise
-        """
-        if sortie_map.value in self.sortie_queue:
-            Log.log_msg(f"{sortie_map.value} is in the sortie queue, needed for quest rerun.")
-            return True
-        else:
-            Log.log_msg(f"{sortie_map.value} is not in the sortie queue.")
-            return False
-
     def solve_gimmick(self):
 
         data = JsonData.load_json(f'data|temp|gimmick.json')
