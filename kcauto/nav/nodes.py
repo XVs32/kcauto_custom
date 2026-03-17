@@ -215,11 +215,12 @@ class NavNode(object):
                 Log.log_debug(f"click {c['click_target']} in {c['click_target_region']}")
                 kca_u.kca.wait_and_click(
                     kca_u.kca.r[c['click_target_region']], c['click_target'])
-
+            
             if api_update:
                 api.api.update_from_api({c['api_target']})
+            
             kca_u.kca.hover('top')
-            kca_u.kca.sleep()
+            
             kca_u.kca.wait(
                 kca_u.kca.r[c['wait_target_region']], c['wait_target'], 20,
                 NEAR_EXACT)
