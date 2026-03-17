@@ -2,7 +2,8 @@
 from kca_enums.enum_base import EnumBase
 from util.logger import Log
 import json
-class MapEnum_t(EnumBase):
+from typing import TYPE_CHECKING
+class MapEnum(EnumBase):
     @property
     def quest(self):
         if len(self.value.split("-")[0]) > 1:
@@ -84,15 +85,12 @@ class MapEnum_t(EnumBase):
     def _missing_(cls, value):
         Log.log_error(f"MapEnum: Unknown map value '{value}' encountered.")
         return None
-            
-try:
-    with open('data/combat/map_enum.json', 'r', encoding='utf-8') as f:
-        data_dict = json.load(f)
-except FileNotFoundError:
-    Log.log_error(f"MapEnum: data/combat/map_enum.json not found.")
-    exit(1)
-    
-MapEnum = MapEnum_t(
-    'MapEnum', 
-    data_dict             
-)
+
+if not TYPE_CHECKING:
+    try:
+        with open('data/combat/map_enum.json', 'r', encoding='utf-8') as f:
+            data_dict = json.load(f)
+    except FileNotFoundError:
+        Log.log_error(f"MapEnum: data/combat/map_enum.json not found.")
+        exit(1)
+    MapEnum = MapEnum('MapEnum', data_dict)  # type: ignore[assignment]
