@@ -11,10 +11,10 @@ from util.logger import Log
 
 class Quest(object):
     
-    name = None
-    quest_id = None
+    name: str | None = None
+    quest_id: int | None = None
     
-    category = None
+    category: 'QuestCategoryEnum | None' = None
     next_intervals = None
     
     completed_count = {}
@@ -59,8 +59,8 @@ class Quest(object):
         return tuple(Quest.static_data[self.name].get('enemy_context', ()))
         
     @property
-    def map_context(self):
-        return tuple(MapEnum(m.get('name','')).without_quest_enum for m in Quest.static_data[self.name].get('map_context', []))
+    def map_context(self) -> tuple[MapEnum, ...]:
+        return tuple(MapEnum(m.get('name','')) for m in Quest.static_data[self.name].get('map_context', []))
     
     @property
     def rank_requirement(self):
