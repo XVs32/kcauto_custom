@@ -24,7 +24,6 @@ from kca_enums.fatigue_states import FatigueStateEnum
 from kca_enums.formations import FormationEnum
 from kca_enums.kcsapi_paths import KCSAPIEnum
 from kca_enums.maps import MapEnum
-from kca_enums.nodes import NodeEnum
 from kca_enums.ship_types import ShipTypeEnum
 from kca_enums.sorite_rank import SortieRankEnum
 
@@ -70,7 +69,7 @@ class CombatCore(CoreBase):
     select_nodes = []
     node_edges = None
     map_data = None
-    current_node = None
+    current_node: MapNode = None
     nodes_run = []
     combat_nodes_run = []
     rescued_ships = []
@@ -226,7 +225,7 @@ class CombatCore(CoreBase):
         return self.available_maps[cfg.config.combat.sortie_map.world_and_map]['gauge_num']
 
     def load_map_data(self, sortie_map):
-        if self.map_data is None or self.map_data.name != sortie_map.world_and_map:
+        if self.map_data is None or self.map_data.enum != sortie_map.world_and_map:
             Log.log_debug("Load_map excute with " + str(sortie_map.world_and_map))
             data = JsonData.load_json(f'data|combat|{sortie_map.world_and_map}.json')
             self.map_data = MapData(sortie_map, data)
@@ -515,7 +514,7 @@ class CombatCore(CoreBase):
 
     def _resolve_smoke_prompt(self):
         
-        if NodeEnum(self.current_node.name) in cfg.config.combat.node_smoke:
+        if self.current_node.name in cfg.config.combat.node_smoke:
             Log.log_msg("Smoke activated in config")
             if kca_u.kca.click_existing(
                 'lower', 'fleet|smoke_disable.png'):
@@ -615,7 +614,7 @@ class CombatCore(CoreBase):
         Log.log_debug("Resolve continue sortie prompt.")
         continue_sortie = True
         retreat_limit = cfg.config.combat.retreat_limit
-        if NodeEnum(self.current_node.name) in cfg.config.combat.push_nodes:
+        if self.current_node.name in cfg.config.combat.push_nodes:
             Log.log_msg(f"{self.current_node} is specified as a push node.")
         else:
             for fleet in flt.fleets.combat_fleets:
@@ -630,12 +629,12 @@ class CombatCore(CoreBase):
                         "not calculated from the API.")
                     continue_sortie = False
             if (
-                    NodeEnum(self.current_node.name)
+                    self.current_node.name
                     in cfg.config.combat.retreat_points):
                 Log.log_debug("Retreat specified in config.")
                 continue_sortie = False
             if (
-                    NodeEnum(len(self.combat_nodes_run))
+                    len(self.combat_nodes_run)
                     in cfg.config.combat.retreat_points):
                 Log.log_debug("Retreat specified combat # in config.")
                 continue_sortie = False
@@ -795,7 +794,7 @@ class CombatCore(CoreBase):
         self.nodes_run.append(next_node)
 
     def _get_next_node_from_edge(self, edge):
-        Log.log_msg(f"current map: {self.map_data.name}, edge: {self.map_data.edges[edge]}")
+        Log.log_msg(f"current map: {self.map_data.enum}, edge: {self.map_data.edges[edge]}")
         return self.map_data.edges[edge][1]
     
     def insert_sortie_queue(self, sortie_map: MapEnum):
