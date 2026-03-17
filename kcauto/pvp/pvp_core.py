@@ -69,9 +69,7 @@ class PvPCore(CoreBase):
             api_result[KCSAPIEnum.PVP_ENEMY_INFO.name][0])
         kca_u.kca.r['top'].hover()
         kca_u.kca.wait_and_click('lower', 'pvp|pvp_start_1.png')
-        kca_u.kca.sleep()
         kca_u.kca.wait_and_click('lower', 'pvp|pvp_start_2.png')
-        kca_u.kca.sleep()
         sts.stats.pvp.pvp_done += 1
 
         kca_u.kca.wait_and_click(
