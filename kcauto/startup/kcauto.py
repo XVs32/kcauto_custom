@@ -334,12 +334,12 @@ class Kcauto(object):
                     
                     map_is_required = False
                     required_node = None
-                    required_rank = SortieRankEnum("E")
+                    required_rank = SortieRankEnum["E"]
                     for required_map in selected_quest.map_context:
                         if current_map == required_map.without_quest_and_node_enum:
                             map_is_required = True
                             required_node = required_map.variant #could be None
-                            required_rank = selected_quest.rank_requirement.get(required_map, SortieRankEnum("E"))
+                            required_rank = selected_quest.rank_requirement.get(required_map, SortieRankEnum["E"])
                             break
                     
                     map_is_required = (
