@@ -700,13 +700,8 @@ class FleetCore(object):
             count = int(type[:1])  # Extract the count from the substring
             item_type = type[1:]  # Extract the type from the substring
 
-            stype = 0
-            for stype in range(0, ShipTypeEnum(0).count):
-                if ShipTypeEnum(stype).name == item_type:
-                    break
-            
             for _ in range(count):
-                fleetShipType.append(ShipTypeEnum(stype))
+                fleetShipType.append(ShipTypeEnum[item_type])
 
         return fleetShipType
             
