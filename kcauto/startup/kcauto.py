@@ -19,6 +19,7 @@ import stats.stats_core as sts
 import util.kca as kca_u
 from fleet.noro6 import Noro6 
 from kca_enums.expeditions import ExpeditionEnum
+from kca_enums.sorite_rank import SortieRankEnum
 from util.logger import Log
 from kca_enums.maps import MapEnum
 from quest.quest import Quest
@@ -225,7 +226,7 @@ class Kcauto(object):
             else:
                 Log.log_debug(f"Manual sortie mode:{cfg.config.combat.sortie_map_read_only.value}")
 
-                sortie_queue = [cfg.config.combat.sortie_map_read_only.value]
+                sortie_queue = [MapEnum(cfg.config.combat.sortie_map_read_only.value)]
                 com.combat.set_sortie_queue(sortie_queue)
         else:
             Log.log_msg(f"Sortie queue:{com.combat.sortie_queue}")
@@ -329,45 +330,45 @@ class Kcauto(object):
 
                 selected_quest = qst.quest.auto_select_quest[CONTEXT_SORTIE]
                 if selected_quest is not None:
-                    current_map = cfg.config.combat.sortie_map.without_quest_enum
+                    current_map = cfg.config.combat.sortie_map.without_quest_and_node_enum
+                    
+                    map_is_required = False
+                    for required_map in selected_quest.map_context:
+                        if current_map == required_map.without_quest_and_node_enum:
+                            map_is_required = True
+                            required_node = required_map.variant #could be None
+                            required_rank = selected_quest.rank_requirement.get(required_map, SortieRankEnum("E"))
+                            break
+                    
                     map_is_required = (
                         selected_quest.map_context == ()
-                        or current_map in selected_quest.map_context)
+                        or map_is_required)
+                    
                     if map_is_required:
                         
+                        Log.log_success(f"Sortie quest {selected_quest.name} selected, current map {current_map} meets the map requirement.")
                         last_node = com.combat.last_battle.get(com.combat.MAP_NODE)
-                        """
-                        if last_node is not None:
-                            
-                            required_node = 
-                        """
                         
-                        if last_node.boss_node:
-                            last_rank = com.combat.last_battle.get(com.combat.RANKENUM)
-                            if last_rank is not None and qst.quest.meets_min_sortie_rank(CONTEXT_SORTIE, last_rank):
-                                Log.log_success(
-                                    f"Quest {selected_quest.name} condition met: "
-                                    f"map {current_map} boss node {last_node} with rank {last_rank}.")
+                        if last_node is not None:
+                            if required_node == None:
+                                Log.log_debug(f"No specific node required for quest {selected_quest.name}, current node: {last_node}.")
+                            elif last_node == required_node:
+                                Log.log_success(f"Required node {required_node} reached for quest {selected_quest.name}.")
+                                last_rank = com.combat.last_battle.get(com.combat.RANKENUM)
+                                if last_rank == None:
+                                    Log.log_success(f"Quest {selected_quest.name} has no rank requirement, condition met with node {last_node}.") 
+                                elif last_rank >= required_rank:
+                                    Log.log_success(f"Quest {selected_quest.name} condition met: node {last_node} with rank {last_rank}.")
+                                else:
+                                    Log.log_warn(f"Quest {selected_quest.name} condition NOT met: node {last_node} with rank {last_rank} does not meet requirement of rank {required_rank}.")
+                                    #@todo add last sortie rerun
                             else:
-                                Log.log_warn(
-                                    f"Quest {selected_quest.name} condition NOT met: "
-                                    f"map {current_map} boss node {last_node} with rank {last_rank}.")
-                        elif last_node is not None and not last_node.boss_node and map_is_required:
-                            Log.log_warn(
-                                f"Quest {selected_quest.name} condition NOT met: "
-                                f"map {current_map} did not reach boss node (ended at node {last_node}).")
-                        elif not map_is_required:
-                            Log.log_warn(
-                                f"Quest {selected_quest.name} condition NOT met: "
-                                f"map {current_map} is not in quest map context {selected_quest.map_context}.")
+                                Log.log_warn(f"Required node {required_node} not reached for quest {selected_quest.name}, last node: {last_node}.")
+                                #@todo add last sortie rerun
+                            
                         else:
-                            Log.log_error(
-                                f"Quest {selected_quest.name} condition NOT met(exception): "
-                                f"map {current_map} did not reach boss node (ended at node {last_node}).")
-                    else:
-                        Log.log_warn(
-                            f"Quest {selected_quest.name} condition NOT met: "
-                            f"map {current_map} is not in quest map context {selected_quest.map_context}.")
+                            Log.log_error(f'Failed to get last node from combat API, \
+                                unable to verify sortie quest conditions. Map: {current_map}, required node: {required_node}.')
                 else:
                     Log.log_warn(f"No sortie quest selected, thus no quest is progressed.")
 
