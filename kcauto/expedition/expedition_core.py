@@ -391,7 +391,6 @@ class ExpeditionCore(CoreBase):
             else:
                 kca_u.kca.click_existing('lower', 'expedition|e_world_1.png')
                 kca_u.kca.r['top'].hover()
-                kca_u.kca.sleep()
 
     def _validate_expeditions(self):
         if len(self.available_expeditions) == 0:
@@ -409,7 +408,6 @@ class ExpeditionCore(CoreBase):
                         "unlocked.")
 
     def _select_world(self, expedition):
-        kca_u.kca.sleep()
         kca_u.kca.click_existing(
             'lower', f'expedition|e_world_{expedition.world}.png')
 
