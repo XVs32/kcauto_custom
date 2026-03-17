@@ -360,12 +360,13 @@ class QuestCore(CoreBase):
             sortie_list = []
             if sortie_dict == None:
                 Log.log_warn(f"Cannot get quest progress from kc3, use default in config file.")
-                sortie_list = list(next_quest.recommended_map)
+                sortie_list = list(MapEnum(map_name) for map_name in next_quest.recommended_map)
                 Log.log_debug(f"sortie_list = {sortie_list}")
             else:
                 for map_enum in sortie_dict:
                     for i in range(0, sortie_dict[map_enum]):
-                        sortie_list.append(next_quest.name +"-"+ map_enum.world_and_map_and_node)
+                        generated_map_name = f"{next_quest.name}-{map_enum.world_and_map_and_node}"
+                        sortie_list.append(MapEnum(generated_map_name))
             
             com.combat.set_sortie_queue(sortie_list)
 
