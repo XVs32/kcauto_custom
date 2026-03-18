@@ -29,7 +29,7 @@ class PvPCore(CoreBase):
         self._set_next_pvp_time()
 
     def update_pvp_list(self, data):
-        Log.log_debug("Updating PvP data from API.")
+        Log.log_debug_1("Updating PvP data from API.")
         self.available_pvp = []
         for index, pvp in enumerate(data):
             if pvp['api_state'] == 0:
@@ -88,7 +88,7 @@ class PvPCore(CoreBase):
             kca_u.kca.r['shipgirl'].click()
             kca_u.kca.sleep(1)
 
-        Log.log_debug("PvP complete.")
+        Log.log_debug_1("PvP complete.")
         api.api.update_from_api({KCSAPIEnum.PORT})
 
     def _get_formation_and_nb(self, api_result):
@@ -132,7 +132,7 @@ class PvPCore(CoreBase):
         else:
             temp_time = jst_time.replace(hour=5, minute=randint(5, 15))
         self.next_pvp_time = KCTime.convert_from_jst(temp_time)
-        Log.log_debug(
+        Log.log_debug_1(
             f"Next PvP at {KCTime.datetime_to_str(self.next_pvp_time)}.")
 
 

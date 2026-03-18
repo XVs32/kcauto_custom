@@ -38,7 +38,7 @@ class ConfigCombat(ConfigBase):
     _override = False
 
     def __init__(self, config):
-        Log.log_debug("Combat config init called")
+        Log.log_debug_1("Combat config init called")
         super().__init__(config)
         self.enabled = config['combat.enabled']
         self.fleet_presets = config['combat.fleet_presets']
@@ -198,7 +198,7 @@ class ConfigCombat(ConfigBase):
             value = "B-" + value
         if not MapEnum.contains_value(value):
             raise ValueError("Invalid map specified:" + str(value))
-        Log.log_debug("SET _sortie_map_read_only: {MapEnum(value)}")
+        Log.log_debug_1("SET _sortie_map_read_only: {MapEnum(value)}")
         self._sortie_map_read_only = MapEnum(value)
 
     @property
@@ -233,7 +233,7 @@ class ConfigCombat(ConfigBase):
     @repair_bucket_threshold.setter
     def repair_bucket_threshold(self, value):
         self._repair_bucket_threshold = value
-        Log.log_debug(f"_repair_bucket_threshold set {self._repair_bucket_threshold}")
+        Log.log_debug_1(f"_repair_bucket_threshold set {self._repair_bucket_threshold}")
 
     @property
     def retreat_points(self):

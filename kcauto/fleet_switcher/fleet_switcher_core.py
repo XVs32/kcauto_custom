@@ -157,7 +157,7 @@ class FleetSwitcherCore(object):
                 ssw.ship_switcher.current_page = 1
                 ssw.ship_switcher.switch_slot_by_id(1,cfg.config.factory.build_secretary)
         elif preset_id == None:
-            Log.log_debug(f"Fleet switch disabled")
+            Log.log_debug_1(f"Fleet switch disabled")
         else:
             Log.log_msg(f"Switching to Fleet Preset {preset_id}.")
             if preset_id not in self.presets:
@@ -235,7 +235,7 @@ class FleetSwitcherCore(object):
 
                 if i <= len(flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][fleet_id].ship_ids) and \
                     id == flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][fleet_id].ship_ids[i-1]:
-                    Log.log_debug("Ship loaded already for costom fleet: ")
+                    Log.log_debug_1("Ship loaded already for costom fleet: ")
                     continue
                 
                 if not ssw.ship_switcher.switch_slot_by_id(i-empty_slot_count,id):
@@ -288,7 +288,7 @@ class FleetSwitcherCore(object):
         return True
     
     def _scroll_preset_list(self, target_clicks):
-        Log.log_debug(f"Scrolling to target preset ({target_clicks} clicks).")
+        Log.log_debug_1(f"Scrolling to target preset ({target_clicks} clicks).")
         clicks = 0
         while clicks < target_clicks:
             kca_u.kca.click_existing('lower_left', 'global|scroll_next.png')
@@ -414,7 +414,7 @@ class FleetSwitcherCore(object):
             ssw.ship_switcher.select_replacement_row(row_idx=idx, ship=ship, mode= ssw.ship_switcher.EQUIPMENT_SHIP_MODE)
              
         else:
-            Log.log_debug(f'Ship {ship.name} is in fleet {fleet_id}, unload from there')
+            Log.log_debug_1(f'Ship {ship.name} is in fleet {fleet_id}, unload from there')
             ship_position = flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][fleet_id].ship_ids.index(ship.production_id)
             
             click_ship_in_equipment_page(ship_position)
@@ -431,19 +431,19 @@ class FleetSwitcherCore(object):
             api_result = api.api.update_from_api({KCSAPIEnum.FREE_EQUIPMENT}, process_all=True, timeout=30)
         
         if ship.slot_num == 1:
-            Log.log_debug(f"1 slot ship")
+            Log.log_debug_1(f"1 slot ship")
             kca_u.kca.click('1_slot_unload_equipment')
         elif ship.slot_num == 2:
-            Log.log_debug(f"2 slot ship")
+            Log.log_debug_1(f"2 slot ship")
             kca_u.kca.click('2_slot_unload_equipment') 
         elif ship.slot_num == 3:
-            Log.log_debug(f"3 slot ship")
+            Log.log_debug_1(f"3 slot ship")
             kca_u.kca.click('3_slot_unload_equipment') 
         elif ship.slot_num == 4:
-            Log.log_debug(f"4 slot ship")
+            Log.log_debug_1(f"4 slot ship")
             kca_u.kca.click('4_slot_unload_equipment') 
         elif ship.slot_num == 5:
-            Log.log_debug(f"5 slot ship")
+            Log.log_debug_1(f"5 slot ship")
             kca_u.kca.click('5_slot_unload_equipment') 
         else:
             Log.log_warn(f"Unexpected slot number {ship.slot_num}, exiting...")
@@ -453,7 +453,7 @@ class FleetSwitcherCore(object):
         
         if ship.slot_ex != None and \
             ship.slot_ex != Equipment():
-            Log.log_debug(f"reinforce slot ship")
+            Log.log_debug_1(f"reinforce slot ship")
             kca_u.kca.click('reinforce_slot_unload_equipment')
 
         kca_u.kca.wait('lower', 'shipswitcher|equipment_panel.png')
@@ -508,7 +508,7 @@ class FleetSwitcherCore(object):
         for i in range(fleet.size):
             
             if fleet.ships[i].equipment_ids == flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][fleet_id].ships[i].equipment_ids:
-                Log.log_debug(f"equipment for ship {load_ship_id[i]} is already loaded")
+                Log.log_debug_1(f"equipment for ship {load_ship_id[i]} is already loaded")
                 continue
             
             click_ship_in_equipment_page(i)
@@ -520,8 +520,8 @@ class FleetSwitcherCore(object):
             
             for k, equipment in enumerate(available_equipment_list):
                 if k %10 == 0:  
-                    Log.log_debug(f'Page {k // 10 + 1}')
-                Log.log_debug(f'{k}: {equipment.name} {equipment.stars} (Production id: {equipment.production_id}, Model id: {equipment.model_id}), category id: {equipment.category}')
+                    Log.log_debug_1(f'Page {k // 10 + 1}')
+                Log.log_debug_1(f'{k}: {equipment.name} {equipment.stars} (Production id: {equipment.production_id}, Model id: {equipment.model_id}), category id: {equipment.category}')
             
             for slot in range(fleet.ships[i].equipment_count):
 
@@ -556,11 +556,11 @@ class FleetSwitcherCore(object):
                 
                 reinforce_equipment_list = fleet.ships[i].available_reinforcement_equipments
                 
-                Log.log_debug(f'Reinforcement equipment list:')
+                Log.log_debug_1(f'Reinforcement equipment list:')
                 for k, equipment in enumerate(reinforce_equipment_list):
                     if k %10 == 0:  
-                        Log.log_debug(f'Page {k // 10 + 1}')
-                    Log.log_debug(f'{k}: {equipment.name} {equipment.stars} (Production id: {equipment.production_id}, Model id: {equipment.model_id}), category id: {equipment.category}')
+                        Log.log_debug_1(f'Page {k // 10 + 1}')
+                    Log.log_debug_1(f'{k}: {equipment.name} {equipment.stars} (Production id: {equipment.production_id}, Model id: {equipment.model_id}), category id: {equipment.category}')
 
                 row_id = next((j for j, equipment in enumerate(reinforce_equipment_list) \
                     if equipment.production_id == fleet.ships[i].slot_ex.production_id), -1)
@@ -588,7 +588,7 @@ def click_ship_in_equipment_page(ship_position):
             ship_position(int): position of the ship in the fleet, starts from 0
     """
     
-    Log.log_debug(f"Selecting the #{ship_position+1} ship")
+    Log.log_debug_1(f"Selecting the #{ship_position+1} ship")
     
     if ship_position+1 == 7:
         next_region = Region(

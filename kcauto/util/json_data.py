@@ -32,7 +32,7 @@ class JsonData(ABC):
                 Defaults to False.
         """
         json_path = cls.create_path(path)
-        Log.log_debug(f"Writing data to '{json_path}'.")
+        Log.log_debug_1(f"Writing data to '{json_path}'.")
         with open(json_path, 'w', encoding='utf-8') as json_file:
             if not pretty:
                 json.dump(data, json_file, ensure_ascii=False)
@@ -50,7 +50,7 @@ class JsonData(ABC):
             object: deserialized object.
         """
         json_path = cls.create_path(path)
-        Log.log_debug(f"Loading data from '{json_path}'.")
+        Log.log_debug_1(f"Loading data from '{json_path}'.")
         with open(json_path, encoding='utf-8') as json_file:
             data = json.load(json_file)
         return data

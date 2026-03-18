@@ -28,7 +28,7 @@ from constants import EMPTY_EQUIPMENT_API, TEMP_EQUIPMENT_API
 
 class ApiWrapper(object):
     def __init__(self):
-        Log.log_debug("API Wrapper module initialized.")
+        Log.log_debug_1("API Wrapper module initialized.")
         self._pending_messages = []
 
     def update_from_api(
@@ -42,7 +42,7 @@ class ApiWrapper(object):
         target_apis = set(target_apis)
         caught_apis = set()
         
-        Log.log_debug("Begin waiting for API payload(s).")
+        Log.log_debug_1("Begin waiting for API payload(s).")
         kcapi_received = False
         kcapi_requests = {}
         results = {}
@@ -62,7 +62,7 @@ class ApiWrapper(object):
             message = kca_u.kca.api_hook.wait_message(timeout=wait_timeout)
             if not message:
                 if process_all and len(caught_apis) == len(target_apis):
-                    Log.log_debug("All target APIs received, ending wait.")
+                    Log.log_debug_1("All target APIs received, ending wait.")
                     break
                 # timed out waiting for a message; re-evaluate loop conditions
                 continue
@@ -79,7 +79,7 @@ class ApiWrapper(object):
                                     target_api.value.split('/')[-1])):
                             caught_apis.add(target_api)
                             request_id = message['params']['requestId']
-                            Log.log_debug(
+                            Log.log_debug_1(
                                 f"Waiting for request {request_id} "
                                 f"({request_url})")
                             kcapi_requests[request_id] = {
@@ -90,7 +90,7 @@ class ApiWrapper(object):
                 elif message['method'] == 'Network.loadingFinished':
                     message_request_id = message['params']['requestId']
                     if message_request_id in kcapi_requests:
-                        Log.log_debug(f"Request {message_request_id} received")
+                        Log.log_debug_1(f"Request {message_request_id} received")
                         kcapi_received = True
                         request_data = kcapi_requests.pop(message_request_id)
                         response_body = (
@@ -98,7 +98,7 @@ class ApiWrapper(object):
                                 requestId=message_request_id))
                         response_body_attempt = 0
                         while not response_body and response_body_attempt < 5:
-                            Log.log_debug("Empty API response. Trying again.")
+                            Log.log_debug_1("Empty API response. Trying again.")
                             response_body = (
                                 kca_u.kca.api_hook.Network.getResponseBody(
                                     requestId=message_request_id))
@@ -150,8 +150,8 @@ class ApiWrapper(object):
     def _load_api_data(self, request_data, data):
         request_type = request_data['type']
         if data['api_result'] != 1:
-            Log.log_debug("Encountered non-1 API result.")
-            Log.log_debug(data)
+            Log.log_debug_1("Encountered non-1 API result.")
+            Log.log_debug_1(data)
             if data['api_result'] == 201:
                 Log.log_error("Encountered catbomb.")
                 raise Catbomb201Exception
@@ -267,7 +267,7 @@ class ApiWrapper(object):
             JsonData.dump_json(data['api_data']['api_mst_equip_ship'], 'data|temp|equipment_ship_special.json')
 
         except KeyError:
-            Log.log_debug("No getData found in API response.")
+            Log.log_debug_1("No getData found in API response.")
 
         return None
 
@@ -275,27 +275,27 @@ class ApiWrapper(object):
         try:
             JsonData.dump_json(self._filter_equipment(data['api_data']['api_slot_item']), 'data|temp|equipment_list.json')
         except KeyError:
-            Log.log_debug("No equipment found in API response.")
+            Log.log_debug_1("No equipment found in API response.")
             
         try:
             exp_prov_resupply = data['api_data']['api_extra_supply'][0] == 1
             res.resupply.exp_provisional_enabled = exp_prov_resupply
         except KeyError:
-            Log.log_debug("No provisional resupply data found in API response")
+            Log.log_debug_1("No provisional resupply data found in API response")
 
     def _process_port(self, data):
         try:
             rsc_data = data['api_data']['api_material']
             sts.stats.rsc.update_resource_stats(rsc_data)
         except KeyError:
-            Log.log_debug("No resource data found in API response.")
+            Log.log_debug_1("No resource data found in API response.")
 
         try:
             ship_data = data['api_data']['api_ship']
             shp.ships.update_ship_pool(ship_data)
             JsonData.dump_json(ship_data, 'data|temp|local_ship.json')
         except KeyError:
-            Log.log_debug("No ship data found in API response.")
+            Log.log_debug_1("No ship data found in API response.")
 
         try:
             fleet_data = data['api_data']['api_deck_port']
@@ -304,13 +304,13 @@ class ApiWrapper(object):
             flt.fleets.load_custom_exp_pool()
             flt.fleets.load_idle_pool()
         except KeyError:
-            Log.log_debug("No fleet data found in API response.")
+            Log.log_debug_1("No fleet data found in API response.")
 
         try:
             repair_data = data['api_data']['api_ndock']
             rep.repair.update_repair_data(repair_data)
         except KeyError:
-            Log.log_debug("No repair data found in API response.")
+            Log.log_debug_1("No repair data found in API response.")
 
         try:
             max_ships = data['api_data']['api_basic']['api_max_chara']
@@ -319,20 +319,20 @@ class ApiWrapper(object):
             equ.equipment.max_equipment_count = max_equipment
             
         except KeyError:
-            Log.log_debug("No ship count data found in API response.")
+            Log.log_debug_1("No ship count data found in API response.")
 
         try:
             max_quests = data['api_data']['api_parallel_quest_count']
             qst.quest.max_quests = max_quests
         except KeyError:
-            Log.log_debug("No quest data found in API response.")
+            Log.log_debug_1("No quest data found in API response.")
 
         try:
             from kca_enums.expeditions import ExpeditionEnum
             for i in range(1, len(data['api_data']['api_deck_port'])):
                 exp.expedition.cur_exp[i] = ExpeditionEnum(data['api_data']['api_deck_port'][i]["api_mission"][1])
         except KeyError:
-            Log.log_debug("No exp data found in API response.")
+            Log.log_debug_1("No exp data found in API response.")
             
         try:
             from kca_enums.fleet_modes import FleetModeEnum
@@ -346,18 +346,18 @@ class ApiWrapper(object):
             elif combined_flag == 3:
                 flt.fleets.combined_flag = FleetModeEnum.TCF
         except KeyError:
-            Log.log_debug("No combine_flag data found in API response.")
+            Log.log_debug_1("No combine_flag data found in API response.")
 
             
 
         try:
             gimmick = data['api_data']['api_event_object']['api_m_flag2']
-            Log.log_debug(f"Gimmick data found = {gimmick}.")
+            Log.log_debug_1(f"Gimmick data found = {gimmick}.")
             if gimmick == 1:
                 """A gimmick is solved"""
                 com.combat.solve_gimmick()
         except KeyError:
-            Log.log_debug("No gimmick data found in API response.")
+            Log.log_debug_1("No gimmick data found in API response.")
 
         return None
 
@@ -366,13 +366,13 @@ class ApiWrapper(object):
             available_maps = data['api_data']['api_map_info']
             com.combat.update_combat_map_list(available_maps)
         except KeyError:
-            Log.log_debug("No available combat map data in API response.")
+            Log.log_debug_1("No available combat map data in API response.")
 
         try:
             lbas_data = data['api_data']['api_air_base']
             lbas.lbas.update_lbas_groups(lbas_data)
         except KeyError:
-            Log.log_debug("No available lbas data in API response.")
+            Log.log_debug_1("No available lbas data in API response.")
 
     def _process_sortie_start(self, data):
         try:
@@ -380,7 +380,7 @@ class ApiWrapper(object):
                 data['api_data']['api_select_route']['api_select_cells'])
             com.combat.select_nodes = select_nodes
         except KeyError:
-            Log.log_debug("No select node data found in API response.")
+            Log.log_debug_1("No select node data found in API response.")
 
         try:
             edge_id = data['api_data']['api_no']
@@ -388,7 +388,7 @@ class ApiWrapper(object):
             Log.log_msg(f"Moving to Node {com.combat.current_node}")
             return edge_id
         except KeyError:
-            Log.log_debug("No next node data found in API response.")
+            Log.log_debug_1("No next node data found in API response.")
 
     def _process_sortie_next(self, data):
         try:
@@ -398,21 +398,21 @@ class ApiWrapper(object):
             
             return edge_id
         except KeyError:
-            Log.log_debug("No next node data found in API response.")
+            Log.log_debug_1("No next node data found in API response.")
 
     def _process_battle(self, data):
         try:
             battle_data = data['api_data']
             com.combat.predict_battle(battle_data)
         except KeyError:
-            Log.log_debug("No battle data found in API response.")
+            Log.log_debug_1("No battle data found in API response.")
 
     def _process_battle_result(self, data):
         try:
             result_data = data['api_data']
             com.combat.process_battle_result(result_data)
         except KeyError:
-            Log.log_debug("No CF battle data found in API response.")
+            Log.log_debug_1("No CF battle data found in API response.")
 
     def _process_battle_deck(self, data):
         try:
@@ -421,7 +421,7 @@ class ApiWrapper(object):
             for fleet in flt.fleets.combat_fleets:
                 fleet.update_ship_data()
         except KeyError:
-            Log.log_debug("No CF battle data found in API response.")
+            Log.log_debug_1("No CF battle data found in API response.")
 
     def _process_expedition_list(self, data):
         try:
@@ -429,7 +429,7 @@ class ApiWrapper(object):
                 data['api_data']['api_list_items'])
             exp.expedition.populate_available_expeditions_per_world()
         except KeyError:
-            Log.log_debug("No expedition list data found in API response.")
+            Log.log_debug_1("No expedition list data found in API response.")
 
         return None
 
@@ -438,7 +438,7 @@ class ApiWrapper(object):
             pvp_data = data['api_data']['api_list']
             pvp.pvp.update_pvp_list(pvp_data)
         except KeyError:
-            Log.log_debug("No pvp data found in API response.")
+            Log.log_debug_1("No pvp data found in API response.")
 
         return None
 
@@ -447,14 +447,14 @@ class ApiWrapper(object):
             enemy_info = data['api_data']['api_deck']['api_ships']
             return enemy_info
         except KeyError:
-            Log.log_debug("No pvp enemy info data found in API response.")
+            Log.log_debug_1("No pvp enemy info data found in API response.")
 
     def _process_expedition_start(self, data):
         try:
             complete_time = data['api_data']['api_complatetime']
             return complete_time
         except KeyError:
-            Log.log_debug("No expedition sent data")
+            Log.log_debug_1("No expedition sent data")
 
         return None
 
@@ -463,21 +463,21 @@ class ApiWrapper(object):
             preset_data = data['api_data']
             fsw.fleet_switcher.update_fleetpreset_data(preset_data)
         except KeyError:
-            Log.log_debug("No fleetcomp preset data found in API response.")
+            Log.log_debug_1("No fleetcomp preset data found in API response.")
 
     def _process_repair_dock_data(self, data):
         try:
             repair_data = data['api_data']
             rep.repair.update_repair_data(repair_data)
         except KeyError:
-            Log.log_debug("No repair data found in API response.")
+            Log.log_debug_1("No repair data found in API response.")
 
     def _process_quest_data(self, data):
         try:
             quest_data = data['api_data']
             qst.quest.update_quest_data(quest_data)
         except KeyError:
-            Log.log_debug("No quest data found in API response.")
+            Log.log_debug_1("No quest data found in API response.")
 
     def update_ship_library_from_json(self):
         try:
@@ -494,7 +494,7 @@ class ApiWrapper(object):
         try:
             JsonData.dump_json(self._filter_equipment(data['api_data']), 'data|temp|equipment_list.json')
         except KeyError:
-            Log.log_debug("No equipment found in API response.")
+            Log.log_debug_1("No equipment found in API response.")
 
 
     def _process_free_equipment_data(self, data):
@@ -523,7 +523,7 @@ class ApiWrapper(object):
             EVENT_SECONDARY_GUN = "api_slottype95"
             if EVENT_SECONDARY_GUN in keys:
                 
-                Log.log_debug(f"Found {EVENT_SECONDARY_GUN} in equipment pool, merging them")
+                Log.log_debug_1(f"Found {EVENT_SECONDARY_GUN} in equipment pool, merging them")
                 
                 temp = []
                 
@@ -559,7 +559,7 @@ class ApiWrapper(object):
             for key in sorted_keys:
                 for equipment in equipment_pool_temp[key]:
                     equ.equipment.equipment_pool[equ.equipment.FREE].append(equipment)
-            Log.log_debug(f"equipment updated")
+            Log.log_debug_1(f"equipment updated")
             
             #for i, equipment in enumerate(equ.equipment.equipment_pool[equ.equipment.FREE]):
             #    if i %10 == 0:  
@@ -567,7 +567,7 @@ class ApiWrapper(object):
             #    Log.log_debug(f'{i}: {equipment.name} {equipment.stars} (Production id: {equipment.production_id}, Model id: {equipment.model_id}), category id: {equipment.category}')
             
         except KeyError:
-            Log.log_debug("No provisional equipment data found in API response")
+            Log.log_debug_1("No provisional equipment data found in API response")
             
     def _filter_equipment(self, equipment_data : list):
         """Filter equipment based on ignore_equipment.json
@@ -589,7 +589,7 @@ class ApiWrapper(object):
         
         for i in range(len(equipment_data) -1 , -1, -1):
             if equipment_data[i]['api_id'] in ignored_equipment_production_id:
-                Log.log_debug(f"Ignoring equipment with production id {equipment_data[i]['api_id']}")
+                Log.log_debug_1(f"Ignoring equipment with production id {equipment_data[i]['api_id']}")
                 equipment_data.pop(i)
         
         return equipment_data

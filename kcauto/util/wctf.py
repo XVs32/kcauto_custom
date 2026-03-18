@@ -13,12 +13,12 @@ class WhoCallsTheFleetData(object):
     def get_and_save_wgtf_data(cls):
         """Wrapper method for retrieving and storing WCTF data.
         """
-        Log.log_debug("Attempting to get WCTF data.")
+        Log.log_debug_1("Attempting to get WCTF data.")
 
         suffixes = cls._get_suffix_data()
         name_db = cls._get_ship_name_data(suffixes)
 
-        Log.log_debug("Successfully downloaded WCTF data.")
+        Log.log_debug_1("Successfully downloaded WCTF data.")
         JsonData.dump_json(name_db, 'data|temp|wctf.json')
 
     @staticmethod

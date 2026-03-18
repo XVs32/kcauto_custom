@@ -97,20 +97,20 @@ class ShipSwitchRule(object):
             
             if condition[0] is ShipSwitcherConditionSlot0Enum.LEVEL:
                 if op(slot_ship.level, condition[2]):
-                    Log.log_debug("""log_msg log_debug"""
+                    Log.log_debug_1("""log_msg log_debug"""
                         f"{slot_ship.name} in Slot {self.slot_id} has met "
                         "level threshold to be switched out.")
 
                     return True
             elif condition[0] is ShipSwitcherConditionSlot0Enum.DAMAGE:
                 if op(slot_ship.damage, condition[2]):
-                    Log.log_debug(
+                    Log.log_debug_1(
                         f"{slot_ship.name} in Slot {self.slot_id} has met "
                         "damage threshold to be switched out.")
                     return True
             elif condition[0] is ShipSwitcherConditionSlot0Enum.MORALE:
                 if op(slot_ship.morale, condition[2]):
-                    Log.log_debug(
+                    Log.log_debug_1(
                         f"{slot_ship.name} in Slot {self.slot_id} has met "
                         "morale threshold to be switched out.")
                     return True
