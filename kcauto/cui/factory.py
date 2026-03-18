@@ -2,6 +2,7 @@ import curses
 
 import cui.util as util
 from cui.macro import *
+from util.json_data import JsonData
 
 from fleet.noro6 import Noro6 
 from config.macro import RECIPE_PRESET_CONSTRUCT, RECIPE_PRESET_DEVELOP, RECIPE_PRESET_CONSTRUCT_TEMPLATE, RECIPE_PRESET_DEVELOP_TEMPLATE
@@ -92,13 +93,8 @@ def pop_up_menu(stdscr, panel, config):
             template_file.close()
             file.close()
             
-    import json
-    file = open(RECIPE_PRESET_CONSTRUCT, 'r', encoding='utf-8')
-    recipe_preset[CONSTRUCT_TAB] = json.load(file)
-    file.close()
-    file = open(RECIPE_PRESET_DEVELOP, 'r', encoding='utf-8')
-    recipe_preset[DEVELOP_TAB] = json.load(file)
-    file.close()
+    recipe_preset[CONSTRUCT_TAB] = JsonData.load_json(RECIPE_PRESET_CONSTRUCT)
+    recipe_preset[DEVELOP_TAB] = JsonData.load_json(RECIPE_PRESET_DEVELOP)
     
     current_tab = CONSTRUCT_TAB 
     current_active = TOP_MENU 

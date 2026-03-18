@@ -1,7 +1,6 @@
 import cv2
 import numpy as np
 import os
-import json
 import glob
 from sys import platform, exit
 import requests
@@ -19,6 +18,7 @@ import args.args_core as arg
 import config.config_core as cfg
 import ships.ships_core as shp
 import util.click_tracker as clt
+from util.json_data import JsonData
 import stats.stats_core as sts
 from constants import (
     GAME_W, GAME_H, VISUAL_URL, STRATEGY_ROOM_URL, API_URL, EXACT, DEFAULT, SLEEP_MODIFIER)
@@ -58,9 +58,8 @@ class Kca(object):
     def __init__(self):
         if self.kc3_id ==None:
             try:
-                with open('data/config/kc3_id.json', 'r', encoding='utf-8') as f:
-                    data = json.load(f)
-                    self.kc3_id = data.get('id', "hkgmldnainaglpjngpajnnjfhpdjkohh")
+                data = JsonData.load_json('data|config|kc3_id.json')
+                self.kc3_id = data.get('id', "hkgmldnainaglpjngpajnnjfhpdjkohh")
             except FileNotFoundError:
                 Log.log_warn("kc3_id.json not found, using default KC3 id.")
                 self.kc3_id = "hkgmldnainaglpjngpajnnjfhpdjkohh"
@@ -180,8 +179,7 @@ class Kca(object):
                                              "level":ship.level,\
                                              "type": ship.ship_type.name})
 
-        with open("ship.json", "w", encoding='utf-8') as f:
-            json.dump(local_ships_json, f, indent=4, ensure_ascii=False)
+        JsonData.dump_json(local_ships_json, "ship.json", pretty=True)
 
         self.sleep()
 

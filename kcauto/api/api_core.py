@@ -1,4 +1,3 @@
-import json
 import sys
 from sys import platform
 
@@ -120,7 +119,7 @@ class ApiWrapper(object):
                             raise ApiException(
                                 "Empty or invalid API response.")
                         res = self._load_api_data(
-                            request_data, json.loads(raw_svdata))
+                            request_data, JsonData.load_json_str(raw_svdata))
                         if request_data['type'].name in results:
                             results[request_data['type'].name].append(res)
                         else:

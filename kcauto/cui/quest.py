@@ -3,6 +3,7 @@ import curses
 import cui.util as util
 from cui.macro import *
 from constants import CONTEXT_SORTIE, CONTEXT_EXPEDITION, CONTEXT_PVP, CONTEXT_FACTORY, CONTEXT_REPAIR
+from util.json_data import JsonData
 
 from fleet.noro6 import Noro6 
 
@@ -66,13 +67,8 @@ def pop_up_menu(stdscr, panel, config):
     
     global quest_info
     if quest_info == []:
-        with open('data/quests/kc3_quests_en.json', 'r', encoding='utf-8') as f:
-            import json
-            quest_info = json.load(f)    
-        
-        with open('data/quests/quests.json', 'r', encoding='utf-8') as f:
-            import json
-            quest_list = json.load(f)    
+        quest_info = JsonData.load_json('data|quests|kc3_quests_en.json')
+        quest_list = JsonData.load_json('data|quests|quests.json')
             
         for quest_name in quest_list:
             context = None
