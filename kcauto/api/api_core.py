@@ -40,6 +40,8 @@ class ApiWrapper(object):
             return {}
 
         target_apis = set(target_apis)
+        caught_apis = set()
+        
         Log.log_debug("Begin waiting for API payload(s).")
         kcapi_received = False
         kcapi_requests = {}
@@ -55,10 +57,13 @@ class ApiWrapper(object):
             remaining = (end_time - datetime.now()).total_seconds()
             if remaining <= 0:
                 break
-            wait_timeout = remaining
+            wait_timeout = min(remaining, 1)
 
             message = kca_u.kca.api_hook.wait_message(timeout=wait_timeout)
             if not message:
+                if process_all and len(caught_apis) == len(target_apis):
+                    Log.log_debug("All target APIs received, ending wait.")
+                    break
                 # timed out waiting for a message; re-evaluate loop conditions
                 continue
             # process the received message and any that have queued up
@@ -72,7 +77,7 @@ class ApiWrapper(object):
                         if (target_api.value in request_url
                                 and request_url.split('?')[0].endswith(
                                     target_api.value.split('/')[-1])):
-                            #found_target = target_api
+                            caught_apis.add(target_api)
                             request_id = message['params']['requestId']
                             Log.log_debug(
                                 f"Waiting for request {request_id} "
@@ -82,8 +87,6 @@ class ApiWrapper(object):
                                 'url': request_url
                             }
                             break
-                    #if found_target:
-                    #    target_apis.remove(found_target)
                 elif message['method'] == 'Network.loadingFinished':
                     message_request_id = message['params']['requestId']
                     if message_request_id in kcapi_requests:
@@ -131,9 +134,7 @@ class ApiWrapper(object):
             # All messages in this batch have been processed; clear the list
             # so they are not re-processed on the next while-loop iteration.
             self._pending_messages = []
-            if timeout:
-                if datetime.now() > end_time:
-                    break
+            
 
         self._check_for_chrome_crash()
 
