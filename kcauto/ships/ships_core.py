@@ -11,19 +11,19 @@ class ShipsCore(object):
     name_db = {}
 
     def __init__(self):
-        Log.log_debug("Initializing Ship core.")
+        Log.log_debug_1("Initializing Ship core.")
         self.load_wctf_names()
 
     def update_ship_pool(self, data):
         # from this api call, api_id = local_api_id, and api_ship_id = api_id
-        Log.log_debug("Updating ship data from API.")
+        Log.log_debug_1("Updating ship data from API.")
         self.ship_pool = {}
         for ship in data:
             self.ship_pool[ship['api_id']] = self.create_ship(
                 self.get_ship_static_data(ship["api_sortno"]), ship)
 
     def update_ship_library(self, data):
-        Log.log_debug("Updating ship library data.")
+        Log.log_debug_1("Updating ship library data.")
         self.ship_library = data
         
     def is_ship_pool_full(self, is_event = False):

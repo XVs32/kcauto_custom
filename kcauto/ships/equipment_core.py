@@ -138,7 +138,7 @@ class EquipmentCore(object):
             if self._is_special_reinforce_equipment(ship, equipment):
                 continue
             
-            Log.log_debug(f"Equipment {equipment.name} ({equipment.production_id}) {equipment.category} is not a special reinforce equipment for ship {ship.name}, skipping")
+            Log.log_debug_1(f"Equipment {equipment.name} ({equipment.production_id}) {equipment.category} is not a special reinforce equipment for ship {ship.name}, skipping")
             available_equipments.pop(i)
 
         return available_equipments
@@ -210,7 +210,7 @@ class EquipmentCore(object):
                     temp = Equipment(model_id=model_id)
                     Log.log_warn(f"Cannot find {temp.name} in equipment list, looks like you don't have any")
         else:
-            Log.log_debug("EMPTY equipment slot")
+            Log.log_debug_1("EMPTY equipment slot")
             output_list = [Equipment()]
 
         return output_list

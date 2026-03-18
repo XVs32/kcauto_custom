@@ -8,7 +8,7 @@ class FactoryStats(StatsBase):
 
     def __init__(self, start_time):
         super().__init__(start_time)
-        Log.log_debug("Factory Stats module initialized.")
+        Log.log_debug_1("Factory Stats module initialized.")
 
     def next_phase(self):
         self.work_phase += 1
