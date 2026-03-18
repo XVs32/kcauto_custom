@@ -33,9 +33,9 @@ def init():
     global config
     # open the file for reading
     try:
-        JsonData.load_json(CONFIG_CUI)
+        config = JsonData.load_json(CONFIG_CUI)
     except FileNotFoundError:
-        JsonData.load_json(CONFIG_DEFAULT)
+        config = JsonData.load_json(CONFIG_DEFAULT)
 
     exp.init()
 
