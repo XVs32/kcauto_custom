@@ -2,7 +2,6 @@ from kca_enums.fleet import FleetEnum
 
 from constants import VISUAL_DAMAGE, FLEET_ID_ICON
 from util.logger import Log
-import json
 from util.json_data import JsonData
 from kca_enums.fleet_modes import FleetModeEnum
 
@@ -32,7 +31,7 @@ class Noro6(object):
             decompressed = LZString.decompressFromUTF16(compressed)
             
             #read decompress as json
-            data = json.loads(decompressed)
+            data = JsonData.load_json_str(decompressed)
             self.data = data["savedata"]
             self.get_presets(self.data)
             
@@ -116,7 +115,7 @@ class Noro6(object):
         if "fleetInfo" not in self.map["manager"]:
             return None
         #read string in self.map["manager"] as json
-        fleetInfo = json.loads(self.map["manager"])["fleetInfo"]
+        fleetInfo = JsonData.load_json_str(self.map["manager"])["fleetInfo"]
         
         if fleetInfo is None:
             return 0
@@ -143,7 +142,7 @@ class Noro6(object):
         if "fleetInfo" not in self.map["manager"]:
             return None
         #read string in self.map["manager"] as json
-        fleetInfo = json.loads(self.map["manager"])["fleetInfo"]
+        fleetInfo = JsonData.load_json_str(self.map["manager"])["fleetInfo"]
         
         if fleetInfo is None:
             return 0
@@ -249,7 +248,7 @@ class Noro6(object):
         
         #read string in self.map["manager"] as json
         Log.log_debug_1(f'Loading {self.map}\'s config')
-        fleetInfo = json.loads(self.map["manager"])["fleetInfo"]
+        fleetInfo = JsonData.load_json_str(self.map["manager"])["fleetInfo"]
         
         if fleetInfo is None:
             return 0
