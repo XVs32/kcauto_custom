@@ -310,7 +310,7 @@ class QuestCore(CoreBase):
             quest = self.current_quest_list[i]
             
             if quest.state == QuestStateEnum.DONE:
-                Log.log_warn(f"Quest {quest.name} is done, but not turned in. ")
+                Log.log_warn(f"Quest {quest.name} is done, but not turned in.")
                 continue
             elif quest.state == QuestStateEnum.IN_PROGRESS:
                 # quest is in progress, check if it should be tracked
@@ -339,7 +339,7 @@ class QuestCore(CoreBase):
                     'left', f'quest|filter_tab_all_active.png',
                     NEAR_EXACT)
             api.api.update_from_api({KCSAPIEnum.QUEST_LIST}) #update quest_list
-            Log.log_msg(f"api update done in #{self.CONTEXT_LOOKUP[mode]} auto map select.")
+            Log.log_msg(f"API update done in #{self.CONTEXT_LOOKUP[mode]} auto map select.")
 
         if mode == CONTEXT_AUTO_SORTIE and cfg.config.combat.sortie_map_read_only == MapEnum.auto_map_select:
             next_quest = self._get_quests_rank_list(CONTEXT_SORTIE)
@@ -352,7 +352,7 @@ class QuestCore(CoreBase):
             
             self.auto_select_quest[CONTEXT_SORTIE] = next_quest    
             
-            Log.log_success(f"Attempt to finish sortie quest {next_quest.name}.")
+            Log.log_success(f"Attempting to finish sortie quest {next_quest.name}.")
 
             """Read quest progress""" 
             sortie_dict = kca_u.kca.get_quest_count(target_quest=next_quest)
@@ -378,10 +378,10 @@ class QuestCore(CoreBase):
             
             if next_quest != []:
                 pvp.pvp.next_pvp_quest = next_quest[0]
-                Log.log_success(f"Attempt to finish pvp quest {pvp.pvp.next_pvp_quest.name}.")
+                Log.log_success(f"Attempting to finish PvP quest {pvp.pvp.next_pvp_quest.name}.")
             else:
                 pvp.pvp.next_pvp_quest = Quest(quest_id=303) #mork the next quest as Cd1, so kcauto use default PvP preset
-                Log.log_success(f"No pvp quests available.")
+                Log.log_success(f"No PvP quests available.")
                 
             self.auto_select_quest[CONTEXT_PVP] = pvp.pvp.next_pvp_quest
             
@@ -390,7 +390,7 @@ class QuestCore(CoreBase):
             quest_list = self._get_quests_rank_list(CONTEXT_EXPEDITION)
             
             for next_quest in reversed(quest_list):
-                Log.log_success(f"Attempt to finish expedition quest {next_quest.name}.")
+                Log.log_success(f"Attempting to finish expedition quest {next_quest.name}.")
                 """Read quest progress""" 
                 exp_dict = kca_u.kca.get_quest_count(target_quest= next_quest)
                 
@@ -400,7 +400,7 @@ class QuestCore(CoreBase):
                     Log.log_debug_1(f"Cannot get quest progress from kc3, use default in config file.")
                     exp_list = list(next_quest.exp_context)
                     if exp_list == []:
-                        Log.log_debug_1(f"Cannot get quest info from kc3 and default config file, kcauto_custom fail to select corresponding expedition")
+                        Log.log_debug_1(f"Cannot get quest info from kc3 and default config file; kcauto_custom failed to select corresponding expedition.")
                     else:
                         exp.expedition.cut_expedition_queue(exp_list)
                 else:

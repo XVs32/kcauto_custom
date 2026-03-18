@@ -64,8 +64,8 @@ class FactoryCore(object):
                 retry += 1
 
             if retry == 5:
-                Log.log_error("Cannot open develop menu, probably because the port is full")
-                Log.log_error("Disable factory module")
+                Log.log_error("Cannot open develop menu, probably because the port is full.")
+                Log.log_error("Disabling factory module.")
                 self.enabled = False
                 return False
 
@@ -146,8 +146,8 @@ class FactoryCore(object):
                         retry += 1
 
                     if retry == 10:
-                        Log.log_error("Cannot receive ship, probably because the port is full")
-                        Log.log_error("Disable factory module")
+                        Log.log_error("Cannot receive ship, probably because the port is full.")
+                        Log.log_error("Disabling factory module.")
                         self.enabled = False
                         return False
                     
@@ -169,8 +169,8 @@ class FactoryCore(object):
                         retry += 1
 
                     if retry == 5:
-                        Log.log_error("Cannot open develop menu, probably because the port is full")
-                        Log.log_error("Disable factory module")
+                        Log.log_error("Cannot open develop menu, probably because the port is full.")
+                        Log.log_error("Disabling factory module.")
                         self.enabled = False
                         return False
 

@@ -157,7 +157,7 @@ class FleetSwitcherCore(object):
                 ssw.ship_switcher.current_page = 1
                 ssw.ship_switcher.switch_slot_by_id(1,cfg.config.factory.build_secretary)
         elif preset_id == None:
-            Log.log_debug_1(f"Fleet switch disabled")
+            Log.log_debug_1(f"Fleet switch disabled.")
         else:
             Log.log_msg(f"Switching to Fleet Preset {preset_id}.")
             if preset_id not in self.presets:
@@ -235,13 +235,13 @@ class FleetSwitcherCore(object):
 
                 if i <= len(flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][fleet_id].ship_ids) and \
                     id == flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][fleet_id].ship_ids[i-1]:
-                    Log.log_debug_1("Ship loaded already for costom fleet: ")
+                    Log.log_debug_1("Ship already loaded for custom fleet.")
                     continue
                 
                 if not ssw.ship_switcher.switch_slot_by_id(i-empty_slot_count,id):
                     #fleet data update
                     if any_vaild_switch == True:
-                        Log.log_msg(f"retrying...")
+                        Log.log_msg(f"Retrying...")
                         nav.navigate.to('home')
                         self.goto()
                         retry = True 
@@ -260,7 +260,7 @@ class FleetSwitcherCore(object):
             else:
                 break
         
-        Log.log_success("load fleet done")
+        Log.log_success("Fleet load complete.")
         return True
         
         
@@ -274,7 +274,7 @@ class FleetSwitcherCore(object):
         
         self._unload_fleet_required_equipment(costom_fleet)
         
-        Log.log_success("unload_equipment done")
+        Log.log_success("Equipment unloaded.")
         
         nav.navigate.to('home')
         
@@ -283,7 +283,7 @@ class FleetSwitcherCore(object):
         self.switch_to_costom_fleet(fleet_id, costom_fleet) 
             
         self._load_equipment(fleet_id, costom_fleet)    
-        Log.log_success("load equipment done")
+        Log.log_success("Equipment loaded.")
         
         return True
     
@@ -460,7 +460,7 @@ class FleetSwitcherCore(object):
         
         api_result = api.api.update_from_api({KCSAPIEnum.FREE_EQUIPMENT}, process_all=True)
         if api_result == {}:
-            Log.log_error(f"Something goes wrong, skipping this round...")
+            Log.log_error(f"Something went wrong, skipping this round...")
             exit(1)
             
             retry = 10
@@ -471,7 +471,7 @@ class FleetSwitcherCore(object):
                     retry -=1
                     kca_u.sleep(1)
                 else:
-                    Log.log_error(f"kcauto can not figure out where it is, exiting...")
+                    Log.log_error(f"kcauto cannot figure out where it is, exiting...")
                     exit()
             #skiping unload for this ship  <= usually it is already unloaded, but api didn't update due to network delay
             
@@ -485,10 +485,10 @@ class FleetSwitcherCore(object):
         
         if flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][fleet_id].ship_ids != \
             fleet.ship_ids:
-            Log.log_error(f"fleet {fleet_id} ship ids does not match, looks like ship load is failed, exiting...")
+            Log.log_error(f"Fleet {fleet_id} ship IDs do not match; ship load may have failed, exiting...")
             exit(1)
         elif flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][fleet_id].under_repair == True:
-            Log.log_error(f"fleet {fleet_id} is under repair, equipment load process halt")
+            Log.log_error(f"Fleet {fleet_id} is under repair; equipment load process halted.")
             return 
             
         needed_load = False

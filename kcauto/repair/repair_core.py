@@ -54,7 +54,7 @@ class RepairCore(object):
                 if (    cfg.config.passive_repair.slots_to_reserve
                         >= self.docks_available_count):
                     
-                    Log.log_debug_1(f"Not enough docks {self.docks_available_count} withour reserve {cfg.config.passive_repair.slots_to_reserve}.")
+                    Log.log_debug_1(f"Not enough docks ({self.docks_available_count}) without the reserve ({cfg.config.passive_repair.slots_to_reserve}).")
                     
                     return False
                 return True
@@ -65,7 +65,7 @@ class RepairCore(object):
         self._clean_timers()
         sorted_timers = sorted(self.complete_times)
         if len(sorted_timers) == 0:
-            Log.log_warn("kc_auto thinks there are ships in repair, but there is not.")
+            Log.log_warn("kcauto thinks there are ships in repair, but there are none.")
             return 0
         else:
             return sorted_timers[0]
