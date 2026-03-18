@@ -14,6 +14,7 @@ import stats.stats_core as sts
 import util.kca as kca_u
 from combat.map_data import MapData
 from combat.node import MapNode, EmptyNode
+from config.macro import GIMMICK, GIMMICK_TEMPLATE
 from util.core_base import CoreBase
 from util.json_data import JsonData
 from util.kc_time import KCTime
@@ -829,11 +830,14 @@ class CombatCore(CoreBase):
     
     def solve_gimmick(self):
 
-        data = JsonData.load_json(f'data|temp|gimmick.json')
+        try:
+            data = JsonData.load_json(GIMMICK)
+        except FileNotFoundError:
+            data = JsonData.load_json(GIMMICK_TEMPLATE)
 
         try:
             data[self.sortie_queue[0]]["gimmick_level"] += 1
-            JsonData.dump_json(data, 'data|temp|gimmick.json')
+            JsonData.dump_json(data, GIMMICK)
             
         except KeyError:
             Log.log_debug_1(f"Invalid gimmick update for map {self.sortie_queue[0]} requested.")
@@ -842,7 +846,10 @@ class CombatCore(CoreBase):
             method to check what gimmick to go next for the current sortie map
             return None if no gimmick is available
         """
-        data = JsonData.load_json(f'data|temp|gimmick.json')
+        try:
+            data = JsonData.load_json(GIMMICK)
+        except FileNotFoundError:
+            data = JsonData.load_json(GIMMICK_TEMPLATE)
         map = map_enum.value
 
         """Reset gimmick each month"""
@@ -851,7 +858,7 @@ class CombatCore(CoreBase):
                 Log.log_debug_1("Gimmick renew")
                 data[map]["timestamp"] = time.time()
                 data[map]["gimmick_level"] = 0
-                JsonData.dump_json(data, 'data|temp|gimmick.json')
+                JsonData.dump_json(data, GIMMICK)
         except KeyError:
             Log.log_debug_1("No gimmick data found, skipping...")
             pass
