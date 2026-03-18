@@ -103,13 +103,13 @@ class Kcauto(object):
 
                 if not flt.fleets.assign_exp_ship():
                     exp.expedition.enabled = False
-                    Log.log_error(f"Failed to assign ships for self balance expedition, disable expedition module.")
+                    Log.log_error(f"Failed to assign ships for self-balance expedition. Disabling expedition module.")
                     return False
                  
             if exp.expedition.is_fleetswitch_needed():
                 if self._run_fleetswitch_logic('expedition') != 0:
                     exp.expedition.timer.set(15*60)
-                    Log.log_warn(f"Failed to switch ships for self balance expedition, disable expedition module for 15 mins.")
+                    Log.log_warn(f"Failed to switch ships for self-balance expedition. Disabling expedition module for 15 minutes.")
                     return False
 
             if res.resupply.exp_provisional_enabled != True:
@@ -233,7 +233,7 @@ class Kcauto(object):
 
 
         if len(com.combat.get_sortie_queue()) == 0: #If no combat map available, turn off combat module
-            Log.log_debug_1(f"Stop combat module cause no combat quest available")
+            Log.log_debug_1(f"Stopping combat module because no combat quest is available.")
             com.combat.enabled = False
             return False
         else:
@@ -255,11 +255,11 @@ class Kcauto(object):
                 
                 is_gimmick_await = False
                 if map_enum in GIMMICK_MAPS:
-                    Log.log_debug_1(f"Gimmick, needed to be finish")
+                    Log.log_debug_1(f"Gimmick needs to be finished.")
                     for gimmick_map in GIMMICK_MAPS[map_enum]:
                         next_gimmick_map = com.combat.check_gimmick(gimmick_map)
                         if next_gimmick_map is not None:
-                            Log.log_warn(f'Gimmick not finished')
+                            Log.log_warn(f'Gimmick not finished.')
                             current_stage = next_gimmick_map
                             com.combat.insert_sortie_queue(current_stage)
                             is_gimmick_await = True
