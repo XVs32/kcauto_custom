@@ -19,6 +19,7 @@ import stats.stats_core as sts
 import util.kca as kca_u
 from fleet.noro6 import Noro6 
 from kca_enums.expeditions import ExpeditionEnum
+from kca_enums.sorite_rank import SortieRankEnum
 from util.logger import Log
 from kca_enums.maps import MapEnum
 from quest.quest import Quest
@@ -219,20 +220,20 @@ class Kcauto(object):
         #set sortie_queue if it is empty
         if len(com.combat.get_sortie_queue()) == 0:
             was_sortie_queue_empty = True
-            Log.log_debug(f"cfg.config.combat.sortie_map_read_only:{cfg.config.combat.sortie_map_read_only}")
+            Log.log_debug_1(f"cfg.config.combat.sortie_map_read_only:{cfg.config.combat.sortie_map_read_only}")
             if cfg.config.combat.sortie_map_read_only == MapEnum.auto_map_select:
                 self.run_quest_logic(CONTEXT_AUTO_SORTIE, fast_check=False, back_to_home=False, force= True) #quest module will call set_sortie_queue
             else:
-                Log.log_debug(f"Manual sortie mode:{cfg.config.combat.sortie_map_read_only.value}")
+                Log.log_debug_1(f"Manual sortie mode:{cfg.config.combat.sortie_map_read_only.value}")
 
-                sortie_queue = [cfg.config.combat.sortie_map_read_only.value]
+                sortie_queue = [MapEnum(cfg.config.combat.sortie_map_read_only.value)]
                 com.combat.set_sortie_queue(sortie_queue)
         else:
             Log.log_msg(f"Sortie queue:{com.combat.sortie_queue}")
 
 
         if len(com.combat.get_sortie_queue()) == 0: #If no combat map available, turn off combat module
-            Log.log_debug(f"Stop combat module cause no combat quest available")
+            Log.log_debug_1(f"Stop combat module cause no combat quest available")
             com.combat.enabled = False
             return False
         else:
@@ -254,7 +255,7 @@ class Kcauto(object):
                 
                 is_gimmick_await = False
                 if map_enum in GIMMICK_MAPS:
-                    Log.log_debug(f"Gimmick, needed to be finish")
+                    Log.log_debug_1(f"Gimmick, needed to be finish")
                     for gimmick_map in GIMMICK_MAPS[map_enum]:
                         next_gimmick_map = com.combat.check_gimmick(gimmick_map)
                         if next_gimmick_map is not None:
@@ -325,18 +326,64 @@ class Kcauto(object):
 
             if com.combat.conduct_sortie():
 
-                Log.log_debug(f"conduct sortie end")
+                Log.log_debug_1(f"conduct sortie end")
+
+                selected_quest = qst.quest.auto_select_quest[CONTEXT_SORTIE]
+                if selected_quest is not None:
+                    current_map = cfg.config.combat.sortie_map.without_quest_and_node_enum
+                    
+                    map_is_required = False
+                    required_node = None
+                    required_rank = SortieRankEnum["E"]
+                    for required_map in selected_quest.map_context:
+                        if current_map == required_map.without_quest_and_node_enum:
+                            map_is_required = True
+                            required_node = required_map.variant #could be None
+                            required_rank = selected_quest.rank_requirement.get(required_map, SortieRankEnum["E"])
+                            break
+                    
+                    map_is_required = (
+                        selected_quest.map_context == ()
+                        or map_is_required)
+                    
+                    if map_is_required:
+                        
+                        Log.log_success(f"Sortie quest {selected_quest.name} selected, current map {current_map} meets the map requirement.")
+                        last_node = com.combat.last_battle.get(com.combat.MAP_NODE)
+                        
+                        if last_node is not None:
+                            if required_node == None:
+                                Log.log_debug_1(f"No specific node required for quest {selected_quest.name}, current node: {last_node}.")
+                            elif last_node == required_node:
+                                Log.log_success(f"Required node {required_node} reached for quest {selected_quest.name}.")
+                                last_rank = com.combat.last_battle.get(com.combat.RANKENUM)
+                                if last_rank == None:
+                                    Log.log_success(f"Quest {selected_quest.name} has no rank requirement, condition met with node {last_node}.") 
+                                elif last_rank >= required_rank:
+                                    Log.log_success(f"Quest {selected_quest.name} condition met: node {last_node} with rank {last_rank}.")
+                                else:
+                                    Log.log_warn(f"Quest {selected_quest.name} condition NOT met: node {last_node} with rank {last_rank} does not meet requirement of rank {required_rank}.")
+                                    #@todo add last sortie rerun
+                            else:
+                                Log.log_warn(f"Required node {required_node} not reached for quest {selected_quest.name}, last node: {last_node}.")
+                                #@todo add last sortie rerun
+                            
+                        else:
+                            Log.log_error(f'Failed to get last node from combat API, \
+                                unable to verify sortie quest conditions. Map: {current_map}, required node: {required_node}.')
+                else:
+                    Log.log_warn(f"No sortie quest selected, thus no quest is progressed.")
+
                 #sortie success, pop the head of sortie_queue
-                
                 com.combat.pop_sortie_queue()
-                
-                sts.stats.set_print_loop_end_stats()
-                kca_u.kca.receive_expedition()
                 
                 qst.quest.is_quest_dom_cache_dirty = True
             else:
                 Log.log_error(f"Sortie failed.")
 
+            sts.stats.set_print_loop_end_stats()
+            kca_u.kca.receive_expedition()
+                
     def run_resupply_logic(self, back_to_home=False):
         if res.resupply.need_to_resupply:
             res.resupply.goto()

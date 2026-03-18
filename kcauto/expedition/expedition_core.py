@@ -200,7 +200,7 @@ class ExpeditionCore(CoreBase):
             for exp_rank in self.exp_rank:
                 
                 if exp_rank[self.EXP_ENUM] not in self.available_expeditions:
-                    Log.log_debug(f'expEnum not available {exp_rank}')
+                    Log.log_debug_1(f'expEnum not available {exp_rank}')
                     
                     # Can not use dict in set, use ENUM instead
                     to_remove.add(exp_rank[self.EXP_ENUM])
@@ -208,16 +208,16 @@ class ExpeditionCore(CoreBase):
                             
                         if prerequisite in self.available_expeditions:
                             if self.exp_state[prerequisite] in {NEW, NOT_CLEARED}:
-                                Log.log_debug(f'exp {prerequisite} is in {self.exp_state[prerequisite]} state, adding into prerequisite')
+                                Log.log_debug_1(f'exp {prerequisite} is in {self.exp_state[prerequisite]} state, adding into prerequisite')
                                 self.exp_rank.append({self.EXP_ENUM:prerequisite,self.SCORE:exp_rank[self.SCORE]})
                             elif self.exp_state[prerequisite] == CLEARED:
-                                Log.log_debug(f'exp {prerequisite} cleared already, not adding into prerequisite')
+                                Log.log_debug_1(f'exp {prerequisite} cleared already, not adding into prerequisite')
                             else:
-                                Log.log_debug(f"unknown expedition state {self.exp_state[prerequisite]}")
+                                Log.log_debug_1(f"unknown expedition state {self.exp_state[prerequisite]}")
                                 exit(0)
                         else:
                             self.exp_rank.append({self.EXP_ENUM:prerequisite,self.SCORE:exp_rank[self.SCORE]})
-                            Log.log_debug(f'exp {prerequisite} is not available, but adding into prerequisite, handle next round')
+                            Log.log_debug_1(f'exp {prerequisite} is not available, but adding into prerequisite, handle next round')
                             flag = True
                             
                 if flag == True:
@@ -391,7 +391,6 @@ class ExpeditionCore(CoreBase):
             else:
                 kca_u.kca.click_existing('lower', 'expedition|e_world_1.png')
                 kca_u.kca.r['top'].hover()
-                kca_u.kca.sleep()
 
     def _validate_expeditions(self):
         if len(self.available_expeditions) == 0:
@@ -409,7 +408,6 @@ class ExpeditionCore(CoreBase):
                         "unlocked.")
 
     def _select_world(self, expedition):
-        kca_u.kca.sleep()
         kca_u.kca.click_existing(
             'lower', f'expedition|e_world_{expedition.world}.png')
 

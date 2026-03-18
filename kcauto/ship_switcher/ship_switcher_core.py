@@ -27,7 +27,7 @@ class ShipSwitcherCore(object):
     REINFORCEMENT_MODE = 4
 
     def __init__(self):
-        Log.log_debug("Initializing Ship Switcher core.")
+        Log.log_debug_1("Initializing Ship Switcher core.")
         self._intake_rules(cfg.config.ship_switcher.slots)
 
     def _intake_rules(self, slot_rules):
@@ -172,7 +172,7 @@ class ShipSwitcherCore(object):
             
             if rule.is_meet_criteria(ship):
                 return (idx, ship)
-        Log.log_debug("No available switch-in ship found.")
+        Log.log_debug_1("No available switch-in ship found.")
         return (None, None)
 
     def goto(self):
@@ -181,7 +181,7 @@ class ShipSwitcherCore(object):
         
     def _select_switch_button(self, slot_id):
         
-        Log.log_debug(f"Selecting switch button for slot {slot_id}.")
+        Log.log_debug_1(f"Selecting switch button for slot {slot_id}.")
         
         if slot_id == 7:
             next_region = Region(
@@ -284,7 +284,7 @@ class ShipSwitcherCore(object):
             if ship == None:
                 Log.log_error("Ship must be specified for reinforcement mode.")
             tot_pages = (len(equ.equipment.get_reinforce_equipment_list(ship)) -1) // 10 + 1
-            Log.log_debug(f"Total pages for reinforcement equipment: {tot_pages}")
+            Log.log_debug_1(f"Total pages for reinforcement equipment: {tot_pages}")
                  
             offset_mode = nav.navigate_list.OP_MODE_EQUIPMENT
 

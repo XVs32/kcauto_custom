@@ -41,7 +41,6 @@ class Navigate(object):
 
             sidestep = bool(randint(0, max_sidestep))
             kca_u.kca.hover('top')
-            kca_u.kca.sleep()
             # Figure out where we are
             current_location = None
             if kca_u.kca.exists('home_menu', 'nav|home_menu_sortie.png'):
@@ -59,7 +58,6 @@ class Navigate(object):
                 raise FindFailed()
 
             kca_u.kca.hover('top')
-            kca_u.kca.sleep()
             
             if current_location.name == 'home':
                 # Starting from home screen
@@ -310,7 +308,7 @@ class NavigateList(object):
             offset (tuple): tuple of x, y pixel offsets as defined by
                 offset_mode and the OFFSET class dictionary
         """
-        Log.log_debug(f"Changing to page {target} with {mode} offsets.")
+        Log.log_debug_1(f"Changing to page {target} with {mode} offsets.")
         x_start = kca_u.kca.game_x + cls.REGION[mode][target][0]
         y_start = kca_u.kca.game_y + cls.REGION[mode][target][1]
             

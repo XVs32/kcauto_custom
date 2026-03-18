@@ -110,10 +110,15 @@ def run_external_program(panel):
       
     global pop_up_lock
     # Read and write the output to the desired panel
-    for line in iter(process.stdout.readline, b''):
+    # Sentinel must be '' (str), not b'' (bytes), because stdout is in text mode
+    for line in iter(process.stdout.readline, ''):
         output = line.strip()
         if output:
             print_log(panel, f"{output}\n")
+
+    process.stdout.close()
+    process.wait()
+    is_running = False
 
     # Final log after the process ends
     print_log(panel, "kcauto ended\n")

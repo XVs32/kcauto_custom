@@ -17,7 +17,6 @@ from config.ship_switcher import ConfigShipSwitcher
 from util.json_data import JsonData
 from util.logger import Log
 
-
 class Config(object):
     
     
@@ -63,10 +62,9 @@ class Config(object):
             if config_json != self.general._config:
                 Log.log_msg("Changes detected from previous config load.")
             else:
-                Log.log_debug("No change from previous config load.")
+                Log.log_debug_1("No change from previous config load.")
                 self.last_cfg_update_time = new_update_time
                 return False
-
         try:
             new_general = ConfigGeneral(config_json)
             new_expedition = ConfigExpedition(config_json)
