@@ -39,7 +39,7 @@ class FleetCore(object):
 
     def __init__(self):
         
-        Log.log_debug("FleetCore init.")
+        Log.log_debug_1("FleetCore init.")
         
         self.fleets[self.ACTIVE_FLEET_KEY] = {}
         self.fleets[self.ACTIVE_FLEET_KEY][1] = Fleet(1, FleetEnum.COMBAT)
@@ -206,7 +206,7 @@ class FleetCore(object):
         elif self.is_custom_fleet_loaded == False:
             self.is_custom_fleet_loaded = True
         elif self.is_custom_fleet_loaded == True:
-            Log.log_debug("Custom fleets setting is already loaded")
+            Log.log_debug_1("Custom fleets setting is already loaded")
             return
         else:
             Log.log_error("Unexpected state for noro6 config load, exiting...")
@@ -226,7 +226,7 @@ class FleetCore(object):
         """
         
         if self.fleets[self.EXP_POOL_KEY] != self.EMPTY:
-            Log.log_debug("Exp pool is already loaded")
+            Log.log_debug_1("Exp pool is already loaded")
             return 
         
         self.fleets[self.EXP_POOL_KEY] = {}
@@ -414,22 +414,22 @@ class FleetCore(object):
         
         #print out the fleet data in debug log
         for key in ret:
-            Log.log_debug(f"Fleet preset: {key}")
+            Log.log_debug_1(f"Fleet preset: {key}")
             for fleet_id in ret[key]:
-                Log.log_debug(f"Fleet ID: {fleet_id}, Fleet Type: {ret[key][fleet_id].fleet_type.name}")
+                Log.log_debug_1(f"Fleet ID: {fleet_id}, Fleet Type: {ret[key][fleet_id].fleet_type.name}")
                 
                 fleet = ret[key][fleet_id]
                 for ship in fleet.ships:
-                    Log.log_debug(f"{ship.name} ({ship.ship_type.name}) - Level: {ship.level}, \
+                    Log.log_debug_1(f"{ship.name} ({ship.ship_type.name}) - Level: {ship.level}, \
                         Equipment name and production id: {[f'{eq.name} {eq.production_id}' for eq in ship.equipments]}, \
                         Slot Ex: {f'{ship.slot_ex.name} {ship.slot_ex.production_id}' if ship.slot_ex != None else 'None'}")
                     
         #print out the whole NON_NORO6 equipment pool in debug log
-        Log.log_debug(f"NON_NORO6 equipment pool after Noro6 preset load:")
+        Log.log_debug_1(f"NON_NORO6 equipment pool after Noro6 preset load:")
         for equipment in equ.equipment.equipment_pool[equ.equipment.NON_NORO6]:
             ret_str = f"Equipment ID {equipment.production_id}: "
             ret_str += f"{equipment.name} ({equipment.stars}★)"
-            Log.log_debug(ret_str)
+            Log.log_debug_1(ret_str)
             
                     
         return ret
@@ -476,12 +476,12 @@ class FleetCore(object):
 
                 if assigned_fleet == self.ASSIGN_SHIP_FAILED :
                     #failed to assign ships for this exp, restore the ship pool
-                    Log.log_debug(f"ship_pool and equipment_pool restore")
+                    Log.log_debug_1(f"ship_pool and equipment_pool restore")
                     exp_ship_pool = exp_ship_pool_bak 
                     equ.equipment.equipment_pool[equ.equipment.NON_NORO6] = non_noro6_equipment_pool_bak
                 elif assigned_fleet == self.ASSIGN_DRUM_FAILED or assigned_fleet == self.ASSIGN_LC_FAILED:
                     #failed to assign equipment for this exp, restore the ship pool
-                    Log.log_debug(f"ship_pool and equipment_pool restore")
+                    Log.log_debug_1(f"ship_pool and equipment_pool restore")
                     exp_ship_pool = exp_ship_pool_bak 
                     equ.equipment.equipment_pool[equ.equipment.NON_NORO6] = non_noro6_equipment_pool_bak
                 else:
@@ -594,11 +594,11 @@ class FleetCore(object):
                                 temp_ship.slot_ex = Equipment()
                             assign_fleet.add_ship(temp_ship)
                             ship_pool[ship_enum].remove(ship)
-                            Log.log_debug(f"fleet_core: assign ship {ship} for {fleet_list}")
+                            Log.log_debug_1(f"fleet_core: assign ship {ship} for {fleet_list}")
                             has_match_ship = True
                             break
                         else:
-                            Log.log_debug(f"fleet_switcher_core: assign LC failed for {fleet_list}")
+                            Log.log_debug_1(f"fleet_switcher_core: assign LC failed for {fleet_list}")
                             return self.ASSIGN_LC_FAILED, ship_pool
             if has_match_ship == True:
                 continue
@@ -624,11 +624,11 @@ class FleetCore(object):
                                 temp_ship.slot_ex = Equipment()
                             assign_fleet.add_ship(temp_ship)
                             ship_pool[ship_enum].remove(ship)
-                            Log.log_debug(f"fleet_core: assign ship {ship} for {fleet_list}")
+                            Log.log_debug_1(f"fleet_core: assign ship {ship} for {fleet_list}")
                             has_match_ship = True
                             break
                         else:
-                            Log.log_debug(f"fleet_switcher_core: assign drum failed for {fleet_list}")
+                            Log.log_debug_1(f"fleet_switcher_core: assign drum failed for {fleet_list}")
                             return self.ASSIGN_DRUM_FAILED, ship_pool
             if has_match_ship == True:
                 continue
@@ -644,19 +644,19 @@ class FleetCore(object):
                     temp_ship.slot_ex = Equipment()
                 assign_fleet.add_ship(temp_ship)
                 ship_pool[ship_enum].remove(ship)
-                Log.log_debug(f"fleet_core: assign ship {ship} for {fleet_list}")
+                Log.log_debug_1(f"fleet_core: assign ship {ship} for {fleet_list}")
                 has_match_ship = True
                 break
             
             if has_match_ship == False:
                 #Cannot find a valid ship
-                Log.log_debug(f"fleet_core: assign ship failed for {fleet_list}")
+                Log.log_debug_1(f"fleet_core: assign ship failed for {fleet_list}")
                 return self.ASSIGN_SHIP_FAILED, ship_pool
             
             flag_ship = False
             
         if assign_fleet.sum_level < req_lv_sum:
-            Log.log_debug(f"fleet_core: assign ship failed for {fleet_list}, level sum is not enough")
+            Log.log_debug_1(f"fleet_core: assign ship failed for {fleet_list}, level sum is not enough")
             return self.ASSIGN_SHIP_FAILED, ship_pool
                 
         return assign_fleet, ship_pool
@@ -682,7 +682,7 @@ class FleetCore(object):
             elif flag == True:
                 return fleet.fleet_id
         
-        Log.log_debug(f"Failed to get next expedition fleet id, current fleet id: {fleet_id}, return None")        
+        Log.log_debug_1(f"Failed to get next expedition fleet id, current fleet id: {fleet_id}, return None")        
         return None
 
     def _get_exp_ship_requirement_from_composition(self, composition):

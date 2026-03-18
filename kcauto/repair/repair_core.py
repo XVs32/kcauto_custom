@@ -54,7 +54,7 @@ class RepairCore(object):
                 if (    cfg.config.passive_repair.slots_to_reserve
                         >= self.docks_available_count):
                     
-                    Log.log_debug(f"Not enough docks {self.docks_available_count} withour reserve {cfg.config.passive_repair.slots_to_reserve}.")
+                    Log.log_debug_1(f"Not enough docks {self.docks_available_count} withour reserve {cfg.config.passive_repair.slots_to_reserve}.")
                     
                     return False
                 return True
@@ -81,7 +81,7 @@ class RepairCore(object):
         self.complete_times = new_complete_times
 
     def update_repair_data(self, data):
-        Log.log_debug("Updating Repair data from API.")
+        Log.log_debug_1("Updating Repair data from API.")
         self.docks_count = 0
         self.docks_available_count = 0
         self.complete_times = []
@@ -140,11 +140,11 @@ class RepairCore(object):
         
         while self.can_conduct_repairs:
             if len(idx_of_combat_ships) + len(idx_of_passive_ships) == 0:
-                Log.log_debug("No combat or passive ships to repair.")
+                Log.log_debug_1("No combat or passive ships to repair.")
                 return False
-            Log.log_debug(
+            Log.log_debug_1(
                 f"Combat repair index: {idx_of_combat_ships.keys()}")
-            Log.log_debug(
+            Log.log_debug_1(
                 f"Passive repair index: {idx_of_passive_ships.keys()}")
 
             idx, ship, context = self._select_idx_and_ship(
@@ -258,10 +258,10 @@ class RepairCore(object):
 
     def _bucket_threshold(self):
         if sts.stats.rsc.bucket > cfg.config.combat.repair_bucket_threshold:
-            Log.log_debug(f"bucket threshold pass")
+            Log.log_debug_1(f"bucket threshold pass")
             return True
         else:
-            Log.log_debug(f"bucket threshold fail")
+            Log.log_debug_1(f"bucket threshold fail")
             return False
 
     @property

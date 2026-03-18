@@ -27,7 +27,7 @@ class Equipment():
             method to reload the static data of equipment from json file
         """
         try:
-            Log.log_debug("Reloading equipment static data.")
+            Log.log_debug_1("Reloading equipment static data.")
             temp = JsonData.load_json('data|temp|equipment_static.json')
             for item in temp:
                 Equipment.equipment_static_data[item['api_id']] = item
@@ -63,12 +63,12 @@ class Equipment():
         return Equipment.equipment_static_data.get(self.model_id, None)
         
         Log.log_error(f"Cannot find model_id:{self.model_id} in equipment static data, something is wrong with the api data")
-        Log.log_debug(f"equipment data:")
-        Log.log_debug(f"model_id: {self.model_id}")
-        Log.log_debug(f"production_id: {self.production_id}")
-        Log.log_debug(f"stars: {self.stars}")
-        Log.log_debug(f"lock: {self.lock}")
-        Log.log_debug(f"ace: {self.ace}")
+        Log.log_debug_1(f"equipment data:")
+        Log.log_debug_1(f"model_id: {self.model_id}")
+        Log.log_debug_1(f"production_id: {self.production_id}")
+        Log.log_debug_1(f"stars: {self.stars}")
+        Log.log_debug_1(f"lock: {self.lock}")
+        Log.log_debug_1(f"ace: {self.ace}")
         
     def category_patch(model_id, new_category):
         """
@@ -78,7 +78,7 @@ class Equipment():
         """
         if model_id in Equipment.equipment_static_data:
             Equipment.equipment_static_data[model_id]['api_type'][2] = new_category
-            Log.log_debug(f"Patched equipment model_id:{model_id} to category:{new_category}")
+            Log.log_debug_1(f"Patched equipment model_id:{model_id} to category:{new_category}")
         else:
             Log.log_error(f"Cannot find model_id:{model_id} in equipment static data, cannot patch category")
             

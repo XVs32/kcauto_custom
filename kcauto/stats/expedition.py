@@ -10,7 +10,7 @@ class ExpeditionStats(StatsBase):
 
     def __init__(self, start_time):
         super().__init__(start_time)
-        Log.log_debug("Expedition Stats module initialized.")
+        Log.log_debug_1("Expedition Stats module initialized.")
 
     @property
     def expeditions_sent_ph(self):

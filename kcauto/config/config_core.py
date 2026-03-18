@@ -62,7 +62,7 @@ class Config(object):
             if config_json != self.general._config:
                 Log.log_msg("Changes detected from previous config load.")
             else:
-                Log.log_debug("No change from previous config load.")
+                Log.log_debug_1("No change from previous config load.")
                 self.last_cfg_update_time = new_update_time
                 return False
         try:

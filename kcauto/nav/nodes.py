@@ -211,8 +211,8 @@ class NavNode(object):
             if c['click_target'] == 'QUEST_MENU':
                 kca_u.kca.click('top_menu_quest')
             else:
-                Log.log_debug(f"Navigating from '{self.name}' to '{target}'")
-                Log.log_debug(f"click {c['click_target']} in {c['click_target_region']}")
+                Log.log_debug_1(f"Navigating from '{self.name}' to '{target}'")
+                Log.log_debug_1(f"click {c['click_target']} in {c['click_target_region']}")
                 kca_u.kca.wait_and_click(
                     kca_u.kca.r[c['click_target_region']], c['click_target'])
             

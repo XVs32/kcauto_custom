@@ -64,7 +64,7 @@ class Kca(object):
             except FileNotFoundError:
                 Log.log_warn("kc3_id.json not found, using default KC3 id.")
                 self.kc3_id = "hkgmldnainaglpjngpajnnjfhpdjkohh"
-        Log.log_debug("Kca module initialized.")
+        Log.log_debug_1("Kca module initialized.")
         
     def hook_chrome(self):
         """Method that initializes the necessary hooks to Chrome using
@@ -105,13 +105,13 @@ class Kca(object):
 
         self.visual_hook.connect_targetID(visual_tab_id)
 
-        Log.log_debug(
+        Log.log_debug_1(
             f"Connected to visual tab ({visual_tab}:{visual_tab_id})")
         self.visual_hook.Page.enable()
 
         self.api_hook.connect_targetID(api_tab_id)
         self.api_hook.Network.enable()
-        Log.log_debug(f"Connected to API tab ({api_tab}:{api_tab_id})")
+        Log.log_debug_1(f"Connected to API tab ({api_tab}:{api_tab_id})")
         Log.log_success("Connected to Chrome")
         
         self.find_game_window_offset()
@@ -168,7 +168,7 @@ class Kca(object):
             shp.ships.load_wctf_names(force_update=True)
 
         else:
-            Log.log_debug("Can't find splash screen.")
+            Log.log_debug_1("Can't find splash screen.")
             api.api.update_ship_library_from_json()
 
         local_ships_json = {"ship": []}
@@ -273,31 +273,31 @@ class Kca(object):
                     screen, f'global|kc_ref_point_{self.last_ui}.png', EXACT)
             except FindFailed:
                 self.last_ui = None
-                Log.log_debug("Last known UI not found.")
+                Log.log_debug_1("Last known UI not found.")
 
         # if last-seen UI was not found, or if kcauto is in first start
         while not ref_r:
             try:
                 ref_r = self.find(screen, 'global|kc_ref_point_1.png', EXACT)
                 self.last_ui = 1
-                Log.log_debug("Using UI 1 or 2")
+                Log.log_debug_1("Using UI 1 or 2")
                 break
             except FindFailed:
-                Log.log_debug("Not using UI 1 or 2")
+                Log.log_debug_1("Not using UI 1 or 2")
             try:
                 ref_r = self.find(screen, 'global|kc_ref_point_2.png', EXACT)
                 self.last_ui = 2
-                Log.log_debug("Using UI 3")
+                Log.log_debug_1("Using UI 3")
                 break
             except FindFailed:
-                Log.log_debug("Not using UI 3")
+                Log.log_debug_1("Not using UI 3")
             try:
                 ref_r = self.find(screen, 'global|kc_ref_point_3.png', EXACT)
                 self.last_ui = 3
-                Log.log_debug("Using UI 4 or 5")
+                Log.log_debug_1("Using UI 4 or 5")
                 break
             except FindFailed:
-                Log.log_debug("Not using UI 4 or 5")
+                Log.log_debug_1("Not using UI 4 or 5")
             attempt += 1
             self.sleep(1)
             if attempt > 3:
@@ -306,7 +306,7 @@ class Kca(object):
 
         new_game_x = ref_r.x + self.KC_REF_OFFSET[0]
         new_game_y = ref_r.y + self.KC_REF_OFFSET[1]
-        Log.log_debug(f"Game X:{new_game_x}, Y:{new_game_y}")
+        Log.log_debug_1(f"Game X:{new_game_x}, Y:{new_game_y}")
 
         # define click callback as needed
         if not arg.args.parsed_args.no_click_track:
@@ -347,7 +347,7 @@ class Kca(object):
         """Method that generates or updates all pre-defined regions
         accordingly based on the game's current x and y position.
         """
-        Log.log_debug("Updating regions.")
+        Log.log_debug_1("Updating regions.")
         x = self.game_x
         y = self.game_y
         w = GAME_W
@@ -630,7 +630,7 @@ class Kca(object):
                 region key.
         """
         
-        Log.log_debug(f"Hovering over region: {region}")
+        Log.log_debug_1(f"Hovering over region: {region}")
         
         self.sleep()
 
@@ -656,7 +656,7 @@ class Kca(object):
                 (0, 0, 0, 0) as offset of (X1, Y1, X2, Y2)
         """
         
-        Log.log_debug(f"Clicking region: {region} with pad: {pad}")
+        Log.log_debug_1(f"Clicking region: {region} with pad: {pad}")
         
         self.sleep()
 
@@ -748,7 +748,7 @@ class Kca(object):
                 (0, 0, 0, 0).
         """
         
-        Log.log_debug(f"Dragging from region: {start_region} to region: {end_region} with pad: {pad}")
+        Log.log_debug_1(f"Dragging from region: {start_region} to region: {end_region} with pad: {pad}")
         
         self.sleep()
 
@@ -823,7 +823,7 @@ class Kca(object):
             
     def receive_expedition(self):
 
-        Log.log_debug("Start receive expedetion")
+        Log.log_debug_1("Start receive expedetion")
         
         received_expeditions = False
         while self.find_expedition_flag():
@@ -1120,7 +1120,7 @@ class Kca(object):
             if quest_name == target_quest_name:
                 
                 action_raw = quest_tree_dom("div.questInfo").eq(i)(".questCount").attr('title')
-                Log.log_debug(f"action_raw:{action_raw}")
+                Log.log_debug_1(f"action_raw:{action_raw}")
                 if action_raw == None:
                     return None
                 action_raw_line = action_raw.split('\n')

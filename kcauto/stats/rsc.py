@@ -16,10 +16,10 @@ class ResourceStats(StatsBase):
 
     def __init__(self, start_time):
         super().__init__(start_time)
-        Log.log_debug("Resource Stats module initialized.")
+        Log.log_debug_1("Resource Stats module initialized.")
 
     def update_resource_stats(self, data):
-        Log.log_debug("Updating resource data from API.")
+        Log.log_debug_1("Updating resource data from API.")
         for rsc in data:
             if rsc['api_id'] == 1:
                 self.fuel = rsc['api_value']

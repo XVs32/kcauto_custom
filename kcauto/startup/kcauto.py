@@ -220,11 +220,11 @@ class Kcauto(object):
         #set sortie_queue if it is empty
         if len(com.combat.get_sortie_queue()) == 0:
             was_sortie_queue_empty = True
-            Log.log_debug(f"cfg.config.combat.sortie_map_read_only:{cfg.config.combat.sortie_map_read_only}")
+            Log.log_debug_1(f"cfg.config.combat.sortie_map_read_only:{cfg.config.combat.sortie_map_read_only}")
             if cfg.config.combat.sortie_map_read_only == MapEnum.auto_map_select:
                 self.run_quest_logic(CONTEXT_AUTO_SORTIE, fast_check=False, back_to_home=False, force= True) #quest module will call set_sortie_queue
             else:
-                Log.log_debug(f"Manual sortie mode:{cfg.config.combat.sortie_map_read_only.value}")
+                Log.log_debug_1(f"Manual sortie mode:{cfg.config.combat.sortie_map_read_only.value}")
 
                 sortie_queue = [MapEnum(cfg.config.combat.sortie_map_read_only.value)]
                 com.combat.set_sortie_queue(sortie_queue)
@@ -233,7 +233,7 @@ class Kcauto(object):
 
 
         if len(com.combat.get_sortie_queue()) == 0: #If no combat map available, turn off combat module
-            Log.log_debug(f"Stop combat module cause no combat quest available")
+            Log.log_debug_1(f"Stop combat module cause no combat quest available")
             com.combat.enabled = False
             return False
         else:
@@ -255,7 +255,7 @@ class Kcauto(object):
                 
                 is_gimmick_await = False
                 if map_enum in GIMMICK_MAPS:
-                    Log.log_debug(f"Gimmick, needed to be finish")
+                    Log.log_debug_1(f"Gimmick, needed to be finish")
                     for gimmick_map in GIMMICK_MAPS[map_enum]:
                         next_gimmick_map = com.combat.check_gimmick(gimmick_map)
                         if next_gimmick_map is not None:
@@ -326,7 +326,7 @@ class Kcauto(object):
 
             if com.combat.conduct_sortie():
 
-                Log.log_debug(f"conduct sortie end")
+                Log.log_debug_1(f"conduct sortie end")
 
                 selected_quest = qst.quest.auto_select_quest[CONTEXT_SORTIE]
                 if selected_quest is not None:
@@ -353,7 +353,7 @@ class Kcauto(object):
                         
                         if last_node is not None:
                             if required_node == None:
-                                Log.log_debug(f"No specific node required for quest {selected_quest.name}, current node: {last_node}.")
+                                Log.log_debug_1(f"No specific node required for quest {selected_quest.name}, current node: {last_node}.")
                             elif last_node == required_node:
                                 Log.log_success(f"Required node {required_node} reached for quest {selected_quest.name}.")
                                 last_rank = com.combat.last_battle.get(com.combat.RANKENUM)

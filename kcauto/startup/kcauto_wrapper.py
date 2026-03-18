@@ -30,7 +30,7 @@ def kcauto_main():
                 if _.kcauto.scheduler_kca_active:
                     #if first_loop == True:
 
-                    Log.log_debug("New kca_loop started")
+                    Log.log_debug_1("New kca_loop started")
 
                     _.kcauto.initialization_check()
                     _.kcauto.run_expedition_logic()

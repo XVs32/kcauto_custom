@@ -15,7 +15,7 @@ class QuestStats(StatsBase):
 
     def __init__(self, start_time):
         super().__init__(start_time)
-        Log.log_debug("Quest Stats module initialized.")
+        Log.log_debug_1("Quest Stats module initialized.")
 
     @property
     def times_checked_ph(self):
