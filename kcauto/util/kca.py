@@ -808,7 +808,7 @@ class Kca(object):
             
     def receive_expedition(self):
 
-        Log.log_debug_1("Start receive expedetion")
+        Log.log_debug_1("Starting to receive expedition.")
         
         received_expeditions = False
         while self.find_expedition_flag():
