@@ -17,9 +17,13 @@ class Log(ABC):
     CLR_END = '\033[0m'
 
     log_file = None
+    
+    _enabled = False
 
     @classmethod
     def init(cls):
+        
+        cls.enabled = True
 
         # Force stdout to use UTF-8
         sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
@@ -53,6 +57,19 @@ class Log(ABC):
         # YY/mm/dd H:M:S
         dt_string = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
         cls.log_file = open( "log/" + dt_string + ".log", "w", encoding='utf-8')
+        
+    @property
+    def enabled(self):
+        """Indicates whether or not the module is enabled.
+        """
+        return self._enabled
+    
+    @enabled.setter
+    def enabled(cls, value):
+        if type(value) is not bool:
+            raise TypeError(
+                f"Enabled setting for module Log is not a bool.")
+        cls._enabled = value
 
     @staticmethod
     def _log_format(msg):
@@ -73,6 +90,9 @@ class Log(ABC):
         Args:
             msg (str): log message.
         """
+        if not cls.enabled:
+            return
+        
         print(
             f"{cls.CLR_MSG}{cls._log_format(msg)}{cls.CLR_END}",
             flush=True)
@@ -88,6 +108,9 @@ class Log(ABC):
         Args:
             msg (str): log message.
         """
+        if not cls.enabled:
+            return
+        
         print(
             f"{cls.CLR_SUCCESS}{cls._log_format(msg)}{cls.CLR_END}",
             flush=True)
@@ -102,6 +125,9 @@ class Log(ABC):
         Args:
             msg (str): log message.
         """
+        if not cls.enabled:
+            return
+        
         print(
             f"{cls.CLR_WARNING}{cls._log_format(msg)}{cls.CLR_END}",
             flush=True)
@@ -116,6 +142,8 @@ class Log(ABC):
         Args:
             msg (str): log message.
         """
+        if not cls.enabled:
+            return
         
         print(
             f"{cls.CLR_ERROR}{cls._log_format(msg)}{cls.CLR_END}",
@@ -124,15 +152,35 @@ class Log(ABC):
         cls.log_file.flush()
 
     @classmethod
-    def log_debug(cls, msg):
+    def log_debug_1(cls, msg):
         """Method to print a debug log message to the console. Only prints if
         the debug flag is set to True.
 
         Args:
             msg (str): log message.
         """
-        if arg.args.parsed_args.debug_output:
+        if not cls.enabled:
+            return
+        
+        if arg.args.parsed_args != None and arg.args.parsed_args.debug_output:
             print(cls._log_format(msg), flush=True)
 
         cls.log_file.write(f'[DEBUG]{cls._log_format(msg)}\n')
         cls.log_file.flush()
+
+    @classmethod
+    def log_debug_2(cls, msg):
+        """Method to print a debug log message to the console. Only prints if
+        the debug flag is set to True.
+
+        Args:
+            msg (str): log message.
+        """
+        if not cls.enabled:
+            return
+        
+        if arg.args.parsed_args != None and arg.args.parsed_args.debug_output:
+            print(cls._log_format(msg), flush=True)
+
+            cls.log_file.write(f'[DEBUG]{cls._log_format(msg)}\n')
+            cls.log_file.flush()

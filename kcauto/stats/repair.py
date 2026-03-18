@@ -10,7 +10,7 @@ class RepairStats(StatsBase):
 
     def __init__(self, start_time):
         super().__init__(start_time)
-        Log.log_debug("Repair Stats module initialized.")
+        Log.log_debug_1("Repair Stats module initialized.")
 
     @property
     def repairs_done_ph(self):

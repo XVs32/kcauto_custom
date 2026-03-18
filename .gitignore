@@ -49,7 +49,11 @@ crash_screenshots/
 *.npz
 *.json
 !data/**
+!template/**
 data/temp/
+!data/temp/gimmick.json
 !configs/template/*.json
 !configs/template/sortie_mode_auto/*.json
 !log/01-11-1995-00-00-00.log
+data/factory/construct_recipe_preset.json
+data/factory/develop_recipe_preset.json

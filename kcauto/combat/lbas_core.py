@@ -25,15 +25,15 @@ class LBASCore(object):
             method to read the LBAS info from "api_air_base"
             into LBAS module
         """
-        Log.log_debug("Updating LBAS group data from API.")
+        Log.log_debug_1("Updating LBAS group data from API.")
         for group in LBASGroupEnum:
             self.groups[group.value].api_enabled = False
 
         sortie_world = cfg.config.combat.sortie_map.world
         sortie_map = cfg.config.combat.sortie_map.map
         for group in data:
-            Log.log_debug(f"group['api_area_id']:{group['api_area_id']}")
-            Log.log_debug(f"sortie_map:{sortie_map}")
+            Log.log_debug_1(f"group['api_area_id']:{group['api_area_id']}")
+            Log.log_debug_1(f"sortie_map:{sortie_map}")
             
             #Pick the LBAS group that is in the same world as the sortie map
             if sortie_world == 'E' and group['api_area_id'] < 40:
@@ -161,7 +161,7 @@ class LBASCore(object):
             kca_u.kca.click_existing(
                 'upper_right', 'combat|lbas_resupply.png')
             api_result = api.api.update_from_api(
-                {KCSAPIEnum.LBAS_RESUPPLY_ACTION}, need_all=False, timeout=1)
+                {KCSAPIEnum.LBAS_RESUPPLY_ACTION}, process_all=False, timeout=1)
             kca_u.kca.sleep()
 
         kca_u.kca.wait_vanish(
@@ -182,7 +182,7 @@ class LBASCore(object):
         for idx, state in enumerate(relative_order):
             if state is stop:
                 break
-            Log.log_debug(
+            Log.log_debug_1(
                 f"Switching LBAS state from {state.display_name} to "
                 f"{relative_order[idx + 1].display_name}.")
             cur_name = state.name.lower()

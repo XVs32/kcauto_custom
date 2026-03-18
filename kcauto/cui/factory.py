@@ -2,8 +2,10 @@ import curses
 
 import cui.util as util
 from cui.macro import *
+from util.json_data import JsonData
 
 from fleet.noro6 import Noro6 
+from config.macro import RECIPE_PRESET_CONSTRUCT, RECIPE_PRESET_DEVELOP, RECIPE_PRESET_CONSTRUCT_TEMPLATE, RECIPE_PRESET_DEVELOP_TEMPLATE
 
 CONSTRUCT_TAB = 1
 DEVELOP_TAB = 2
@@ -69,14 +71,18 @@ def pop_up_menu(stdscr, panel, config):
     recipe_preset[CONSTRUCT_TAB] = []
     recipe_preset[DEVELOP_TAB] = []
     if recipe_preset[CONSTRUCT_TAB] == []:
-        with open('data/factory/construct_recipe_preset.json', 'r', encoding='utf-8') as f:
-            import json
-            recipe_preset[CONSTRUCT_TAB] = json.load(f)    
-            
+        try:
+            recipe_preset[CONSTRUCT_TAB] = JsonData.load_json(RECIPE_PRESET_CONSTRUCT)
+        except FileNotFoundError:
+            JsonData.dump_json(JsonData.load_json(RECIPE_PRESET_CONSTRUCT_TEMPLATE), RECIPE_PRESET_CONSTRUCT)
+            recipe_preset[CONSTRUCT_TAB] = JsonData.load_json(RECIPE_PRESET_CONSTRUCT)
+
     if recipe_preset[DEVELOP_TAB] == []:
-        with open('data/factory/develop_recipe_preset.json', 'r', encoding='utf-8') as f:
-            import json
-            recipe_preset[DEVELOP_TAB] = json.load(f)
+        try:
+            recipe_preset[DEVELOP_TAB] = JsonData.load_json(RECIPE_PRESET_DEVELOP)
+        except FileNotFoundError:
+            JsonData.dump_json(JsonData.load_json(RECIPE_PRESET_DEVELOP_TEMPLATE), RECIPE_PRESET_DEVELOP)
+            recipe_preset[DEVELOP_TAB] = JsonData.load_json(RECIPE_PRESET_DEVELOP)
     
     current_tab = CONSTRUCT_TAB 
     current_active = TOP_MENU 

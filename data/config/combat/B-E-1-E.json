@@ -1,7 +1,7 @@
 {
     "combat.repair_limit": 2,
     "combat.node_selects": [
-        "A>D"
+        "A>F"
     ],
     "combat.lbas_groups": [
         1,

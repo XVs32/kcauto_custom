@@ -8,8 +8,11 @@
         2
     ],
     "combat.lbas_group_1_nodes": [
-        "C",
-        "C"
+        "Q",
+        "Q"
     ],
-    "combat.lbas_group_2_nodes": []
+    "combat.lbas_group_2_nodes": [
+        "O",
+        "O"
+    ]
 }

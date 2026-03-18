@@ -31,6 +31,8 @@ class EquipmentCore(object):
     current_ship_list_page = 1
     current_fleet = 1
     
+    max_equipment_count = 0
+    
     is_custom_fleet_equipment_loaded = False
     
     EQUIPMENT_NAME_KEY = "api_name"
@@ -136,7 +138,7 @@ class EquipmentCore(object):
             if self._is_special_reinforce_equipment(ship, equipment):
                 continue
             
-            Log.log_debug(f"Equipment {equipment.name} ({equipment.production_id}) {equipment.category} is not a special reinforce equipment for ship {ship.name}, skipping")
+            Log.log_debug_1(f"Equipment {equipment.name} ({equipment.production_id}) {equipment.category} is not a special reinforce equipment for ship {ship.name}, skipping")
             available_equipments.pop(i)
 
         return available_equipments
@@ -208,7 +210,7 @@ class EquipmentCore(object):
                     temp = Equipment(model_id=model_id)
                     Log.log_warn(f"Cannot find {temp.name} in equipment list, looks like you don't have any")
         else:
-            Log.log_debug("EMPTY equipment slot")
+            Log.log_debug_1("EMPTY equipment slot")
             output_list = [Equipment()]
 
         return output_list
@@ -277,5 +279,17 @@ class EquipmentCore(object):
         
         
         return self.is_available_equipments(ship, self.equipment_pool[self.FREE])
+    
+    def is_equipment_pool_full(self):
+        """method to check if the equipment pool is full, 
+        due to current equipment count api limitation, this could be inaccurate
+        Returns:
+            bool: True if the equipment pool is full, False otherwise
+        """
+        
+        if len(self.equipment_pool[self.ID]) >= self.max_equipment_count:
+            return True
+        else:
+            return False
     
 equipment = EquipmentCore()

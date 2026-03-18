@@ -22,7 +22,7 @@ class SchedulerCore(object):
     kca_active = True
 
     def __init__(self):
-        Log.log_debug("Initializing scheduler core.")
+        Log.log_debug_1("Initializing scheduler core.")
         self.update_from_config()
 
     def update_from_config(self):

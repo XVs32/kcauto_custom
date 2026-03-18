@@ -1,7 +1,9 @@
 
 from kca_enums.enum_base import EnumBase
-import json
-class MapEnum_t(EnumBase):
+from util.logger import Log
+from util.json_data import JsonData
+from typing import TYPE_CHECKING
+class MapEnum(EnumBase):
     @property
     def quest(self):
         if len(self.value.split("-")[0]) > 1:
@@ -74,28 +76,20 @@ class MapEnum_t(EnumBase):
             return self.value.split("-")[3]
         else:
             return None
-            
-# ----------------------------------------------------
-# 2. 數據源 (JSON) 讀取邏輯
-# ----------------------------------------------------
-# 假設這是從實際檔案讀取的
-try:
-    with open('data/combat/map_enum.json', 'r', encoding='utf-8') as f:
-        data_dict = json.load(f)
-except FileNotFoundError:
-    # 作為範例，如果找不到檔案，使用預設值
-    print("Warning: config_status.json not found, using hardcoded defaults.")
-    data_dict = {
-        "STATUS_OK": 200,
-        "STATUS_ERROR": 500,
-        "STATUS_PENDING": 100
-    }
+        
+    @property
+    def is_eo(self):
+        return self.map >= 5
+    
+    @classmethod
+    def _missing_(cls, value):
+        Log.log_error(f"MapEnum: Unknown map value '{value}' encountered.")
+        return None
 
-# ----------------------------------------------------
-# 3. 動態類別創建 (在模組層級執行)
-# ----------------------------------------------------
-# 使用 type() 函式創建並賦值給一個全域變數
-MapEnum = MapEnum_t(
-    'MapEnum', 
-    data_dict             
-)
+if not TYPE_CHECKING:
+    try:
+        data_dict = JsonData.load_json('data|combat|map_enum.json')
+    except FileNotFoundError:
+        Log.log_error(f"MapEnum: data/combat/map_enum.json not found.")
+        exit(1)
+    MapEnum = MapEnum('MapEnum', data_dict)  # type: ignore[assignment]

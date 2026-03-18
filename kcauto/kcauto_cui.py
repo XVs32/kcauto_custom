@@ -2,7 +2,6 @@ import sys,os
 import io
 import signal
 import curses
-import json
 import threading
 import subprocess
 
@@ -18,6 +17,8 @@ import cui.scheduler as scheduler
 import cui.quest as quest 
 import cui.factory as factory
 import cui.util as util
+from config.macro import CONFIG_DEFAULT, CONFIG_CUI
+from util.json_data import JsonData
 
 process = None
 panels = None
@@ -32,15 +33,9 @@ def init():
     global config
     # open the file for reading
     try:
-        with open('configs/config_cui.json', encoding='utf-8') as f:
-            # Load configuration file values
-            config = json.load(f)
-        f.close()
+        config = JsonData.load_json(CONFIG_CUI)
     except FileNotFoundError:
-        with open('data/config/config_cui_template.json', encoding='utf-8') as f:
-            # Load configuration file values
-            config = json.load(f)
-        f.close()
+        config = JsonData.load_json(CONFIG_DEFAULT)
 
     exp.init()
 
@@ -121,6 +116,7 @@ def resize_panel():
     
 def draw_menu(stdscr):
 
+    global panels
     init()
 
     k = 0
@@ -171,6 +167,13 @@ def draw_menu(stdscr):
             kc_auto = open_pop_up(kc_auto, stdscr, FACTORY)
             panels[LOG].redrawwin()
             k = 0
+        elif k == KEY_SPACE:
+            # Pause or resume the external program
+            if util.is_running:
+                util.pause_external_program(panels[LOG])
+            else:
+                util.resume_external_program(panels[LOG])
+            k = stdscr.getch()
         else:
             # Wait for next input
             k = stdscr.getch()
@@ -319,15 +322,13 @@ def open_pop_up(thread, stdscr, active_panel):
             elif key == KEY_ENTER:
                 if is_yes == True:
                     # open the file for writing
-                    with open('configs/config_cui.json', 'w', encoding='utf-8') as output:
-                        # parse the JSON data using json.load()
-                        json.dump(config, output, indent=4, sort_keys=True)
-                    output.close()
-                    
+                    JsonData.dump_json(config, CONFIG_CUI, pretty=True)
+                
                     # send a SIGTERM signal to terminate the subprocess
-                    if thread.is_alive() == True:
-                        util.process.send_signal(subprocess.signal.SIGTERM)
-                        thread.join()
+                    if util.psutil_proc and util.psutil_proc.is_running():
+                        util.psutil_proc.kill()
+                        util.psutil_proc.wait(timeout=5)
+                        util.print_log(panels[LOG], "kcauto terminated\n")
 
                     thread = kc_auto_kick_start(panels[LOG])
                 break
