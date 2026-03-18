@@ -162,7 +162,7 @@ class Log(ABC):
         if not cls.enabled:
             return
         
-        if arg.args.parsed_args.debug_output:
+        if arg.args.parsed_args != None and arg.args.parsed_args.debug_output:
             print(cls._log_format(msg), flush=True)
 
         cls.log_file.write(f'[DEBUG]{cls._log_format(msg)}\n')
@@ -179,7 +179,7 @@ class Log(ABC):
         if not cls.enabled:
             return
         
-        if arg.args.parsed_args.debug_output:
+        if arg.args.parsed_args != None and arg.args.parsed_args.debug_output:
             print(cls._log_format(msg), flush=True)
 
             cls.log_file.write(f'[DEBUG]{cls._log_format(msg)}\n')

@@ -358,6 +358,9 @@ class ApiWrapper(object):
         except KeyError:
             Log.log_debug_1("No gimmick data found in API response.")
 
+        import scheduler.scheduler_core as sch
+        sch.scheduler.check_and_process_rules()
+
         return None
 
     def _process_sortie_maps(self, data):
