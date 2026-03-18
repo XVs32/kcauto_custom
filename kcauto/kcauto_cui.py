@@ -2,7 +2,6 @@ import sys,os
 import io
 import signal
 import curses
-import json
 import threading
 import subprocess
 
@@ -19,6 +18,7 @@ import cui.quest as quest
 import cui.factory as factory
 import cui.util as util
 from config.macro import CONFIG_DEFAULT, CONFIG_CUI
+from util.json_data import JsonData
 
 process = None
 panels = None
@@ -33,15 +33,9 @@ def init():
     global config
     # open the file for reading
     try:
-        with open(CONFIG_CUI, encoding='utf-8') as f:
-            # Load configuration file values
-            config = json.load(f)
-        f.close()
+        JsonData.load_json(CONFIG_CUI)
     except FileNotFoundError:
-        with open(CONFIG_DEFAULT, encoding='utf-8') as f:
-            # Load configuration file values
-            config = json.load(f)
-        f.close()
+        JsonData.load_json(CONFIG_DEFAULT)
 
     exp.init()
 
@@ -328,11 +322,8 @@ def open_pop_up(thread, stdscr, active_panel):
             elif key == KEY_ENTER:
                 if is_yes == True:
                     # open the file for writing
-                    with open('configs/config_cui.json', 'w', encoding='utf-8') as output:
-                        # parse the JSON data using json.load()
-                        json.dump(config, output, indent=4, sort_keys=True)
-                    output.close()
-                    
+                    JsonData.dump_json(config, CONFIG_CUI, pretty=True)
+                
                     # send a SIGTERM signal to terminate the subprocess
                     if util.psutil_proc and util.psutil_proc.is_running():
                         util.psutil_proc.kill()

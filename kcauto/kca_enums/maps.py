@@ -1,7 +1,7 @@
 
 from kca_enums.enum_base import EnumBase
 from util.logger import Log
-import json
+from util.json_data import JsonData
 from typing import TYPE_CHECKING
 class MapEnum(EnumBase):
     @property
@@ -88,8 +88,7 @@ class MapEnum(EnumBase):
 
 if not TYPE_CHECKING:
     try:
-        with open('data/combat/map_enum.json', 'r', encoding='utf-8') as f:
-            data_dict = json.load(f)
+        data_dict = JsonData.load_json('data|combat|map_enum.json')
     except FileNotFoundError:
         Log.log_error(f"MapEnum: data/combat/map_enum.json not found.")
         exit(1)
