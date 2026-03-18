@@ -24,6 +24,7 @@ class JsonData(ABC):
     @classmethod
     def dump_json(cls, data, path, pretty=False):
         """Method for serializing an object into a json file.
+           file is first written to a temp file and then renamed to the target path to prevent data loss in case of an error during writing.
 
         Args:
             data (object): object to serialize.
@@ -32,12 +33,15 @@ class JsonData(ABC):
                 Defaults to False.
         """
         json_path = cls.create_path(path)
-        Log.log_debug_1(f"Writing data to '{json_path}'.")
-        with open(json_path, 'w', encoding='utf-8') as json_file:
+        temp_path = json_path + ".tmp"
+        Log.log_debug_1(f"Writing data to temporary file '{temp_path}'.")
+        with open(temp_path, 'w', encoding='utf-8') as json_file:
             if not pretty:
                 json.dump(data, json_file, ensure_ascii=False)
             else:
                 json.dump(data, json_file, ensure_ascii=False, indent=2)
+        os.replace(temp_path, json_path)
+        Log.log_debug_1(f"Data successfully written to '{json_path}'.")
 
     @classmethod
     def load_json(cls, path):
