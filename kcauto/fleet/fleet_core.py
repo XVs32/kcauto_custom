@@ -143,7 +143,7 @@ class FleetCore(object):
             if ship.production_id in ship_pool:
                 ship_pool.pop(ship.production_id)
             else: 
-                Log.log_warn(f"ship {ship.name} not found in ship pool")
+                Log.log_warn(f"Ship {ship.name} not found in ship pool.")
         return ship_pool.values()
 
     @property
@@ -200,7 +200,7 @@ class FleetCore(object):
         """
         
         if not cfg.config.combat.is_auto_mode and not cfg.config.expedition.is_auto_mode and not cfg.config.pvp.is_auto_mode:
-            Log.log_success("Manual mode kcauto, noro6 config ignored")
+            Log.log_success("kcauto is running in manual mode; Noro6 config ignored.")
             self.is_custom_fleet_loaded = True
             return
         elif self.is_custom_fleet_loaded == False:
@@ -304,7 +304,7 @@ class FleetCore(object):
         equ.equipment.equipment_pool[equ.equipment.NON_NORO6] = equ.equipment.equipment_pool[equ.equipment.ID].copy()
         
         if cfg.config.expedition.is_auto_mode == False:
-            Log.log_warn("Expedition mode manual, please make sure expedition fleet doesn't occupy noro6's ship and equipment")
+            Log.log_warn("Expedition mode is manual. Please make sure the expedition fleet does not occupy Noro6's ships and equipment.")
             
             for fleet in self.expedition_fleets:
                 for ship in fleet.ships:
@@ -312,10 +312,10 @@ class FleetCore(object):
                         equ.equipment._remove_from_pool(equipment, pool=equ.equipment.ID)
         else:
             if cfg.config.combat.is_auto_mode == False:
-                Log.log_warn("Combat mode manual, expedition model might mess up combat fleet on fly.")
+                Log.log_warn("Combat mode is manual; the expedition module might mess up the combat fleet on the fly.")
             
             if cfg.config.pvp.is_auto_mode == False:
-                Log.log_warn("PVP mode manual, expedition model might mess up pvp fleet on fly.")
+                Log.log_warn("PvP mode is manual; the expedition module might mess up the PvP fleet on the fly.")
                 
         equipment_pool_bak = equ.equipment.equipment_pool[equ.equipment.ID].copy()
         
@@ -347,7 +347,7 @@ class FleetCore(object):
                 for i in range(1, noro6.get_ship_count() + 1 ):
                     ship = copy.deepcopy(shp.ships.get_ship_from_noro6_ship(noro6.get_ship(i))) # avoid modifying ship data in ship_pool
                     if ship == None:
-                        Log.log_error(f'Something goes wrong when setting up Noro6 {preset["name"]} fleet, exiting...')
+                        Log.log_error(f'Something went wrong when setting up Noro6 {preset["name"]} fleet, exiting...')
                         exit()
             
                     ship.equipments = []
@@ -407,7 +407,7 @@ class FleetCore(object):
             equ.equipment.equipment_pool[equ.equipment.ID] = equipment_pool_bak.copy()     
             
         if panic_flag == True:
-            Log.log_error("Something goes wrong when setting up Noro6 fleet, exiting...")
+            Log.log_error("Something went wrong when setting up Noro6 fleet, exiting...")
             exit()               
             
         equ.equipment.equipment_pool[equ.equipment.ID] = equipment_pool_read_only.copy()
@@ -499,7 +499,7 @@ class FleetCore(object):
                 expEnum = exp_in_rank[exp.expedition.EXP_ENUM]
                 
                 if expEnum in self.fleets:
-                    Log.log_msg(f'Use Noro6 for {expEnum.expedition}')
+                    Log.log_msg(f'Using Noro6 for {expEnum.expedition}.')
                     noro6_available = False
                     exp.expedition.exp_for_fleet[fleet_id] = expEnum 
                     fleet_id = self.get_next_exp_fleet_id(fleet_id)
@@ -518,7 +518,7 @@ class FleetCore(object):
             
         if fleet_id == None:
             #assign for all fleets success
-            Log.log_success(f"auto mode asigned ship for exp{[expedition.display_name if expedition != None else None for expedition in exp.expedition.exp_for_fleet[2:]]}")
+            Log.log_success(f"Auto mode assigned ships for expeditions: {[expedition.display_name if expedition != None else None for expedition in exp.expedition.exp_for_fleet[2:]]}")
             return True
         else:
             #some assign failed

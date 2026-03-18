@@ -227,7 +227,7 @@ class CombatCore(CoreBase):
 
     def load_map_data(self, sortie_map):
         if self.map_data is None or self.map_data.enum != sortie_map.world_and_map:
-            Log.log_debug_1("Load_map excute with " + str(sortie_map.world_and_map))
+            Log.log_debug_1("Loading map with " + str(sortie_map.world_and_map))
             data = JsonData.load_json(f'data|combat|{sortie_map.world_and_map}.json')
             self.map_data = MapData(sortie_map, data)
 
@@ -248,10 +248,10 @@ class CombatCore(CoreBase):
                 Log.log_warn(f"EO map {sortie_map.world_and_map} is not available, likely due to not meeting requirements.")
                 
                 if cfg.config.combat.sortie_map_read_only == MapEnum.auto_map_select:
-                    Log.log_msg("Auto map select mode is on, attemp to finish precondition map.")
+                    Log.log_msg("Auto map select mode is on, attempting to finish precondition map.")
                     self.insert_sortie_queue(MapEnum("B-" + str(sortie_map.world) + "-" + str(sortie_map.map-1)))
             else:
-                Log.log_error(f'Disabling combat module')
+                Log.log_error(f'Disabling combat module.')
                 self.enabled = False
             
             return False
@@ -428,11 +428,11 @@ class CombatCore(CoreBase):
                     Log.log_debug_1("Flagship heavily damaged.")
                     conducting_sortie = False
                 elif kca_u.kca.exists('left', 'nav|home_menu_sortie.png'):
-                    Log.log_debug_1("backed to port.")
+                    Log.log_debug_1("Back to port.")
                     conducting_sortie = False
 
             elif node_type == self.NODE_TYPE_SELECT:
-                Log.log_msg(f"Node select node.")
+                Log.log_msg(f"Node selection.")
                 next_node = cfg.config.combat.node_selects.get(
                     self.current_node.name, None)
                 if not next_node:
@@ -447,7 +447,7 @@ class CombatCore(CoreBase):
                 continue
 
         self._click_until_port()
-        Log.log_msg(f"sortie handle end")
+        Log.log_msg(f"Sortie handling complete.")
 
         return 
  
@@ -824,7 +824,7 @@ class CombatCore(CoreBase):
             self.sortie_queue.pop(0)
             Log.log_debug_1(f"Sortie queue updated:{self.sortie_queue}")
         else:
-            Log.log_error(f"cannot pop an empty sortie queue")
+            Log.log_error(f"Cannot pop an empty sortie queue.")
 
         return self.sortie_queue
     

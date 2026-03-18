@@ -72,7 +72,7 @@ class Noro6(object):
                 self.item = None
                 return preset
             
-        Log.log_warn(f"Map {name} not found in noro6")
+        Log.log_warn(f"Map {name} not found in Noro6.")
         return None
             
         
