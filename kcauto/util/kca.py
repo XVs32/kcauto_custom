@@ -170,19 +170,6 @@ class Kca(object):
             Log.log_debug_1("Can't find splash screen.")
             api.api.update_ship_library_from_json()
 
-        local_ships_json = {"ship": []}
-        for id in shp.ships.ship_pool:
-            ship = shp.ships.ship_pool[id]
-            local_ships_json["ship"].append({"name": ship.name, \
-                                             "name_jp": ship.name_jp,
-                                             "id":ship.api_id,\
-                                             "level":ship.level,\
-                                             "type": ship.ship_type.name})
-
-        JsonData.dump_json(local_ships_json, "ship.json", pretty=True)
-
-        self.sleep()
-
         return True
 
     def find_game_window_offset(self):
