@@ -49,6 +49,7 @@ crash_screenshots/
 *.npz
 *.json
 !data/**
+!template/**
 data/temp/
 !data/temp/gimmick.json
 !configs/template/*.json

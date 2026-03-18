@@ -1,3 +1,5 @@
+import os
+
 from kca_enums.fleet import FleetEnum
 
 from constants import VISUAL_DAMAGE, FLEET_ID_ICON
@@ -10,6 +12,7 @@ from util.lzstring import LZString
 class Noro6(object):
     
     NORO6_CONFIG = 'configs/noro6/noro6'
+    NORO6_TEMPLATE = 'template/configs/noro6/noro6'
     
     data = None
     
@@ -25,8 +28,14 @@ class Noro6(object):
         
         if filepath is not None:
             
-            with open(filepath, 'r', encoding='utf-8') as file:
-                compressed = file.read()
+            if not os.path.isfile(filepath):
+                filepath = self.NORO6_TEMPLATE
+
+            try:
+                with open(filepath, 'r', encoding='utf-8') as file:
+                    compressed = file.read()
+            except OSError as e:
+                return
 
             decompressed = LZString.decompressFromUTF16(compressed)
             

@@ -31,6 +31,7 @@ class JsonData(ABC):
         """
         json_path = cls.create_path(path)
         temp_path = json_path + ".tmp"
+        os.makedirs(os.path.dirname(json_path), exist_ok=True)
         with open(temp_path, 'w', encoding='utf-8') as json_file:
             if not pretty:
                 json.dump(data, json_file, ensure_ascii=False)

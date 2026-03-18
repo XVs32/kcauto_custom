@@ -266,7 +266,12 @@ class Kcauto(object):
                             break
                         
                 if is_gimmick_await == False:
-                    target_stage = MULTI_STAGE_MAPS[map_enum].index(cfg.config.combat.sortie_map.without_quest_enum)
+                    
+                    try:
+                        target_stage = MULTI_STAGE_MAPS[map_enum].index(cfg.config.combat.sortie_map.without_quest_enum)
+                    except ValueError:
+                        target_stage = com.combat.sortie_map_stage - 1
+                        
                     if com.combat.sortie_map_stage - 1 < target_stage:
                         current_stage = MULTI_STAGE_MAPS[map_enum][com.combat.sortie_map_stage - 1]
                         com.combat.insert_sortie_queue(current_stage)
@@ -288,14 +293,17 @@ class Kcauto(object):
             default_json = cfg.config.load_json(COMBAT_CONFIG + "default.json")
             cfg.config.combat.config_override(default_json)
             
-            #get combat.fleet_mode from Noro6 config
-            noro6 = Noro6()
-            if noro6.get_map(cfg.config.combat.sortie_map.value) == None:
-                if noro6.get_map(cfg.config.combat.sortie_map.without_quest) == None:
-                    Log.log_warn(f"Map: {cfg.config.combat.sortie_map.without_quest} not found in Noro6 config")
+            #noro6 related config override, only active when in sortie auto mode
+            if cfg.config.combat.sortie_map_read_only == MapEnum.auto_map_select:
             
-            if noro6.get_fleet_mode() is not None:
-                cfg.config.combat.config_override({"combat.fleet_mode":noro6.get_fleet_mode().config_name})
+                #get combat.fleet_mode from Noro6 config
+                noro6 = Noro6()
+                if noro6.get_map(cfg.config.combat.sortie_map.value) == None:
+                    if noro6.get_map(cfg.config.combat.sortie_map.without_quest) == None:
+                        Log.log_warn(f"Map: {cfg.config.combat.sortie_map.without_quest} not found in Noro6 config")
+            
+                if noro6.get_fleet_mode() is not None:
+                    cfg.config.combat.config_override({"combat.fleet_mode":noro6.get_fleet_mode().config_name})
 
             if os.path.isfile(COMBAT_CONFIG + cfg.config.combat.sortie_map.value + ".json"):
                 default_json = cfg.config.load_json(COMBAT_CONFIG + cfg.config.combat.sortie_map.value + ".json")
