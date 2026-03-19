@@ -390,8 +390,11 @@ class CombatCore(CoreBase):
 
                         kca_u.kca.r['lbas'].hover()
 
-                #api.api.update_from_api(self.RESULT_APIS, need_all=False)
+                # api update
+                node_type = self._cycle_between_nodes(sortie_map)
+                
                 Log.log_debug_1("Battle animations complete.")
+                
                 sts.stats.combat.nodes_fought += 1
                 for fleet in flt.fleets.combat_fleets:
                     kca_u.kca.wait('lower_right_corner', 'global|next.png')
@@ -601,6 +604,7 @@ class CombatCore(CoreBase):
 
     def _resolve_continue_sortie_prompt(self):
         Log.log_debug_1("Resolve continue sortie prompt.")
+        api.api.update_from_api(self.COMBAT_APIS, need_all=False)
         continue_sortie = True
         retreat_limit = cfg.config.combat.retreat_limit
         if self.current_node.name in cfg.config.combat.push_nodes:
