@@ -568,10 +568,10 @@ class QuestCore(CoreBase):
                 return False
             elif quest.map_context != ():
                 if quest_dict:
-                    if not (com.combat.get_sortie_queue()[0].without_quest_enum in quest_dict.keys()):
+                    if not (com.combat.get_sortie_queue()[0].without_quest_and_node_enum in [map_context.without_quest_and_node_enum for map_context in quest_dict.keys()]):
                         Log.log_debug_1(f"Quest {quest.name} is not relevant to sortie map {com.combat.get_sortie_queue()[0].without_quest} anymore.")
                         return False
-                elif not (com.combat.get_sortie_queue()[0].without_quest_enum in quest.map_context):
+                elif not (com.combat.get_sortie_queue()[0].without_quest_and_node_enum in [map_context.without_quest_and_node_enum for map_context in quest.map_context]):
                     Log.log_debug_1(f"Quest {quest.name} is not relevant to sortie map {com.combat.get_sortie_queue()[0].without_quest}.")
                     return False
             elif quest.enemy_context != () and not (set(com.combat.map_data.enemy_context) & set(quest.enemy_context)):
