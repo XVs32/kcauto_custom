@@ -356,21 +356,21 @@ class Kcauto(object):
                     
                     if map_is_required:
                         
-                        Log.log_success(f"Sortie quest {selected_quest.name} selected, current map {current_map} meets the map requirement.")
+                        Log.log_success(f"Sortie quest {selected_quest.name} selected, current map {current_map.name} meets the map requirement.")
                         last_node = com.combat.last_battle.get(com.combat.MAP_NODE)
                         
                         if last_node is not None:
                             if required_node == None:
                                 Log.log_debug_1(f"No specific node required for quest {selected_quest.name}, current node: {last_node}.")
-                            elif last_node == required_node:
+                            elif last_node.name == required_node:
                                 Log.log_success(f"Required node {required_node} reached for quest {selected_quest.name}.")
                                 last_rank = com.combat.last_battle.get(com.combat.RANKENUM)
                                 if last_rank == None:
                                     Log.log_success(f"Quest {selected_quest.name} has no rank requirement, condition met with node {last_node}.") 
-                                elif last_rank >= required_rank:
-                                    Log.log_success(f"Quest {selected_quest.name} condition met: node {last_node} with rank {last_rank}.")
+                                elif last_rank.is_at_least(required_rank):
+                                    Log.log_success(f"Quest {selected_quest.name} condition met: node {last_node} with rank {last_rank.name}.")
                                 else:
-                                    Log.log_warn(f"Quest {selected_quest.name} condition NOT met: node {last_node} with rank {last_rank} does not meet requirement of rank {required_rank}.")
+                                    Log.log_warn(f"Quest {selected_quest.name} condition NOT met: node {last_node} with rank {last_rank.name} does not meet requirement of rank {required_rank.name}.")
                                     #@todo add last sortie rerun
                             else:
                                 Log.log_warn(f"Required node {required_node} not reached for quest {selected_quest.name}, last node: {last_node}.")
