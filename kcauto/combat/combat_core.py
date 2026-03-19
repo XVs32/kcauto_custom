@@ -604,7 +604,7 @@ class CombatCore(CoreBase):
 
     def _resolve_continue_sortie_prompt(self):
         Log.log_debug_1("Resolve continue sortie prompt.")
-        api.api.update_from_api(self.COMBAT_APIS, need_all=False)
+        #api.api.update_from_api(self.COMBAT_APIS, process_all=True)
         continue_sortie = True
         retreat_limit = cfg.config.combat.retreat_limit
         if self.current_node.name in cfg.config.combat.push_nodes:
