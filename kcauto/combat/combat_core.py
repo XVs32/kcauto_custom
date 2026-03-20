@@ -787,7 +787,6 @@ class CombatCore(CoreBase):
         self.nodes_run.append(next_node)
 
     def _get_next_node_from_edge(self, edge):
-        Log.log_msg(f"current map: {self.map_data.enum}, edge: {self.map_data.edges[edge]}")
         return self.map_data.edges[edge][1]
     
     def duplicate_front_to_back_sortie_queue(self):
