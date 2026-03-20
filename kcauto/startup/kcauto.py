@@ -367,14 +367,15 @@ class Kcauto(object):
                                 last_rank = com.combat.last_battle.get(com.combat.RANKENUM)
                                 if last_rank == None:
                                     Log.log_success(f"Quest {selected_quest.name} has no rank requirement, condition met with node {last_node}.") 
+                                    
                                 elif last_rank.is_at_least(required_rank):
                                     Log.log_success(f"Quest {selected_quest.name} condition met: node {last_node} with rank {last_rank.name}.")
                                 else:
                                     Log.log_warn(f"Quest {selected_quest.name} condition NOT met: node {last_node} with rank {last_rank.name} does not meet requirement of rank {required_rank.name}.")
-                                    #@todo add last sortie rerun
+                                    com.combat.duplicate_front_to_back_sortie_queue()
                             else:
                                 Log.log_warn(f"Required node {required_node} not reached for quest {selected_quest.name}, last node: {last_node}.")
-                                #@todo add last sortie rerun
+                                com.combat.duplicate_front_to_back_sortie_queue()
                             
                         else:
                             Log.log_error(f'Failed to get last node from combat API, \
