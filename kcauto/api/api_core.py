@@ -60,14 +60,15 @@ class ApiWrapper(object):
 
             message = kca_u.kca.api_hook.wait_message(timeout=wait_timeout)
             if not message:
-                if process_all and len(caught_apis) == len(target_apis):
+                if len(caught_apis) == len(target_apis):
                     Log.log_debug_1("All target APIs received, ending wait.")
                     break
                 # timed out waiting for a message; re-evaluate loop conditions
                 continue
             # process the received message and any that have queued up
             self._pending_messages = self._pending_messages + [message] + kca_u.kca.api_hook.pop_messages()
-                
+            
+            pending_id = 0 
             for idx, message in enumerate(self._pending_messages):
                 if message['method'] == 'Network.responseReceived':
                     request_url = message['params']['response']['url']
@@ -128,13 +129,15 @@ class ApiWrapper(object):
                         if not process_all:
                             # Save any messages not yet processed in this
                             # batch so the next call can pick them up.
-                            self._pending_messages = self._pending_messages[idx + 1:]
-                            return results
-            # All messages in this batch have been processed; clear the list
-            # so they are not re-processed on the next while-loop iteration.
-            self._pending_messages = []
-            
-
+                            pending_id = idx
+                            
+            if  process_all:
+                # All messages in this batch have been processed; clear the list
+                # so they are not re-processed on the next while-loop iteration.
+                self._pending_messages = []
+            else:
+                self._pending_messages = self._pending_messages[pending_id + 1:]
+                
         self._check_for_chrome_crash()
 
         return results
