@@ -88,6 +88,16 @@ class ShipsCore(object):
         
         return self.ship_pool[ship_id]
 
+    def get_highest_level_ship_by_type(self, ship_type) -> Ship:
+        ships_of_type = [
+            s for s in self.ship_pool.values()
+            if s.ship_type == ship_type
+        ]
+        if not ships_of_type:
+            Log.log_error(f"No ships of type {ship_type.display_name} found in port.")
+            return None
+        return max(ships_of_type, key=lambda s: s.level)
+
     def create_ship(self, static_data, local_data = Ship.EMPTY_LOCAL_DATA):
         return Ship(static_data, local_data)
      
