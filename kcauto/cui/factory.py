@@ -55,6 +55,7 @@ recipe_preset = {}
 recipe = {}
 secretary = {}    # mode per tab: 'on-hand' | 'ID' | ship-type name (e.g. 'DD')
 secretary_id = {} # digit list [7] per tab — only used when mode == 'ID'
+comment = {}      # comment string for the currently-loaded preset per tab
 
 def int_to_list(n, length):
     ret = []
@@ -124,6 +125,9 @@ def pop_up_menu(stdscr, panel, config):
 
     secretary[CONSTRUCT_TAB], secretary_id[CONSTRUCT_TAB] = _load_secretary(config["factory.build_secretary"])
     secretary[DEVELOP_TAB],   secretary_id[DEVELOP_TAB]   = _load_secretary(config["factory.develop_secretary"])
+
+    comment[CONSTRUCT_TAB] = ""
+    comment[DEVELOP_TAB]   = ""
         
     tab_col = [width//2//2 - len(" construct ")//2, width//2 + width//2//2 - len(" develop ")//2]
     
@@ -244,10 +248,30 @@ def pop_up_menu(stdscr, panel, config):
                 else:
                     panel.addstr(row[2] + row_local_offset + 1, recipe_col[col_offset +1], str(list_to_int(recipe[current_tab][resource_idx])).rjust(4, " "), curses.color_pair(LOG))
                
-        
-        panel.refresh()
+        # --- comment area (right column only, below resource panel) ---
+        # resource panel occupies row[2]+0 .. row[2]+4; comment goes just below
+        comment_row_0 = row[2] + 5
+        comment_row_1 = row[2] + 6
+        comment_x     = recipe_col[1]           # same left edge as resource panel
+        comment_w     = width - comment_x - 1   # up to the right border
 
-        # Wait for next input
+        display_comment = comment[current_tab]
+        if current_active == TOP_MENU and curser[CURSER_X] == 0 and curser[CURSER_Y] >= 2:
+            hover_idx = curser[CURSER_Y] - 2
+            presets_list = list(recipe_preset[current_tab].items())
+            if 0 <= hover_idx < len(presets_list):
+                display_comment = presets_list[hover_idx][1].get("comment", "")
+
+        if comment_row_0 < height - 1:
+            panel.addstr(comment_row_0, comment_x,
+                         display_comment[:comment_w].ljust(comment_w),
+                         curses.color_pair(LOG))
+        if comment_row_1 < height - 1:
+            panel.addstr(comment_row_1, comment_x,
+                         display_comment[comment_w:comment_w * 2].ljust(comment_w),
+                         curses.color_pair(LOG))
+
+        panel.refresh()
         key = stdscr.getch()
         
         if key == curses.KEY_DOWN or key == ord('j'):
@@ -357,6 +381,7 @@ def pop_up_menu(stdscr, panel, config):
                         
                         secretary_int = list(recipe_preset[current_tab].items())[preset_idx][1][secretary_name]
                         secretary[current_tab], secretary_id[current_tab] = _load_secretary(secretary_int)
+                        comment[current_tab] = list(recipe_preset[current_tab].items())[preset_idx][1].get("comment", "")
                             
                         recipe[current_tab] = [int_to_list(n,4) for n in list(recipe_preset[current_tab].items())[preset_idx][1][recipe_name]]
                     
