@@ -147,15 +147,35 @@ class FleetSwitcherCore(object):
                     fleet_id = flt.fleets.get_next_exp_fleet_id(fleet_id)
 
             elif context == 'factory_develop':
-                Log.log_msg(f"Switching to {cfg.config.factory.develop_secretary} for develop.")
-
+                develop_sec = cfg.config.factory.develop_secretary
+                if isinstance(develop_sec, ShipTypeEnum):
+                    ship = shp.ships.get_highest_level_ship_by_type(develop_sec)
+                    if ship is None:
+                        return False
+                    develop_sec_id = ship.production_id
+                    Log.log_msg(
+                        f"Switching to highest level {develop_sec.display_name} "
+                        f"(production #{develop_sec_id}) for develop.")
+                else:
+                    develop_sec_id = develop_sec
+                    Log.log_msg(f"Switching to {develop_sec_id} for develop.")
                 ssw.ship_switcher.current_page = 1
-                ssw.ship_switcher.switch_slot_by_id(1,cfg.config.factory.develop_secretary)
+                ssw.ship_switcher.switch_slot_by_id(1, develop_sec_id)
             elif context == 'factory_build':
-                Log.log_msg(f"Switching to {cfg.config.factory.build_secretary} for construction.")
-
+                build_sec = cfg.config.factory.build_secretary
+                if isinstance(build_sec, ShipTypeEnum):
+                    ship = shp.ships.get_highest_level_ship_by_type(build_sec)
+                    if ship is None:
+                        return False
+                    build_sec_id = ship.production_id
+                    Log.log_msg(
+                        f"Switching to highest level {build_sec.display_name} "
+                        f"(production #{build_sec_id}) for construction.")
+                else:
+                    build_sec_id = build_sec
+                    Log.log_msg(f"Switching to {build_sec_id} for construction.")
                 ssw.ship_switcher.current_page = 1
-                ssw.ship_switcher.switch_slot_by_id(1,cfg.config.factory.build_secretary)
+                ssw.ship_switcher.switch_slot_by_id(1, build_sec_id)
         elif preset_id == None:
             Log.log_debug_1(f"Fleet switch disabled.")
         else:
