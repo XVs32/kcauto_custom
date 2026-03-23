@@ -20,9 +20,6 @@ STEEL_MENU = 6
 BAUXITE_MENU = 7
 SECRETARY_TYPE_MENU = 8
 
-SECRETARY_MODE_ID = 1
-SECRETARY_MODE_TYPE = 2
-
 _EXCLUDED_TYPES = {'NA', 'EAO', 'SD', 'WILDCARD'}
 SECRETARY_TYPE_OPTIONS = ['on-hand', 'ID'] + [
     t.name for t in _ShipTypeEnum if t.name not in _EXCLUDED_TYPES
@@ -146,8 +143,6 @@ def pop_up_menu(stdscr, panel, config):
                   x_recipe + len("PRESETNAME    XAMMOX XXXX  "), 
                   x_recipe + len("PRESETNAME    XAMMOX XXXX  XBAUXITEX ")]
     
-    secretary_mode = SECRETARY_MODE_ID
-    
     while True:
         
         panel.clear()
@@ -164,7 +159,7 @@ def pop_up_menu(stdscr, panel, config):
         # --- mode selector (type cycling) ---
         sec_mode = secretary[current_tab]
         mode_in_type_menu = (current_active == SECRETARY_TYPE_MENU)
-        mode_focused = (current_active == TOP_MENU and curser[CURSER_Y] == 1 and curser[CURSER_X] == 1)
+        mode_focused = (current_active == TOP_MENU and curser[CURSER_Y] == 1 and (sec_mode != 'ID' or curser[CURSER_X] < 2))  # focused if on secretary row and either not in ID mode or not on the digit column
         if mode_in_type_menu:
             mode_label = f"<{sec_mode.ljust(8)}>"
             mode_color = curses.color_pair(LOG_GREEN)
@@ -358,13 +353,13 @@ def pop_up_menu(stdscr, panel, config):
         elif key == KEY_ENTER:
             if current_active == TOP_MENU:
                 if curser[CURSER_Y] == 1:
-                    if curser[CURSER_X] == 1:
-                        # enter type-cycling mode for the mode selector
-                        current_active = SECRETARY_TYPE_MENU
-                    elif curser[CURSER_X] == 2 and secretary[current_tab] == 'ID':
+                    if curser[CURSER_X] == 2 and secretary[current_tab] == 'ID':
                         # enter digit-edit mode for the ship-ID field
                         current_active = SECRETARY_MENU
                         curser[CURSER_X] = 6
+                    else:
+                        # enter type-cycling mode for the mode selector
+                        current_active = SECRETARY_TYPE_MENU
                 elif curser[CURSER_Y] >= 2:
                     if curser[CURSER_X] == 0:
                     
