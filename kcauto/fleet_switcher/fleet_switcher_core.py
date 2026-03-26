@@ -528,8 +528,10 @@ class FleetSwitcherCore(object):
         for i in range(fleet.size):
             
             if fleet.ships[i].equipment_ids == flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][fleet_id].ships[i].equipment_ids:
-                Log.log_debug_1(f"equipment for ship {load_ship_id[i]} is already loaded")
+                Log.log_msg(f"equipment for ship {fleet.ships[i].name_jp} is already loaded")
                 continue
+            else:
+                Log.log_msg(f"Loading equipment for ship {fleet.ships[i].name_jp}...")                
             
             click_ship_in_equipment_page(i)
 
@@ -588,10 +590,9 @@ class FleetSwitcherCore(object):
                 if row_id == -1:
                     Log.log_error(f"Cannot find equipment {fleet.ships[i].slot_ex.name} \
                         with production id:{fleet.ships[i].slot_ex.production_id}, did you scrapped it?")
-                    
                     exit(1)
                     
-                Log.log_msg(f'Selecting {fleet.ships[i].slot_ex.name} {fleet.ships[i].slot_ex.stars} ★')
+                Log.log_msg(f'Selecting {fleet.ships[i].slot_ex.name} {fleet.ships[i].slot_ex.stars} ★ on page {row_id // 10 + 1} position {(row_id % 10) + 1}')
                 ssw.ship_switcher.select_replacement_row(row_idx=row_id, ship=fleet.ships[i], mode= ssw.ship_switcher.REINFORCEMENT_MODE)
 
                 kca_u.kca.click_existing(

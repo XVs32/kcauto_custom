@@ -266,7 +266,7 @@ class ShipSwitcherCore(object):
                 435, 34)
             
         elif mode == self.EQUIPMENT_MODE:
-            Log.log_msg(f"Selecting {row_idx}"
+            Log.log_debug_1(f"Selecting {row_idx}"
                         f"(From pg{self.current_page} to pg{target_page}).")
             
             tot_pages = (len(equ.equipment.equipment_pool[equ.equipment.FREE]) -1) // 10 + 1
