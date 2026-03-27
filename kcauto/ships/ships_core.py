@@ -118,5 +118,10 @@ class ShipsCore(object):
             Log.log_error(f"Ship {ship_name} #{noro_ship.get('i','Unknown')} not found in ship pool, exiting...")
                 
         return ret
+    
+    def is_same_ship(self, ship1: Ship, ship2: Ship):
+        if ship1 is None or ship2 is None:
+            return False
+        return ship1.production_id == ship2.production_id
 
 ships = ShipsCore()
