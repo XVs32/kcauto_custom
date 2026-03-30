@@ -441,8 +441,8 @@ class CombatCore(CoreBase):
                 if not next_node:
                     raise ValueError("Node select not defined.")
                 else:
-                    Log.log_msg(f"Selecting node {next_node.value}")
-                    self.map_data.nodes[next_node.value].select()
+                    Log.log_msg(f"Selecting node {next_node}")
+                    self.map_data.nodes[next_node].select()
             elif node_type == self.NODE_TYPE_NOTHING:
                 pass
             elif node_type == self.NODE_TYPE_END:
