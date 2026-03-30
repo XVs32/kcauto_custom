@@ -26,8 +26,6 @@ SECRETARY_TYPE_OPTIONS = ['on-hand', 'ID'] + [
 ]
 _SEC_MODE_FIELD = 10  # " " + name.ljust(8) + "|< or >" — fixed display width
 
-MAX_QUEST_COL = 16
-
 TAB_ORDER = [CONSTRUCT_TAB, DEVELOP_TAB]
 RESOURCE_ORDER = [FUEL_MENU, AMMO_MENU, STEEL_MENU, BAUXITE_MENU]
 RESOURCE_PANEL_LAYOUT = [
@@ -47,6 +45,18 @@ COL_NEEDED_WIDTH = 5
 
 CURSER_X = 0
 CURSER_Y = 1
+
+# Index as python list, [include:exclude]
+TOP_TAP_ROW = 0
+SECRETARY_ROW = TOP_TAP_ROW + 2
+RESOURCE_ROW_START = SECRETARY_ROW + 2
+RESOURCE_ROW_END = RESOURCE_ROW_START + 3
+
+COMMENT_ROW_START = RESOURCE_ROW_END + 1
+COMMENT_ROW_END = COMMENT_ROW_START + 2
+
+RECIPE_ROW_START = RESOURCE_ROW_START
+
 
 recipe_preset = {}
 recipe = {}
@@ -91,16 +101,18 @@ def pop_up_menu(stdscr, panel, config):
             JsonData.dump_json(JsonData.load_json(RECIPE_PRESET_DEVELOP_TEMPLATE), RECIPE_PRESET_DEVELOP)
             recipe_preset[DEVELOP_TAB] = JsonData.load_json(RECIPE_PRESET_DEVELOP)
     
-    current_tab = CONSTRUCT_TAB 
-    current_active = TOP_MENU 
+    current_tab = CONSTRUCT_TAB
+    current_active = TOP_MENU
     curser = [1, 0]
     
     height, width = panel.getmaxyx()
     
+    RECIPE_ROW_END =  height - 2
+    
+    
     tab_height = 1
     secretary_height = 2
-    resource_height = min((height - (tab_height + secretary_height)), 15)
-    y_offset = 0
+    recipe_y_offset = 0 #the id of the first recipe currently displayed
     
     row = [0, tab_height, tab_height + secretary_height]
     
@@ -188,16 +200,16 @@ def pop_up_menu(stdscr, panel, config):
         
         for recipe_idx, preset in enumerate(recipe_preset[current_tab]):
             
-            if recipe_idx < (y_offset * -1):
+            if recipe_idx < (recipe_y_offset * -1):
                 continue
             
-            if recipe_idx > resource_height - y_offset - 3:
+            if recipe_idx > RECIPE_ROW_END - RECIPE_ROW_START - recipe_y_offset:
                 break
             
             if curser[CURSER_Y] == recipe_idx + 2 and curser[CURSER_X] == 0:
-                panel.addstr(row[2] + 1 + recipe_idx + y_offset, recipe_col[0], preset, curses.color_pair(LOG_GREEN))
+                panel.addstr(row[2] + 1 + recipe_idx + recipe_y_offset, recipe_col[0], preset, curses.color_pair(LOG_GREEN))
             else:
-                panel.addstr(row[2] + 1 + recipe_idx + y_offset, recipe_col[0], preset, curses.color_pair(LOG))
+                panel.addstr(row[2] + 1 + recipe_idx + recipe_y_offset, recipe_col[0], preset, curses.color_pair(LOG))
         
         for resource_idx, resource in enumerate(RESOURCE_ORDER):
             
@@ -271,15 +283,20 @@ def pop_up_menu(stdscr, panel, config):
         
         if key == curses.KEY_DOWN or key == ord('j'):
             if current_active == TOP_MENU:
-                if curser[CURSER_X] != 0:
-                    if curser[CURSER_Y] < 3:
-                        curser[CURSER_Y] += 1
+                if curser[CURSER_Y] == 0:
+                    curser[CURSER_Y] = 1  
+                    curser[CURSER_X] = 0
+                elif curser[CURSER_Y] == 1:
+                    curser[CURSER_Y] = 2
+                    curser[CURSER_X] = 1
                 else:
-                    if curser[CURSER_Y] < 1:
-                        curser[CURSER_Y] += 1
-                    elif curser[CURSER_Y] < recipe_preset[current_tab].__len__() + 1:
-                        curser[CURSER_Y] += 1
-                    y_offset = min(y_offset, (resource_height-2) - (curser[CURSER_Y] -2 +1) )
+                    if curser[CURSER_X] == 0:
+                        if curser[CURSER_Y] < recipe_preset[current_tab].__len__() + 1:
+                            curser[CURSER_Y] += 1
+                        recipe_y_offset = max(recipe_y_offset,  (curser[CURSER_Y] -2) +1 - (RECIPE_ROW_END - RECIPE_ROW_START))
+                    else:
+                        if curser[CURSER_Y] < 3:
+                            curser[CURSER_Y] += 1
             elif current_active == SECRETARY_TYPE_MENU:
                 idx = SECRETARY_TYPE_OPTIONS.index(secretary[current_tab])
                 secretary[current_tab] = SECRETARY_TYPE_OPTIONS[(idx + 1) % len(SECRETARY_TYPE_OPTIONS)]
@@ -291,10 +308,16 @@ def pop_up_menu(stdscr, panel, config):
                 
         elif key == curses.KEY_UP or key == ord('k'):
             if current_active == TOP_MENU:
-                if curser[CURSER_Y] > 0:
+                if curser[CURSER_Y] == 1:
+                    curser[CURSER_Y] = 0
+                    curser[CURSER_X] = 0
+                elif curser[CURSER_Y] == 2:
+                    curser[CURSER_Y] = 1
+                    curser[CURSER_X] = 0
+                else:
                     curser[CURSER_Y] -= 1
-                    if curser[CURSER_Y] >1 and curser[CURSER_X] == 0:
-                        y_offset = max(y_offset, -(curser[CURSER_Y] -2))
+                    if curser[CURSER_X] == 0:
+                        recipe_y_offset = max(recipe_y_offset, -(curser[CURSER_Y] -2))
             elif current_active == SECRETARY_TYPE_MENU:
                 idx = SECRETARY_TYPE_OPTIONS.index(secretary[current_tab])
                 secretary[current_tab] = SECRETARY_TYPE_OPTIONS[(idx - 1) % len(SECRETARY_TYPE_OPTIONS)]
@@ -311,14 +334,17 @@ def pop_up_menu(stdscr, panel, config):
                     if current_tab != TAB_ORDER[-1]:
                         current_tab = TAB_ORDER[TAB_ORDER.index(current_tab)+1]
                         curser[CURSER_X] = 1
-                else:
-                    if curser[CURSER_X] < 2:
-                        if curser[CURSER_X] == 0:
-                            curser[CURSER_Y] = 2
-                            curser[CURSER_X] += 1
-                        elif curser[CURSER_Y] != 1 or secretary[current_tab] == 'ID':
-                            # on secretary row: only reach digit-column when mode is ID
-                            curser[CURSER_X] += 1
+                elif curser[CURSER_Y] == 1:
+                    if curser[CURSER_X] != 2:
+                        # on secretary row: only reach digit-column when mode is ID
+                        if secretary[current_tab] == 'ID':
+                            curser[CURSER_X] = 2
+                else:    
+                    if curser[CURSER_X] == 0:
+                        curser[CURSER_Y] = 2
+                        curser[CURSER_X] += 1
+                    else:
+                        curser[CURSER_X] += 1
             elif current_active == SECRETARY_TYPE_MENU:
                 idx = SECRETARY_TYPE_OPTIONS.index(secretary[current_tab])
                 secretary[current_tab] = SECRETARY_TYPE_OPTIONS[(idx + 1) % len(SECRETARY_TYPE_OPTIONS)]
@@ -335,10 +361,13 @@ def pop_up_menu(stdscr, panel, config):
                     if current_tab != TAB_ORDER[0]:
                         current_tab = TAB_ORDER[TAB_ORDER.index(current_tab)-1]
                         curser[CURSER_X] = 1
+                elif curser[CURSER_Y] == 1:
+                    if curser[CURSER_X] != 0:
+                        curser[CURSER_X] -= 1
                 else:
                     if curser[CURSER_X] != 0:
                         if curser[CURSER_X] == 1:
-                            curser[CURSER_Y] = 2 - y_offset
+                            curser[CURSER_Y] = 2 - recipe_y_offset
                         curser[CURSER_X] -= 1
             elif current_active == SECRETARY_TYPE_MENU:
                 idx = SECRETARY_TYPE_OPTIONS.index(secretary[current_tab])
