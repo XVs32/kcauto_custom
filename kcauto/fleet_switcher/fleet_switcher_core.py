@@ -255,6 +255,8 @@ class FleetSwitcherCore(object):
                     ship = None
                 else:
                     ship = shp.ships.get_ship_from_production_id(costom_fleet.ship_ids[i-1])
+                    if ship is None:
+                        return False
 
                 if i <= len(flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][fleet_id].ship_ids) and \
                     shp.ships.is_same_ship(ship, flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][fleet_id].ships[i-1]):
