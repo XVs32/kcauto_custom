@@ -261,7 +261,9 @@ def pop_up_menu(stdscr, panel, config):
 
         display_comment = comment[current_tab]
         if current_active == TOP_MENU and curser[CURSER_X] == 0 and curser[CURSER_Y] >= 2:
-            hover_idx = curser[CURSER_Y] - 2
+            # Convert cursor Y position (visible row) to actual preset index using scroll offset.
+            hover_visible_idx = curser[CURSER_Y] - 2
+            hover_idx = hover_visible_idx + recipe_y_offset
             presets_list = list(recipe_preset[current_tab].items())
             if 0 <= hover_idx < len(presets_list):
                 display_comment = presets_list[hover_idx][1].get("comment", "")
