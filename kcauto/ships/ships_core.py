@@ -82,6 +82,10 @@ class ShipsCore(object):
 
     def get_ship_from_production_id(self, ship_id) -> Ship:
         
+        if ship_id == 0:
+            Log.log_debug_2("Ship id 0 is requested.")
+            return None
+        
         if ship_id not in self.ship_pool:
             Log.log_error(f"Ship #{ship_id} not found in port.")
             return None
