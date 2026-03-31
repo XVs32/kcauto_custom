@@ -42,8 +42,8 @@ class ShipSwitcherCore(object):
         """
             method to switch a slot to a specified ship
             Args:
-                slot(int): The slot to switch, index starts from one
-                ship_local_id(int): The target ship production id
+                slot (int): slot number to switch, from 1 to 6, 7 for flagship reinforcement slot
+                ship (Ship): ship to switch in, if None, will remove the ship in this
             @todo: track fleet ship_ids using API, not ship_local_id
         """
 
