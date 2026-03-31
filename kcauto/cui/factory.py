@@ -201,7 +201,7 @@ def pop_up_menu(stdscr, panel, config):
                 continue
 
             row = recipe_idx - recipe_y_offset
-            if row >= RECIPE_ROW_END - RECIPE_ROW_START:
+            if row > RECIPE_ROW_END - RECIPE_ROW_START:
                 break
 
             if curser[CURSER_Y] == row + 2 and curser[CURSER_X] == 0:
@@ -294,7 +294,7 @@ def pop_up_menu(stdscr, panel, config):
                         recipe_idx_current = curser[CURSER_Y] - 2 + recipe_y_offset
                         if recipe_idx_current + 1 < len(recipe_preset[current_tab]):
                             visible_row = recipe_idx_current - recipe_y_offset
-                            if visible_row < RECIPE_ROW_END - RECIPE_ROW_START - 1:
+                            if visible_row < RECIPE_ROW_END - RECIPE_ROW_START :
                                 curser[CURSER_Y] += 1
                             else:
                                 recipe_y_offset += 1
@@ -316,9 +316,24 @@ def pop_up_menu(stdscr, panel, config):
                     curser[CURSER_Y] = 0
                     curser[CURSER_X] = 0
                 elif curser[CURSER_Y] == 2:
-                    curser[CURSER_Y] = 1
-                    curser[CURSER_X] = 0
+                    
+                    if curser[CURSER_X] == 0:
+                        
+                        recipe_idx_current = curser[CURSER_Y] - 2 + recipe_y_offset
+                        if recipe_idx_current > 0:
+                            visible_row = recipe_idx_current - recipe_y_offset
+                            if visible_row >= 0:
+                                recipe_y_offset -= 1
+                        else:
+                            curser[CURSER_Y] -= 1
+                            curser[CURSER_X] = 0
+                                    
+                    else:
+                        curser[CURSER_Y] -= 1
+                        curser[CURSER_X] = 0
+                    
                 elif curser[CURSER_Y] > 2:
+                    #when in preset list, move up will scroll up if cursor is on the first visible preset
                     curser[CURSER_Y] -= 1
             elif current_active == SECRETARY_TYPE_MENU:
                 idx = SECRETARY_TYPE_OPTIONS.index(secretary[current_tab])
