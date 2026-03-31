@@ -196,17 +196,18 @@ def pop_up_menu(stdscr, panel, config):
                 panel.addstr(SECRETARY_ROW, secretary_col[2], str(list_to_int(secretary_id[current_tab])).rjust(7), id_color)
         
         for recipe_idx, preset in enumerate(recipe_preset[current_tab]):
-            
-            if recipe_idx < (recipe_y_offset * -1):
+
+            if recipe_idx < recipe_y_offset:
                 continue
-            
-            if recipe_idx > RECIPE_ROW_END - RECIPE_ROW_START - recipe_y_offset:
+
+            row = recipe_idx - recipe_y_offset
+            if row >= RECIPE_ROW_END - RECIPE_ROW_START:
                 break
-            
-            if curser[CURSER_Y] == recipe_idx + 2 and curser[CURSER_X] == 0:
-                panel.addstr(RECIPE_ROW_START + (recipe_idx + recipe_y_offset), recipe_col[0], preset, curses.color_pair(LOG_GREEN))
+
+            if curser[CURSER_Y] == row + 2 and curser[CURSER_X] == 0:
+                panel.addstr(RECIPE_ROW_START + row, recipe_col[0], preset, curses.color_pair(LOG_GREEN))
             else:
-                panel.addstr(RECIPE_ROW_START + (recipe_idx + recipe_y_offset), recipe_col[0], preset, curses.color_pair(LOG))
+                panel.addstr(RECIPE_ROW_START + row, recipe_col[0], preset, curses.color_pair(LOG))
         
         for resource_idx, resource in enumerate(RESOURCE_ORDER):
             
@@ -290,9 +291,13 @@ def pop_up_menu(stdscr, panel, config):
                     curser[CURSER_X] = 1
                 elif curser[CURSER_Y] > 1:
                     if curser[CURSER_X] == 0:
-                        if curser[CURSER_Y] < recipe_preset[current_tab].__len__() + 1:
-                            curser[CURSER_Y] += 1
-                        recipe_y_offset = max(recipe_y_offset,  (curser[CURSER_Y] -2) +1 - (RECIPE_ROW_END - RECIPE_ROW_START))
+                        recipe_idx_current = curser[CURSER_Y] - 2 + recipe_y_offset
+                        if recipe_idx_current + 1 < len(recipe_preset[current_tab]):
+                            visible_row = recipe_idx_current - recipe_y_offset
+                            if visible_row < RECIPE_ROW_END - RECIPE_ROW_START - 1:
+                                curser[CURSER_Y] += 1
+                            else:
+                                recipe_y_offset += 1
                     else:
                         if curser[CURSER_Y] < 3:
                             curser[CURSER_Y] += 1
@@ -315,8 +320,6 @@ def pop_up_menu(stdscr, panel, config):
                     curser[CURSER_X] = 0
                 elif curser[CURSER_Y] > 2:
                     curser[CURSER_Y] -= 1
-                    if curser[CURSER_X] == 0:
-                        recipe_y_offset = max(recipe_y_offset, -(curser[CURSER_Y] -2))
             elif current_active == SECRETARY_TYPE_MENU:
                 idx = SECRETARY_TYPE_OPTIONS.index(secretary[current_tab])
                 secretary[current_tab] = SECRETARY_TYPE_OPTIONS[(idx - 1) % len(SECRETARY_TYPE_OPTIONS)]
@@ -366,7 +369,7 @@ def pop_up_menu(stdscr, panel, config):
                 elif curser[CURSER_Y] > 1:
                     if curser[CURSER_X] != 0:
                         if curser[CURSER_X] == 1:
-                            curser[CURSER_Y] = 2 - recipe_y_offset
+                            curser[CURSER_Y] = 2
                         curser[CURSER_X] -= 1
             elif current_active == SECRETARY_TYPE_MENU:
                 idx = SECRETARY_TYPE_OPTIONS.index(secretary[current_tab])
@@ -391,7 +394,7 @@ def pop_up_menu(stdscr, panel, config):
                 elif curser[CURSER_Y] >= 2:
                     if curser[CURSER_X] == 0:
                     
-                        preset_idx = curser[CURSER_Y] -2
+                        preset_idx = curser[CURSER_Y] - 2 + recipe_y_offset
                         
                         recipe_name = ""
                         secretary_name = 0
