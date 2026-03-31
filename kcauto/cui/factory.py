@@ -47,8 +47,8 @@ CURSER_X = 0
 CURSER_Y = 1
 
 # Index as python list, [include:exclude]
-TOP_TAP_ROW = 0
-SECRETARY_ROW = TOP_TAP_ROW + 2
+TOP_TAB_ROW = 0
+SECRETARY_ROW = TOP_TAB_ROW + 2
 RESOURCE_ROW_START = SECRETARY_ROW + 2
 RESOURCE_ROW_END = RESOURCE_ROW_START + 3
 
@@ -110,11 +110,8 @@ def pop_up_menu(stdscr, panel, config):
     RECIPE_ROW_END =  height - 2
     
     
-    tab_height = 1
-    secretary_height = 2
     recipe_y_offset = 0 #the id of the first recipe currently displayed
     
-    row = [0, tab_height, tab_height + secretary_height]
     
     #read current quest status from config
     recipe[CONSTRUCT_TAB] = config["factory.build_recipe"]
@@ -159,14 +156,14 @@ def pop_up_menu(stdscr, panel, config):
         
         panel.clear()
         panel.border()
-        panel.addstr(row[0], tab_col[0], 
+        panel.addstr(TOP_TAB_ROW, tab_col[0], 
                     ("<" if curser[CURSER_Y] == 0 and current_tab == CONSTRUCT_TAB else " ")+"Construct"+(">" if curser[CURSER_Y] == 0 and current_tab == CONSTRUCT_TAB else " "),
                     curses.color_pair(CONSTRUCT + (COLOR_REVERT * (int(current_tab == CONSTRUCT_TAB)))))
-        panel.addstr(row[0], tab_col[1], 
+        panel.addstr(TOP_TAB_ROW, tab_col[1], 
                     ("<" if curser[CURSER_Y] == 0 and current_tab == DEVELOP_TAB else " ")+"Develop"+(">" if curser[CURSER_Y] == 0 and current_tab == DEVELOP_TAB else " "),
                     curses.color_pair(DEVELOP + (COLOR_REVERT * (int(current_tab == DEVELOP_TAB)))))
         
-        panel.addstr(row[1] + 1, secretary_col[0], "Secretary ship ", curses.color_pair(LOG))
+        panel.addstr(SECRETARY_ROW, secretary_col[0], "Secretary ship ", curses.color_pair(LOG))
         
         # --- mode selector (type cycling) ---
         sec_mode = secretary[current_tab]
@@ -181,22 +178,22 @@ def pop_up_menu(stdscr, panel, config):
         else:
             mode_label = f" {sec_mode.ljust(8)} "
             mode_color = curses.color_pair(LOG)
-        panel.addstr(row[1] + 1, secretary_col[1], mode_label, mode_color)
+        panel.addstr(SECRETARY_ROW, secretary_col[1], mode_label, mode_color)
 
         # --- ship-ID digits (only visible when mode is 'ID') ---
         if sec_mode == 'ID':
             if current_active == SECRETARY_MENU:
                 for i in range(7):
                     if i == curser[CURSER_X]:
-                        panel.addstr(row[1] + 0, secretary_col[2] + i, str((secretary_id[current_tab][i] + 9) % 10), curses.color_pair(LOG))
-                        panel.addstr(row[1] + 1, secretary_col[2] + i, str(secretary_id[current_tab][i]), curses.color_pair(LOG_GREEN))
-                        panel.addstr(row[1] + 2, secretary_col[2] + i, str((secretary_id[current_tab][i] + 1) % 10), curses.color_pair(LOG))
+                        panel.addstr(SECRETARY_ROW - 1, secretary_col[2] + i, str((secretary_id[current_tab][i] + 9) % 10), curses.color_pair(LOG))
+                        panel.addstr(SECRETARY_ROW + 0, secretary_col[2] + i, str(secretary_id[current_tab][i]), curses.color_pair(LOG_GREEN))
+                        panel.addstr(SECRETARY_ROW + 1, secretary_col[2] + i, str((secretary_id[current_tab][i] + 1) % 10), curses.color_pair(LOG))
                     else:
-                        panel.addstr(row[1] + 1, secretary_col[2] + i, str(secretary_id[current_tab][i]), curses.color_pair(LOG))
+                        panel.addstr(SECRETARY_ROW , secretary_col[2] + i, str(secretary_id[current_tab][i]), curses.color_pair(LOG))
             else:
                 id_focused = (current_active == TOP_MENU and curser[CURSER_Y] == 1 and curser[CURSER_X] == 2)
                 id_color = curses.color_pair(LOG_GREEN if id_focused else LOG)
-                panel.addstr(row[1] + 1, secretary_col[2], str(list_to_int(secretary_id[current_tab])).rjust(7), id_color)
+                panel.addstr(SECRETARY_ROW, secretary_col[2], str(list_to_int(secretary_id[current_tab])).rjust(7), id_color)
         
         for recipe_idx, preset in enumerate(recipe_preset[current_tab]):
             
@@ -207,9 +204,9 @@ def pop_up_menu(stdscr, panel, config):
                 break
             
             if curser[CURSER_Y] == recipe_idx + 2 and curser[CURSER_X] == 0:
-                panel.addstr(row[2] + 1 + recipe_idx + recipe_y_offset, recipe_col[0], preset, curses.color_pair(LOG_GREEN))
+                panel.addstr(RECIPE_ROW_START + (recipe_idx + recipe_y_offset), recipe_col[0], preset, curses.color_pair(LOG_GREEN))
             else:
-                panel.addstr(row[2] + 1 + recipe_idx + recipe_y_offset, recipe_col[0], preset, curses.color_pair(LOG))
+                panel.addstr(RECIPE_ROW_START + (recipe_idx + recipe_y_offset), recipe_col[0], preset, curses.color_pair(LOG))
         
         for resource_idx, resource in enumerate(RESOURCE_ORDER):
             
@@ -239,26 +236,26 @@ def pop_up_menu(stdscr, panel, config):
                 color = REPAIR 
                 if curser[CURSER_Y] == 3 and curser[CURSER_X] == 2:
                     focus = BAUXITE_MENU
-            panel.addstr(row[2] + row_local_offset + 1, recipe_col[col_offset], " "+RESOURCE_DISPLAY_NAME[resource]+" ", curses.color_pair(color))
+            panel.addstr(RESOURCE_ROW_START + row_local_offset, recipe_col[col_offset], " "+RESOURCE_DISPLAY_NAME[resource]+" ", curses.color_pair(color))
         
             if current_active == resource:    
                 for i in range(4):
                     if i == curser[CURSER_X]:
-                        panel.addstr(row[2] + row_local_offset + 0, recipe_col[col_offset +1] + i, str((recipe[current_tab][resource_idx][i] +9) % 10), curses.color_pair(LOG))
-                        panel.addstr(row[2] + row_local_offset + 1, recipe_col[col_offset +1] + i, str(recipe[current_tab][resource_idx][i]), curses.color_pair(LOG_GREEN))
-                        panel.addstr(row[2] + row_local_offset + 2, recipe_col[col_offset +1] + i, str((recipe[current_tab][resource_idx][i] +1) % 10), curses.color_pair(LOG))
+                        panel.addstr(RESOURCE_ROW_START + row_local_offset - 1, recipe_col[col_offset +1] + i, str((recipe[current_tab][resource_idx][i] +9) % 10), curses.color_pair(LOG))
+                        panel.addstr(RESOURCE_ROW_START + row_local_offset + 0, recipe_col[col_offset +1] + i, str(recipe[current_tab][resource_idx][i]), curses.color_pair(LOG_GREEN))
+                        panel.addstr(RESOURCE_ROW_START + row_local_offset + 1, recipe_col[col_offset +1] + i, str((recipe[current_tab][resource_idx][i] +1) % 10), curses.color_pair(LOG))
                     else:    
-                        panel.addstr(row[2] + row_local_offset + 1, recipe_col[col_offset +1] + i, str(recipe[current_tab][resource_idx][i]), curses.color_pair(LOG))
+                        panel.addstr(RESOURCE_ROW_START + row_local_offset + 0, recipe_col[col_offset +1] + i, str(recipe[current_tab][resource_idx][i]), curses.color_pair(LOG))
             else:
                 if focus == resource:
-                    panel.addstr(row[2] + row_local_offset + 1, recipe_col[col_offset +1], str(list_to_int(recipe[current_tab][resource_idx])).rjust(4, " "), curses.color_pair(LOG_GREEN))
+                    panel.addstr(RESOURCE_ROW_START + row_local_offset, recipe_col[col_offset +1], str(list_to_int(recipe[current_tab][resource_idx])).rjust(4, " "), curses.color_pair(LOG_GREEN))
                 else:
-                    panel.addstr(row[2] + row_local_offset + 1, recipe_col[col_offset +1], str(list_to_int(recipe[current_tab][resource_idx])).rjust(4, " "), curses.color_pair(LOG))
+                    panel.addstr(RESOURCE_ROW_START + row_local_offset, recipe_col[col_offset +1], str(list_to_int(recipe[current_tab][resource_idx])).rjust(4, " "), curses.color_pair(LOG))
                
         # --- comment area (right column only, below resource panel) ---
         # resource panel occupies row[2]+0 .. row[2]+4; comment goes just below
-        comment_row_0 = row[2] + 5
-        comment_row_1 = row[2] + 6
+        comment_row_0 = COMMENT_ROW_START
+        comment_row_1 = COMMENT_ROW_END - 1
         comment_x     = recipe_col[1]           # same left edge as resource panel
         comment_w     = width - comment_x - 1   # up to the right border
 
@@ -289,7 +286,7 @@ def pop_up_menu(stdscr, panel, config):
                 elif curser[CURSER_Y] == 1:
                     curser[CURSER_Y] = 2
                     curser[CURSER_X] = 1
-                else:
+                elif curser[CURSER_Y] > 1:
                     if curser[CURSER_X] == 0:
                         if curser[CURSER_Y] < recipe_preset[current_tab].__len__() + 1:
                             curser[CURSER_Y] += 1
@@ -314,7 +311,7 @@ def pop_up_menu(stdscr, panel, config):
                 elif curser[CURSER_Y] == 2:
                     curser[CURSER_Y] = 1
                     curser[CURSER_X] = 0
-                else:
+                elif curser[CURSER_Y] > 2:
                     curser[CURSER_Y] -= 1
                     if curser[CURSER_X] == 0:
                         recipe_y_offset = max(recipe_y_offset, -(curser[CURSER_Y] -2))
@@ -343,7 +340,7 @@ def pop_up_menu(stdscr, panel, config):
                     if curser[CURSER_X] == 0:
                         curser[CURSER_Y] = 2
                         curser[CURSER_X] += 1
-                    else:
+                    elif curser[CURSER_X] < 2:
                         curser[CURSER_X] += 1
             elif current_active == SECRETARY_TYPE_MENU:
                 idx = SECRETARY_TYPE_OPTIONS.index(secretary[current_tab])
@@ -364,7 +361,7 @@ def pop_up_menu(stdscr, panel, config):
                 elif curser[CURSER_Y] == 1:
                     if curser[CURSER_X] != 0:
                         curser[CURSER_X] -= 1
-                else:
+                elif curser[CURSER_Y] > 1:
                     if curser[CURSER_X] != 0:
                         if curser[CURSER_X] == 1:
                             curser[CURSER_Y] = 2 - recipe_y_offset
