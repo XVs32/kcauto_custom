@@ -257,7 +257,7 @@ class ShipSwitcherCore(object):
             
         elif mode == self.REINFORCEMENT_MODE:
             self.current_page = 1
-            Log.log_msg(f"Selecting {row_idx}"
+            Log.log_debug_1(f"Selecting {row_idx}"
                         f"(From pg{self.current_page} to pg{target_page}).")
             if ship == None:
                 Log.log_error("Ship must be specified for reinforcement mode.")
