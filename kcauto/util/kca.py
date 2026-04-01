@@ -1088,7 +1088,7 @@ class Kca(object):
         
         return qst.quest._quest_dom_cache
         
-    def get_quest_count(self, target_quest: Quest) -> dict[MapEnum, int]:
+    def get_quest_count(self, target_quest: Quest) -> dict[MapEnum, int] | None:
         """ method to get the remaining action needed for the specified quest.
             For example, the remaining sorties needed for quest Bm3 could be {1-4:1, 3-5:0}
 
@@ -1097,7 +1097,7 @@ class Kca(object):
         
         Return:
             dict with key of quest name, and value of remaining actions needed.
-            return None if quest is not combat type.
+            return None if quest is not combat type, KC3 is unavailable, or quest count cannot be read.
         """
         
         target_quest_name = target_quest.name
