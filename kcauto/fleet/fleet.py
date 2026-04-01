@@ -306,14 +306,6 @@ class Fleet(object):
         self.ships.append(ship)
         return
             
-    def remove_ship(self, ship):
-        for i, ship in enumerate(self.ships):
-            if ship.production_id == ship.production_id:
-                del self.ships[i]
-                Log.log_debug_1(f"Removed ship {ship.name} from fleet {self.fleet_id}.")
-                return
-        Log.log_debug_1(f"Ship {ship.name} not found in fleet {self.fleet_id}.")
-    
     def get_ship_by_production_id(self, production_id):
         for ship in self.ships:
             if ship.production_id == production_id:

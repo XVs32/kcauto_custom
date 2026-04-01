@@ -1053,9 +1053,13 @@ class Kca(object):
         Args:
             subpage (string): The name of sub page to open. (ex. flowchart)
         """
-        asyncio.get_event_loop().run_until_complete(self.get_html(f"chrome-extension://{self.kc3_id}/pages/strategy/strategy.html{subpage}"))
-        #Wait for quest panel finish closing
-        self.find_kancolle()
+        try:
+            asyncio.get_event_loop().run_until_complete(self.get_html(f"chrome-extension://{self.kc3_id}/pages/strategy/strategy.html{subpage}"))
+            #Wait for quest panel finish closing
+            self.find_kancolle()
+        except Exception as e:
+            Log.log_warn(f"KC3 strategy page unavailable: {e}")
+            self.html = None
 
         return
     
@@ -1072,6 +1076,10 @@ class Kca(object):
         
         self.reload_kc3_strategy_page(subpage = "#flowchart")
 
+        if self.html is None:
+            Log.log_warn("KC3 unavailable; quest DOM cache not updated, falling back to config defaults.")
+            return None
+
         dom = PyQuery(self.html, parser='html')
 
         qst.quest._quest_dom_cache = dom("ul#questBox_rootFlow.questTree")
@@ -1080,7 +1088,7 @@ class Kca(object):
         
         return qst.quest._quest_dom_cache
         
-    def get_quest_count(self, target_quest: Quest) -> dict[MapEnum, int]:
+    def get_quest_count(self, target_quest: Quest) -> dict[MapEnum, int] | None:
         """ method to get the remaining action needed for the specified quest.
             For example, the remaining sorties needed for quest Bm3 could be {1-4:1, 3-5:0}
 
@@ -1089,12 +1097,16 @@ class Kca(object):
         
         Return:
             dict with key of quest name, and value of remaining actions needed.
-            return None if quest is not combat type.
+            return None if quest is not combat type, KC3 is unavailable, or quest count cannot be read.
         """
         
         target_quest_name = target_quest.name
         
         quest_tree_dom = self.get_quest_dom()
+
+        if quest_tree_dom is None:
+            Log.log_warn(f"KC3 unavailable; cannot get quest count for {target_quest_name}, using config defaults.")
+            return None
         
         i = 0
         while True:
