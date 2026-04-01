@@ -533,10 +533,10 @@ class FleetSwitcherCore(object):
         for i in range(fleet.size):
             
             if fleet.ships[i].equipment_ids == flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][fleet_id].ships[i].equipment_ids:
-                Log.log_msg(f"equipment for ship {fleet.ships[i].name_jp} is already loaded")
+                Log.log_msg(f"equipment for {fleet.ships[i].name_jp} is already loaded")
                 continue
             else:
-                Log.log_msg(f"Loading equipment for ship {fleet.ships[i].name_jp}...")                
+                Log.log_msg(f"Loading equipment for {fleet.ships[i].name_jp}...")                
             
             click_ship_in_equipment_page(i)
 
