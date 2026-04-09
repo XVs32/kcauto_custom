@@ -77,11 +77,11 @@ def run_external_program(panel):
     if platform.startswith("linux"):
         filename = "kcauto_custom"
         python_cmd = "python3"
-        exec_path = f"./{filename}"
+        exec_path = f"./bin/kcauto_custom/{filename}"
     elif platform in ["darwin", "win32"]:
         filename = "kcauto_custom.exe"
         python_cmd = "python"
-        exec_path = filename
+        exec_path = f"./bin/kcauto_custom/{filename}"
     else:
         raise TypeError("Non-supported OS.")
 
