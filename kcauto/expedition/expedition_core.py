@@ -21,7 +21,7 @@ class ExpeditionCore(CoreBase):
     MONTHLY_EXPEDITION = [ExpeditionEnum.E1_A4, ExpeditionEnum.E1_A5, ExpeditionEnum.E1_A6, 
                           ExpeditionEnum.E2_B2, ExpeditionEnum.E2_B3, ExpeditionEnum.E2_B4, ExpeditionEnum.E2_B5, ExpeditionEnum.E2_B6,
                           ExpeditionEnum.E7_42, ExpeditionEnum.E7_43, ExpeditionEnum.E7_44, ExpeditionEnum.E7_46,
-                          ExpeditionEnum.E5_D2, ExpeditionEnum.E5_D3, 
+                          ExpeditionEnum.E4_D2, ExpeditionEnum.E4_D3, 
                           ExpeditionEnum.E5_E1, ExpeditionEnum.E5_E2]
     EXP_ENUM = "exp_enum"
     SCORE = "score"
