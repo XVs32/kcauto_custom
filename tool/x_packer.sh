@@ -1,42 +1,53 @@
 #!/bin/bash
 
-# Path to virtual environment
 VENV_PATH="../.venv"
+BIN_PATH="../bin"
+ROOT_PATH="../"
 
 # Activate the virtual environment
 source "${VENV_PATH}/bin/activate"
 
-SRC="../kcauto/__main__.py"
-ROOT_PATH="../"
-BIN_PATH="../bin"
-rm -f "../kcauto_custom"
-rm -rf "${BIN_PATH}/kcauto_custom"
-
 # Get the site-packages path from the virtual environment
 PYTHON_SITE_PACKAGE=$(python -c "import site; print(site.getsitepackages()[0])")
-echo "The Python site-packages directory is: $PYTHON_SITE_PACKAGE"
+echo "Python site-packages: $PYTHON_SITE_PACKAGE"
 
+# ---------------------------------------------------------
+# 1. Build core GUI executable (placed in bin/)
+# ---------------------------------------------------------
+SRC_CUSTOM="../kcauto/__main__.py"
+rm -rf "${BIN_PATH}/kcauto_custom"
 
-# Build the first executable
-python -m PyInstaller -D --clean $SRC -p ../kcauto -p $PYTHON_SITE_PACKAGE --distpath $BIN_PATH --name "kcauto_custom"
-rm -r dist
-rm -r build
-rm __main__.spec
+echo "Building Core: kcauto_custom..."
+python -m PyInstaller -D --clean $SRC_CUSTOM -p ../kcauto/ -p $PYTHON_SITE_PACKAGE --distpath $BIN_PATH --name "kcauto_custom"
 
 strip "${BIN_PATH}/kcauto_custom/kcauto_custom"
 ln -sf "bin/kcauto_custom/kcauto_custom" "${ROOT_PATH}kcauto_custom"
 
-# Build the second executable
-SRC="../kcauto/kcauto_cui.py"
-rm -f "../kcauto_cui"
-rm -rf "${BIN_PATH}/kcauto_cui"
-python -m PyInstaller -D --clean $SRC -p ../kcauto/ -p $PYTHON_SITE_PACKAGE --distpath $BIN_PATH --name "kcauto_cui"
-rm -r dist
-rm -r build
-rm kcauto_cui.spec
+# ---------------------------------------------------------
+# 2. Build CUI launcher (single file, placed in root directory)
+# ---------------------------------------------------------
+SRC_CUI="../kcauto/kcauto_cui.py"
+rm -f "${ROOT_PATH}kcauto_cui"
 
-strip "${BIN_PATH}/kcauto_cui/kcauto_cui"
-ln -sf "bin/kcauto_cui/kcauto_cui" "${ROOT_PATH}kcauto_cui"
+echo "Building Launcher: kcauto_cui..."
+python -m PyInstaller -F --clean $SRC_CUI -p ../kcauto/ -p $PYTHON_SITE_PACKAGE --distpath $ROOT_PATH --name "kcauto_cui"
+
+# ---------------------------------------------------------
+# 3. Clean up temporary files
+# ---------------------------------------------------------
+echo "Cleaning up temporary files..."
+rm -rf ./dist
+rm -rf ./build
+rm -f ./__main__.spec
+rm -f ./kcauto_cui.spec
 
 # Deactivate the virtual environment
 deactivate
+
+echo ""
+echo "======================================================"
+echo "Build Complete!"
+echo "Root Directory:"
+echo " - kcauto_custom  (symlink -> bin/kcauto_custom/kcauto_custom)"
+echo " - kcauto_cui     (Launcher/Console)"
+echo "======================================================"
