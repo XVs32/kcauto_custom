@@ -390,8 +390,11 @@ class CombatCore(CoreBase):
 
                         kca_u.kca.r['lbas'].hover()
 
-                #api.api.update_from_api(self.RESULT_APIS, need_all=False)
+                # api update
+                node_type = self._cycle_between_nodes(sortie_map)
+                
                 Log.log_debug_1("Battle animations complete.")
+                
                 sts.stats.combat.nodes_fought += 1
                 for fleet in flt.fleets.combat_fleets:
                     kca_u.kca.wait('lower_right_corner', 'global|next.png')
@@ -438,8 +441,8 @@ class CombatCore(CoreBase):
                 if not next_node:
                     raise ValueError("Node select not defined.")
                 else:
-                    Log.log_msg(f"Selecting node {next_node.value}")
-                    self.map_data.nodes[next_node.value].select()
+                    Log.log_msg(f"Selecting node {next_node}")
+                    self.map_data.nodes[next_node].select()
             elif node_type == self.NODE_TYPE_NOTHING:
                 pass
             elif node_type == self.NODE_TYPE_END:
@@ -601,6 +604,7 @@ class CombatCore(CoreBase):
 
     def _resolve_continue_sortie_prompt(self):
         Log.log_debug_1("Resolve continue sortie prompt.")
+        #api.api.update_from_api(self.COMBAT_APIS, process_all=True)
         continue_sortie = True
         retreat_limit = cfg.config.combat.retreat_limit
         if self.current_node.name in cfg.config.combat.push_nodes:
@@ -783,7 +787,6 @@ class CombatCore(CoreBase):
         self.nodes_run.append(next_node)
 
     def _get_next_node_from_edge(self, edge):
-        Log.log_msg(f"current map: {self.map_data.enum}, edge: {self.map_data.edges[edge]}")
         return self.map_data.edges[edge][1]
     
     def duplicate_front_to_back_sortie_queue(self):

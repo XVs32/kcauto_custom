@@ -147,15 +147,39 @@ class FleetSwitcherCore(object):
                     fleet_id = flt.fleets.get_next_exp_fleet_id(fleet_id)
 
             elif context == 'factory_develop':
-                Log.log_msg(f"Switching to {cfg.config.factory.develop_secretary} for develop.")
-
+                develop_sec = cfg.config.factory.develop_secretary
+                if isinstance(develop_sec, ShipTypeEnum):
+                    ship = shp.ships.get_highest_level_ship_by_type(develop_sec)
+                    if ship is None:
+                        return False
+                    Log.log_msg(
+                        f"Switching to highest level {develop_sec.display_name} "
+                        f"({ship.name_jp}) for develop.")
+                else:
+                    ship = shp.ships.get_ship_from_production_id(develop_sec)
+                    if ship is None:
+                        return False
+                    
+                    Log.log_msg(f"Switching to {ship.name_jp} for develop.")
                 ssw.ship_switcher.current_page = 1
-                ssw.ship_switcher.switch_slot_by_id(1,cfg.config.factory.develop_secretary)
+                ssw.ship_switcher.switch_slot(1, ship)
             elif context == 'factory_build':
-                Log.log_msg(f"Switching to {cfg.config.factory.build_secretary} for construction.")
-
+                build_sec = cfg.config.factory.build_secretary
+                if isinstance(build_sec, ShipTypeEnum):
+                    ship = shp.ships.get_highest_level_ship_by_type(build_sec)
+                    if ship is None:
+                        return False
+                    Log.log_msg(
+                        f"Switching to highest level {build_sec.display_name} "
+                        f"({ship.name_jp}) for construction.")
+                else:
+                    ship = shp.ships.get_ship_from_production_id(build_sec)
+                    if ship is None:
+                        return False
+                    
+                    Log.log_msg(f"Switching to {ship.name_jp} for construction.")
                 ssw.ship_switcher.current_page = 1
-                ssw.ship_switcher.switch_slot_by_id(1,cfg.config.factory.build_secretary)
+                ssw.ship_switcher.switch_slot(1, ship)
         elif preset_id == None:
             Log.log_debug_1(f"Fleet switch disabled.")
         else:
@@ -204,7 +228,6 @@ class FleetSwitcherCore(object):
             ship_list(fleetcore_obj): ships to use
         """
         
-        EMPTY = -1
         retry = 0
 
         while True:
@@ -229,16 +252,18 @@ class FleetSwitcherCore(object):
             retry = False
             for i in range(1,size + 1):
                 if i > costom_fleet.size:
-                    id = EMPTY #remove this slot
+                    ship = None
                 else:
-                    id = costom_fleet.ship_ids[i-1]
+                    ship = shp.ships.get_ship_from_production_id(costom_fleet.ship_ids[i-1])
+                    if ship is None:
+                        return False
 
                 if i <= len(flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][fleet_id].ship_ids) and \
-                    id == flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][fleet_id].ship_ids[i-1]:
+                    shp.ships.is_same_ship(ship, flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][fleet_id].ships[i-1]):
                     Log.log_debug_1("Ship already loaded for custom fleet.")
                     continue
                 
-                if not ssw.ship_switcher.switch_slot_by_id(i-empty_slot_count,id):
+                if not ssw.ship_switcher.switch_slot(i-empty_slot_count, ship):
                     #fleet data update
                     if any_vaild_switch == True:
                         Log.log_msg(f"Retrying...")
@@ -252,7 +277,7 @@ class FleetSwitcherCore(object):
                 else:
                     any_vaild_switch = True
                     
-                if id == EMPTY:
+                if ship == None:
                     empty_slot_count += 1
 
             if retry == True:
@@ -408,7 +433,7 @@ class FleetSwitcherCore(object):
             
             Log.log_msg(f'Ship {ship.name} is not in any fleet, unload from idle fleet')
             for k, idle_ship in enumerate(ships_to_check):
-                if ship.production_id == idle_ship.production_id:
+                if shp.ships.is_same_ship(ship, idle_ship):
                     idx = k
                     break
             ssw.ship_switcher.select_replacement_row(row_idx=idx, ship=ship, mode= ssw.ship_switcher.EQUIPMENT_SHIP_MODE)
@@ -508,8 +533,10 @@ class FleetSwitcherCore(object):
         for i in range(fleet.size):
             
             if fleet.ships[i].equipment_ids == flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][fleet_id].ships[i].equipment_ids:
-                Log.log_debug_1(f"equipment for ship {load_ship_id[i]} is already loaded")
+                Log.log_msg(f"equipment for {fleet.ships[i].name_jp} is already loaded")
                 continue
+            else:
+                Log.log_msg(f"Loading equipment for {fleet.ships[i].name_jp}...")                
             
             click_ship_in_equipment_page(i)
 
@@ -568,10 +595,9 @@ class FleetSwitcherCore(object):
                 if row_id == -1:
                     Log.log_error(f"Cannot find equipment {fleet.ships[i].slot_ex.name} \
                         with production id:{fleet.ships[i].slot_ex.production_id}, did you scrapped it?")
-                    
                     exit(1)
                     
-                Log.log_msg(f'Selecting {fleet.ships[i].slot_ex.name} {fleet.ships[i].slot_ex.stars} ★')
+                Log.log_msg(f'Selecting {fleet.ships[i].slot_ex.name} {fleet.ships[i].slot_ex.stars} ★ on page {row_id // 10 + 1} position {(row_id % 10) + 1}')
                 ssw.ship_switcher.select_replacement_row(row_idx=row_id, ship=fleet.ships[i], mode= ssw.ship_switcher.REINFORCEMENT_MODE)
 
                 kca_u.kca.click_existing(
