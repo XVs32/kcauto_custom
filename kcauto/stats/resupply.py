@@ -9,7 +9,7 @@ class ResupplyStats(StatsBase):
 
     def __init__(self, start_time):
         super().__init__(start_time)
-        Log.log_debug("Resupply Stats module initialized.")
+        Log.log_debug_1("Resupply Stats module initialized.")
 
     @property
     def resupplies_done_ph(self):

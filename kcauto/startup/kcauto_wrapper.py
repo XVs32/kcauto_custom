@@ -30,7 +30,7 @@ def kcauto_main():
                 if _.kcauto.scheduler_kca_active:
                     #if first_loop == True:
 
-                    Log.log_debug("New kca_loop started")
+                    Log.log_debug_1("New kca_loop started")
 
                     _.kcauto.initialization_check()
                     _.kcauto.run_expedition_logic()
@@ -38,7 +38,7 @@ def kcauto_main():
                     _.kcauto.run_pvp_logic()
                     _.kcauto.run_combat_logic()
 
-                    _.kcauto.run_repair_logic()
+                    _.kcauto.run_repair_logic(passive_only=True)
                     _.kcauto.run_shipswitch_logic()
                     _.kcauto.check_end_loop_at_port()
                     _.kcauto.print_stats()

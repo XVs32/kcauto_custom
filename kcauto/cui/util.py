@@ -2,12 +2,23 @@ import os
 import time
 import curses
 import subprocess
+import psutil
 from sys import platform, exit
 
 from cui.macro import *
 
+WINDOW_MIN_HEIGHT = 8
+WINDOW_MIN_WIDTH = 45
+
+POP_UP_MAX_HEIGHT = 20
+
 pop_up_lock = False
+
+log_buffer = []
+
 process = None
+psutil_proc = None
+is_running = False
 
 import re
 
@@ -24,6 +35,10 @@ def print_string(window, offset_x, offset_y, string):
     window.addstr(y + offset_y, x + offset_x, string)
 
 def print_log(panel, string):
+    
+    if pop_up_lock:
+        log_buffer.append(string)
+        return
 
     # Define regular expression pattern for ANSI color codes
     ansi_color_pattern = re.compile(r'\x1b\[([0-9;]+)m')
@@ -56,67 +71,73 @@ def print_log(panel, string):
 
 def run_external_program(panel):
     # Start the external program and redirect its output
-    global process
     
-    if platform == "linux" or platform == "linux2":
+    global process, psutil_proc, is_running
+    
+    if platform.startswith("linux"):
         filename = "kcauto_custom"
-        if os.path.isfile(filename):
-            process = subprocess.Popen(
-                [f'./{filename}', '--cli', '--cfg', 'config_cui'],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                text=True,  # Enable text mode
-                encoding='utf-8'  # Ensure UTF-8 decoding
-            )
-            time.sleep(1)
-            print_log(panel, f"Starting from {filename}\n")
-        else:
-            process = subprocess.Popen(
-                ['python3', 'kcauto', '--cli', '--cfg', 'config_cui'],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                text=True,  # Enable text mode
-                encoding='utf-8'  # Ensure UTF-8 decoding
-            )
-            time.sleep(1)
-            print_log(panel, f"{filename} does not exist\n")
-            print_log(panel, "Start kcauto in Python instead\n")
-            
-    elif platform == "darwin" or platform == "win32": 
+        python_cmd = "python3"
+        exec_path = f"./bin/kcauto_custom/{filename}"
+    elif platform in ["darwin", "win32"]:
         filename = "kcauto_custom.exe"
-        if os.path.isfile(filename):
-            process = subprocess.Popen(
-                [filename, '--cli', '--cfg', 'config_cui'],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                text=True,  # Enable text mode
-                encoding='utf-8'  # Ensure UTF-8 decoding
-            )
-            time.sleep(1)
-            print_log(panel, f"Starting from {filename}\n")
-        else:
-            process = subprocess.Popen(
-                ['python', 'kcauto', '--cli', '--cfg', 'config_cui'],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                text=True,  # Enable text mode
-                encoding='utf-8'  # Ensure UTF-8 decoding
-            )
-            time.sleep(1)
-            print_log(panel, f"{filename} does not exist\n")
-            print_log(panel, "Start kcauto in Python instead\n")
+        python_cmd = "python"
+        exec_path = f"./bin/kcauto_custom/{filename}"
     else:
         raise TypeError("Non-supported OS.")
+
+    common_args = ['--cli', '--cfg', 'config_cui']
     
+    if os.path.isfile(filename):
+        cmd = [exec_path] + common_args
+        msg = f"Starting from {filename}\n"
+    else:
+        cmd = [python_cmd, "kcauto"] + common_args
+        msg = f"{filename} does not exist\nStart kcauto in Python instead\n"
+
+    # 3. 統一執行 subprocess
+    process = subprocess.Popen(
+        cmd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        encoding='utf-8'
+    )
+    psutil_proc = psutil.Process(process.pid)
+    is_running = True
+    
+    time.sleep(1)
+    print_log(panel, msg)
+      
     global pop_up_lock
     # Read and write the output to the desired panel
-    while process.poll() is None:
-        output = process.stdout.readline().strip()  # Read line and remove extra whitespace
-        if output:  # Only process non-empty lines
+    # Sentinel must be '' (str), not b'' (bytes), because stdout is in text mode
+    for line in iter(process.stdout.readline, ''):
+        output = line.strip()
+        if output:
             print_log(panel, f"{output}\n")
+
+    process.stdout.close()
+    process.wait()
+    is_running = False
 
     # Final log after the process ends
     print_log(panel, "kcauto ended\n")
+    
+def pause_external_program(panel):
+    
+    global psutil_proc, is_running
+    if psutil_proc and psutil_proc.is_running():
+        psutil_proc.suspend()
+        is_running = False
+        print_log(panel, "kcauto paused\n")
+        
+def resume_external_program(panel):
+    
+    global psutil_proc, is_running
+    if psutil_proc and psutil_proc.is_running():
+        psutil_proc.resume()
+        is_running = True
+        print_log(panel, "kcauto resumed\n")
 
 def signal_handler(signal = None, frame = None):
     exit(0)

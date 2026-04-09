@@ -64,8 +64,8 @@ class FactoryCore(object):
                 retry += 1
 
             if retry == 5:
-                Log.log_error("Cannot open develop menu, probably because the port is full")
-                Log.log_error("Disable factory module")
+                Log.log_error("Cannot open develop menu, probably because the port is full.")
+                Log.log_error("Disabling factory module.")
                 self.enabled = False
                 return False
 
@@ -95,11 +95,9 @@ class FactoryCore(object):
             kca_u.kca.r["order_confirm_region"].click()
             kca_u.kca.wait('lower_right_corner', 'global|next_alt.png', 20)
             while not kca_u.kca.exists('left', 'nav|side_menu_home.png'):
-                Log.log_debug("In develop result")
-                kca_u.kca.sleep()
+                Log.log_debug_1("In develop result")
                 kca_u.kca.r['shipgirl'].click()
                 kca_u.kca.r['top'].hover()
-                kca_u.kca.sleep()
 
         return True
     
@@ -117,7 +115,10 @@ class FactoryCore(object):
     def build(self, oil, ammo, steel, bauxite, count):
         """Place the build order"""
         """Assume currently at factory page when called"""
-
+        
+        init_resource = [30, 30, 30, 30]
+        step_multiplier = 1
+            
         while count > 0:
 
             kca_u.kca.sleep(1)
@@ -145,16 +146,14 @@ class FactoryCore(object):
                         retry += 1
 
                     if retry == 10:
-                        Log.log_error("Cannot receive ship, probably because the port is full")
-                        Log.log_error("Disable factory module")
+                        Log.log_error("Cannot receive ship, probably because the port is full.")
+                        Log.log_error("Disabling factory module.")
                         self.enabled = False
                         return False
                     
                     while not kca_u.kca.exists('left', 'nav|side_menu_home.png'):
-                        kca_u.kca.sleep()
                         kca_u.kca.r['shipgirl'].click()
                         kca_u.kca.r['top'].hover()
-                        kca_u.kca.sleep()
                     kca_u.kca.wait('lower', 'factory|factory_init.png', 20)
 
             """place the order on a empty slot"""
@@ -170,26 +169,33 @@ class FactoryCore(object):
                         retry += 1
 
                     if retry == 5:
-                        Log.log_error("Cannot open develop menu, probably because the port is full")
-                        Log.log_error("Disable factory module")
+                        Log.log_error("Cannot open develop menu, probably because the port is full.")
+                        Log.log_error("Disabling factory module.")
                         self.enabled = False
                         return False
 
+                    if self.is_large_ship_construction(oil, ammo, steel, bauxite) == True:
+                        kca_u.kca.click_existing("lower", "factory|large_ship_construction.png")
+                        kca_u.kca.click_existing("lower", "factory|large_ship_construction_agree.png")
+                        init_resource = [1500, 1500, 2000, 1000]
+                        step_multiplier = 10
+                        
                     resource_list = [oil, ammo, steel, bauxite]
 
                     for i in range(4):
                         """The init 30 point of resource on the order"""
                         resource = resource_list[i]
-                        resource -= 30
-                        while resource >= 100:
+                        resource -= init_resource[i]
+                        
+                        while resource >= 100 * step_multiplier:
                             kca_u.kca.r[self.order_resource_region[i][100]].click()
-                            resource -= 100
-                        while resource >= 10:
+                            resource -= 100 * step_multiplier 
+                        while resource >= 10 * step_multiplier:
                             kca_u.kca.r[self.order_resource_region[i][10]].click()
-                            resource -= 10
-                        while resource >= 1:
+                            resource -= 10 * step_multiplier
+                        while resource >= 1 * step_multiplier:
                             kca_u.kca.r[self.order_resource_region[i][1]].click()
-                            resource -= 1
+                            resource -= 1 * step_multiplier
 
                     kca_u.kca.r["order_confirm_region"].click()
                     kca_u.kca.wait('lower', 'factory|factory_init.png', 20)
@@ -216,5 +222,11 @@ class FactoryCore(object):
         return oil, ammo, steel, bauxite
 
 
+    def is_large_ship_construction(self, oil, ammo, steel, bauxite):
+        """Check if the large ship construction is enabled"""
+        if oil > 999 or ammo > 999 or steel > 999 or bauxite > 999:
+            return True
+        
+        return False
 
 factory = FactoryCore()

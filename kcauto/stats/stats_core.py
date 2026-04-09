@@ -48,7 +48,7 @@ class Stats(object):
         self.quest = QuestStats(self.start_time)
         self.recovery = RecoveryStats(self.start_time)
         self.rsc = ResourceStats(self.start_time)
-        Log.log_debug("Stats module initialized.")
+        Log.log_debug_1("Stats module initialized.")
 
     def set_print_loop_end_stats(self, value=True):
         self.print_loop_end_stats = value

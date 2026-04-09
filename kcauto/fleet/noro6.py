@@ -1,8 +1,9 @@
+import os
+
 from kca_enums.fleet import FleetEnum
 
-from constants import VISUAL_DAMAGE, FLEET_NUMBER_ICON
+from constants import VISUAL_DAMAGE, FLEET_ID_ICON
 from util.logger import Log
-import json
 from util.json_data import JsonData
 from kca_enums.fleet_modes import FleetModeEnum
 
@@ -11,6 +12,7 @@ from util.lzstring import LZString
 class Noro6(object):
     
     NORO6_CONFIG = 'configs/noro6/noro6'
+    NORO6_TEMPLATE = 'template/configs/noro6/noro6'
     
     data = None
     
@@ -26,13 +28,19 @@ class Noro6(object):
         
         if filepath is not None:
             
-            with open(filepath, 'r', encoding='utf-8') as file:
-                compressed = file.read()
+            if not os.path.isfile(filepath):
+                filepath = self.NORO6_TEMPLATE
+
+            try:
+                with open(filepath, 'r', encoding='utf-8') as file:
+                    compressed = file.read()
+            except OSError as e:
+                return
 
             decompressed = LZString.decompressFromUTF16(compressed)
             
             #read decompress as json
-            data = json.loads(decompressed)
+            data = JsonData.load_json_str(decompressed)
             self.data = data["savedata"]
             self.get_presets(self.data)
             
@@ -53,6 +61,7 @@ class Noro6(object):
         
         """
         method to get the config by name
+        name(str): map name
         Returns:
         """
         for preset in self.presets:
@@ -63,7 +72,7 @@ class Noro6(object):
                 self.item = None
                 return preset
             
-        Log.log_warn(f"Map {name} not found in noro6")
+        Log.log_warn(f"Map {name} not found in Noro6.")
         return None
             
         
@@ -115,7 +124,7 @@ class Noro6(object):
         if "fleetInfo" not in self.map["manager"]:
             return None
         #read string in self.map["manager"] as json
-        fleetInfo = json.loads(self.map["manager"])["fleetInfo"]
+        fleetInfo = JsonData.load_json_str(self.map["manager"])["fleetInfo"]
         
         if fleetInfo is None:
             return 0
@@ -142,7 +151,7 @@ class Noro6(object):
         if "fleetInfo" not in self.map["manager"]:
             return None
         #read string in self.map["manager"] as json
-        fleetInfo = json.loads(self.map["manager"])["fleetInfo"]
+        fleetInfo = JsonData.load_json_str(self.map["manager"])["fleetInfo"]
         
         if fleetInfo is None:
             return 0
@@ -247,8 +256,8 @@ class Noro6(object):
             return 0
         
         #read string in self.map["manager"] as json
-        Log.log_debug(f'Loading {self.map}\'s config')
-        fleetInfo = json.loads(self.map["manager"])["fleetInfo"]
+        Log.log_debug_1(f'Loading {self.map}\'s config')
+        fleetInfo = JsonData.load_json_str(self.map["manager"])["fleetInfo"]
         
         if fleetInfo is None:
             return 0
@@ -287,7 +296,7 @@ class Noro6(object):
         return count
     
     def print_status(self):
-        Log.log_debug(f"map: {self.map['name']}")
-        Log.log_debug(f"fleet: {self.fleet}") if self.fleet is not None else None
-        Log.log_debug(f"ship: {self.ship}") if self.ship is not None else None
-        Log.log_debug(f"item: {self.item}") if self.item is not None else None
+        Log.log_debug_1(f"map: {self.map['name']}")
+        Log.log_debug_1(f"fleet: {self.fleet}") if self.fleet is not None else None
+        Log.log_debug_1(f"ship: {self.ship}") if self.ship is not None else None
+        Log.log_debug_1(f"item: {self.item}") if self.item is not None else None

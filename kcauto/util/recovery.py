@@ -74,7 +74,7 @@ class Recovery(object):
         Returns:
             bool: True if recovery was successful; False otherwise.
         """
-        Log.log_debug("Attempting Basic Recovery.")
+        Log.log_debug_1("Attempting Basic Recovery.")
 
         if cfg.config.general.is_direct_control:
             pyautogui.moveTo(1, 1)
@@ -116,7 +116,7 @@ class Recovery(object):
 
             elif kca_u.kca.exists(screen, 'nav|home_menu_sortie.png'):
                 kca_u.kca.find_kancolle()
-                exp.expedition.receive_expedition()
+                kca_u.kca.receive_expedition()
                 return True
 
             else:

@@ -7,7 +7,7 @@ import util.kca as kca_u
 from kca_enums.damage_states import DamageStateEnum
 from kca_enums.fatigue_states import FatigueStateEnum
 from kca_enums.fleet import FleetEnum
-from constants import VISUAL_DAMAGE, FLEET_NUMBER_ICON
+from constants import VISUAL_DAMAGE, FLEET_ID_ICON
 from util.kc_time import KCTime
 from util.logger import Log
 
@@ -23,7 +23,7 @@ class Fleet(object):
     visual_health = []
 
     def __init__(self, fleet_id, fleet_type, enabled=True):
-        Log.log_debug(f"Fleet {fleet_id} with type {fleet_type} init.")
+        Log.log_debug_1(f"Fleet {fleet_id} with type {fleet_type} init.")
         self.fleet_id = fleet_id
         self.enabled = enabled
         self.fleet_type = fleet_type
@@ -36,16 +36,15 @@ class Fleet(object):
             self.ships.append(shp.ships.get_ship_from_production_id(id))
 
     def select(self):
-        Log.log_debug(f"Selecting fleet {self.fleet_id}.")
+        Log.log_debug_1(f"Selecting fleet {self.fleet_id}.")
         kca_u.kca.click_existing(
             'top_submenu', f'fleet|fleet_{self.fleet_id}.png')
         while not kca_u.kca.exists(
                 'top_submenu', f'fleet|fleet_{self.fleet_id}_active.png',
-                FLEET_NUMBER_ICON):
+                FLEET_ID_ICON):
             kca_u.kca.click_existing(
                 'top_submenu', f'fleet|fleet_{self.fleet_id}.png',
-                FLEET_NUMBER_ICON)
-        kca_u.kca.sleep()
+                FLEET_ID_ICON)
 
     @property
     def fleet_type(self):
@@ -53,7 +52,7 @@ class Fleet(object):
 
     @fleet_type.setter
     def fleet_type(self, value):
-        Log.log_debug(f"value {value}.")
+        Log.log_debug_1(f"value {value}.")
         
         if self.fleet_id == 1 and value != FleetEnum.COMBAT:
             raise ValueError("Fleet 1 can only be a combat fleet.")
@@ -241,20 +240,72 @@ class Fleet(object):
             return 0
         return self.ships[0].level
     
+    def has_stype(self, stype_list, member_id_list):
+        """
+        Check if the fleet contains ships of a specific ship type.
+
+        Args:
+            stype (list[ShipTypeEnum]): list of ship types to check for
+            member_id_list (list[int]): list of ship position in this fleet, id start from 0
+            
+        Returns:
+            count (int): number of ships in the fleet that match the ship type
+        """
+        count = 0
+        for i, ship in enumerate(self.ships):
+            if i not in member_id_list:
+                continue
+            
+            if ship.ship_type in stype_list:
+                count += 1
+        return count
+    
+    def has_ctype(self, ctype_list, member_id_list):
+        """
+        Check if the fleet contains ships of a specific ship class.
+
+        Args:
+            ctype (list[ShipClassEnum]): list of ship classes to check for
+            member_id_list (list[int]): list of ship position in this fleet, id start from 0
+            
+        Returns:
+            count (int): number of ships in the fleet that match the ship class
+        """
+        count = 0
+        for i, ship in enumerate(self.ships):
+            if i not in member_id_list:
+                continue
+            
+            if ship.ship_class in ctype_list:
+                count += 1
+        return count
+    
+    def has_id(self, id_list, member_id_list):
+        """
+        Check if the fleet contains ships of a specific ship id.
+
+        Args:
+            id_list (list[int]): list of ship ids to check for
+            member_id_list (list[int]): list of ship position in this fleet, id start from 0
+            
+        Returns:
+            count (int): number of ships in the fleet that match the ship id
+        """
+        count = 0
+        for i, ship in enumerate(self.ships):
+            if i not in member_id_list:
+                continue
+            
+            if ship.api_id in id_list:
+                count += 1
+        return count
+    
     def add_ship(self, ship):
         if not isinstance(ship, Ship):
             raise TypeError("ship must be an instance of Ship class.")
         self.ships.append(ship)
         return
             
-    def remove_ship(self, ship):
-        for i, ship in enumerate(self.ships):
-            if ship.production_id == ship.production_id:
-                del self.ships[i]
-                Log.log_debug(f"Removed ship {ship.name} from fleet {self.fleet_id}.")
-                return
-        Log.log_debug(f"Ship {ship.name} not found in fleet {self.fleet_id}.")
-    
     def get_ship_by_production_id(self, production_id):
         for ship in self.ships:
             if ship.production_id == production_id:
@@ -266,7 +317,7 @@ class Fleet(object):
             ship.hp = hps[idx]
 
     def visual_health_check(self, region):
-        Log.log_debug(f"Running visual health check of fleet {self.fleet_id}.")
+        Log.log_debug_1(f"Running visual health check of fleet {self.fleet_id}.")
 
         find_heavy = kca_u.kca.find_all(
             region, 'fleet|ship_state_dmg_heavy.png', VISUAL_DAMAGE)
@@ -285,7 +336,7 @@ class Fleet(object):
             'moderate': moderate,
             'minor': minor
         }
-        Log.log_debug(f"Visual health check results: {self.visual_health}")
+        Log.log_debug_1(f"Visual health check results: {self.visual_health}")
         return self.visual_health
 
     def get_fleet_id_and_name(self):

@@ -14,7 +14,7 @@ class RecoveryStats(StatsBase):
 
     def __init__(self, start_time):
         super().__init__(start_time)
-        Log.log_debug("Recovery Stats module initialized.")
+        Log.log_debug_1("Recovery Stats module initialized.")
 
     @property
     def recoveries_done_ph(self):

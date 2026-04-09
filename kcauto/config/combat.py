@@ -6,15 +6,13 @@ from kca_enums.fleet_modes import FleetModeEnum, CombinedFleetModeEnum
 from kca_enums.formations import FormationEnum
 from kca_enums.lbas_groups import LBASGroupEnum
 from kca_enums.maps import MapEnum
-from kca_enums.nodes import NodeEnum, NodeEnum
 from util.logger import Log
 import combat.lbas_core as lbas
-
 
 class ConfigCombat(ConfigBase):
     _enabled = False
     _fleet_presets = []
-    _sortie_map = None
+    _sortie_map : MapEnum = None
     _sortie_map_read_only = None
     _fleet_mode = None
     _retreat_points = []
@@ -40,7 +38,7 @@ class ConfigCombat(ConfigBase):
     _override = False
 
     def __init__(self, config):
-        Log.log_debug("Combat config init called")
+        Log.log_debug_1("Combat config init called")
         super().__init__(config)
         self.enabled = config['combat.enabled']
         self.fleet_presets = config['combat.fleet_presets']
@@ -164,11 +162,11 @@ class ConfigCombat(ConfigBase):
         return False
 
     @property
-    def sortie_map(self):
+    def sortie_map(self) -> MapEnum:
         return self._sortie_map
 
     @sortie_map.setter
-    def sortie_map(self, value):
+    def sortie_map(self, value : str):
         """ 
             Method that set the value of _sortie_map
         
@@ -200,7 +198,7 @@ class ConfigCombat(ConfigBase):
             value = "B-" + value
         if not MapEnum.contains_value(value):
             raise ValueError("Invalid map specified:" + str(value))
-        Log.log_debug("SET _sortie_map_read_only: {MapEnum(value)}")
+        Log.log_debug_1("SET _sortie_map_read_only: {MapEnum(value)}")
         self._sortie_map_read_only = MapEnum(value)
 
     @property
@@ -235,7 +233,7 @@ class ConfigCombat(ConfigBase):
     @repair_bucket_threshold.setter
     def repair_bucket_threshold(self, value):
         self._repair_bucket_threshold = value
-        Log.log_debug(f"_repair_bucket_threshold set {self._repair_bucket_threshold}")
+        Log.log_debug_1(f"_repair_bucket_threshold set {self._repair_bucket_threshold}")
 
     @property
     def retreat_points(self):
@@ -243,10 +241,7 @@ class ConfigCombat(ConfigBase):
 
     @retreat_points.setter
     def retreat_points(self, value):
-        for node in value:
-            if not NodeEnum.contains_value(node):
-                raise ValueError("Invalid node specified")
-        self._retreat_points = [NodeEnum(node) for node in value]
+        self._retreat_points = value
 
     @property
     def node_smoke(self):
@@ -254,12 +249,7 @@ class ConfigCombat(ConfigBase):
 
     @node_smoke.setter
     def node_smoke(self, value):
-        node_smoke = [] 
-        for node in value:
-            if not NodeEnum.contains_value(node):
-                raise ValueError("Bad node specified in node select.")
-            node_smoke.append(NodeEnum(node)) 
-        self._node_smoke = node_smoke
+        self._node_smoke = value
 
     @property
     def node_selects(self):
@@ -267,17 +257,12 @@ class ConfigCombat(ConfigBase):
 
     @node_selects.setter
     def node_selects(self, value):
-        node_selects = {}
+        self._node_selects = {}
         for select in value:
             split = select.split('>')
             if len(split) != 2:
                 raise ValueError("Node select in wrong format.")
-            if (
-                    not NodeEnum.contains_value(split[0])
-                    or not NodeEnum.contains_value(split[1])):
-                raise ValueError("Bad node specified in node select.")
-            node_selects[split[0]] = NodeEnum(split[1])
-        self._node_selects = node_selects
+            self._node_selects[split[0]] = split[1]
 
     @property
     def node_formations(self):
@@ -291,8 +276,6 @@ class ConfigCombat(ConfigBase):
             split[0] = int(split[0]) if split[0].isdigit() else split[0]
             if len(split) != 2:
                 raise ValueError("Node formation in wrong format.")
-            if not NodeEnum.contains_value(split[0]):
-                raise ValueError("Bad node specified in node formation.")
             if not FormationEnum.contains_value(split[1]):
                 raise ValueError("Bad formation specified in node formation.")
             node_formations[split[0]] = FormationEnum(split[1])
@@ -310,8 +293,6 @@ class ConfigCombat(ConfigBase):
             split[0] = int(split[0]) if split[0].isdigit() else split[0]
             if len(split) != 2:
                 raise ValueError("Node night battle in wrong format.")
-            if not NodeEnum.contains_value(split[0]):
-                raise ValueError("Bad node specified in node nb.")
             if split[1] not in ('True', 'False'):
                 raise ValueError("Bad bool specified for node nb.")
             node_night_battles[split[0]] = split[1] == 'True'
@@ -323,10 +304,7 @@ class ConfigCombat(ConfigBase):
 
     @push_nodes.setter
     def push_nodes(self, value):
-        for node in value:
-            if not NodeEnum.contains_value(node):
-                raise ValueError("Invalid node specified for push nodes.")
-        self._push_nodes = [NodeEnum(node) for node in value]
+        self._push_nodes = value
 
     @property
     def retreat_limit(self):
@@ -391,10 +369,7 @@ class ConfigCombat(ConfigBase):
                 LBASGroupEnum.G01.value in self.lbas_groups
                 and len(value) not in (0, 2)):
             raise ValueError("0 or 2 nodes not specified for LBAS 1")
-        for node in value:
-            if not NodeEnum.contains_value(node):
-                raise ValueError("Invalid node specified for LBAS 1")
-        self._lbas_group_1_nodes = [NodeEnum(node) for node in value]
+        self._lbas_group_1_nodes = value
 
     @property
     def lbas_group_2_nodes(self):
@@ -406,10 +381,7 @@ class ConfigCombat(ConfigBase):
                 LBASGroupEnum.G02.value in self.lbas_groups
                 and len(value) not in (0, 2)):
             raise ValueError("0 or 2 nodes not specified for LBAS 2")
-        for node in value:
-            if not NodeEnum.contains_value(node):
-                raise ValueError("Invalid node specified for LBAS 2")
-        self._lbas_group_2_nodes = [NodeEnum(node) for node in value]
+        self._lbas_group_2_nodes = value
 
     @property
     def lbas_group_3_nodes(self):
@@ -421,10 +393,7 @@ class ConfigCombat(ConfigBase):
                 LBASGroupEnum.G03.value in self.lbas_groups
                 and len(value) not in (0, 2)):
             raise ValueError("0 or 2 nodes not specified for LBAS 3")
-        for node in value:
-            if not NodeEnum.contains_value(node):
-                raise ValueError("Invalid node specified for LBAS 3")
-        self._lbas_group_3_nodes = [NodeEnum(node) for node in value]
+        self._lbas_group_3_nodes = value
 
     @property
     def check_fatigue(self):

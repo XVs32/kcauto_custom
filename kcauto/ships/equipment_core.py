@@ -2,11 +2,16 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from ships.ship import Ship
-
+    
 from ships.equipment import Equipment
 from util.json_data import JsonData
 from util.logger import Log
+from kca_enums.ship_class import ShipClassEnum 
+from kca_enums.ship_types import ShipTypeEnum
+from constants import FLEET_ID_ICON
 
+import nav.nav as nav
+import util.kca as kca_u
 
 class EquipmentCore(object):
     
@@ -23,6 +28,10 @@ class EquipmentCore(object):
     ship_type_static = []
     equipment_special = []
     
+    current_ship_list_page = 1
+    current_fleet = 1
+    
+    max_equipment_count = 0
     
     is_custom_fleet_equipment_loaded = False
     
@@ -41,20 +50,45 @@ class EquipmentCore(object):
             self.reinforce_general_category = JsonData.load_json('data|temp|reinforce_general_category.json')
             self.reinforce_special = JsonData.load_json('data|temp|reinforce_special.json')
             self.ship_type_static = JsonData.load_json('data|temp|ship_type.json')
+            self.ship_type_static.insert(0, "dummy") #insert a dummy at index 0 to align with ship type id
             self.equipment_special = JsonData.load_json('data|temp|equipment_ship_special.json')
         except FileNotFoundError as e:
             Log.log_error("Reinforce equipment data not found, please start kcauto from splash screen")
             Log.log_error(e)
 
         try:
-            
             for raw_equipment in JsonData.load_json('data|temp|equipment_list.json'):
                 self.equipment_pool[self.ID].append(Equipment(model_id=raw_equipment["api_slotitem_id"],production_id=raw_equipment["api_id"],
                     stars=raw_equipment["api_level"], lock=raw_equipment["api_locked"], ace=raw_equipment.get("api_alv", Equipment().ace)))
             self.equipment_pool[self.ID].append(Equipment())
-        except FileNotFoundError:
+        except FileNotFoundError as e:
             Log.log_error("Equipment data not found, please start kcauto from splash screen")
             Log.log_error(e)
+            
+    def goto(self):
+        nav.navigate.to('equipment')
+        self.current_ship_list_page = 1
+        self.current_fleet = 1
+        
+    def goto_fleet(self, fleet_id):
+        """method to navigate to the fleet in equipment page, page 'other' as treated as fleet 999
+
+        Args:
+            fleet_id (_type_): _description_
+        """
+        
+        kca_u.kca.wait("left", f"nav|side_menu_equipment_active.png")
+        while True:
+            kca_u.kca.click_existing("upper_left", f"fleet|fleet_{fleet_id}.png")
+            if  kca_u.kca.exists("upper_left", f"fleet|fleet_{fleet_id}_active.png", similarity=FLEET_ID_ICON):
+                break
+            kca_u.kca.sleep(1)
+        
+        if fleet_id != self.current_fleet:
+            self.current_ship_list_page = 1 
+            self.current_fleet = fleet_id
+        
+        return
             
     def _remove_from_pool(self, target_equipment : Equipment, pool):
         
@@ -95,77 +129,59 @@ class EquipmentCore(object):
         
     def get_reinforce_equipment_list(self, ship : Ship):
 
-        ret = []
-
-        special_equipment_list = self._get_special_reinforce_equipment(ship) # sqecial equipment for this ship only
+        available_equipments = self.get_ship_available_equipment_list(ship)
         
-        for equipment in self.equipment_pool[self.FREE]:
-            if equipment.model_id in special_equipment_list:
-                if equipment.stars >= special_equipment_list[equipment.model_id]:
-                    ret.append(equipment)
-            elif equipment.category in self.reinforce_general_category and \
-                self.is_available_equipment(ship, equipment):
-                    ret.append(equipment)
-            else:
-                Log.log_debug(f"Equipment {equipment.name} ({equipment.production_id}) is not available for ship {ship.name}, skipping")
-                
+        for i in range(len(available_equipments)-1, 0-1, -1):
+            
+            equipment = available_equipments[i]
+            
+            if self._is_special_reinforce_equipment(ship, equipment):
+                continue
+            
+            Log.log_debug_1(f"Equipment {equipment.name} ({equipment.production_id}) {equipment.category} is not a special reinforce equipment for ship {ship.name}, skipping")
+            available_equipments.pop(i)
 
-        Log.log_debug(f'ship {ship.name} reinforce equipment list:')
-        for i, equipment in enumerate(ret):
-            if i %10 == 0:  
-                Log.log_debug(f'Page {i // 10 + 1}')
-            Log.log_debug(f'{i}: {equipment.name}{equipment.stars} (Production id: {equipment.production_id}, Model ID: {equipment.model_id})')
-        
-        
-        return ret 
-
-    def _get_special_reinforce_equipment(self, ship):
-        """method to get the special reinforce equipment for the ship
+        return available_equipments
+    
+    def _is_special_reinforce_equipment(self, ship: Ship, equipment : Equipment):
+        """method to check if the equipment is a special reinforce equipment for the ship, 
+            !!DOES NOT CHECK IF THE EQUIPMENT IS AVAILABLE FOR THE SHIP!!
+            ONLY PUT AVAILABLE EQUIPMENT IN THIS FUNCTION
         Args:
             ship (Ship): the ship to check
+            equipment (Equipment): the equipment to check
         Returns:
-            dict: a dictionary with key as equipment production id and value as required level
+            bool: True if the equipment is a special reinforce equipment for the ship, False otherwise
         """
+    
+        equipment_str_id = str(equipment.model_id)
 
-        WILDCARD_SHIP_TYPE = "99"
-
-        equipment_list = {}
-
-        Log.log_debug(self.reinforce_special)
-
-        for key in self.reinforce_special:
+        if equipment_str_id in self.reinforce_special:
+            
             if \
-                (self.reinforce_special[key]["api_ship_ids"] is not None \
-                and \
-                str(ship.api_id) in self.reinforce_special[key]["api_ship_ids"].keys())\
-            or \
-                (self.reinforce_special[key]["api_ctypes"] is not None \
-                and \
-                str(ship.ship_family) in self.reinforce_special[key]["api_ctypes"].keys())\
-            or \
-                (self.reinforce_special[key]["api_stypes"] is not None \
-                and \
-                    (str(ship.ship_type.id) in self.reinforce_special[key]["api_stypes"].keys() \
-                        or\
-                    WILDCARD_SHIP_TYPE in self.reinforce_special[key]["api_stypes"].keys())):
-                Log.log_debug("hit")
-                equipment_list[(int(key))] = self.reinforce_special[key]["api_req_level"]
-
-        Log.log_debug("special equipment_list")
-        Log.log_debug(equipment_list)
-
-        return equipment_list
-
-    def _get_model_id(self, production_id):
-        """method to convert equipment production id to equipment name id"""
-        
-        ret = self.get_equipment_by_production_id(self.equipment_pool[self.ID], production_id)
-        
-        if ret is not None:
-            return ret.model_id
-        else:
-            Log.log_warn(f"Cannot find production_id:{production_id} in equipment list")
-            return None
+            (self.reinforce_special[equipment_str_id].get("api_ship_ids", None) != None \
+            and \
+            str(ship.api_id) in self.reinforce_special[equipment_str_id]["api_ship_ids"])\
+        or \
+            (self.reinforce_special[equipment_str_id].get("api_ctypes", None) != None \
+            and \
+            str(ship.ship_class.id) in self.reinforce_special[equipment_str_id]["api_ctypes"])\
+        or \
+            (self.reinforce_special[equipment_str_id].get("api_stypes", None) != None \
+            and \
+                (str(ship.ship_type.id) in self.reinforce_special[equipment_str_id]["api_stypes"] 
+                    or
+                str(ShipTypeEnum.WILDCARD.id) in self.reinforce_special[equipment_str_id]["api_stypes"])):
+                
+                if self.reinforce_special[equipment_str_id]["api_req_level"] > equipment.stars:
+                    return False
+                else:
+                    return True
+                
+        if equipment.category in self.reinforce_general_category:
+            return True
+            
+        return False
 
     def _get_match_equipment(self, equipment_pool, model_id) -> list[Equipment]:
         """method to find all equipment in the equipment pool with the specified model id
@@ -194,7 +210,7 @@ class EquipmentCore(object):
                     temp = Equipment(model_id=model_id)
                     Log.log_warn(f"Cannot find {temp.name} in equipment list, looks like you don't have any")
         else:
-            Log.log_debug("EMPTY equipment slot")
+            Log.log_debug_1("EMPTY equipment slot")
             output_list = [Equipment()]
 
         return output_list
@@ -218,51 +234,62 @@ class EquipmentCore(object):
             
         return Equipment(Equipment().UNKNOWN_EQUIPMENT, production_id=production_id)
 
-    def is_available_category(self, target_ship, category_id):
-        
-        NON_NONE = 0
-
-        # If this ship has a special available equipment category
-        target_ship_id = str(target_ship.api_id)
-        
-        if target_ship_id in self.equipment_special:
-            if self.equipment_special[target_ship_id]["api_equip_type"].get(str(category_id), NON_NONE) == None:
-                return True
-            else:
-                return False
-
-        # If this ship use general equipment category
-        type_id = target_ship.ship_type.id
-        for ship_type_static_info in self.ship_type_static:
-            if ship_type_static_info["api_id"] == type_id:
-                if ship_type_static_info["api_equip_type"][str(category_id)] == 1:
-                    return True
-                else:
-                    return False
-
-        Log.log_warn(f"Cannot find ship type id:{type_id}")
-        return False
- 
-    def is_available_equipment(self, ship: Ship, equipment: Equipment):
+    def is_available_equipments(self, ship: Ship, equipments: list[Equipment]):
         
         """method to check if the equipment is available for the ship
         Args:
             ship (Ship): the ship to check
-            equipment (Equipment): the equipment to check
+            equipments (List[Equipment]): the equipments to check
         """
         
-        if self.is_available_category(ship, equipment.category) == True:
+        local_equipments = equipments.copy()
+        
+        CATEGORY_NOT_AVAILABLE = 0
+        ALL_IS_AVAILABLE = None
+        target_ship_id = str(ship.api_id)
+        
+        # If this ship has a special available equipment category
+        if target_ship_id in self.equipment_special:
+            
+            for i in range(len(local_equipments)-1, 0-1, -1):
+                equipment = local_equipments[i]
+                available_equipments_in_category = self.equipment_special[target_ship_id]["api_equip_type"].get(str(equipment.category), CATEGORY_NOT_AVAILABLE)
+                if available_equipments_in_category != CATEGORY_NOT_AVAILABLE:
+                    if available_equipments_in_category == ALL_IS_AVAILABLE or equipment.model_id in available_equipments_in_category:
+                        continue
+                
+                local_equipments.pop(i)
+        else:
+            for i in range(len(local_equipments)-1, 0-1, -1):
+                equipment = local_equipments[i]
+                if self.ship_type_static[ship.ship_type.id]["api_equip_type"].get(str(equipment.category), 0) == 1:
+                    continue
+                else:
+                    local_equipments.pop(i)
+        
+        return local_equipments
+    
+    def get_ship_available_equipment_list(self, ship: Ship):
+        """helper method to get the list of equipment available for the ship
+        Args:
+            ship (Ship): the ship to check
+        Returns:
+            list: a list of equipment available for the ship
+        """
+        
+        
+        return self.is_available_equipments(ship, self.equipment_pool[self.FREE])
+    
+    def is_equipment_pool_full(self):
+        """method to check if the equipment pool is full, 
+        due to current equipment count api limitation, this could be inaccurate
+        Returns:
+            bool: True if the equipment pool is full, False otherwise
+        """
+        
+        if len(self.equipment_pool[self.ID]) >= self.max_equipment_count:
             return True
         else:
-            ship_id = str(ship.api_id)
-            
-            if ship_id in self.equipment_special:
-                if str(equipment.category) in self.equipment_special[ship_id]["api_equip_type"] \
-                and equipment.model_id in self.equipment_special[ship_id]["api_equip_type"][str(equipment.category)]:
-                    return True
-                else:
-                    return False
-        
-        return False
+            return False
     
 equipment = EquipmentCore()

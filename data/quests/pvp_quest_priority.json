@@ -1,0 +1,44 @@
+{
+  "time_limited": [
+    "2409C1",
+    "2507C1",
+    "2601C2"
+  ],
+  "exact_ship": [
+    "Cq2",
+    "Cq3",
+    "Cy1",
+    "Cy2",
+    "Cy4",
+    "Cy6",
+    "Cy7",
+    "Cy8",
+    "Cy9",
+    "Cy10",
+    "Cy11",
+    "Cy12",
+    "Cy15",
+    "Cy16"
+  ],
+  "exact_ship_type": [
+    "Cm2",
+    "Cq1",
+    "Cq4",
+    "Cy3",
+    "Cy5",
+    "Cy13",
+    "Cy14"
+  ],
+  "any_pvp": [
+    "Cd1",
+    "Cd2",
+    "Cw1",
+    "Cm1",
+    "Cs1",
+    "Cs2",
+    "Cs3",
+    "Cs4",
+    "Cs5",
+    "Cs6"
+  ]
+}

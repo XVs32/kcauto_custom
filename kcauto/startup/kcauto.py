@@ -1,4 +1,5 @@
 import os
+import atexit
 import combat.combat_core as com
 import factory.factory_core as fty
 import config.config_core as cfg
@@ -12,14 +13,20 @@ import repair.repair_core as rep
 import resupply.resupply_core as res
 import scheduler.scheduler_core as sch
 import ship_switcher.ship_switcher_core as ssw
+import ships.ships_core as shp
+import ships.equipment_core as equ
 import stats.stats_core as sts
 import util.kca as kca_u
 from fleet.noro6 import Noro6 
 from kca_enums.expeditions import ExpeditionEnum
+from kca_enums.sorite_rank import SortieRankEnum
 from util.logger import Log
 from kca_enums.maps import MapEnum
+from quest.quest import Quest
 
-from constants import COMBAT_CONFIG
+from constants import COMBAT_CONFIG, AUTO_PRESET
+from constants import CONTEXT_EXPEDITION, CONTEXT_PVP, CONTEXT_SORTIE, CONTEXT_FACTORY
+from constants import CONTEXT_AUTO_EXPEDITION, CONTEXT_AUTO_SORTIE, CONTEXT_AUTO_PVP
 
 class Kcauto(object):
     """Primary kcauto class.
@@ -30,6 +37,7 @@ class Kcauto(object):
     skip_one_repair = False
 
     def __init__(self):
+        atexit.register(kca_u.kca.save_screenshots)
         kca_u.kca.hook_chrome()
 
     def start_kancolle(self):
@@ -54,12 +62,12 @@ class Kcauto(object):
     def initialization_check(self):
         if sts.stats.rsc.ammo is None:
             Log.log_msg("kcauto is initializing.")
-            if not exp.expedition.receive_expedition():
+            if not kca_u.kca.receive_expedition():
                 nav.navigate.to('refresh_home')
                 sts.stats.set_print_loop_end_stats()
 
     def check_for_expedition(self):
-        if not exp.expedition.receive_expedition():
+        if not kca_u.kca.receive_expedition():
             if exp.expedition.expect_returned_fleets():
                 nav.navigate.to('refresh_home')
                 sts.stats.set_print_loop_end_stats()
@@ -85,22 +93,23 @@ class Kcauto(object):
                 exp.expedition.goto()
                 exp.expedition.get_expedition_ranking()
                 
-                self.run_quest_logic('auto_expedition')
+                self.run_quest_logic(CONTEXT_AUTO_EXPEDITION)
                     
                 exp.expedition.prerequisite_handling()
                 exp.expedition.on_going_exp_handling()
+                exp.expedition.monthly_exp_handling()
                 
                 Log.log_msg(f'Expedition rank: {[expedition[exp.expedition.EXP_ENUM].display_name for expedition in exp.expedition.exp_rank]}')
 
                 if not flt.fleets.assign_exp_ship():
                     exp.expedition.enabled = False
-                    Log.log_error(f"Failed to assign ships for self balance expedition, disable expedition module.")
+                    Log.log_error(f"Failed to assign ships for self-balance expedition. Disabling expedition module.")
                     return False
                  
             if exp.expedition.is_fleetswitch_needed():
                 if self._run_fleetswitch_logic('expedition') != 0:
                     exp.expedition.timer.set(15*60)
-                    Log.log_warn(f"Failed to switch ships for self balance expedition, disable expedition module for 15 mins.")
+                    Log.log_warn(f"Failed to switch ships for self-balance expedition. Disabling expedition module for 15 minutes.")
                     return False
 
             if res.resupply.exp_provisional_enabled != True:
@@ -108,7 +117,9 @@ class Kcauto(object):
                 
             exp.expedition.goto()
             exp.expedition.send_expeditions()
-            self.run_quest_logic('expedition')
+            #Refresh home for exp api data update
+            nav.navigate.to('refresh_home')
+            self.run_quest_logic(CONTEXT_EXPEDITION)
             sts.stats.set_print_loop_end_stats()
 
     def run_factory_logic(self):
@@ -116,65 +127,46 @@ class Kcauto(object):
         if not fty.factory.enabled or not fty.factory.disable_time_up():
             return False
 
-        self.run_quest_logic('factory', fast_check=False)
+        self.run_quest_logic(CONTEXT_FACTORY, fast_check=False, force=True)
         nav.navigate.to('home')
 
         anything_is_done = False
-
-        if "F5" in qst.quest.next_check_intervals.keys():
-            anything_is_done = True
-
-            self._run_fleetswitch_logic('factory_develop')
-
-            fty.factory.goto()
-            if fty.factory.develop_logic(1) == True:
-                self.run_quest_logic('factory', fast_check=True, back_to_home=True, force=True)
-                nav.navigate.to('home')
-
-        if "F6" in qst.quest.next_check_intervals.keys():
-            anything_is_done = True
-            fty.factory.goto()
-            if fty.factory.any_build_slot_available() == False:
-                #slot not ready yet
-                fty.factory.set_timer()
-            else:
-                self._run_fleetswitch_logic('factory_build')
-
-                fty.factory.goto()
-                if fty.factory.build_logic(1) == True:
-                    self.run_quest_logic('factory', fast_check=True, back_to_home=True, force=True)
-                    nav.navigate.to('home')
-                else:
-                    # disable module for 60 mins
-                    fty.factory.set_timer()
-
-        if "F7" in qst.quest.next_check_intervals.keys():
-            anything_is_done = True
-
-            self._run_fleetswitch_logic('factory_develop')
-
-            fty.factory.goto()
-            if fty.factory.develop_logic(3) == True:
-                self.run_quest_logic('factory', fast_check=True, back_to_home=True, force=True)
-                nav.navigate.to('home')
         
-        if "F8" in qst.quest.next_check_intervals.keys():
-            anything_is_done = True
+        quest_configs = [
+            {"id": "Fd1", "type": "develop", "count": 1, "is_full": equ.equipment.is_equipment_pool_full},
+            {"id": "Fd3", "type": "develop", "count": 3, "is_full": equ.equipment.is_equipment_pool_full},
+            {"id": "Fd2", "type": "build",   "count": 1, "is_full": shp.ships.is_ship_pool_full},
+            {"id": "Fd4", "type": "build",   "count": 3, "is_full": shp.ships.is_ship_pool_full},
+        ]
+        
+        for cfg in quest_configs:
+            if qst.quest.is_tracking_quest(Quest(name=cfg["id"])) and not cfg["is_full"]():
+                anything_is_done = True
+                
+                if cfg["type"] == "develop":
+                    self._run_fleetswitch_logic('factory_develop')
 
-            if fty.factory.any_build_slot_available() == False:
-                #slot not ready yet
-                fty.factory.set_timer()
-            else:
-                self._run_fleetswitch_logic('factory_build')
+                    fty.factory.goto()
+                    if fty.factory.develop_logic(cfg["count"]) == True:
+                        nav.navigate.to('home')
+                else:
+                    self._run_fleetswitch_logic('factory_build')
+                    
+                    fty.factory.goto()
 
-                fty.factory.goto()
-                """If F8 is already 80% done, one more build could finish the quest"""
-                """Therefore, no if == True here"""
-                fty.factory.build_logic(3)
-                self.run_quest_logic('factory', fast_check=True, back_to_home=True, force=True)
-                nav.navigate.to('home')
-                #always disable module for 60 mins
-                fty.factory.set_timer()
+                    if not fty.factory.any_build_slot_available():
+                        fty.factory.set_timer()
+                        return
+
+                    success = fty.factory.build_logic(cfg["count"])
+                    
+                    if cfg["id"] == "Fd4":
+                        nav.navigate.to('home')
+                        fty.factory.set_timer()
+                    elif success:
+                        nav.navigate.to('home')
+                    else:
+                        fty.factory.set_timer()                    
 
         if anything_is_done == False:
             """Daily factory process done, disable from now"""
@@ -191,22 +183,33 @@ class Kcauto(object):
                 return False
             nav.navigate.to('home')
             
-            self.run_quest_logic('pvp', back_to_home=True)
+            if cfg.config.pvp.fleet_preset == AUTO_PRESET:
+                self.run_quest_logic(CONTEXT_AUTO_PVP, fast_check=False, back_to_home=False, force= True)
+            
             self._run_fleetswitch_logic('pvp')
+            self.run_repair_logic()
+            
+            self.run_quest_logic(CONTEXT_PVP, back_to_home=True)
+            
         else:
             return False
 
         while pvp.pvp.pvp_available():
+            if flt.fleets.pvp_fleets[0].under_repair == True:
+                pvp.pvp.next_pvp_time = rep.repair.soonest_complete_time
+                Log.log_warn(f"PvP fleet is under repair, next PvP at {pvp.pvp.next_pvp_time}.")
+                break
+            self.run_resupply_logic()
             pvp.pvp.goto()
             pvp.pvp.conduct_pvp()
-            self.run_resupply_logic(back_to_home=True)
-            self.run_quest_logic('pvp', fast_check=True, back_to_home=True)
+            
+            qst.quest.is_quest_dom_cache_dirty = True
+            self.run_quest_logic(CONTEXT_PVP, fast_check=True)
             
         sts.stats.set_print_loop_end_stats()
         return True
 
     def run_combat_logic(self):
-        quest_selected = False
         if not com.combat.enabled or com.combat.time_to_sortie == False:
             return False
         else :
@@ -217,49 +220,66 @@ class Kcauto(object):
         #set sortie_queue if it is empty
         if len(com.combat.get_sortie_queue()) == 0:
             was_sortie_queue_empty = True
-            Log.log_debug(f"cfg.config.combat.sortie_map_read_only:{cfg.config.combat.sortie_map_read_only}")
-            if cfg.config.combat.sortie_map_read_only == MapEnum.auto_map_selete:
-                self.run_quest_logic('auto_sortie', fast_check=False, back_to_home=False, force= True) #quest module will call set_sortie_queue
+            Log.log_debug_1(f"cfg.config.combat.sortie_map_read_only:{cfg.config.combat.sortie_map_read_only}")
+            if cfg.config.combat.sortie_map_read_only == MapEnum.auto_map_select:
+                self.run_quest_logic(CONTEXT_AUTO_SORTIE, fast_check=False, back_to_home=False, force= True) #quest module will call set_sortie_queue
             else:
-                Log.log_debug(f"Manual sortie mode:{cfg.config.combat.sortie_map_read_only.value}")
+                Log.log_debug_1(f"Manual sortie mode:{cfg.config.combat.sortie_map_read_only.value}")
 
-                sortie_queue = [cfg.config.combat.sortie_map_read_only.value]
+                sortie_queue = [MapEnum(cfg.config.combat.sortie_map_read_only.value)]
                 com.combat.set_sortie_queue(sortie_queue)
         else:
-            Log.log_msg(f"Sortie queue:{com.combat.get_sortie_queue()}")
+            Log.log_msg(f"Sortie queue:{com.combat.sortie_queue}")
 
 
         if len(com.combat.get_sortie_queue()) == 0: #If no combat map available, turn off combat module
-            Log.log_debug(f"Stop combat module cause no combat quest available")
+            Log.log_debug_1(f"Stopping combat module because no combat quest is available.")
             com.combat.enabled = False
             return False
         else:
             #update current sortie_map
             #@todo fix sortie queue map name
-            cfg.config.combat.sortie_map = com.combat.get_sortie_queue()[0]
+            cfg.config.combat._sortie_map = com.combat.get_sortie_queue()[0]
 
             """Check if multi stage map requested"""
-            MULTI_STAGE_MAPS = {"7-2":["G", "M"], "7-3":["E", "M"], "7-5":["K", "Q", "T"]}
-            GIMMICK_MAPS = {"7-5":["M"]}
-            map_name = cfg.config.combat.sortie_map.value
-            if map_name in MULTI_STAGE_MAPS:
+            MULTI_STAGE_MAPS = {MapEnum.W7_2: [MapEnum.W7_2_G, MapEnum.W7_2_M], 
+                                MapEnum.W7_3: [MapEnum.W7_3_E, MapEnum.W7_3_P], 
+                                MapEnum.W7_5: [MapEnum.W7_5_K, MapEnum.W7_5_Q, MapEnum.W7_5_T]}
+            
+            GIMMICK_MAPS = {MapEnum.W7_5:[MapEnum.W7_5_M]}
+            map_enum = cfg.config.combat.sortie_map.without_quest_and_node_enum
+            if map_enum in MULTI_STAGE_MAPS:
                 nav.navigate.to('combat')
-                Log.log_error(f"com.combat.sortie_map_stage: {com.combat.sortie_map_stage}")
+                Log.log_success(f"Multi map stage: {com.combat.sortie_map_stage}")
 
-                try:
-                    Log.log_debug(f"Gimmick needed to be finish")
-                    stage = GIMMICK_MAPS[map_name][com.combat.check_gimmick()]
-                except TypeError:
-                    stage = MULTI_STAGE_MAPS[map_name][com.combat.sortie_map_stage - 1]
-                except IndexError:
-                    stage = MULTI_STAGE_MAPS[map_name][com.combat.sortie_map_stage - 1]
-                except KeyError:
-                    stage = MULTI_STAGE_MAPS[map_name][com.combat.sortie_map_stage - 1]
+                
+                is_gimmick_await = False
+                if map_enum in GIMMICK_MAPS:
+                    Log.log_debug_1(f"Gimmick needs to be finished.")
+                    for gimmick_map in GIMMICK_MAPS[map_enum]:
+                        next_gimmick_map = com.combat.check_gimmick(gimmick_map)
+                        if next_gimmick_map is not None:
+                            Log.log_warn(f'Gimmick not finished.')
+                            current_stage = next_gimmick_map
+                            com.combat.insert_sortie_queue(current_stage)
+                            is_gimmick_await = True
+                            break
+                        
+                if is_gimmick_await == False:
+                    
+                    try:
+                        target_stage = MULTI_STAGE_MAPS[map_enum].index(cfg.config.combat.sortie_map.without_quest_enum)
+                    except ValueError:
+                        target_stage = com.combat.sortie_map_stage - 1
+                        
+                    if com.combat.sortie_map_stage - 1 < target_stage:
+                        current_stage = MULTI_STAGE_MAPS[map_enum][com.combat.sortie_map_stage - 1]
+                        com.combat.insert_sortie_queue(current_stage)
+                    else:
+                        current_stage = cfg.config.combat.sortie_map
 
-
-                Log.log_error(f"stage: {stage}")
-
-                cfg.config.combat.sortie_map = cfg.config.combat.sortie_map.value + "-" + stage
+                Log.log_error(f"stage: {current_stage}")
+                cfg.config.combat._sortie_map = current_stage
 
         #update map_data for combat module
         com.combat.load_map_data(cfg.config.combat.sortie_map)
@@ -273,26 +293,29 @@ class Kcauto(object):
             default_json = cfg.config.load_json(COMBAT_CONFIG + "default.json")
             cfg.config.combat.config_override(default_json)
             
-            #get combat.fleet_mode from Noro6 config
-            noro6 = Noro6()
-            if noro6.get_map(cfg.config.combat.sortie_map.value) == None:
-                if noro6.get_map(cfg.config.combat.sortie_map.without_quest) == None:
-                    Log.log_error(f"Map: {cfg.config.combat.sortie_map.without_quest} not found in Noro6 config")
-                    exit(1)
+            #noro6 related config override, only active when in sortie auto mode
+            if cfg.config.combat.sortie_map_read_only == MapEnum.auto_map_select:
             
-            cfg.config.combat.config_override({"combat.fleet_mode":noro6.get_fleet_mode().config_name})
+                #get combat.fleet_mode from Noro6 config
+                noro6 = Noro6()
+                if noro6.get_map(cfg.config.combat.sortie_map.value) == None:
+                    if noro6.get_map(cfg.config.combat.sortie_map.without_quest) == None:
+                        Log.log_warn(f"Map: {cfg.config.combat.sortie_map.without_quest} not found in Noro6 config")
+            
+                if noro6.get_fleet_mode() is not None:
+                    cfg.config.combat.config_override({"combat.fleet_mode":noro6.get_fleet_mode().config_name})
 
             if os.path.isfile(COMBAT_CONFIG + cfg.config.combat.sortie_map.value + ".json"):
                 default_json = cfg.config.load_json(COMBAT_CONFIG + cfg.config.combat.sortie_map.value + ".json")
                 cfg.config.combat.config_override(default_json)
-            elif os.path.isfile(COMBAT_CONFIG + cfg.config.combat.sortie_map.world_and_map + ".json"):
-                default_json = cfg.config.load_json(COMBAT_CONFIG + cfg.config.combat.sortie_map.world_and_map + ".json")
+            elif os.path.isfile(COMBAT_CONFIG + cfg.config.combat.sortie_map.without_quest + ".json"):
+                default_json = cfg.config.load_json(COMBAT_CONFIG + cfg.config.combat.sortie_map.without_quest + ".json")
+                cfg.config.combat.config_override(default_json)
+            elif os.path.isfile(COMBAT_CONFIG + cfg.config.combat.sortie_map.without_quest_and_node + ".json"):
+                default_json = cfg.config.load_json(COMBAT_CONFIG + cfg.config.combat.sortie_map.without_quest_and_node + ".json")
                 cfg.config.combat.config_override(default_json)
             else:
                 Log.log_warn(f"{cfg.config.combat.sortie_map.value} combat config not found, use default combat config instead.")
-
-        #apply for combat queue, assume map_data is up-to-date
-        self.run_quest_logic('combat', fast_check = not was_sortie_queue_empty, force= was_sortie_queue_empty)
 
         port_api_update = False 
         if self._run_fleetswitch_logic('combat') == 0:
@@ -303,20 +326,73 @@ class Kcauto(object):
         
         if com.combat.should_and_able_to_sortie(ignore_supply=True):
 
+            #apply for combat queue, assume map_data is up-to-date
+            self.run_quest_logic(CONTEXT_SORTIE, fast_check = not was_sortie_queue_empty, force= was_sortie_queue_empty)
+            
             self.run_resupply_logic()
             com.combat.goto()
 
             if com.combat.conduct_sortie():
 
-                Log.log_debug(f"conduct sortie end")
+                Log.log_debug_1(f"conduct sortie end")
+
+                selected_quest = qst.quest.auto_select_quest[CONTEXT_SORTIE]
+                if selected_quest is not None:
+                    current_map = cfg.config.combat.sortie_map.without_quest_and_node_enum
+                    
+                    map_is_required = False
+                    required_node = None
+                    required_rank = SortieRankEnum["E"]
+                    for required_map in selected_quest.map_context:
+                        if current_map == required_map.without_quest_and_node_enum:
+                            map_is_required = True
+                            required_node = required_map.variant #could be None
+                            required_rank = selected_quest.rank_requirement.get(required_map, SortieRankEnum["E"])
+                            break
+                    
+                    map_is_required = (
+                        selected_quest.map_context == ()
+                        or map_is_required)
+                    
+                    if map_is_required:
+                        
+                        Log.log_success(f"Sortie quest {selected_quest.name} selected, current map {current_map.name} meets the map requirement.")
+                        last_node = com.combat.last_battle.get(com.combat.MAP_NODE)
+                        
+                        if last_node is not None:
+                            if required_node == None:
+                                Log.log_debug_1(f"No specific node required for quest {selected_quest.name}, current node: {last_node}.")
+                            elif last_node.name == required_node:
+                                Log.log_success(f"Required node {required_node} reached for quest {selected_quest.name}.")
+                                last_rank = com.combat.last_battle.get(com.combat.RANKENUM)
+                                if last_rank == None:
+                                    Log.log_success(f"Quest {selected_quest.name} has no rank requirement, condition met with node {last_node}.") 
+                                    
+                                elif last_rank.is_at_least(required_rank):
+                                    Log.log_success(f"Quest {selected_quest.name} condition met: node {last_node} with rank {last_rank.name}.")
+                                else:
+                                    Log.log_warn(f"Quest {selected_quest.name} condition NOT met: node {last_node} with rank {last_rank.name} does not meet requirement of rank {required_rank.name}.")
+                                    com.combat.duplicate_front_to_back_sortie_queue()
+                            else:
+                                Log.log_warn(f"Required node {required_node} not reached for quest {selected_quest.name}, last node: {last_node}.")
+                                com.combat.duplicate_front_to_back_sortie_queue()
+                            
+                        else:
+                            Log.log_error(f'Failed to get last node from combat API, \
+                                unable to verify sortie quest conditions. Map: {current_map}, required node: {required_node}.')
+                else:
+                    Log.log_warn(f"No sortie quest selected, thus no quest is progressed.")
+
                 #sortie success, pop the head of sortie_queue
                 com.combat.pop_sortie_queue()
                 
-                sts.stats.set_print_loop_end_stats()
-                exp.expedition.receive_expedition()
+                qst.quest.is_quest_dom_cache_dirty = True
             else:
                 Log.log_error(f"Sortie failed.")
 
+            sts.stats.set_print_loop_end_stats()
+            kca_u.kca.receive_expedition()
+                
     def run_resupply_logic(self, back_to_home=False):
         if res.resupply.need_to_resupply:
             res.resupply.goto()
@@ -326,14 +402,22 @@ class Kcauto(object):
                 self.end_loop_at_port = True
             sts.stats.set_print_loop_end_stats()
 
-    def run_repair_logic(self, back_to_home=False):
+    def run_repair_logic(self, back_to_home=False, passive_only=False):
         
         if self.skip_one_repair == True:
             self.skip_one_repair = False
             return
         
+        if passive_only == True:
+            #passive repair only, temporarily disable combat and pvp module
+            log_temp = Log.enabled
+            Log.enabled = False
+            combat_temp = com.combat.enabled
+            com.combat.enabled = False
+            pvp_temp = pvp.pvp.enabled
+            pvp.pvp.enabled = False
+        
         if rep.repair.can_conduct_repairs:
-            rep.repair.goto()
             rep.repair.repair_ships()
             self.handle_back_to_home(back_to_home)
             if not back_to_home:
@@ -341,6 +425,12 @@ class Kcauto(object):
             sts.stats.set_print_loop_end_stats()
         else:
             self.handle_back_to_home(back_to_home)
+            
+        if passive_only == True:
+            #restore combat and pvp module status
+            com.combat.enabled = combat_temp
+            pvp.pvp.enabled = pvp_temp
+            Log.enabled = log_temp 
             
 
     def _run_fleetswitch_logic(self, context):

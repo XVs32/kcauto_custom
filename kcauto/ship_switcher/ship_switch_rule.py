@@ -97,20 +97,20 @@ class ShipSwitchRule(object):
             
             if condition[0] is ShipSwitcherConditionSlot0Enum.LEVEL:
                 if op(slot_ship.level, condition[2]):
-                    Log.log_debug("""log_msg log_debug"""
+                    Log.log_debug_1("""log_msg log_debug"""
                         f"{slot_ship.name} in Slot {self.slot_id} has met "
                         "level threshold to be switched out.")
 
                     return True
             elif condition[0] is ShipSwitcherConditionSlot0Enum.DAMAGE:
                 if op(slot_ship.damage, condition[2]):
-                    Log.log_debug(
+                    Log.log_debug_1(
                         f"{slot_ship.name} in Slot {self.slot_id} has met "
                         "damage threshold to be switched out.")
                     return True
             elif condition[0] is ShipSwitcherConditionSlot0Enum.MORALE:
                 if op(slot_ship.morale, condition[2]):
-                    Log.log_debug(
+                    Log.log_debug_1(
                         f"{slot_ship.name} in Slot {self.slot_id} has met "
                         "morale threshold to be switched out.")
                     return True
@@ -125,11 +125,11 @@ class ShipSwitchRule(object):
                     return True
             return False
         
-        if ship.production_id in flt.fleets.ships_in_fleets:
+        if ship.production_id in [ship_in_fleet.production_id for ship_in_fleet in flt.fleets.ships_in_fleets]:
             return False
-        """load the ship even if it is under repair -- XVs32"""
-        """if ship.production_id in rep.repair.ships_under_repair:
-            return False"""
+        
+        if ship.production_id in rep.repair.ships_under_repair:
+            return False
         
         for criterion in self.criteria:
             if criterion[0] is ShipSwitcherCriteriaSlot0Enum.SHIP:
