@@ -1,7 +1,4 @@
 @echo off
-:: Force UTF-8 encoding in cmd and Python output
-chcp 65001 >nul
-set PYTHONUTF8=1
 
 setlocal enabledelayedexpansion
 
@@ -18,6 +15,8 @@ set "ROOT_PATH=..\"
 :: 啟動虛擬環境
 
 call "%VENV_PATH%\Scripts\activate.bat"
+
+
 
 :: 取得 site-packages 路徑
 
@@ -77,9 +76,12 @@ del .\__main__.spec
 del .\kcauto_cui.spec
 
 
+
 :: 停用虛擬環境
 
 call "%VENV_PATH%\Scripts\deactivate.bat"
+
+
 
 echo.
 
