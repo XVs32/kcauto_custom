@@ -467,13 +467,16 @@ class ExpeditionCore(CoreBase):
     def _scroll_list_up(self):
         """Method to scroll the expedition list all the way up.
         """
-        while kca_u.kca.click_existing('upper_left', 'global|scroll_prev.png'):
+        while not kca_u.kca.exists('upper_left', 'global|scroll_prev_404.png'):
+            kca_u.kca.click('expedition_scoll_up')
             pass
 
     def _scroll_list_down(self):
         """Method to scroll the expedition list all the way down.
         """
-        while kca_u.kca.click_existing('lower_left', 'global|scroll_next.png'):
+        while not kca_u.kca.exists('expedition_scoll_down_mark', 'global|scroll_next_404_1.png')\
+            and not kca_u.kca.exists('expedition_scoll_down_mark', 'global|scroll_next_404_2.png'):
+            kca_u.kca.click('expedition_scoll_down')
             pass
 
 
