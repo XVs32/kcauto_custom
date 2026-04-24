@@ -87,7 +87,7 @@ def run_external_program(panel):
 
     common_args = ['--cli', '--cfg', 'config_cui']
     
-    if os.path.isfile(filename):
+    if os.path.isfile(exec_path):
         cmd = [exec_path] + common_args
         msg = f"Starting from {filename}\n"
     else:
