@@ -437,6 +437,15 @@ class Kca(object):
         self._create_or_shift_region(
             "order_bauxite_region_100", x + 1085, y + 430, 10, 10)
 
+        # expedition-related regions
+        self._create_or_shift_region(
+            "expedition_scoll_down_mark", x + 420, y + 600, 70, 20)
+        self._create_or_shift_region(
+            "expedition_scoll_down", x + 440, y + 610, 20, 20)
+        
+        self._create_or_shift_region(
+            "expedition_scoll_up", x + 440, y + 200, 20, 20)
+        
         # equipment-related regions
         self._create_or_shift_region('equipment_panel', x + 455, y + 226, 125, 268)
         self._create_or_shift_region('ship_1', x + 210, y + 228, 230, 47)

@@ -37,7 +37,7 @@ class ExpeditionCore(CoreBase):
     exp_state = {}
     exp_data = None
     exp_rank = []
-    exp_for_fleet = []
+    exp_for_fleet : list[ExpeditionEnum] = []
     TYPE_PRIORITY = [""]
     cur_exp = [ExpeditionEnum.NULL,ExpeditionEnum.NULL,ExpeditionEnum.NULL,ExpeditionEnum.NULL]
     timer = None
@@ -288,7 +288,7 @@ class ExpeditionCore(CoreBase):
         return -1
 
     @property
-    def available_expeditions(self):
+    def available_expeditions(self) -> list[ExpeditionEnum]:
         return self._available_expeditions
 
     @available_expeditions.setter
@@ -343,7 +343,7 @@ class ExpeditionCore(CoreBase):
         return False
 
     @property
-    def fleets_at_base(self):
+    def fleets_at_base(self) -> list[flt.Fleet]:
         fleets_at_base = []
         for fleet in flt.fleets.expedition_fleets:
             if fleet.at_base:
@@ -351,7 +351,7 @@ class ExpeditionCore(CoreBase):
         return fleets_at_base
 
     @property
-    def fleets_to_send(self):
+    def fleets_to_send(self) -> list[flt.Fleet]:
         fleets_to_send = []
         for fleet in self.fleets_at_base:
             fleet_expeditions = cfg.config.expedition.expeditions_for_fleet(
@@ -407,23 +407,21 @@ class ExpeditionCore(CoreBase):
                         f"Specified expedition {expedition.expedition} is not "
                         "unlocked.")
 
-    def _select_world(self, expedition):
+    def _select_world(self, expedition : ExpeditionEnum):
         kca_u.kca.click_existing(
             'lower', f'expedition|e_world_{expedition.world}.png')
 
-    def _select_expedition(self, expedition):
+    def _select_expedition(self, expedition:ExpeditionEnum):
         kca_u.kca.sleep(0.1)
         expedition_list = self.available_expeditions_per_world[
             expedition.world]
         index = expedition_list.index(expedition)
-        offset = 0
         if index >= self.NUM_VISIBLE_EXPEDITONS:
-            if kca_u.kca.exists('lower_left', 'global|scroll_next.png'):
-                self._scroll_list_down()
+            self._scroll_list_down()
             offset = len(expedition_list) - self.NUM_VISIBLE_EXPEDITONS
         else:
-            if kca_u.kca.exists('upper_left', 'global|scroll_prev.png'):
-                self._scroll_list_up()
+            self._scroll_list_up()
+            offset = 0
 
         true_index = index - offset
         if not 0 <= true_index < self.NUM_VISIBLE_EXPEDITONS:
@@ -436,7 +434,7 @@ class ExpeditionCore(CoreBase):
         kca_u.kca.r['top'].hover()
         kca_u.kca.sleep(0.5)
 
-    def _dispatch_expedition(self, fleet, expedition):
+    def _dispatch_expedition(self, fleet :flt.Fleet, expedition:ExpeditionEnum):
         if kca_u.kca.click_existing('lower_right', 'global|sortie_select.png'):
             kca_u.kca.sleep(1) #wait for fleet select panel anime to finish
             fleet.select()
@@ -467,13 +465,16 @@ class ExpeditionCore(CoreBase):
     def _scroll_list_up(self):
         """Method to scroll the expedition list all the way up.
         """
-        while kca_u.kca.click_existing('upper_left', 'global|scroll_prev.png'):
+        while not kca_u.kca.exists('upper_left', 'global|scroll_prev_404.png'):
+            kca_u.kca.click('expedition_scoll_up')
             pass
 
     def _scroll_list_down(self):
         """Method to scroll the expedition list all the way down.
         """
-        while kca_u.kca.click_existing('lower_left', 'global|scroll_next.png'):
+        while not kca_u.kca.exists('expedition_scoll_down_mark', 'global|scroll_next_404_1.png')\
+            and not kca_u.kca.exists('expedition_scoll_down_mark', 'global|scroll_next_404_2.png'):
+            kca_u.kca.click('expedition_scoll_down')
             pass
 
 
