@@ -12,16 +12,13 @@ PYTHON_SITE_PACKAGE=$(python -c "import site; print(site.getsitepackages()[0])")
 echo "Python site-packages: $PYTHON_SITE_PACKAGE"
 
 # ---------------------------------------------------------
-# 1. Build core GUI executable (placed in bin/)
+# 1. Build core executable (placed in bin/)
 # ---------------------------------------------------------
 SRC_CUSTOM="../kcauto/__main__.py"
 rm -rf "${BIN_PATH}/kcauto_custom"
 
 echo "Building Core: kcauto_custom..."
 python -m PyInstaller -D --clean $SRC_CUSTOM -p ../kcauto/ -p $PYTHON_SITE_PACKAGE --distpath $BIN_PATH --name "kcauto_custom"
-
-strip "${BIN_PATH}/kcauto_custom/kcauto_custom"
-ln -sf "bin/kcauto_custom/kcauto_custom" "${ROOT_PATH}kcauto_custom"
 
 # ---------------------------------------------------------
 # 2. Build CUI launcher (single file, placed in root directory)
@@ -48,6 +45,5 @@ echo ""
 echo "======================================================"
 echo "Build Complete!"
 echo "Root Directory:"
-echo " - kcauto_custom  (symlink -> bin/kcauto_custom/kcauto_custom)"
 echo " - kcauto_cui     (Launcher/Console)"
 echo "======================================================"
