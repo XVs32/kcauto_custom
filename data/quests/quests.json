@@ -1119,7 +1119,7 @@
         "min_rank": "S"
       }
     ],
-    "recommended_map": [[
+    "recommended_map": [
       "By1-2-5",
       "By1-3-4",
       "By1-4-5",
@@ -1616,7 +1616,7 @@
         "min_rank": "A"
       }
     ],
-    "recommended_map": [[
+    "recommended_map": [
       "By11-3-1",
       "By11-3-3",
       "By11-4-3",
@@ -2844,5 +2844,5 @@
       5,
       0
     ]
-  },
+  }
 }
