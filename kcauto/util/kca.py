@@ -185,9 +185,17 @@ class Kca(object):
         retry_delay = 1
         
         import base64
+        port = cfg.config.general.chrome_dev_port
+        _tmp_hook = PyChromeDevTools.ChromeInterface(host="localhost", port=port)
+        _top_page = next(
+            (tab for tab in _tmp_hook.tabs if tab.get('type') == 'page'), None)
+        if _top_page:
+            _tmp_hook.connect_targetID(_top_page['id'])
         while retry < max_retries:
             try:
-                screenshot_raw = self.visual_hook.Page.captureScreenshot()
+                screenshot_raw = (_tmp_hook if _top_page
+                                  else self.visual_hook).Page.captureScreenshot()
+                
                 
                 if screenshot_raw is None or not screenshot_raw:
                     raise ValueError("Failed to capture screenshot from Chrome")
