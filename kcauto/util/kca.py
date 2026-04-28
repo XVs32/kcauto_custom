@@ -87,7 +87,7 @@ class Kca(object):
         api_tab = None
         api_tab_id = None
         for n, tab in enumerate(self.visual_hook.tabs):
-            if VISUAL_URL in tab['url']:
+            if VISUAL_URL == tab['url']:
                 visual_tab = n
                 visual_tab_id = tab['id']
                 self.visual_tab_id = visual_tab_id
