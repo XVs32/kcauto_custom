@@ -8,7 +8,7 @@
       0
     ],
     "recommended_map": [
-      "B-7-1-K"
+      "B-1-1"
     ]
   },
   "Bd2": {
@@ -20,7 +20,7 @@
       0
     ],
     "recommended_map": [
-      "B-7-1-K"
+      "B-1-1"
     ]
   },
   "Bd3": {
@@ -32,7 +32,7 @@
       0
     ],
     "recommended_map": [
-      "B-7-1-K"
+      "B-1-1"
     ]
   },
   "Bd4": {
@@ -138,7 +138,7 @@
       0
     ],
     "recommended_map": [
-      "B-7-1-K"
+      "B-1-1"
     ]
   },
   "Bw2": {
@@ -1119,7 +1119,7 @@
         "min_rank": "S"
       }
     ],
-    "recommended_map": [[
+    "recommended_map": [
       "By1-2-5",
       "By1-3-4",
       "By1-4-5",
@@ -1616,7 +1616,7 @@
         "min_rank": "A"
       }
     ],
-    "recommended_map": [[
+    "recommended_map": [
       "By11-3-1",
       "By11-3-3",
       "By11-4-3",
@@ -1779,7 +1779,7 @@
     "map_context": [
       {
         "name": "B-1-1-C",
-        "min_rank": "A"
+        "min_rank": "S"
       },
       {
         "name": "B-1-2-E",
@@ -1878,6 +1878,59 @@
           ],
           "count_rule": "at_least",
           "amount": 2
+        }
+      ]
+    }
+  },
+  "By16": {
+    "id": 1045,
+    "type": "other",
+    "map_context": [
+      {
+        "name": "B-7-5-T",
+        "min_rank": "S"
+      },
+      {
+        "name": "B-5-1-J",
+        "min_rank": "S"
+      },
+      {
+        "name": "B-5-3-Q",
+        "min_rank": "S"
+      },
+      {
+        "name": "B-5-4-P",
+        "min_rank": "S"
+      },
+      {
+        "name": "B-5-5-S",
+        "min_rank": "S"
+      }
+    ],
+    "recommended_map": [
+      "By16-7-5-T",
+      "By16-5-1",
+      "By16-5-3",
+      "By16-5-4",
+      "By16-5-5"
+    ],
+    "fleet_composition": {
+      "requirements": [
+        {
+          "id": [
+            1040
+          ],
+          "position": [
+            0
+          ]
+        },
+        {
+          "ctype": [
+            12
+          ],
+          "position": [
+            1
+          ]
         }
       ]
     }
@@ -2843,6 +2896,47 @@
       0,
       5,
       0
-    ]
+    ],
+    "fleet_composition": {
+      "requirements": [
+        {
+          "id": [
+            973,
+            988,
+            995,
+            451,
+            992,
+            93,
+            15,
+            94,
+            16,
+            9
+          ],
+          "position": [
+            0,
+            1
+          ]
+        }
+      ]
+    }
   },
+  "2604B7": {
+    "id": 979,
+    "type": "monthly",
+    "map_context": [
+      {
+        "name": "B-1-3-J",
+        "min_rank": "S"
+      },
+      {
+        "name": "B-1-4-L",
+        "min_rank": "S"
+      }
+    ],
+    "recommended_map": [
+      "2604B7-1-3",
+      "2604B7-1-4",
+      "2604B7-1-6-N"
+    ]
+  }
 }
