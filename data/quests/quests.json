@@ -1313,19 +1313,17 @@
     "type": "other",
     "map_context": [
       {
-        "name": "B-7-2-G",
-        "min_rank": "S"
+        "name": "B-7-2-G"
       },
       {
         "name": "B-7-2-M",
         "min_rank": "S"
       },
       {
-        "name": "B-7-3-P",
-        "min_rank": "S"
+        "name": "B-7-3-E"
       },
       {
-        "name": "B-7-3-E",
+        "name": "B-7-3-P",
         "min_rank": "S"
       },
       {
