@@ -1,33 +1,98 @@
 @echo off
-set "VENV_PATH=..\.venv"
-set "src=..\kcauto\__main__.py"
-set "target_path=..\kcauto.exe"
 
-:: Activate the virtual environment
+setlocal enabledelayedexpansion
+
+
+
+set "VENV_PATH=..\.venv"
+
+set "BIN_PATH=..\bin"
+
+set "ROOT_PATH=..\"
+
+
+
+:: 啟動虛擬環境
+
 call "%VENV_PATH%\Scripts\activate.bat"
 
-:: Get site-packages from the virtual environment
-for /f "delims=" %%i in ('python -c "import site; print(site.getsitepackages()[0])"') do set "python_site_package=%%i"
-echo The Python site-packages directory is: %python_site_package%
 
-:: Build the first executable
-python -m PyInstaller -F %src% -p ..\kcauto\ -p %python_site_package%
-move /y ".\dist\__main__.exe" "%target_path%"
+
+:: 取得 site-packages 路徑
+
+for /f "delims=" %%i in ('python -c "import site; print(site.getsitepackages()[0])"') do set "python_site_package=%%i"
+
+echo Python site-packages: %python_site_package%
+
+
+
+:: ---------------------------------------------------------
+
+:: 1. 編譯核心 GUI 程式 (放在 bin 資料夾)
+
+:: ---------------------------------------------------------
+
+set "src_custom=..\kcauto\__main__.py"
+
+if exist "%BIN_PATH%\kcauto_custom" rmdir /s /q "%BIN_PATH%\kcauto_custom"
+
+
+
+echo Building Core: kcauto_custom...
+
+python -m PyInstaller -D --clean %src_custom% -p ..\kcauto\ -p %python_site_package% --distpath %BIN_PATH% --name "kcauto_custom"
+
+
+
+:: ---------------------------------------------------------
+
+:: 2. 編譯 CUI 啟動器 (放在根目錄，指向 bin 內的執行檔)
+
+:: ---------------------------------------------------------
+
+set "src_cui=..\kcauto\kcauto_cui.py"
+
+set "icon_path=..\assets\cui\bot.ico"
+
+echo Building Launcher: kcauto_cui with icon...
+:: 加入 --icon "%icon_path%"
+python -m PyInstaller -F --clean --icon "%icon_path%" %src_cui% -p ..\kcauto\ -p %python_site_package% --distpath %ROOT_PATH% --name "kcauto_cui"
+
+
+:: ---------------------------------------------------------
+
+:: 3. 清理臨時檔案
+
+:: ---------------------------------------------------------
+
+echo Cleaning up temporary files...
+
 rmdir /s /q ".\dist"
+
 rmdir /s /q ".\build"
+
 del .\__main__.spec
 
-:: Build the second executable
-set "src=..\kcauto\kcauto_cui.py"
-set "target_path=..\kcauto_cui.exe"
-python -m PyInstaller -F %src% -p ..\kcauto\ -p %python_site_package%
-move /y ".\dist\kcauto_cui.exe" "%target_path%"
-rmdir /s /q ".\dist"
-rmdir /s /q ".\build"
 del .\kcauto_cui.spec
 
-:: Deactivate the virtual environment
+
+
+:: 停用虛擬環境
+
 call "%VENV_PATH%\Scripts\deactivate.bat"
 
-echo Build complete!
+
+
+echo.
+
+echo ======================================================
+
+echo Build Complete!
+
+echo Root Directory:
+
+echo  - kcauto_cui.exe    (Launcher/Console)
+
+echo ======================================================
+
 pause

@@ -1,29 +1,31 @@
 from combat.node import MapNode, EmptyNode
+from kca_enums.maps import MapEnum
 
 
 class MapData(object):
-    name = None
-    world = None
-    subworld = None
-    panel = None
+    enum = None
     page = None
     enemy_context = []
-    nodes = {}
+    nodes = {} # key(str) , value(MapNode)
     edges = {}
 
-    def __init__(self, enum, data):
-        self.name = enum.world_and_map
-        self.world = data['world']
-        self.subworld = data['subworld']
-        self.panel = data.get('panel', data['subworld'])
+    def __init__(self, enum: MapEnum, data: dict):
+        self.enum = enum
         self.page = data.get('page', 1)
-        self.enemy_context = data.get('enemy_context', [])
-        for node in data['nodes']:
-            node_instance = MapNode(node, data['nodes'][node])
-            self.nodes[node_instance.name] = node_instance
+        self.enemy_context = list(data.get('enemy_context', []))
+        
+        self.nodes = {}
+        self.edges = {}
+        
+        for node_name in data['nodes']:
+            self.nodes[node_name] = MapNode(node_name, data['nodes'][node_name])
+            
         for edge in data['edges']:
             node_a = data['edges'][edge][0]
             node_b = data['edges'][edge][1]
             self.edges[int(edge)] = (
                 self.nodes.get(node_a, EmptyNode(node_a)),
                 self.nodes.get(node_b, EmptyNode(node_b)))
+            
+    def is_node_exist(self, node_name: str) -> bool:
+        return node_name in self.nodes

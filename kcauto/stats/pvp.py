@@ -10,7 +10,7 @@ class PvPStats(StatsBase):
 
     def __init__(self, start_time):
         super().__init__(start_time)
-        Log.log_debug("PvP Stats module initialized.")
+        Log.log_debug_1("PvP Stats module initialized.")
 
     @property
     def pvp_done_ph(self):

@@ -8,7 +8,7 @@ class MapNode(object):
     x = None
     y = None
 
-    def __init__(self, name, data):
+    def __init__(self, name, data: dict):
         self.name = name
         self.types = data.get('types', [])
         self.x = data['coords'][0]

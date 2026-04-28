@@ -1,19 +1,15 @@
 import curses
-import json
 
 import cui.util as util
+from util.json_data import JsonData
 
 from cui.macro import *
 
 expedition_set = None
 
 def init():
-    # open the file for reading
-    with open('data/expedition/expedition_preset.json') as f:
-        # parse the JSON data using json.load()
-        global expedition_set
-        expedition_set = json.load(f)
-    f.close()
+    global expedition_set
+    expedition_set = JsonData.load_json('data|expedition|expedition_preset.json')
 
 def pop_up_menu(stdscr, panel, active_expset):
 

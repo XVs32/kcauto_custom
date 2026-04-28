@@ -9,6 +9,7 @@ import config.config_core as cfg
 import nav.nav as nav
 import ships.equipment_core as equ 
 import ships.ships_core as shp
+from ships.ship import Ship
 import stats.stats_core as sts
 import util.kca as kca_u
 from constants import EXACT, NEAR_EXACT
@@ -27,7 +28,7 @@ class ShipSwitcherCore(object):
     REINFORCEMENT_MODE = 4
 
     def __init__(self):
-        Log.log_debug("Initializing Ship Switcher core.")
+        Log.log_debug_1("Initializing Ship Switcher core.")
         self._intake_rules(cfg.config.ship_switcher.slots)
 
     def _intake_rules(self, slot_rules):
@@ -37,35 +38,30 @@ class ShipSwitcherCore(object):
             self.rules[slot_id] = ShipSwitchRule(slot_id, slot_rules[slot_id])
 
 
-    def switch_slot_by_id(self, slot, ship_local_id):
+    def switch_slot(self, slot, ship : Ship):
         """
             method to switch a slot to a specified ship
             Args:
-                slot(int): The slot to switch, index starts from one
-                ship_local_id(int): The target ship production id
+                slot (int): slot number to switch, from 1 to 6, 7 for flagship reinforcement slot
+                ship (Ship): ship to switch in, if None, will remove the ship in this
             @todo: track fleet ship_ids using API, not ship_local_id
         """
 
-        # The slot has the specified ship already
-        #@todo upper function has to handle the switched already detection, tho ship switcher does not know what fleet currently is
-        #if len(flt.fleets.fleets[1].ship_ids) >= slot and ship_local_id == flt.fleets.fleets[1].ship_ids[slot-1]:
-            #return
-            
-        if ship_local_id == 0:
+        if ship != None and ship.api_id == 0:
             Log.log_warn("No ship specified to switch in.")
             return False
 
         if not self._select_switch_button(slot):
             return False
 
-        if ship_local_id == -1:
+        if ship == None:
             """Remove ship in this slot"""
             self._select_remove_button()
         else:
-            ship_idx = self._get_ship_idx_by_local_id(ship_local_id)
+            ship_idx = self._get_ship_list_index(ship)
             kca_u.kca.sleep(1)
             self._reset_shiplist()
-            self.select_replacement_row(ship_idx)
+            self.select_replacement_row(ship_idx, ship)
             kca_u.kca.sleep(1)
             if not self._switch_ship():
                 return False
@@ -85,26 +81,8 @@ class ShipSwitcherCore(object):
                 """End the switching process since the slots after this slot are empty"""
                 break
 
-            self.switch_slot_by_id(switch_info["slot_id"], switch_info["ship"].production_id)
-
-            """self._select_switch_button(switch_info["slot_id"])
-            kca_u.kca.sleep(2)
-            self._reset_shiplist()
-            self._select_replacement_ship(switch_info["idx"], switch_info["ship"])
-            kca_u.kca.sleep(2)
-            if self._switch_ship():
-                sts.stats.ship_switcher.ships_switched += 1
-            else:
-                not_fleet_region = Region(
-                    kca_u.kca.game_x + 185,
-                    kca_u.kca.game_y + 210,
-                    330, 450)
-                while not kca_u.kca.exists(
-                    'right', 'shipswitcher|shiplist_button.png'):
-                    kca_u.kca.click(not_fleet_region)
-                    kca_u.kca.sleep(1)
-                return False"""
-
+            self.switch_slot(switch_info["slot_id"], switch_info["ship"])
+            
         """Check if next combat possible, since new ship is switched in"""
         """Refresh home to update ship list"""
         if switch_list:
@@ -153,12 +131,12 @@ class ShipSwitcherCore(object):
             
         return switch_list
 
-    def _get_ship_idx_by_local_id(self, local_id = 0):
+    def _get_ship_list_index(self, ship : Ship):
 
         ship_list = self._local_ships_sorted_by_levels
         
         for i in range(len(ship_list)):
-            if ship_list[i].production_id == local_id:
+            if ship_list[i].production_id == ship.production_id:
                 return i
 
         raise ValueError("Can not find the specified ship")
@@ -172,7 +150,7 @@ class ShipSwitcherCore(object):
             
             if rule.is_meet_criteria(ship):
                 return (idx, ship)
-        Log.log_debug("No available switch-in ship found.")
+        Log.log_debug_1("No available switch-in ship found.")
         return (None, None)
 
     def goto(self):
@@ -181,7 +159,7 @@ class ShipSwitcherCore(object):
         
     def _select_switch_button(self, slot_id):
         
-        Log.log_debug(f"Selecting switch button for slot {slot_id}.")
+        Log.log_debug_1(f"Selecting switch button for slot {slot_id}.")
         
         if slot_id == 7:
             next_region = Region(
@@ -235,7 +213,7 @@ class ShipSwitcherCore(object):
                 cached=True)
             kca_u.kca.sleep(0.1)
 
-    def select_replacement_row(self, row_idx, ship : shp.Ship = None, mode = SHIP_MODE):
+    def select_replacement_row(self, row_idx, ship : Ship = None, mode = SHIP_MODE):
         
         """ship_idx // 10 gives 0 when ship_idx < 10, the "if" statement is not needed---XVs32"""
         """target_page = (ship_idx // 10) + 1 if ship_idx > 9 else 1"""
@@ -266,7 +244,7 @@ class ShipSwitcherCore(object):
                 435, 34)
             
         elif mode == self.EQUIPMENT_MODE:
-            Log.log_msg(f"Selecting {row_idx}"
+            Log.log_debug_1(f"Selecting {row_idx}"
                         f"(From pg{self.current_page} to pg{target_page}).")
             
             tot_pages = (len(equ.equipment.equipment_pool[equ.equipment.FREE]) -1) // 10 + 1
@@ -279,12 +257,12 @@ class ShipSwitcherCore(object):
             
         elif mode == self.REINFORCEMENT_MODE:
             self.current_page = 1
-            Log.log_msg(f"Selecting {row_idx}"
+            Log.log_debug_1(f"Selecting {row_idx}"
                         f"(From pg{self.current_page} to pg{target_page}).")
             if ship == None:
                 Log.log_error("Ship must be specified for reinforcement mode.")
             tot_pages = (len(equ.equipment.get_reinforce_equipment_list(ship)) -1) // 10 + 1
-            Log.log_debug(f"Total pages for reinforcement equipment: {tot_pages}")
+            Log.log_debug_1(f"Total pages for reinforcement equipment: {tot_pages}")
                  
             offset_mode = nav.navigate_list.OP_MODE_EQUIPMENT
 
@@ -351,7 +329,7 @@ class ShipSwitcherCore(object):
         return True
 
     @property
-    def _local_ships_sorted_by_levels(self):
+    def _local_ships_sorted_by_levels(self) -> list[Ship]:
         
         temp_list = sorted(shp.ships.ship_pool.values(), key=lambda item: (item.sort_id, item.production_id ))
         temp_list = sorted(
@@ -360,7 +338,7 @@ class ShipSwitcherCore(object):
         return temp_list
 
     @property
-    def _local_ships_sorted_by_class(self):
+    def _local_ships_sorted_by_class(self) -> list[Ship]:
         return sorted(
             [shp.ships.ship_pool[s] for s in shp.ships.ship_pool],
             key=lambda ship: (ship.sort_id, ship.production_id))

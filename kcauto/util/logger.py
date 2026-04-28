@@ -152,7 +152,7 @@ class Log(ABC):
         cls.log_file.flush()
 
     @classmethod
-    def log_debug(cls, msg):
+    def log_debug_1(cls, msg):
         """Method to print a debug log message to the console. Only prints if
         the debug flag is set to True.
 
@@ -162,8 +162,25 @@ class Log(ABC):
         if not cls.enabled:
             return
         
-        if arg.args.parsed_args.debug_output:
+        if arg.args.parsed_args != None and arg.args.parsed_args.debug_output:
             print(cls._log_format(msg), flush=True)
 
         cls.log_file.write(f'[DEBUG]{cls._log_format(msg)}\n')
         cls.log_file.flush()
+
+    @classmethod
+    def log_debug_2(cls, msg):
+        """Method to print a debug log message to the console. Only prints if
+        the debug flag is set to True.
+
+        Args:
+            msg (str): log message.
+        """
+        if not cls.enabled:
+            return
+        
+        if arg.args.parsed_args != None and arg.args.parsed_args.debug_output:
+            print(cls._log_format(msg), flush=True)
+
+            cls.log_file.write(f'[DEBUG]{cls._log_format(msg)}\n')
+            cls.log_file.flush()

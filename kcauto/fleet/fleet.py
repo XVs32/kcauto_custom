@@ -23,7 +23,7 @@ class Fleet(object):
     visual_health = []
 
     def __init__(self, fleet_id, fleet_type, enabled=True):
-        Log.log_debug(f"Fleet {fleet_id} with type {fleet_type} init.")
+        Log.log_debug_1(f"Fleet {fleet_id} with type {fleet_type} init.")
         self.fleet_id = fleet_id
         self.enabled = enabled
         self.fleet_type = fleet_type
@@ -36,7 +36,7 @@ class Fleet(object):
             self.ships.append(shp.ships.get_ship_from_production_id(id))
 
     def select(self):
-        Log.log_debug(f"Selecting fleet {self.fleet_id}.")
+        Log.log_debug_1(f"Selecting fleet {self.fleet_id}.")
         kca_u.kca.click_existing(
             'top_submenu', f'fleet|fleet_{self.fleet_id}.png')
         while not kca_u.kca.exists(
@@ -45,7 +45,6 @@ class Fleet(object):
             kca_u.kca.click_existing(
                 'top_submenu', f'fleet|fleet_{self.fleet_id}.png',
                 FLEET_ID_ICON)
-        kca_u.kca.sleep()
 
     @property
     def fleet_type(self):
@@ -53,7 +52,7 @@ class Fleet(object):
 
     @fleet_type.setter
     def fleet_type(self, value):
-        Log.log_debug(f"value {value}.")
+        Log.log_debug_1(f"value {value}.")
         
         if self.fleet_id == 1 and value != FleetEnum.COMBAT:
             raise ValueError("Fleet 1 can only be a combat fleet.")
@@ -307,14 +306,6 @@ class Fleet(object):
         self.ships.append(ship)
         return
             
-    def remove_ship(self, ship):
-        for i, ship in enumerate(self.ships):
-            if ship.production_id == ship.production_id:
-                del self.ships[i]
-                Log.log_debug(f"Removed ship {ship.name} from fleet {self.fleet_id}.")
-                return
-        Log.log_debug(f"Ship {ship.name} not found in fleet {self.fleet_id}.")
-    
     def get_ship_by_production_id(self, production_id):
         for ship in self.ships:
             if ship.production_id == production_id:
@@ -326,7 +317,7 @@ class Fleet(object):
             ship.hp = hps[idx]
 
     def visual_health_check(self, region):
-        Log.log_debug(f"Running visual health check of fleet {self.fleet_id}.")
+        Log.log_debug_1(f"Running visual health check of fleet {self.fleet_id}.")
 
         find_heavy = kca_u.kca.find_all(
             region, 'fleet|ship_state_dmg_heavy.png', VISUAL_DAMAGE)
@@ -345,7 +336,7 @@ class Fleet(object):
             'moderate': moderate,
             'minor': minor
         }
-        Log.log_debug(f"Visual health check results: {self.visual_health}")
+        Log.log_debug_1(f"Visual health check results: {self.visual_health}")
         return self.visual_health
 
     def get_fleet_id_and_name(self):

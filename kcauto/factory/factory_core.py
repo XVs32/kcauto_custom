@@ -64,8 +64,8 @@ class FactoryCore(object):
                 retry += 1
 
             if retry == 5:
-                Log.log_error("Cannot open develop menu, probably because the port is full")
-                Log.log_error("Disable factory module")
+                Log.log_error("Cannot open develop menu, probably because the port is full.")
+                Log.log_error("Disabling factory module.")
                 self.enabled = False
                 return False
 
@@ -95,11 +95,9 @@ class FactoryCore(object):
             kca_u.kca.r["order_confirm_region"].click()
             kca_u.kca.wait('lower_right_corner', 'global|next_alt.png', 20)
             while not kca_u.kca.exists('left', 'nav|side_menu_home.png'):
-                Log.log_debug("In develop result")
-                kca_u.kca.sleep()
+                Log.log_debug_1("In develop result")
                 kca_u.kca.r['shipgirl'].click()
                 kca_u.kca.r['top'].hover()
-                kca_u.kca.sleep()
 
         return True
     
@@ -148,16 +146,14 @@ class FactoryCore(object):
                         retry += 1
 
                     if retry == 10:
-                        Log.log_error("Cannot receive ship, probably because the port is full")
-                        Log.log_error("Disable factory module")
+                        Log.log_error("Cannot receive ship, probably because the port is full.")
+                        Log.log_error("Disabling factory module.")
                         self.enabled = False
                         return False
                     
                     while not kca_u.kca.exists('left', 'nav|side_menu_home.png'):
-                        kca_u.kca.sleep()
                         kca_u.kca.r['shipgirl'].click()
                         kca_u.kca.r['top'].hover()
-                        kca_u.kca.sleep()
                     kca_u.kca.wait('lower', 'factory|factory_init.png', 20)
 
             """place the order on a empty slot"""
@@ -173,8 +169,8 @@ class FactoryCore(object):
                         retry += 1
 
                     if retry == 5:
-                        Log.log_error("Cannot open develop menu, probably because the port is full")
-                        Log.log_error("Disable factory module")
+                        Log.log_error("Cannot open develop menu, probably because the port is full.")
+                        Log.log_error("Disabling factory module.")
                         self.enabled = False
                         return False
 

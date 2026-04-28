@@ -2,9 +2,6 @@ import json
 import os
 from abc import ABC
 
-from util.logger import Log
-
-
 class JsonData(ABC):
     """kcauto json helper module.
     """
@@ -24,6 +21,7 @@ class JsonData(ABC):
     @classmethod
     def dump_json(cls, data, path, pretty=False):
         """Method for serializing an object into a json file.
+           file is first written to a temp file and then renamed to the target path to prevent data loss in case of an error during writing.
 
         Args:
             data (object): object to serialize.
@@ -32,12 +30,14 @@ class JsonData(ABC):
                 Defaults to False.
         """
         json_path = cls.create_path(path)
-        Log.log_debug(f"Writing data to '{json_path}'.")
-        with open(json_path, 'w', encoding='utf-8') as json_file:
+        temp_path = json_path + ".tmp"
+        os.makedirs(os.path.dirname(json_path), exist_ok=True)
+        with open(temp_path, 'w', encoding='utf-8') as json_file:
             if not pretty:
                 json.dump(data, json_file, ensure_ascii=False)
             else:
                 json.dump(data, json_file, ensure_ascii=False, indent=2)
+        os.replace(temp_path, json_path)
 
     @classmethod
     def load_json(cls, path):
@@ -50,7 +50,6 @@ class JsonData(ABC):
             object: deserialized object.
         """
         json_path = cls.create_path(path)
-        Log.log_debug(f"Loading data from '{json_path}'.")
         with open(json_path, encoding='utf-8') as json_file:
             data = json.load(json_file)
         return data

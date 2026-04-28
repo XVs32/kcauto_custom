@@ -21,7 +21,7 @@ class ExpeditionCore(CoreBase):
     MONTHLY_EXPEDITION = [ExpeditionEnum.E1_A4, ExpeditionEnum.E1_A5, ExpeditionEnum.E1_A6, 
                           ExpeditionEnum.E2_B2, ExpeditionEnum.E2_B3, ExpeditionEnum.E2_B4, ExpeditionEnum.E2_B5, ExpeditionEnum.E2_B6,
                           ExpeditionEnum.E7_42, ExpeditionEnum.E7_43, ExpeditionEnum.E7_44, ExpeditionEnum.E7_46,
-                          ExpeditionEnum.E3_D2, ExpeditionEnum.E3_D3, 
+                          ExpeditionEnum.E4_D2, ExpeditionEnum.E4_D3, 
                           ExpeditionEnum.E5_E1, ExpeditionEnum.E5_E2]
     EXP_ENUM = "exp_enum"
     SCORE = "score"
@@ -37,7 +37,7 @@ class ExpeditionCore(CoreBase):
     exp_state = {}
     exp_data = None
     exp_rank = []
-    exp_for_fleet = []
+    exp_for_fleet : list[ExpeditionEnum] = []
     TYPE_PRIORITY = [""]
     cur_exp = [ExpeditionEnum.NULL,ExpeditionEnum.NULL,ExpeditionEnum.NULL,ExpeditionEnum.NULL]
     timer = None
@@ -200,7 +200,7 @@ class ExpeditionCore(CoreBase):
             for exp_rank in self.exp_rank:
                 
                 if exp_rank[self.EXP_ENUM] not in self.available_expeditions:
-                    Log.log_debug(f'expEnum not available {exp_rank}')
+                    Log.log_debug_1(f'expEnum not available {exp_rank}')
                     
                     # Can not use dict in set, use ENUM instead
                     to_remove.add(exp_rank[self.EXP_ENUM])
@@ -208,16 +208,16 @@ class ExpeditionCore(CoreBase):
                             
                         if prerequisite in self.available_expeditions:
                             if self.exp_state[prerequisite] in {NEW, NOT_CLEARED}:
-                                Log.log_debug(f'exp {prerequisite} is in {self.exp_state[prerequisite]} state, adding into prerequisite')
+                                Log.log_debug_1(f'exp {prerequisite} is in {self.exp_state[prerequisite]} state, adding into prerequisite')
                                 self.exp_rank.append({self.EXP_ENUM:prerequisite,self.SCORE:exp_rank[self.SCORE]})
                             elif self.exp_state[prerequisite] == CLEARED:
-                                Log.log_debug(f'exp {prerequisite} cleared already, not adding into prerequisite')
+                                Log.log_debug_1(f'exp {prerequisite} cleared already, not adding into prerequisite')
                             else:
-                                Log.log_debug(f"unknown expedition state {self.exp_state[prerequisite]}")
+                                Log.log_debug_1(f"unknown expedition state {self.exp_state[prerequisite]}")
                                 exit(0)
                         else:
                             self.exp_rank.append({self.EXP_ENUM:prerequisite,self.SCORE:exp_rank[self.SCORE]})
-                            Log.log_debug(f'exp {prerequisite} is not available, but adding into prerequisite, handle next round')
+                            Log.log_debug_1(f'exp {prerequisite} is not available, but adding into prerequisite, handle next round')
                             flag = True
                             
                 if flag == True:
@@ -288,7 +288,7 @@ class ExpeditionCore(CoreBase):
         return -1
 
     @property
-    def available_expeditions(self):
+    def available_expeditions(self) -> list[ExpeditionEnum]:
         return self._available_expeditions
 
     @available_expeditions.setter
@@ -343,7 +343,7 @@ class ExpeditionCore(CoreBase):
         return False
 
     @property
-    def fleets_at_base(self):
+    def fleets_at_base(self) -> list[flt.Fleet]:
         fleets_at_base = []
         for fleet in flt.fleets.expedition_fleets:
             if fleet.at_base:
@@ -351,7 +351,7 @@ class ExpeditionCore(CoreBase):
         return fleets_at_base
 
     @property
-    def fleets_to_send(self):
+    def fleets_to_send(self) -> list[flt.Fleet]:
         fleets_to_send = []
         for fleet in self.fleets_at_base:
             fleet_expeditions = cfg.config.expedition.expeditions_for_fleet(
@@ -391,7 +391,6 @@ class ExpeditionCore(CoreBase):
             else:
                 kca_u.kca.click_existing('lower', 'expedition|e_world_1.png')
                 kca_u.kca.r['top'].hover()
-                kca_u.kca.sleep()
 
     def _validate_expeditions(self):
         if len(self.available_expeditions) == 0:
@@ -408,24 +407,21 @@ class ExpeditionCore(CoreBase):
                         f"Specified expedition {expedition.expedition} is not "
                         "unlocked.")
 
-    def _select_world(self, expedition):
-        kca_u.kca.sleep()
+    def _select_world(self, expedition : ExpeditionEnum):
         kca_u.kca.click_existing(
             'lower', f'expedition|e_world_{expedition.world}.png')
 
-    def _select_expedition(self, expedition):
+    def _select_expedition(self, expedition:ExpeditionEnum):
         kca_u.kca.sleep(0.1)
         expedition_list = self.available_expeditions_per_world[
             expedition.world]
         index = expedition_list.index(expedition)
-        offset = 0
         if index >= self.NUM_VISIBLE_EXPEDITONS:
-            if kca_u.kca.exists('lower_left', 'global|scroll_next.png'):
-                self._scroll_list_down()
+            self._scroll_list_down()
             offset = len(expedition_list) - self.NUM_VISIBLE_EXPEDITONS
         else:
-            if kca_u.kca.exists('upper_left', 'global|scroll_prev.png'):
-                self._scroll_list_up()
+            self._scroll_list_up()
+            offset = 0
 
         true_index = index - offset
         if not 0 <= true_index < self.NUM_VISIBLE_EXPEDITONS:
@@ -438,7 +434,7 @@ class ExpeditionCore(CoreBase):
         kca_u.kca.r['top'].hover()
         kca_u.kca.sleep(0.5)
 
-    def _dispatch_expedition(self, fleet, expedition):
+    def _dispatch_expedition(self, fleet :flt.Fleet, expedition:ExpeditionEnum):
         if kca_u.kca.click_existing('lower_right', 'global|sortie_select.png'):
             kca_u.kca.sleep(1) #wait for fleet select panel anime to finish
             fleet.select()
@@ -469,13 +465,16 @@ class ExpeditionCore(CoreBase):
     def _scroll_list_up(self):
         """Method to scroll the expedition list all the way up.
         """
-        while kca_u.kca.click_existing('upper_left', 'global|scroll_prev.png'):
+        while not kca_u.kca.exists('upper_left', 'global|scroll_prev_404.png'):
+            kca_u.kca.click('expedition_scoll_up')
             pass
 
     def _scroll_list_down(self):
         """Method to scroll the expedition list all the way down.
         """
-        while kca_u.kca.click_existing('lower_left', 'global|scroll_next.png'):
+        while not kca_u.kca.exists('expedition_scoll_down_mark', 'global|scroll_next_404_1.png')\
+            and not kca_u.kca.exists('expedition_scoll_down_mark', 'global|scroll_next_404_2.png'):
+            kca_u.kca.click('expedition_scoll_down')
             pass
 
 

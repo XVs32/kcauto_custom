@@ -20,6 +20,7 @@ from kca_enums.kcsapi_paths import KCSAPIEnum
 from kca_enums.quest_state import QuestStateEnum
 from kca_enums.ship_types import ShipTypeEnum
 from kca_enums.ship_class import ShipClassEnum 
+from kca_enums.sorite_rank import SortieRankEnum
 from kca_enums.maps import MapEnum
 from quest.quest import Quest
 from fleet.fleet import Fleet
@@ -136,7 +137,7 @@ class QuestCore(CoreBase):
         
         self.tot_page = math.ceil(len(self.current_quest_list)/5)
         
-        Log.log_debug(self.quests_str)
+        Log.log_debug_1(self.quests_str)
 
     def manage_quests(self, context=None, fast_check=True):
         # dismiss Ooyodo
@@ -166,7 +167,7 @@ class QuestCore(CoreBase):
     def quests_str(self):
         return_string = f"Visible quests: pg{self.tot_page}"
         for q in self.current_quest_list:
-            return_string += f", {q.quest_id}:{q.name} (state:{q.state})"
+            return_string += f", {q.quest_id}:{q.name}:{q.state.name})"
         return return_string
     
     def _to_tab(self, tab_name):
@@ -202,13 +203,13 @@ class QuestCore(CoreBase):
             quest = self.current_quest_list[i]
             
             if not (quest.name in cfg.config.quest.quests):
-                Log.log_debug(f"Quest {quest.quest_id}/{quest.name} is not in config.")
+                Log.log_debug_1(f"Quest {quest.quest_id}/{quest.name} is not in config.")
                 if quest.state == QuestStateEnum.DONE:
                     self._turn_in_quest_idx(i)
                     quest_turned_in = True
             elif quest.state == QuestStateEnum.IN_PROGRESS and context != CONTEXT_AUTO_SORTIE and context != CONTEXT_AUTO_EXPEDITION and context != CONTEXT_AUTO_PVP:
                 
-                Log.log_msg(f"Checking if quest {quest.name} is relevant to context {context}.")
+                Log.log_msg(f"Checking if quest {quest.name} is relevant to {self.CONTEXT_LOOKUP[context]}.")
                 
                 deactivate_needed = False 
                 if not self._is_relevent_quest(quest, context=context):
@@ -263,7 +264,7 @@ class QuestCore(CoreBase):
         for quest in self.quest_priority_library[mode]:
                 
             if not (quest.name in cfg.config.quest.quests):
-                Log.log_debug(f"Quest {quest.name} is not in config.")
+                Log.log_debug_1(f"Quest {quest.name} is not in config.")
                 continue
             
             for current_quest in self.current_quest_list:
@@ -309,7 +310,7 @@ class QuestCore(CoreBase):
             quest = self.current_quest_list[i]
             
             if quest.state == QuestStateEnum.DONE:
-                Log.log_warn(f"Quest {quest.name} is done, but not turned in. ")
+                Log.log_warn(f"Quest {quest.name} is done, but not turned in.")
                 continue
             elif quest.state == QuestStateEnum.IN_PROGRESS:
                 # quest is in progress, check if it should be tracked
@@ -338,7 +339,7 @@ class QuestCore(CoreBase):
                     'left', f'quest|filter_tab_all_active.png',
                     NEAR_EXACT)
             api.api.update_from_api({KCSAPIEnum.QUEST_LIST}) #update quest_list
-            Log.log_msg(f"api update done in #{self.CONTEXT_LOOKUP[mode]} auto map select.")
+            Log.log_msg(f"API update done in #{self.CONTEXT_LOOKUP[mode]} auto map select.")
 
         if mode == CONTEXT_AUTO_SORTIE and cfg.config.combat.sortie_map_read_only == MapEnum.auto_map_select:
             next_quest = self._get_quests_rank_list(CONTEXT_SORTIE)
@@ -351,7 +352,7 @@ class QuestCore(CoreBase):
             
             self.auto_select_quest[CONTEXT_SORTIE] = next_quest    
             
-            Log.log_success(f"Attempt to finish sortie quest {next_quest.name}.")
+            Log.log_success(f"Attempting to finish sortie quest {next_quest.name}.")
 
             """Read quest progress""" 
             sortie_dict = kca_u.kca.get_quest_count(target_quest=next_quest)
@@ -359,16 +360,17 @@ class QuestCore(CoreBase):
             sortie_list = []
             if sortie_dict == None:
                 Log.log_warn(f"Cannot get quest progress from kc3, use default in config file.")
-                sortie_list = list(next_quest.recommended_map)
-                Log.log_debug(f"sortie_list = {sortie_list}")
+                sortie_list = list(MapEnum(map_name) for map_name in next_quest.recommended_map)
+                Log.log_debug_1(f"sortie_list = {sortie_list}")
             else:
                 for map_enum in sortie_dict:
                     for i in range(0, sortie_dict[map_enum]):
-                        sortie_list.append(next_quest.name +"-"+ map_enum.world_and_map_and_node)
+                        generated_map_name = f"{next_quest.name}-{map_enum.world_and_map_and_node}"
+                        sortie_list.append(MapEnum(generated_map_name))
             
             com.combat.set_sortie_queue(sortie_list)
 
-            Log.log_debug(f"get_sortie_queue {com.combat.get_sortie_queue()}.")
+            Log.log_debug_1(f"get_sortie_queue {com.combat.get_sortie_queue()}.")
             
         elif mode == CONTEXT_AUTO_PVP:
             
@@ -376,10 +378,10 @@ class QuestCore(CoreBase):
             
             if next_quest != []:
                 pvp.pvp.next_pvp_quest = next_quest[0]
-                Log.log_success(f"Attempt to finish pvp quest {pvp.pvp.next_pvp_quest.name}.")
+                Log.log_success(f"Attempting to finish PvP quest {pvp.pvp.next_pvp_quest.name}.")
             else:
                 pvp.pvp.next_pvp_quest = Quest(quest_id=303) #mork the next quest as Cd1, so kcauto use default PvP preset
-                Log.log_success(f"No pvp quests available.")
+                Log.log_success(f"No PvP quests available.")
                 
             self.auto_select_quest[CONTEXT_PVP] = pvp.pvp.next_pvp_quest
             
@@ -388,17 +390,17 @@ class QuestCore(CoreBase):
             quest_list = self._get_quests_rank_list(CONTEXT_EXPEDITION)
             
             for next_quest in reversed(quest_list):
-                Log.log_success(f"Attempt to finish expedition quest {next_quest.name}.")
+                Log.log_success(f"Attempting to finish expedition quest {next_quest.name}.")
                 """Read quest progress""" 
                 exp_dict = kca_u.kca.get_quest_count(target_quest= next_quest)
                 
-                Log.log_debug(f'exp_dict {exp_dict}')
+                Log.log_debug_1(f'exp_dict {exp_dict}')
                 
                 if exp_dict == None:
-                    Log.log_debug(f"Cannot get quest progress from kc3, use default in config file.")
+                    Log.log_debug_1(f"Cannot get quest progress from kc3, use default in config file.")
                     exp_list = list(next_quest.exp_context)
                     if exp_list == []:
-                        Log.log_debug(f"Cannot get quest info from kc3 and default config file, kcauto_custom fail to select corresponding expedition")
+                        Log.log_debug_1(f"Cannot get quest info from kc3 and default config file; kcauto_custom failed to select corresponding expedition.")
                     else:
                         exp.expedition.cut_expedition_queue(exp_list)
                 else:
@@ -406,10 +408,10 @@ class QuestCore(CoreBase):
                     for map_enum in exp_dict:
                         if exp_dict[map_enum] > 0:
                             exp_list.append(map_enum)
-                    Log.log_debug(f'exp_list: {exp_list}')
+                    Log.log_debug_1(f'exp_list: {exp_list}')
                     exp.expedition.cut_expedition_queue(exp_list)
                 
-                Log.log_debug(f'exp_rank: {exp.expedition.exp_rank}')
+                Log.log_debug_1(f'exp_rank: {exp.expedition.exp_rank}')
 
     def _turn_in_quest_idx(self, idx):
         """Method to turn in quest by index in the current quest list.
@@ -431,7 +433,7 @@ class QuestCore(CoreBase):
             idx (int): The index of the quest in the current quest list. id starts from 0
         """
         
-        Log.log_debug(f"Clicking quest at position {idx}.")
+        Log.log_debug_1(f"Clicking quest at position {idx}.")
         Log.log_msg(f"Moving from page {self.cur_page}/{self.tot_page} to {math.ceil((idx+1)/5)}/{self.tot_page}.")
         
         nav.navigate_list.to_page(self.tot_page, self.cur_page, math.ceil((idx+1)/5),nav.navigate_list.OP_MODE_QUEST)
@@ -442,7 +444,7 @@ class QuestCore(CoreBase):
             830, 30)
         quest_list_region.click()
         api.api.update_from_api(
-            {KCSAPIEnum.QUEST_LIST, KCSAPIEnum.QUEST_TURN_IN}, need_all=False)
+            {KCSAPIEnum.QUEST_LIST, KCSAPIEnum.QUEST_TURN_IN}, process_all=False)
         kca_u.kca.sleep(1)
 
     def _untrack_quest(self, quest:Quest):
@@ -456,6 +458,18 @@ class QuestCore(CoreBase):
         self.next_check_intervals[quest.quest_id].next_intervals = self._generate_intervals(quest)
         
         return
+    
+    def meets_min_sortie_rank(self, current_context, last_sortie_result: SortieRankEnum = None) -> bool:
+        """Return True if sortie_rank (or last_sortie_result) meets quest.min_sortie_rank."""
+        
+        if current_context == CONTEXT_PVP:
+            pass
+        elif current_context == CONTEXT_SORTIE:
+            return last_sortie_result.is_at_least(
+                self.auto_select_quest[CONTEXT_SORTIE].rank_requirement.get(
+                    com.combat.get_sortie_queue()[0].without_quest_enum, 
+                    SortieRankEnum.E))
+            self.auto_select_quest[CONTEXT_PVP] = pvp.pvp.next_pvp_quest
 
     def _generate_intervals(self, quest :Quest):
         next_combat = (
@@ -528,15 +542,15 @@ class QuestCore(CoreBase):
         """
         
         if quest is None or not isinstance(quest, Quest) or quest.quest_id is None:
-            Log.log_debug(f"Invalid quest: {quest}")
+            Log.log_debug_1(f"Invalid quest: {quest}")
             return False
         
         if not (quest.name in cfg.config.quest.quests):
-            Log.log_debug(f"Quest {quest.quest_id}/{quest.name} is not in config.")
+            Log.log_debug_1(f"Quest {quest.quest_id}/{quest.name} is not in config.")
             return False
         
         if quest.category.is_repair():
-            Log.log_debug(f"Quest {quest.quest_id}/{quest.name} is a repair/supply quest, which is always enabled.")
+            Log.log_debug_1(f"Quest {quest.quest_id}/{quest.name} is a repair/supply quest, which is always enabled.")
             return True
         
         quest_dict = kca_u.kca.get_quest_count(target_quest= quest)
@@ -547,24 +561,24 @@ class QuestCore(CoreBase):
         
         if context == CONTEXT_SORTIE:
             if quest.category.is_sortie() == False:
-                Log.log_debug(f"Quest {quest.name} {quest.category} is not a combat quest.")
+                Log.log_debug_1(f"Quest {quest.name} {quest.category} is not a combat quest.")
                 return False
             if len(com.combat.get_sortie_queue()) <= 0:
                 Log.log_msg("No sortie quests available, cannot activate sortie quest.")
                 return False
             elif quest.map_context != ():
                 if quest_dict:
-                    if not (com.combat.get_sortie_queue()[0].without_quest_enum in quest_dict.keys()):
-                        Log.log_debug(f"Quest {quest.name} is not relevant to sortie map {com.combat.get_sortie_queue()[0].without_quest} anymore.")
+                    if not (com.combat.get_sortie_queue()[0].without_quest_and_node_enum in [map_context.without_quest_and_node_enum for map_context in quest_dict.keys()]):
+                        Log.log_debug_1(f"Quest {quest.name} is not relevant to sortie map {com.combat.get_sortie_queue()[0].without_quest} anymore.")
                         return False
-                elif not (com.combat.get_sortie_queue()[0].without_quest_enum in quest.map_context):
-                    Log.log_debug(f"Quest {quest.name} is not relevant to sortie map {com.combat.get_sortie_queue()[0].without_quest}.")
+                elif not (com.combat.get_sortie_queue()[0].without_quest_and_node_enum in [map_context.without_quest_and_node_enum for map_context in quest.map_context]):
+                    Log.log_debug_1(f"Quest {quest.name} is not relevant to sortie map {com.combat.get_sortie_queue()[0].without_quest}.")
                     return False
             elif quest.enemy_context != () and not (set(com.combat.map_data.enemy_context) & set(quest.enemy_context)):
-                Log.log_debug(f"Quest {quest.name} is not relevant to enemy context {com.combat.map_data.enemy_context}.")
+                Log.log_debug_1(f"Quest {quest.name} is not relevant to enemy context {com.combat.map_data.enemy_context}.")
                 return False
             elif quest.fleet_composition != {} and not self._is_fleet_valid_for_quest(quest, flt.fleets.combat_fleets[0]):
-                Log.log_debug(f"Fleet layout is not valid for quest {quest.name}.")
+                Log.log_debug_1(f"Fleet layout is not valid for quest {quest.name}.")
                 if force_enable == True:
                     Log.log_error(f"Fleet layout is not valid for quest {quest.name}.")
                     Log.log_warn(f"Quest {quest.name} is the current target quest for {self.CONTEXT_LOOKUP[context]}, force enabling it.")
@@ -574,25 +588,25 @@ class QuestCore(CoreBase):
             return True
         elif context == CONTEXT_EXPEDITION:
             if quest.category.is_expedition() == False:
-                Log.log_debug(f"Quest {quest.name} {quest.category} is not an expedition quest.")
+                Log.log_debug_1(f"Quest {quest.name} {quest.category} is not an expedition quest.")
                 return False
             
             if quest.exp_context != ():
                 if quest_dict:
                     if not any(expedition in exp.expedition.cur_exp for expedition in quest_dict.keys()):
-                        Log.log_debug(f"Quest {quest.name} is not relevant to expedition {exp.expedition.cur_exp} anymore.")
+                        Log.log_debug_1(f"Quest {quest.name} is not relevant to expedition {exp.expedition.cur_exp} anymore.")
                         return False
                 elif not any(item in exp.expedition.cur_exp for item in quest.exp_context):
-                    Log.log_debug(f"Quest {quest.name} is not relevant to expedition {exp.expedition.cur_exp}.")
+                    Log.log_debug_1(f"Quest {quest.name} is not relevant to expedition {exp.expedition.cur_exp}.")
                     return False
                 
             return True
         elif context == CONTEXT_PVP:
             if quest.category.is_pvp() == False:
-                Log.log_debug(f"Quest {quest.name} {quest.category} is not a PVP quest.")
+                Log.log_debug_1(f"Quest {quest.name} {quest.category} is not a PVP quest.")
                 return False
             elif quest.fleet_composition != {} and not self._is_fleet_valid_for_quest(quest, flt.fleets.pvp_fleets[0]):
-                Log.log_debug(f"Fleet layout is not valid for quest {quest.name}.")
+                Log.log_debug_1(f"Fleet layout is not valid for quest {quest.name}.")
                 if force_enable == True:
                     Log.log_error(f"Fleet layout is not valid for quest {quest.name}.")
                     Log.log_warn(f"Quest {quest.name} is the current target quest for {self.CONTEXT_LOOKUP[context]}, force enabling it.")
@@ -603,7 +617,7 @@ class QuestCore(CoreBase):
                 return True
         elif context == CONTEXT_FACTORY:
             if quest.category.is_factory() == False:
-                Log.log_debug(f"Quest {quest.name} {quest.category} is not a factory quest.")
+                Log.log_debug_1(f"Quest {quest.name} {quest.category} is not a factory quest.")
                 return False
             else:
                 return True

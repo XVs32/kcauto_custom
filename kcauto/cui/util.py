@@ -77,17 +77,17 @@ def run_external_program(panel):
     if platform.startswith("linux"):
         filename = "kcauto_custom"
         python_cmd = "python3"
-        exec_path = f"./{filename}"
+        exec_path = f"./bin/kcauto_custom/{filename}"
     elif platform in ["darwin", "win32"]:
         filename = "kcauto_custom.exe"
         python_cmd = "python"
-        exec_path = filename
+        exec_path = f"./bin/kcauto_custom/{filename}"
     else:
         raise TypeError("Non-supported OS.")
 
     common_args = ['--cli', '--cfg', 'config_cui']
     
-    if os.path.isfile(filename):
+    if os.path.isfile(exec_path):
         cmd = [exec_path] + common_args
         msg = f"Starting from {filename}\n"
     else:
@@ -110,10 +110,15 @@ def run_external_program(panel):
       
     global pop_up_lock
     # Read and write the output to the desired panel
-    for line in iter(process.stdout.readline, b''):
+    # Sentinel must be '' (str), not b'' (bytes), because stdout is in text mode
+    for line in iter(process.stdout.readline, ''):
         output = line.strip()
         if output:
             print_log(panel, f"{output}\n")
+
+    process.stdout.close()
+    process.wait()
+    is_running = False
 
     # Final log after the process ends
     print_log(panel, "kcauto ended\n")

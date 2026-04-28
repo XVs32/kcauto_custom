@@ -4,16 +4,17 @@ from util.json_data import JsonData
 from kca_enums.maps import MapEnum
 from kca_enums.quest_type import QuestTypeEnum
 from kca_enums.quest_state import QuestStateEnum
+from kca_enums.sorite_rank import SortieRankEnum
 from util.logger import Log
 
 
 
 class Quest(object):
     
-    name = None
-    quest_id = None
+    name: str | None = None
+    quest_id: int | None = None
     
-    category = None
+    category: 'QuestCategoryEnum | None' = None
     next_intervals = None
     
     completed_count = {}
@@ -58,16 +59,27 @@ class Quest(object):
         return tuple(Quest.static_data[self.name].get('enemy_context', ()))
         
     @property
-    def map_context(self):
-        return tuple([MapEnum(m).without_quest_enum for m in Quest.static_data[self.name].get('map_context', [])])
+    def map_context(self) -> tuple[MapEnum, ...]:
+        return tuple(MapEnum(m.get('name','')) for m in Quest.static_data[self.name].get('map_context', []))
+    
+    @property
+    def rank_requirement(self):
+        ret = {}
+        for map in Quest.static_data[self.name].get('map_context', []):
+            ret[MapEnum(map.get('name',''))] = SortieRankEnum[map.get('min_rank','E')]
+        
+        return ret
         
     @property
     def exp_context(self):
-        return tuple([ExpeditionEnum(e) for e in Quest.static_data[self.name].get('expedition_context', [])])
+        return tuple(ExpeditionEnum(e) for e in Quest.static_data[self.name].get('expedition_context', []))
         
     @property
     def recommended_map(self):
-        return tuple(Quest.static_data[self.name].get('recommended_map', ()))
+        ret = []
+        for map in Quest.static_data[self.name].get('recommended_map', []):
+            ret.append(MapEnum(map))
+        return tuple(ret)
     
     @property
     def fleet_composition(self):
