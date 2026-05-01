@@ -50,6 +50,7 @@ crash_screenshots/
 *.json
 !data/**
 !template/**
+!reference/**
 data/temp/
 !data/temp/gimmick.json
 !configs/template/*.json
