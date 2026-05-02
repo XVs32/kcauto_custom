@@ -337,8 +337,8 @@ class Kca(object):
         y = self.game_y
         w = GAME_W
         h = GAME_H
-        hw = w / 2
-        hh = h / 2
+        hw = w // 2
+        hh = h // 2
 
         # general regions
         self._create_or_shift_region('kc', x, y, w, h)
