@@ -10,7 +10,7 @@ from kca_enums.lbas_state import LBASStateEnum
 
 
 class LBASCore(object):
-    groups = {}
+    groups : dict[int, LBASGroup] = {}
 
     def __init__(self):
         self.enabled = (
@@ -102,10 +102,10 @@ class LBASCore(object):
         for group in self.assignable_lbas_groups:
             nodes = cfg.config.combat.nodes_for_lbas_group(group.group_id)
             Log.log_msg(
-                f"Assigning group {group.group_id} to nodes {nodes[0].value} "
-                f"and {nodes[1].value}.")
+                f"Assigning group {group.group_id} to nodes {nodes[0]} "
+                f"and {nodes[1]}.")
             for node in nodes:
-                node_instance = map_data.nodes[node.value]
+                node_instance = map_data.nodes[node]
                 panel = kca_u.kca.wait(
                     'kc', 'combat|lbas_panel_side.png', wait=90)
                 panel_pos = 'r' if panel.x - kca_u.kca.game_x > 600 else 'l'
