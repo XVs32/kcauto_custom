@@ -28,6 +28,15 @@ mkdir -p "$RELEASE_DIR"
 echo "Cloning $REPO_URL into kcauto_custom_linux..."
 git clone "$REPO_URL" "$RELEASE_DIR/kcauto_custom_linux"
 
+# If a .venv exists in the current workspace, copy it into kcauto_custom_linux
+VENV_SRC="../../.venv"
+if [ -d "$VENV_SRC" ]; then
+	echo "Copying .venv to kcauto_custom_linux..."
+	cp -r "$VENV_SRC" "$RELEASE_DIR/kcauto_custom_linux/.venv"
+else
+	echo "No .venv found in workspace; skipping."
+fi
+
 # Copy kcauto_custom_linux to kcauto_custom_windows
 echo "Copying kcauto_custom_linux to kcauto_custom_windows..."
 cp -r "$RELEASE_DIR/kcauto_custom_linux" "$RELEASE_DIR/kcauto_custom_windows"
