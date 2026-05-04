@@ -5,7 +5,7 @@
 :: and archives the entire folder as kcauto_custom_windows.zip.
 ::
 :: Usage: run from anywhere - paths are derived from the script's location
-::   tool\pack_windows.bat
+::   tool\execution_packer\pack_windows.bat
 
 setlocal enabledelayedexpansion
 
@@ -13,7 +13,8 @@ setlocal enabledelayedexpansion
 :: works correctly regardless of the current working directory.
 set "TOOL_DIR=%~dp0"
 if "%TOOL_DIR:~-1%"=="\" set "TOOL_DIR=%TOOL_DIR:~0,-1%"
-for %%I in ("%TOOL_DIR%\..") do set "ROOT_DIR=%%~fI"
+for %%I in ("%TOOL_DIR%\..\..\") do set "ROOT_DIR=%%~fI"
+if "%ROOT_DIR:~-1%"=="\" set "ROOT_DIR=%ROOT_DIR:~0,-1%"
 
 echo ======================================================
 echo Execution Pack Script - Windows

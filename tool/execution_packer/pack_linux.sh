@@ -4,14 +4,14 @@
 # Builds the executables, removes development-only files/folders,
 # and archives the entire folder as kcauto_custom_linux.tar.
 #
-# Usage: run from the tool directory inside kcauto_custom_linux
-#   cd tool && bash pack_linux.sh
+# Usage: run from the execution_packer directory inside kcauto_custom_linux
+#   cd tool/execution_packer && bash pack_linux.sh
 
-ROOT_PATH="../"
+ROOT_PATH="../../"
 
-# Ensure script is run from ./tool
-if [ "$(basename "$PWD")" != "tool" ]; then
-	echo "Error: must run this script from ./tool (current: $PWD)"
+# Ensure script is run from ./tool/execution_packer
+if [ "$(basename "$PWD")" != "execution_packer" ]; then
+	echo "Error: must run this script from ./tool/execution_packer (current: $PWD)"
 	exit 1
 fi
 

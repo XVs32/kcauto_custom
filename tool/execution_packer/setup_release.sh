@@ -5,15 +5,15 @@
 # clones the repo into kcauto_custom_linux and kcauto_custom_windows,
 # and switches each to the corresponding branch.
 #
-# Usage: run from the tool directory
-#   cd tool && bash setup_release.sh
+# Usage: run from the execution_packer directory
+#   cd tool/execution_packer && bash setup_release.sh
 
 REPO_URL="https://github.com/XVs32/kcauto_custom/"
-RELEASE_DIR="../../kcauto_custom_release"
+RELEASE_DIR="../../../kcauto_custom_release"
 
-# Ensure script is run from ./tool
-if [ "$(basename "$PWD")" != "tool" ]; then
-	echo "Error: must run this script from ./tool (current: $PWD)"
+# Ensure script is run from ./tool/execution_packer
+if [ "$(basename "$PWD")" != "execution_packer" ]; then
+	echo "Error: must run this script from ./tool/execution_packer (current: $PWD)"
 	exit 1
 fi
 
