@@ -94,9 +94,9 @@ def run_external_program(panel):
         cmd = [python_cmd, "kcauto"] + common_args
         msg = f"{filename} does not exist\nStart kcauto in Python instead\n"
 
-    # 3. 統一執行 subprocess
     process = subprocess.Popen(
         cmd,
+        stdin=subprocess.PIPE,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         text=True,
