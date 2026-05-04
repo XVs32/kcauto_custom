@@ -49,10 +49,10 @@ rm -f .gitignore
 echo "Step 3: Creating tar archive..."
 FOLDER_NAME=$(basename "$PWD")
 cd .. || exit 1
-tar -cf "${FOLDER_NAME}.tar" "${FOLDER_NAME}"
+tar -czf "${FOLDER_NAME}.tar.gz" "${FOLDER_NAME}"
 
 echo ""
 echo "======================================================"
 echo "Pack Complete!"
-echo " - $(realpath "${FOLDER_NAME}.tar")"
+echo " - $(realpath "${FOLDER_NAME}.tar.gz")"
 echo "======================================================"
