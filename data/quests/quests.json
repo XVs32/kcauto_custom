@@ -1313,19 +1313,17 @@
     "type": "other",
     "map_context": [
       {
-        "name": "B-7-2-G",
-        "min_rank": "S"
+        "name": "B-7-2-G"
       },
       {
         "name": "B-7-2-M",
         "min_rank": "S"
       },
       {
-        "name": "B-7-3-P",
-        "min_rank": "S"
+        "name": "B-7-3-E"
       },
       {
-        "name": "B-7-3-E",
+        "name": "B-7-3-P",
         "min_rank": "S"
       },
       {
@@ -2937,6 +2935,20 @@
       "2604B7-1-3",
       "2604B7-1-4",
       "2604B7-1-6-N"
+    ]
+  },
+  "2604D3": {
+    "id": 451,
+    "type": "weekly",
+    "intervals": [
+      0,
+      0,
+      2
+    ],
+    "expedition_context": [
+      5,
+      9,
+      11
     ]
   }
 }
