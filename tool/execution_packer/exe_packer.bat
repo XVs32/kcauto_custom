@@ -4,11 +4,11 @@ setlocal enabledelayedexpansion
 
 
 
-set "VENV_PATH=..\.venv"
+set "VENV_PATH=..\..\.venv"
 
-set "BIN_PATH=..\bin"
+set "BIN_PATH=..\..\bin"
 
-set "ROOT_PATH=..\"
+set "ROOT_PATH=..\..\"
 
 
 
@@ -32,7 +32,7 @@ echo Python site-packages: %python_site_package%
 
 :: ---------------------------------------------------------
 
-set "src_custom=..\kcauto\__main__.py"
+set "src_custom=..\..\kcauto\__main__.py"
 
 if exist "%BIN_PATH%\kcauto_custom" rmdir /s /q "%BIN_PATH%\kcauto_custom"
 
@@ -40,7 +40,7 @@ if exist "%BIN_PATH%\kcauto_custom" rmdir /s /q "%BIN_PATH%\kcauto_custom"
 
 echo Building Core: kcauto_custom...
 
-python -m PyInstaller -D --clean %src_custom% -p ..\kcauto\ -p %python_site_package% --distpath %BIN_PATH% --name "kcauto_custom"
+python -m PyInstaller -D --clean %src_custom% -p ..\..\kcauto\ -p %python_site_package% --distpath %BIN_PATH% --name "kcauto_custom"
 
 
 
@@ -50,13 +50,13 @@ python -m PyInstaller -D --clean %src_custom% -p ..\kcauto\ -p %python_site_pack
 
 :: ---------------------------------------------------------
 
-set "src_cui=..\kcauto\kcauto_cui.py"
+set "src_cui=..\..\kcauto\kcauto_cui.py"
 
-set "icon_path=..\assets\cui\bot.ico"
+set "icon_path=..\..\assets\cui\bot.ico"
 
 echo Building Launcher: kcauto_cui with icon...
 :: 加入 --icon "%icon_path%"
-python -m PyInstaller -F --clean --icon "%icon_path%" %src_cui% -p ..\kcauto\ -p %python_site_package% --distpath %ROOT_PATH% --name "kcauto_cui"
+python -m PyInstaller -F --clean --icon "%icon_path%" %src_cui% -p ..\..\kcauto\ -p %python_site_package% --distpath %ROOT_PATH% --name "kcauto_cui"
 
 
 :: ---------------------------------------------------------
@@ -95,4 +95,4 @@ echo  - kcauto_cui.exe    (Launcher/Console)
 
 echo ======================================================
 
-pause
+pause
