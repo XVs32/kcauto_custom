@@ -4,58 +4,67 @@
 :: Builds the executables, removes development-only files/folders,
 :: and archives the entire folder as kcauto_custom_windows.zip.
 ::
-:: Usage: run from the tool directory inside kcauto_custom_windows
-::   cd tool && pack_windows.bat
+:: Usage: run from anywhere - paths are derived from the script's location
+::   tool\pack_windows.bat
 
 setlocal enabledelayedexpansion
 
-set "ROOT_PATH=..\"
+:: Derive paths from the script's own location (%~dp0) so the script
+:: works correctly regardless of the current working directory.
+set "TOOL_DIR=%~dp0"
+if "%TOOL_DIR:~-1%"=="\" set "TOOL_DIR=%TOOL_DIR:~0,-1%"
+for %%I in ("%TOOL_DIR%\..") do set "ROOT_DIR=%%~fI"
 
-:: Ensure script is run from .\tool
-for %%I in ("%CD%") do set "CURRENT_DIR=%%~nxI"
-if /i not "%CURRENT_DIR%"=="tool" (
-	echo Error: must run this script from .\tool (current: %CD%)
-	exit /b 1
-)
+echo ======================================================
+echo Execution Pack Script - Windows
+echo Tool Dir : %TOOL_DIR%
+echo Root Dir : %ROOT_DIR%
+echo ======================================================
 
 :: ---------------------------------------------------------
-:: Step 1: Build executables
+:: Step 1: Build executables via exe_packer.bat
 :: ---------------------------------------------------------
-echo Step 1: Building executables...
+echo.
+echo [Step 1] Building executables...
+cd /d "%TOOL_DIR%"
 if not exist "exe_packer.bat" (
-	echo Error: exe_packer.bat not found in %CD%
-	exit /b 1
+    echo Error: exe_packer.bat not found in %TOOL_DIR%
+    exit /b 1
 )
 call exe_packer.bat
-if errorlevel 1 (
-	echo Error: exe_packer.bat failed
-	exit /b 1
-)
 
 :: ---------------------------------------------------------
 :: Step 2: Remove development-only files and folders
 :: ---------------------------------------------------------
-echo Step 2: Removing unnecessary files and folders...
-cd "%ROOT_PATH%"
+echo.
+echo [Step 2] Removing unnecessary files and folders...
+cd /d "%ROOT_DIR%"
 
-if exist ".git" rmdir /s /q ".git"
-if exist ".github" rmdir /s /q ".github"
-if exist ".venv" rmdir /s /q ".venv"
+if exist ".git"              rmdir /s /q ".git"
+if exist ".github"           rmdir /s /q ".github"
+if exist ".venv"             rmdir /s /q ".venv"
 if exist "crash_screenshots" rmdir /s /q "crash_screenshots"
-if exist "kcauto" rmdir /s /q "kcauto"
-if exist "reference" rmdir /s /q "reference"
-if exist ".gitignore" del /f /q ".gitignore"
+if exist "kcauto"            rmdir /s /q "kcauto"
+if exist "reference"         rmdir /s /q "reference"
+if exist ".gitignore"        del /f /q ".gitignore"
 
 :: ---------------------------------------------------------
 :: Step 3: Create zip archive of the whole folder
 :: ---------------------------------------------------------
-echo Step 3: Creating zip archive...
-for %%I in ("%CD%") do set "FOLDER_NAME=%%~nxI"
-cd ..
-powershell -Command "Compress-Archive -Path '%FOLDER_NAME%' -DestinationPath '%FOLDER_NAME%.zip' -Force"
+echo.
+echo [Step 3] Creating zip archive...
+for %%I in ("%ROOT_DIR%") do set "FOLDER_NAME=%%~nxI"
+for %%I in ("%ROOT_DIR%\..") do set "PARENT_DIR=%%~fI"
+cd /d "%PARENT_DIR%"
+powershell -NoProfile -Command "Compress-Archive -Path '%FOLDER_NAME%' -DestinationPath '%FOLDER_NAME%.zip' -Force"
+if errorlevel 1 (
+    echo Error: Failed to create zip archive
+    exit /b 1
+)
 
 echo.
 echo ======================================================
 echo Pack Complete!
-echo  - %FOLDER_NAME%.zip
+echo  - %PARENT_DIR%\%FOLDER_NAME%.zip
 echo ======================================================
+pause
