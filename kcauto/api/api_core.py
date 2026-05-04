@@ -33,7 +33,10 @@ class ApiWrapper(object):
     def update_from_api(
             self, target_apis={KCSAPIEnum.ANY}, process_all=True, timeout=30):
         """
-            method to read the APIs in queue, all APIs in queue currently will be removed after this method is finished
+        
+        Args: target_apis (set of KCSAPIEnum): Set of API endpoints to wait for. Use KCSAPIEnum.ANY to wait for any API, or KCSAPIEnum.NONE to skip waiting and return immediately. Default is KCSAPIEnum.ANY.
+            process_all (bool): Whether to process all API messages received during the wait period (True) or just the first message for each target API (False). Default is True.
+            timeout (int): Maximum time in seconds to wait for the target API payload(s). Default is 30 seconds.
         """
         if KCSAPIEnum.NONE in target_apis:
             return {}
