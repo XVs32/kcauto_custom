@@ -341,12 +341,13 @@ class Kcauto(object):
                     current_map = cfg.config.combat.sortie_map.without_quest_and_node_enum
                     
                     map_is_required = False
-                    required_node = None
+                    required_node = []
                     required_rank = SortieRankEnum["E"]
                     for required_map in selected_quest.map_context:
                         if current_map == required_map.without_quest_and_node_enum:
                             map_is_required = True
-                            required_node = required_map.variant #could be None
+                            if required_map.variant is not None:
+                                required_node.append(required_map.variant)
                             required_rank = selected_quest.rank_requirement.get(required_map, SortieRankEnum["E"])
                             break
                     
@@ -360,10 +361,10 @@ class Kcauto(object):
                         last_node = com.combat.last_battle.get(com.combat.MAP_NODE)
                         
                         if last_node is not None:
-                            if required_node == None:
+                            if not required_node:
                                 Log.log_debug_1(f"No specific node required for quest {selected_quest.name}, current node: {last_node}.")
-                            elif last_node.name == required_node:
-                                Log.log_success(f"Required node {required_node} reached for quest {selected_quest.name}.")
+                            elif last_node.name in required_node:
+                                Log.log_success(f"Required node {last_node.name} reached for quest {selected_quest.name}.")
                                 last_rank = com.combat.last_battle.get(com.combat.RANKENUM)
                                 if last_rank == None:
                                     Log.log_success(f"Quest {selected_quest.name} has no rank requirement, condition met with node {last_node}.") 
