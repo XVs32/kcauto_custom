@@ -794,12 +794,17 @@ class CombatCore(CoreBase):
             self.sortie_queue.append(self.sortie_queue[0])
             Log.log_debug_1(f"Duplicated front to back in sortie queue: {self.sortie_queue}")
 
-    def insert_sortie_queue(self, sortie_map: MapEnum):
+    def insert_sortie_queue(self, sortie_map: MapEnum, allow_duplicate = False):
         """
             method for other modules to push a sortie_map to the start of sortie_queue in combat module
             Args:
                 sortie_map (str): A sortie_map, ex: "1-1"
+                allow_duplicate (bool): when false, will prioritize the existing map in the queue than inserting a duplicate to the front, when true, will insert a duplicate to the front even if the same map already exists in the queue
         """
+        if not allow_duplicate and sortie_map in self.sortie_queue:
+            Log.log_debug_1(f"Sortie map {sortie_map.value} already in queue, not inserting duplicate.")
+            #put the existing map to the front
+            self.sortie_queue.remove(sortie_map)
         self.sortie_queue.insert(0, sortie_map)
         Log.log_debug_1(f"Inserted {sortie_map.value} to sortie queue {self.sortie_queue}")
 
