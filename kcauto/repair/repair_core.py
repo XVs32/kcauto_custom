@@ -114,6 +114,14 @@ class RepairCore(object):
             elif ship in flt.fleets.combat_ships and (com.combat.enabled or pvp.pvp.enabled):
                 
                 if ship.damage >= cfg.config.combat.repair_limit:
+                    if not self._bucket_threshold():
+                        if ship.has_equipment():
+                            if not in_equipment_page:
+                                in_equipment_page = True
+                                equ.equipment.goto()
+
+                            fsw.fleet_switcher.unload_ship(ship)
+                    
                     idx_of_combat_ships[idx] = ship
                     count += 1
                     
