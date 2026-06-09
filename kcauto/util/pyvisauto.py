@@ -337,11 +337,12 @@ class Region(ImageMatch):
         """
         self.MOUSE_MOVE_SPEED = Region.MOUSE_MOVE_SPEED
         if x is None and y is None and w is None and h is None:
-            screen = pyautogui.size()
-            self.x = 0
-            self.y = 0
-            self.w = screen.width
-            self.h = screen.height
+            with mss.mss() as sct:
+                screen = sct.monitors[0]
+            self.x = screen['left']
+            self.y = screen['top']
+            self.w = screen['width']
+            self.h = screen['height']
         else:
             if x is None or y is None or w is None or h is None:
                 raise ValueError("Parameters must be all or nothing.")

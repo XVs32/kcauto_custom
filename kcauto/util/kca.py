@@ -176,7 +176,13 @@ class Kca(object):
         """Method that finds the game window offset for chrome driver"""
         Log.log_msg("Finding browser offset")
         
-        whole_screen = Region().capture()
+        whole_screen_region = Region()
+        Log.log_debug_1(f"whole_screen_region.x: {whole_screen_region.x}")
+        Log.log_debug_1(f"whole_screen_region.y: {whole_screen_region.y}")
+        Log.log_debug_1(f"whole_screen_region.w: {whole_screen_region.w}")
+        Log.log_debug_1(f"whole_screen_region.h: {whole_screen_region.h}")
+        
+        whole_screen = whole_screen_region.capture()
         whole_screen_rgb = np.array(whole_screen)
         whole_screen_gray = cv2.cvtColor(whole_screen_rgb, cv2.COLOR_BGR2GRAY)
         
