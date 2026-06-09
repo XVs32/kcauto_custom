@@ -1,6 +1,7 @@
 {
     "B-7-5-M": {
         "timestamp": 0,
-        "gimmick_level": 0
+        "clear_count": 0,
+        "min_rank": "S"
     }
 }
