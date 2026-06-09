@@ -62,6 +62,7 @@ class CombatCore(CoreBase):
     NODE_TYPE_FORMATION_SKIP = 5
     MAP_NODE = 0
     RANKENUM = 1
+    GIMMICK_CLEAR_COUNT = "clear_count"
     
     module_name = 'combat'
     module_display_name = 'Combat'
@@ -844,7 +845,7 @@ class CombatCore(CoreBase):
             data = JsonData.load_json(GIMMICK_TEMPLATE)
 
         try:
-            data[self.sortie_queue[0]]["gimmick_level"] += 1
+            data[self.sortie_queue[0]][self.GIMMICK_CLEAR_COUNT] += 1
             JsonData.dump_json(data, GIMMICK)
             
         except KeyError:
@@ -865,17 +866,17 @@ class CombatCore(CoreBase):
             if not KCTime.is_same_month(data[map]["timestamp"], time.time()):
                 Log.log_debug_1("Gimmick renew")
                 data[map]["timestamp"] = time.time()
-                data[map]["gimmick_level"] = 0
+                data[map][self.GIMMICK_CLEAR_COUNT] = 0
                 JsonData.dump_json(data, GIMMICK)
         except KeyError:
             Log.log_debug_1("No gimmick data found, skipping...")
             pass
         
-        """gimmick_level rules for each map(7-5 only for now)"""
+        """gimmick clear count rules for each map(7-5 only for now)"""
         if map_enum == MapEnum.W7_5_M and (self.sortie_map_stage ) > 1:
-            gimmick_level = data[map]["gimmick_level"]
+            data[map][self.GIMMICK_CLEAR_COUNT] = 0
             
-            if gimmick_level == 0:
+            if self.GIMMICK_CLEAR_COUNT == 0:
                 return map_enum
             
             Log.log_success(f'Gimmick already solved for map {map_enum.value}.')
