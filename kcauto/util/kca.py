@@ -207,6 +207,8 @@ class Kca(object):
                     
                 screenshot_data = base64.b64decode(result['data'])
                 ref = cv2.imdecode(np.frombuffer(screenshot_data, np.uint8), cv2.IMREAD_GRAYSCALE)
+
+                Log.log_debug_1(f"chrome driver browser size: {(ref.shape[1], ref.shape[0])}")
                 
                 clip_height = int(ref.shape[0] * 0.1)
                 clip_width = int(ref.shape[1] * 0.1)
@@ -215,9 +217,17 @@ class Kca(object):
                 start_x = (ref.shape[1] - clip_width) // 2
                 
                 ref = ref[start_y:start_y + clip_height, start_x:start_x + clip_width]
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                if not os.path.exists("debug"):
+                    os.makedirs("debug")
+
+                cv2.imwrite(f"debug/browser_ref_clip_{timestamp}.png", ref)
                 
                 match = cv2.matchTemplate(whole_screen_gray, ref, cv2.TM_CCOEFF_NORMED)
                 min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(match)
+                Log.log_debug_1(f"start_x: {start_x}")
+                Log.log_debug_1(f"start_y: {start_y}")
+                Log.log_debug_1(f"max_loc: {max_loc}")
                 
                 if max_val < 0.9:
                     raise ValueError(f"Match value {max_val} is below threshold")
