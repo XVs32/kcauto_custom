@@ -976,6 +976,14 @@ class CombatCore(CoreBase):
             f"current_map: {current_map}, gimmick_attampt: {self.gimmick_attampt}, last_battle_node: {self.last_battle[self.MAP_NODE]}, last_battle_rank: {self.last_battle[self.RANKENUM]}"
         )
 
+        Log.log_error(
+            f"current_map.without_quest_and_node_enum: {current_map.without_quest_and_node_enum}, \
+            gimmick_attampt.without_quest_and_node_enum: {self.gimmick_attampt.without_quest_and_node_enum}, \
+            last_battle_node: {self.last_battle[self.MAP_NODE]}, \
+            last_battle_rank: {self.last_battle[self.RANKENUM]}, \
+            gimmick_attampt.variant: {self.gimmick_attampt.variant}"
+        )
+
         # check if current map has gimmick
         if (
             current_map.without_quest_and_node_enum
@@ -986,12 +994,14 @@ class CombatCore(CoreBase):
             Log.log_msg(f"Battled in gimmick node {self.gimmick_attampt}")
 
             if self.last_battle[self.RANKENUM].is_at_least(
-                SortieRankEnum(
-                    self.gimmick_list[self.gimmick_attampt][self.GIMMICK_RANK_REQUIRE]
-                )
+                SortieRankEnum[
+                    self.gimmick_list[self.gimmick_attampt.display_name][
+                        self.GIMMICK_RANK_REQUIRE
+                    ]
+                ]
             ):
                 Log.log_msg(f"Gimmick solved for map {current_map.value}.")
-                self.gimmick_list[self.gimmick_attampt][
+                self.gimmick_list[self.gimmick_attampt.display_name][
                     self.GIMMICK_CLEAR_REMAINING
                 ] -= 1
                 JsonData.dump_json(self.gimmick_list, GIMMICK)
