@@ -272,46 +272,46 @@ class Kca(object):
 
     def _build_browser_ref_layout(self, screenshot_gray):
         """Build reusable layout values for browser ref scanning."""
-        window_width = min(GAME_W // 2, screenshot_gray.shape[1])
-        window_height = min(GAME_H // 2, screenshot_gray.shape[0])
-        ref_size = min(self.BROWSER_REF_SIZE, window_width, window_height)
-        center_x = (window_width - ref_size) // 2
-        center_y = (window_height - ref_size) // 2
+        slide_window_width = min(GAME_W // 2, screenshot_gray.shape[1])
+        slide_window_height = min(GAME_H // 2, screenshot_gray.shape[0])
+        ref_size = min(self.BROWSER_REF_SIZE, slide_window_width, slide_window_height)
+        ref_origin_x = (slide_window_width - ref_size) // 2
+        ref_origin_y = (slide_window_height - ref_size) // 2
 
         return {
-            "window_width": window_width,
-            "window_height": window_height,
+            "slide_window_width": slide_window_width,
+            "slide_window_height": slide_window_height,
             "ref_size": ref_size,
-            "center_x": center_x,
-            "center_y": center_y,
-            "x_positions": self._build_sliding_positions(screenshot_gray.shape[1], window_width, window_width),
-            "y_positions": self._build_sliding_positions(screenshot_gray.shape[0], window_height, window_height),
+            "ref_origin_x": ref_origin_x,
+            "ref_origin_y": ref_origin_y,
+            "x_positions": self._build_sliding_positions(screenshot_gray.shape[1], slide_window_width, slide_window_width),
+            "y_positions": self._build_sliding_positions(screenshot_gray.shape[0], slide_window_height, slide_window_height),
         }
 
     def _iter_browser_ref_regions(self, screenshot_gray):
         """Yield sliding windows and centered refs from the browser screenshot."""
         layout = self._build_browser_ref_layout(screenshot_gray)
-        window_width = layout["window_width"]
-        window_height = layout["window_height"]
+        slide_window_width = layout["slide_window_width"]
+        slide_window_height = layout["slide_window_height"]
         ref_size = layout["ref_size"]
-        center_x = layout["center_x"]
-        center_y = layout["center_y"]
+        ref_origin_x = layout["ref_origin_x"]
+        ref_origin_y = layout["ref_origin_y"]
 
         for window_y in layout["y_positions"]:
             for window_x in layout["x_positions"]:
                 slide_window = screenshot_gray[
-                    window_y:window_y + window_height,
-                    window_x:window_x + window_width]
+                    window_y:window_y + slide_window_height,
+                    window_x:window_x + slide_window_width]
                 ref = slide_window[
-                    center_y:center_y + ref_size,
-                    center_x:center_x + ref_size]
+                    ref_origin_y:ref_origin_y + ref_size,
+                    ref_origin_x:ref_origin_x + ref_size]
                 yield {
                     "window_x": window_x,
                     "window_y": window_y,
-                    "window_width": window_width,
-                    "window_height": window_height,
-                    "ref_x": window_x + center_x,
-                    "ref_y": window_y + center_y,
+                    "slide_window_width": slide_window_width,
+                    "slide_window_height": slide_window_height,
+                    "ref_x": window_x + ref_origin_x,
+                    "ref_y": window_y + ref_origin_y,
                     "ref_size": ref_size,
                     "ref": ref,
                     "entropy": self._calc_grayscale_entropy(ref),
@@ -363,8 +363,8 @@ class Kca(object):
                 debug_image,
                 (ref_info["window_x"], ref_info["window_y"]),
                 (
-                    ref_info["window_x"] + ref_info["window_width"],
-                    ref_info["window_y"] + ref_info["window_height"],
+                    ref_info["window_x"] + ref_info["slide_window_width"],
+                    ref_info["window_y"] + ref_info["slide_window_height"],
                 ),
                 (0, 255, 0),
                 2)
