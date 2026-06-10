@@ -216,14 +216,14 @@ class Kca(object):
 
                 Log.log_debug_1(f"chrome driver browser size: {(screenshot_gray.shape[1], screenshot_gray.shape[0])}")
 
-                window_width = min(GAME_W, screenshot_gray.shape[1])
-                window_height = min(GAME_H, screenshot_gray.shape[0])
+                window_width = min(GAME_W // 2, screenshot_gray.shape[1])
+                window_height = min(GAME_H // 2, screenshot_gray.shape[0])
                 ref_size = min(self.BROWSER_REF_SIZE, window_width, window_height)
                 center_x = (window_width - ref_size) // 2
                 center_y = (window_height - ref_size) // 2
 
-                x_positions = self._build_sliding_positions(screenshot_gray.shape[1], window_width, GAME_W)
-                y_positions = self._build_sliding_positions(screenshot_gray.shape[0], window_height, GAME_H)
+                x_positions = self._build_sliding_positions(screenshot_gray.shape[1], window_width, GAME_W // 2)
+                y_positions = self._build_sliding_positions(screenshot_gray.shape[0], window_height, GAME_H // 2)
 
                 valid_ref_found = False
 
@@ -269,15 +269,11 @@ class Kca(object):
                     return False
 
     def _build_sliding_positions(self, full_size, window_size, step_size):
-        """Build sliding window positions while ensuring the far edge is checked."""
+        """Build side-by-side sliding window positions using a fixed step."""
         if full_size <= window_size:
             return [0]
 
-        positions = list(range(0, full_size - window_size + 1, step_size))
-        last_position = full_size - window_size
-        if positions[-1] != last_position:
-            positions.append(last_position)
-        return positions
+        return list(range(0, full_size - window_size + 1, step_size))
 
     def _try_browser_offset_match(self, whole_screen_gray, ref, start_x, start_y):
         """Try matching a browser reference image against the full screen."""
@@ -307,16 +303,14 @@ class Kca(object):
         debug_dir = os.path.join("debug", f"browser_refs_{timestamp}")
         os.makedirs(debug_dir, exist_ok=True)
 
-        window_width = min(GAME_W, screenshot_gray.shape[1])
-        window_height = min(GAME_H, screenshot_gray.shape[0])
+        window_width = min(GAME_W // 2, screenshot_gray.shape[1])
+        window_height = min(GAME_H // 2, screenshot_gray.shape[0])
         ref_size = min(self.BROWSER_REF_SIZE, window_width, window_height)
         center_x = (window_width - ref_size) // 2
         center_y = (window_height - ref_size) // 2
 
-        x_positions = self._build_sliding_positions(
-            screenshot_gray.shape[1], window_width, GAME_W)
-        y_positions = self._build_sliding_positions(
-            screenshot_gray.shape[0], window_height, GAME_H)
+        x_positions = self._build_sliding_positions(screenshot_gray.shape[1], window_width, GAME_W // 2)
+        y_positions = self._build_sliding_positions(screenshot_gray.shape[0], window_height, GAME_H // 2)
 
         saved_count = 0
         for window_y in y_positions:
@@ -347,16 +341,14 @@ class Kca(object):
         debug_dir = "debug"
         os.makedirs(debug_dir, exist_ok=True)
 
-        window_width = min(GAME_W, screenshot_gray.shape[1])
-        window_height = min(GAME_H, screenshot_gray.shape[0])
+        window_width = min(GAME_W // 2, screenshot_gray.shape[1])
+        window_height = min(GAME_H // 2, screenshot_gray.shape[0])
         ref_size = min(self.BROWSER_REF_SIZE, window_width, window_height)
         center_x = (window_width - ref_size) // 2
         center_y = (window_height - ref_size) // 2
 
-        x_positions = self._build_sliding_positions(
-            screenshot_gray.shape[1], window_width, GAME_W)
-        y_positions = self._build_sliding_positions(
-            screenshot_gray.shape[0], window_height, GAME_H)
+        x_positions = self._build_sliding_positions(screenshot_gray.shape[1], window_width, GAME_W // 2)
+        y_positions = self._build_sliding_positions(screenshot_gray.shape[0], window_height, GAME_H // 2)
 
         debug_image = cv2.cvtColor(screenshot_gray, cv2.COLOR_GRAY2BGR)
         for window_y in y_positions:
