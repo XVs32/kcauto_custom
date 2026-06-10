@@ -389,7 +389,7 @@ class Kca(object):
                 (text_x, text_y),
                 cv2.FONT_HERSHEY_SIMPLEX,
                 0.5,
-                (255, 0, 0),
+                (0, 0, 255),
                 1,
                 cv2.LINE_AA)
 
