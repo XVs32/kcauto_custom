@@ -324,11 +324,6 @@ class Kca(object):
         Log.log_debug_1(f"start_y: {start_y}")
         Log.log_debug_1(f"max_loc: {max_loc}")
 
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        if not os.path.exists("debug"):
-            os.makedirs("debug")
-
-        cv2.imwrite(f"debug/browser_ref_clip_{timestamp}.png", ref)
         if max_val < 0.9:
             Log.log_error(f"Match value {max_val} is below threshold")
             return False
