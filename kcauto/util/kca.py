@@ -222,8 +222,13 @@ class Kca(object):
                 if max_val < 0.9:
                     raise ValueError(f"Match value {max_val} is below threshold")
                     
-                self.css_x = max_loc[0] - start_x
-                self.css_y = max_loc[1] - start_y
+                # whole-screen origin + whole-screen reference offset - browser reference offset
+                self.css_x = whole_screen_region.x + max_loc[0] - start_x
+                self.css_y = whole_screen_region.y + max_loc[1] - start_y
+                Log.log_debug_1(f"max_loc[0]: {max_loc[0]}")
+                Log.log_debug_1(f"max_loc[1]: {max_loc[1]}")
+                Log.log_debug_1(f"start_x: {start_x}")
+                Log.log_debug_1(f"start_y: {start_y}")
                 Log.log_success(f"Browser offset found at X: {self.css_x}, Y: {self.css_y}")
                 return True
                 
