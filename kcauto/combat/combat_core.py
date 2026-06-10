@@ -978,14 +978,15 @@ class CombatCore(CoreBase):
 
         # check if current map has gimmick
         if (
-            current_map == self.gimmick_attampt.without_quest_and_node_enum
+            current_map.without_quest_and_node_enum
+            == self.gimmick_attampt.without_quest_and_node_enum
             and self.last_battle[self.MAP_NODE] == self.gimmick_attampt.variant
         ):
 
             Log.log_msg(f"Battled in gimmick node {self.gimmick_attampt}")
 
             if self.last_battle[self.RANKENUM].is_at_least(
-                RankEnum(
+                SortieRankEnum(
                     self.gimmick_list[self.gimmick_attampt][self.GIMMICK_RANK_REQUIRE]
                 )
             ):
