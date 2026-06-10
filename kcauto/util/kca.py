@@ -38,6 +38,8 @@ class Kca(object):
     """
     
     KC_REF_OFFSET = (-144, 0)
+    BROWSER_REF_ENTROPY_THRESHOLD = 0.5
+    BROWSER_REF_SIZE = 100
     
     ASSETS_FOLDER = 'assets'
     visual_tab_id = None
@@ -206,39 +208,59 @@ class Kca(object):
                     raise ValueError("No image data in screenshot result")
                     
                 screenshot_data = base64.b64decode(result['data'])
-                ref = cv2.imdecode(np.frombuffer(screenshot_data, np.uint8), cv2.IMREAD_GRAYSCALE)
+                screenshot_gray = cv2.imdecode(np.frombuffer(screenshot_data, np.uint8), cv2.IMREAD_GRAYSCALE)
 
-                Log.log_debug_1(f"chrome driver browser size: {(ref.shape[1], ref.shape[0])}")
-                
-                clip_height = int(ref.shape[0] * 0.1)
-                clip_width = int(ref.shape[1] * 0.1)
-                
-                start_y = (ref.shape[0] - clip_height) // 2
-                start_x = (ref.shape[1] - clip_width) // 2
-                
-                ref = ref[start_y:start_y + clip_height, start_x:start_x + clip_width]
-                ref_entropy = self._calc_grayscale_entropy(ref)
-                Log.log_debug_1(f"browser ref clip entropy: {ref_entropy:.4f}")
+                Log.log_debug_1(f"chrome driver browser size: {(screenshot_gray.shape[1], screenshot_gray.shape[0])}")
 
-                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-                if not os.path.exists("debug"):
-                    os.makedirs("debug")
+                window_width = min(GAME_W, screenshot_gray.shape[1])
+                window_height = min(GAME_H, screenshot_gray.shape[0])
+                ref_size = min(self.BROWSER_REF_SIZE, window_width, window_height)
+                center_x = (window_width - ref_size) // 2
+                center_y = (window_height - ref_size) // 2
 
-                cv2.imwrite(f"debug/browser_ref_clip_{timestamp}.png", ref)
-                
-                match = cv2.matchTemplate(whole_screen_gray, ref, cv2.TM_CCOEFF_NORMED)
-                min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(match)
-                Log.log_debug_1(f"start_x: {start_x}")
-                Log.log_debug_1(f"start_y: {start_y}")
-                Log.log_debug_1(f"max_loc: {max_loc}")
-                
-                if max_val < 0.9:
-                    raise ValueError(f"Match value {max_val} is below threshold")
-                    
-                self.css_x = max_loc[0] - start_x
-                self.css_y = max_loc[1] - start_y
-                Log.log_success(f"Browser offset found at X: {self.css_x}, Y: {self.css_y}")
-                return True
+                x_positions = self._build_sliding_positions(screenshot_gray.shape[1], window_width, GAME_W)
+                y_positions = self._build_sliding_positions(screenshot_gray.shape[0], window_height, GAME_H)
+
+                valid_ref_found = False
+
+                for window_y in y_positions:
+                    for window_x in x_positions:
+                        slide_window = screenshot_gray[window_y:window_y + window_height, window_x:window_x + window_width]
+
+                        ref = slide_window[center_y:center_y + ref_size, center_x:center_x + ref_size]
+
+                        ref_entropy = self._calc_grayscale_entropy(ref)
+                        Log.log_debug_1(f"ref entropy at window ({window_x}, {window_y}): {ref_entropy:.4f}")
+
+                        if ref_entropy < self.BROWSER_REF_ENTROPY_THRESHOLD:
+                            continue
+
+                        valid_ref_found = True
+                        match = cv2.matchTemplate(whole_screen_gray, ref, cv2.TM_CCOEFF_NORMED)
+                        min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(match)
+                        start_x = window_x + center_x
+                        start_y = window_y + center_y
+                        Log.log_debug_1(f"start_x: {start_x}")
+                        Log.log_debug_1(f"start_y: {start_y}")
+                        Log.log_debug_1(f"max_loc: {max_loc}")
+
+                        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                        if not os.path.exists("debug"):
+                            os.makedirs("debug")
+
+                        cv2.imwrite(f"debug/browser_ref_clip_{timestamp}.png", ref)
+                        if max_val < 0.9:
+                            Log.log_error(f"Match value {max_val} is below threshold")
+                            continue
+                        self.css_x = max_loc[0] - start_x
+                        self.css_y = max_loc[1] - start_y
+                        Log.log_success(f"Browser offset found at X: {self.css_x}, Y: {self.css_y}")
+                        return True
+
+                if not valid_ref_found:
+                    raise ValueError("No valid reference clip found in sliding windows")
+                else:
+                    raise ValueError("No browser offset found from valid reference clips")
                 
             except Exception as e:
                 Log.log_error(f"Attempt {retry + 1}/{max_retries} failed: {str(e)}")
@@ -254,6 +276,17 @@ class Kca(object):
                         exit(1)
                     
                     return False
+
+    def _build_sliding_positions(self, full_size, window_size, step_size):
+        """Build sliding window positions while ensuring the far edge is checked."""
+        if full_size <= window_size:
+            return [0]
+
+        positions = list(range(0, full_size - window_size + 1, step_size))
+        last_position = full_size - window_size
+        if positions[-1] != last_position:
+            positions.append(last_position)
+        return positions
 
     def _calc_grayscale_entropy(self, image):
         """Calculate Shannon entropy for a grayscale image."""
