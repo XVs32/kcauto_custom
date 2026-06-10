@@ -184,10 +184,6 @@ class Kca(object):
         Log.log_debug_1(f"whole_screen_region.w: {whole_screen_region.w}")
         Log.log_debug_1(f"whole_screen_region.h: {whole_screen_region.h}")
         
-        whole_screen = whole_screen_region.capture()
-        whole_screen_rgb = np.array(whole_screen)
-        whole_screen_gray = cv2.cvtColor(whole_screen_rgb, cv2.COLOR_BGR2GRAY)
-        
         retry = 0
         max_retries = 5
         retry_delay = 1
@@ -195,6 +191,10 @@ class Kca(object):
         import base64
         while retry < max_retries:
             try:
+                whole_screen = whole_screen_region.capture()
+                whole_screen_rgb = np.array(whole_screen)
+                whole_screen_gray = cv2.cvtColor(whole_screen_rgb, cv2.COLOR_BGR2GRAY)
+
                 screenshot_raw = self.visual_hook.Page.captureScreenshot()
                 
                 if screenshot_raw is None or not screenshot_raw:
@@ -236,31 +236,18 @@ class Kca(object):
                             continue
 
                         valid_ref_found = True
-                        match = cv2.matchTemplate(whole_screen_gray, ref, cv2.TM_CCOEFF_NORMED)
-                        min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(match)
                         start_x = window_x + center_x
                         start_y = window_y + center_y
-                        Log.log_debug_1(f"start_x: {start_x}")
-                        Log.log_debug_1(f"start_y: {start_y}")
-                        Log.log_debug_1(f"max_loc: {max_loc}")
-
-                        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-                        if not os.path.exists("debug"):
-                            os.makedirs("debug")
-
-                        cv2.imwrite(f"debug/browser_ref_clip_{timestamp}.png", ref)
-                        if max_val < 0.9:
-                            Log.log_error(f"Match value {max_val} is below threshold")
-                            continue
-                        self.css_x = max_loc[0] - start_x
-                        self.css_y = max_loc[1] - start_y
-                        Log.log_success(f"Browser offset found at X: {self.css_x}, Y: {self.css_y}")
-                        return True
+                        if self._try_browser_offset_match(whole_screen_gray, ref, start_x, start_y):
+                            return True
 
                 if not valid_ref_found:
-                    raise ValueError("No valid reference clip found in sliding windows")
+                    Log.log_warn("No valid reference clip found in sliding windows, falling back to full browser screenshot.")
+                    if self._try_browser_offset_match(whole_screen_gray, screenshot_gray, 0, 0):
+                        return True
+                    raise ValueError("No valid sliding window reference found and full browser match failed")
                 else:
-                    raise ValueError("No browser offset found from valid reference clips")
+                    raise ValueError("No browser offset found from valid references")
                 
             except Exception as e:
                 Log.log_error(f"Attempt {retry + 1}/{max_retries} failed: {str(e)}")
@@ -287,6 +274,28 @@ class Kca(object):
         if positions[-1] != last_position:
             positions.append(last_position)
         return positions
+
+    def _try_browser_offset_match(self, whole_screen_gray, ref, start_x, start_y):
+        """Try matching a browser reference image against the full screen."""
+        match = cv2.matchTemplate(whole_screen_gray, ref, cv2.TM_CCOEFF_NORMED)
+        min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(match)
+        Log.log_debug_1(f"start_x: {start_x}")
+        Log.log_debug_1(f"start_y: {start_y}")
+        Log.log_debug_1(f"max_loc: {max_loc}")
+
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        if not os.path.exists("debug"):
+            os.makedirs("debug")
+
+        cv2.imwrite(f"debug/browser_ref_clip_{timestamp}.png", ref)
+        if max_val < 0.9:
+            Log.log_error(f"Match value {max_val} is below threshold")
+            return False
+
+        self.css_x = max_loc[0] - start_x
+        self.css_y = max_loc[1] - start_y
+        Log.log_success(f"Browser offset found at X: {self.css_x}, Y: {self.css_y}")
+        return True
 
     def _calc_grayscale_entropy(self, image):
         """Calculate Shannon entropy for a grayscale image."""
