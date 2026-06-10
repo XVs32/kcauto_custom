@@ -179,6 +179,7 @@ class Kca(object):
         Log.log_msg("Finding browser offset")
         
         whole_screen_region = Region()
+        whole_screen_origin = (whole_screen_region.x, whole_screen_region.y)
         Log.log_debug_1(f"whole_screen_region.x: {whole_screen_region.x}")
         Log.log_debug_1(f"whole_screen_region.y: {whole_screen_region.y}")
         Log.log_debug_1(f"whole_screen_region.w: {whole_screen_region.w}")
@@ -214,12 +215,12 @@ class Kca(object):
                         continue
 
                     valid_ref_found = True
-                    if self._try_browser_offset_match(whole_screen_gray, ref_info["ref"], ref_info["ref_x"], ref_info["ref_y"]):
+                    if self._try_browser_offset_match(whole_screen_origin, whole_screen_gray, ref_info["ref"], ref_info["ref_x"], ref_info["ref_y"]):
                         return True
 
                 if not valid_ref_found:
                     Log.log_warn("No valid reference clip found in sliding windows, falling back to full browser screenshot.")
-                    if self._try_browser_offset_match(whole_screen_gray, screenshot_gray, 0, 0):
+                    if self._try_browser_offset_match(whole_screen_origin, whole_screen_gray, screenshot_gray, 0, 0):
                         return True
                     raise ValueError("No valid sliding window reference found and full browser match failed")
                 else:
@@ -316,7 +317,7 @@ class Kca(object):
                     "entropy": self._calc_grayscale_entropy(ref),
                 }
 
-    def _try_browser_offset_match(self, whole_screen_gray, ref, start_x, start_y):
+    def _try_browser_offset_match(self, whole_screen_origin, whole_screen_gray, ref, start_x, start_y):
         """Try matching a browser reference image against the full screen."""
         match = cv2.matchTemplate(whole_screen_gray, ref, cv2.TM_CCOEFF_NORMED)
         min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(match)
@@ -328,8 +329,8 @@ class Kca(object):
             Log.log_error(f"Match value {max_val} is below threshold")
             return False
 
-        self.css_x = max_loc[0] - start_x
-        self.css_y = max_loc[1] - start_y
+        self.css_x = whole_screen_origin[0] + max_loc[0] - start_x
+        self.css_y = whole_screen_origin[1] + max_loc[1] - start_y
         Log.log_success(f"Browser offset found at X: {self.css_x}, Y: {self.css_y}")
         return True
 
