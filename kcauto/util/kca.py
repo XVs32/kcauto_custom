@@ -38,6 +38,8 @@ class Kca(object):
     """
     
     KC_REF_OFFSET = (-144, 0)
+    BROWSER_REF_ENTROPY_THRESHOLD = 0.5
+    BROWSER_REF_SIZE = 100
     
     ASSETS_FOLDER = 'assets'
     visual_tab_id = None
@@ -177,60 +179,52 @@ class Kca(object):
         Log.log_msg("Finding browser offset")
         
         whole_screen_region = Region()
+        whole_screen_origin = (whole_screen_region.x, whole_screen_region.y)
         Log.log_debug_1(f"whole_screen_region.x: {whole_screen_region.x}")
         Log.log_debug_1(f"whole_screen_region.y: {whole_screen_region.y}")
         Log.log_debug_1(f"whole_screen_region.w: {whole_screen_region.w}")
         Log.log_debug_1(f"whole_screen_region.h: {whole_screen_region.h}")
         
-        whole_screen = whole_screen_region.capture()
-        whole_screen_rgb = np.array(whole_screen)
-        whole_screen_gray = cv2.cvtColor(whole_screen_rgb, cv2.COLOR_BGR2GRAY)
-        
         retry = 0
         max_retries = 5
         retry_delay = 1
         
-        import base64
         while retry < max_retries:
             try:
-                screenshot_raw = self.visual_hook.Page.captureScreenshot()
-                
-                if screenshot_raw is None or not screenshot_raw:
-                    raise ValueError("Failed to capture screenshot from Chrome")
-                    
-                if len(screenshot_raw) == 0 or "result" not in screenshot_raw[0]:
-                    raise ValueError("Invalid screenshot data structure")
-                    
-                result = screenshot_raw[0]["result"]
-                if "data" not in result:
-                    raise ValueError("No image data in screenshot result")
-                    
-                screenshot_data = base64.b64decode(result['data'])
-                ref = cv2.imdecode(np.frombuffer(screenshot_data, np.uint8), cv2.IMREAD_GRAYSCALE)
-                
-                clip_height = int(ref.shape[0] * 0.1)
-                clip_width = int(ref.shape[1] * 0.1)
-                
-                start_y = (ref.shape[0] - clip_height) // 2
-                start_x = (ref.shape[1] - clip_width) // 2
-                
-                ref = ref[start_y:start_y + clip_height, start_x:start_x + clip_width]
-                
-                match = cv2.matchTemplate(whole_screen_gray, ref, cv2.TM_CCOEFF_NORMED)
-                min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(match)
-                
-                if max_val < 0.9:
-                    raise ValueError(f"Match value {max_val} is below threshold")
-                    
-                # whole-screen origin + whole-screen reference offset - browser reference offset
-                self.css_x = whole_screen_region.x + max_loc[0] - start_x
-                self.css_y = whole_screen_region.y + max_loc[1] - start_y
-                Log.log_debug_1(f"max_loc[0]: {max_loc[0]}")
-                Log.log_debug_1(f"max_loc[1]: {max_loc[1]}")
-                Log.log_debug_1(f"start_x: {start_x}")
-                Log.log_debug_1(f"start_y: {start_y}")
-                Log.log_success(f"Browser offset found at X: {self.css_x}, Y: {self.css_y}")
-                return True
+                whole_screen = whole_screen_region.capture()
+                whole_screen_rgb = np.array(whole_screen)
+                whole_screen_gray = cv2.cvtColor(whole_screen_rgb, cv2.COLOR_BGR2GRAY)
+
+                screenshot_gray = self._capture_browser_screenshot_gray()
+
+                if arg.args.parsed_args.debug_output:
+                    self._debug_save_all_browser_refs(screenshot_gray)
+                    self._debug_draw_browser_slide_windows(screenshot_gray)
+
+                Log.log_debug_1(f"chrome driver browser size: {(screenshot_gray.shape[1], screenshot_gray.shape[0])}")
+
+                valid_ref_found = False
+
+                for ref_info in self._iter_browser_ref_regions(screenshot_gray):
+                    ref_entropy = ref_info["entropy"]
+                    window_x = ref_info["window_x"]
+                    window_y = ref_info["window_y"]
+                    Log.log_debug_1(f"ref entropy at window ({window_x}, {window_y}): {ref_entropy:.4f}")
+
+                    if ref_entropy < self.BROWSER_REF_ENTROPY_THRESHOLD:
+                        continue
+
+                    valid_ref_found = True
+                    if self._try_browser_offset_match(whole_screen_origin, whole_screen_gray, ref_info["ref"], ref_info["ref_x"], ref_info["ref_y"]):
+                        return True
+
+                if not valid_ref_found:
+                    Log.log_warn("No valid reference clip found in sliding windows, falling back to full browser screenshot.")
+                    if self._try_browser_offset_match(whole_screen_origin, whole_screen_gray, screenshot_gray, 0, 0):
+                        return True
+                    raise ValueError("No valid sliding window reference found and full browser match failed")
+                else:
+                    raise ValueError("No browser offset found from valid references")
                 
             except Exception as e:
                 Log.log_error(f"Attempt {retry + 1}/{max_retries} failed: {str(e)}")
@@ -246,6 +240,171 @@ class Kca(object):
                         exit(1)
                     
                     return False
+
+    def _build_sliding_positions(self, full_size, window_size, step_size):
+        """Build side-by-side sliding window positions using a fixed step."""
+        if full_size <= window_size:
+            return [0]
+
+        return list(range(0, full_size - window_size + 1, step_size))
+
+    def _capture_browser_screenshot_gray(self):
+        """Capture the browser screenshot and decode it to grayscale."""
+
+        import base64
+        screenshot_raw = self.visual_hook.Page.captureScreenshot()
+
+        if screenshot_raw is None or not screenshot_raw:
+            raise ValueError("Failed to capture screenshot from Chrome")
+
+        if len(screenshot_raw) == 0 or "result" not in screenshot_raw[0]:
+            raise ValueError("Invalid screenshot data structure")
+
+        result = screenshot_raw[0]["result"]
+        if "data" not in result:
+            raise ValueError("No image data in screenshot result")
+
+        screenshot_data = base64.b64decode(result["data"])
+        screenshot_gray = cv2.imdecode(np.frombuffer(screenshot_data, np.uint8), cv2.IMREAD_GRAYSCALE)
+        if screenshot_gray is None:
+            raise ValueError("Failed to decode browser screenshot")
+        return screenshot_gray
+
+    def _build_browser_ref_layout(self, screenshot_gray):
+        """Build reusable layout values for browser ref scanning."""
+        slide_window_width = min(GAME_W // 2, screenshot_gray.shape[1])
+        slide_window_height = min(GAME_H // 2, screenshot_gray.shape[0])
+        ref_size = min(self.BROWSER_REF_SIZE, slide_window_width, slide_window_height)
+        ref_origin_x = (slide_window_width - ref_size) // 2
+        ref_origin_y = (slide_window_height - ref_size) // 2
+
+        return {
+            "slide_window_width": slide_window_width,
+            "slide_window_height": slide_window_height,
+            "ref_size": ref_size,
+            "ref_origin_x": ref_origin_x,
+            "ref_origin_y": ref_origin_y,
+            "x_positions": self._build_sliding_positions(screenshot_gray.shape[1], slide_window_width, slide_window_width),
+            "y_positions": self._build_sliding_positions(screenshot_gray.shape[0], slide_window_height, slide_window_height),
+        }
+
+    def _iter_browser_ref_regions(self, screenshot_gray):
+        """Yield sliding windows and centered refs from the browser screenshot."""
+        layout = self._build_browser_ref_layout(screenshot_gray)
+        slide_window_width = layout["slide_window_width"]
+        slide_window_height = layout["slide_window_height"]
+        ref_size = layout["ref_size"]
+        ref_origin_x = layout["ref_origin_x"]
+        ref_origin_y = layout["ref_origin_y"]
+
+        for window_y in layout["y_positions"]:
+            for window_x in layout["x_positions"]:
+                slide_window = screenshot_gray[
+                    window_y:window_y + slide_window_height,
+                    window_x:window_x + slide_window_width]
+                ref = slide_window[
+                    ref_origin_y:ref_origin_y + ref_size,
+                    ref_origin_x:ref_origin_x + ref_size]
+                yield {
+                    "window_x": window_x,
+                    "window_y": window_y,
+                    "slide_window_width": slide_window_width,
+                    "slide_window_height": slide_window_height,
+                    "ref_x": window_x + ref_origin_x,
+                    "ref_y": window_y + ref_origin_y,
+                    "ref_size": ref_size,
+                    "ref": ref,
+                    "entropy": self._calc_grayscale_entropy(ref),
+                }
+
+    def _try_browser_offset_match(self, whole_screen_origin, whole_screen_gray, ref, start_x, start_y):
+        """Try matching a browser reference image against the full screen."""
+        match = cv2.matchTemplate(whole_screen_gray, ref, cv2.TM_CCOEFF_NORMED)
+        min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(match)
+        Log.log_debug_1(f"start_x: {start_x}")
+        Log.log_debug_1(f"start_y: {start_y}")
+        Log.log_debug_1(f"max_loc: {max_loc}")
+
+        if max_val < 0.9:
+            Log.log_error(f"Match value {max_val} is below threshold")
+            return False
+
+        self.css_x = whole_screen_origin[0] + max_loc[0] - start_x
+        self.css_y = whole_screen_origin[1] + max_loc[1] - start_y
+        Log.log_success(f"Browser offset found at X: {self.css_x}, Y: {self.css_y}")
+        return True
+
+    def _debug_save_all_browser_refs(self, screenshot_gray):
+        """Save all sliding-window reference images without stopping early."""
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        debug_dir = os.path.join("debug", f"browser_refs_{timestamp}")
+        os.makedirs(debug_dir, exist_ok=True)
+
+        saved_count = 0
+        for ref_info in self._iter_browser_ref_regions(screenshot_gray):
+            entropy = ref_info["entropy"]
+            status = "valid" if entropy >= self.BROWSER_REF_ENTROPY_THRESHOLD else "blank"
+            filename = (f"ref_x{ref_info['window_x']}_y{ref_info['window_y']}_entropy_{entropy:.4f}_{status}.png")
+            cv2.imwrite(os.path.join(debug_dir, filename), ref_info["ref"])
+            saved_count += 1
+
+        Log.log_msg(f"Saved {saved_count} browser refs to {debug_dir}")
+        return debug_dir
+
+    def _debug_draw_browser_slide_windows(self, screenshot_gray):
+        """Draw slide windows and ref regions on the browser screenshot."""
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        debug_dir = "debug"
+        os.makedirs(debug_dir, exist_ok=True)
+
+        debug_image = cv2.cvtColor(screenshot_gray, cv2.COLOR_GRAY2BGR)
+        for ref_info in self._iter_browser_ref_regions(screenshot_gray):
+            cv2.rectangle(
+                debug_image,
+                (ref_info["window_x"], ref_info["window_y"]),
+                (
+                    ref_info["window_x"] + ref_info["slide_window_width"],
+                    ref_info["window_y"] + ref_info["slide_window_height"],
+                ),
+                (0, 255, 0),
+                2)
+            cv2.rectangle(
+                debug_image,
+                (ref_info["ref_x"], ref_info["ref_y"]),
+                (
+                    ref_info["ref_x"] + ref_info["ref_size"],
+                    ref_info["ref_y"] + ref_info["ref_size"],
+                ),
+                (0, 0, 255),
+                2)
+            text_x = ref_info["ref_x"] + 4
+            text_y = ref_info["ref_y"] + min(ref_info["ref_size"] - 6, 18)
+            cv2.putText(
+                debug_image,
+                f"{ref_info['entropy']:.2f}",
+                (text_x, text_y),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.5,
+                (0, 0, 255),
+                1,
+                cv2.LINE_AA)
+
+        output_path = os.path.join(
+            debug_dir, f"browser_slide_windows_{timestamp}.png")
+        cv2.imwrite(output_path, debug_image)
+        Log.log_msg(f"Saved browser slide window debug image to {output_path}")
+        return output_path
+
+    def _calc_grayscale_entropy(self, image):
+        """Calculate Shannon entropy for a grayscale image."""
+        hist = cv2.calcHist([image], [0], None, [256], [0, 256])
+        total = float(hist.sum())
+        if total == 0:
+            return 0.0
+
+        probabilities = hist / total
+        probabilities = probabilities[probabilities > 0]
+        return float(-np.sum(probabilities * np.log2(probabilities)))
 
     def find_kancolle(self):
         """Method that finds the Kancolle game on-screen and determine the UI
