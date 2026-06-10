@@ -210,6 +210,10 @@ class Kca(object):
                 screenshot_data = base64.b64decode(result['data'])
                 screenshot_gray = cv2.imdecode(np.frombuffer(screenshot_data, np.uint8), cv2.IMREAD_GRAYSCALE)
 
+                if arg.args.parsed_args.debug_output:
+                    self._debug_save_all_browser_refs(screenshot_gray)
+                    self._debug_draw_browser_slide_windows(screenshot_gray)
+
                 Log.log_debug_1(f"chrome driver browser size: {(screenshot_gray.shape[1], screenshot_gray.shape[0])}")
 
                 window_width = min(GAME_W, screenshot_gray.shape[1])
@@ -296,6 +300,105 @@ class Kca(object):
         self.css_y = max_loc[1] - start_y
         Log.log_success(f"Browser offset found at X: {self.css_x}, Y: {self.css_y}")
         return True
+
+    def _debug_save_all_browser_refs(self, screenshot_gray):
+        """Save all sliding-window reference images without stopping early."""
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        debug_dir = os.path.join("debug", f"browser_refs_{timestamp}")
+        os.makedirs(debug_dir, exist_ok=True)
+
+        window_width = min(GAME_W, screenshot_gray.shape[1])
+        window_height = min(GAME_H, screenshot_gray.shape[0])
+        ref_size = min(self.BROWSER_REF_SIZE, window_width, window_height)
+        center_x = (window_width - ref_size) // 2
+        center_y = (window_height - ref_size) // 2
+
+        x_positions = self._build_sliding_positions(
+            screenshot_gray.shape[1], window_width, GAME_W)
+        y_positions = self._build_sliding_positions(
+            screenshot_gray.shape[0], window_height, GAME_H)
+
+        saved_count = 0
+        for window_y in y_positions:
+            for window_x in x_positions:
+                slide_window = screenshot_gray[
+                    window_y:window_y + window_height,
+                    window_x:window_x + window_width]
+                ref = slide_window[
+                    center_y:center_y + ref_size,
+                    center_x:center_x + ref_size]
+                entropy = self._calc_grayscale_entropy(ref)
+                status = (
+                    "valid" if entropy >= self.BROWSER_REF_ENTROPY_THRESHOLD
+                    else "blank")
+                filename = (
+                    f"ref_x{window_x}_y{window_y}_"
+                    f"entropy_{entropy:.4f}_{status}.png")
+                cv2.imwrite(os.path.join(debug_dir, filename), ref)
+                saved_count += 1
+
+        Log.log_msg(
+            f"Saved {saved_count} browser refs to {debug_dir}")
+        return debug_dir
+
+    def _debug_draw_browser_slide_windows(self, screenshot_gray):
+        """Draw slide windows and ref regions on the browser screenshot."""
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        debug_dir = "debug"
+        os.makedirs(debug_dir, exist_ok=True)
+
+        window_width = min(GAME_W, screenshot_gray.shape[1])
+        window_height = min(GAME_H, screenshot_gray.shape[0])
+        ref_size = min(self.BROWSER_REF_SIZE, window_width, window_height)
+        center_x = (window_width - ref_size) // 2
+        center_y = (window_height - ref_size) // 2
+
+        x_positions = self._build_sliding_positions(
+            screenshot_gray.shape[1], window_width, GAME_W)
+        y_positions = self._build_sliding_positions(
+            screenshot_gray.shape[0], window_height, GAME_H)
+
+        debug_image = cv2.cvtColor(screenshot_gray, cv2.COLOR_GRAY2BGR)
+        for window_y in y_positions:
+            for window_x in x_positions:
+                slide_window = screenshot_gray[
+                    window_y:window_y + window_height,
+                    window_x:window_x + window_width]
+                ref = slide_window[
+                    center_y:center_y + ref_size,
+                    center_x:center_x + ref_size]
+                entropy = self._calc_grayscale_entropy(ref)
+
+                cv2.rectangle(
+                    debug_image,
+                    (window_x, window_y),
+                    (window_x + window_width, window_y + window_height),
+                    (0, 255, 0),
+                    2)
+                cv2.rectangle(
+                    debug_image,
+                    (window_x + center_x, window_y + center_y),
+                    (window_x + center_x + ref_size,
+                     window_y + center_y + ref_size),
+                    (0, 0, 255),
+                    2)
+                text_x = window_x + center_x + 4
+                text_y = window_y + center_y + min(ref_size - 6, 18)
+                cv2.putText(
+                    debug_image,
+                    f"{entropy:.2f}",
+                    (text_x, text_y),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.5,
+                    (255, 0, 0),
+                    1,
+                    cv2.LINE_AA)
+
+        output_path = os.path.join(
+            debug_dir, f"browser_slide_windows_{timestamp}.png")
+        cv2.imwrite(output_path, debug_image)
+        Log.log_msg(f"Saved browser slide window debug image to {output_path}")
+        return output_path
 
     def _calc_grayscale_entropy(self, image):
         """Calculate Shannon entropy for a grayscale image."""
