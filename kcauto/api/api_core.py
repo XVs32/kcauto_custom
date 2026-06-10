@@ -353,17 +353,6 @@ class ApiWrapper(object):
         except KeyError:
             Log.log_debug_1("No combine_flag data found in API response.")
 
-            
-
-        try:
-            gimmick = data['api_data']['api_event_object']['api_m_flag2']
-            Log.log_debug_1(f"Gimmick data found = {gimmick}.")
-            if gimmick == 1:
-                """A gimmick is solved"""
-                com.combat.solve_gimmick()
-        except KeyError:
-            Log.log_debug_1("No gimmick data found in API response.")
-
         import scheduler.scheduler_core as sch
         sch.scheduler.check_and_process_rules()
 

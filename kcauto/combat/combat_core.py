@@ -62,7 +62,9 @@ class CombatCore(CoreBase):
     NODE_TYPE_FORMATION_SKIP = 5
     MAP_NODE = 0
     RANKENUM = 1
-    GIMMICK_CLEAR_COUNT = "clear_count"
+    GIMMICK_CLEAR_REMAINING = "clear_remaining"
+    GIMMICK_TIMESTAMP = "timestamp"
+    GIMMICK_MAP_STAGE_REQUIRE = "map_stage_required"
     
     module_name = 'combat'
     module_display_name = 'Combat'
@@ -81,6 +83,8 @@ class CombatCore(CoreBase):
     first_init = True
     combat_api_listener_enable = True
     last_battle: dict[str, SortieRankEnum | MapNode] = {}
+    gimmick_list = {}
+    gimmick_attampt = None
    
     def __init__(self):
         """
@@ -89,6 +93,7 @@ class CombatCore(CoreBase):
                 sortie_map (str): The current sortie map, ex: "3-5", if input is empty, reload setting in config only
         """
         self.update_from_config()
+        self.gimmick_init()
 
     def update_from_config(self):
         super().update_from_config()
@@ -743,6 +748,9 @@ class CombatCore(CoreBase):
             self.last_battle[self.RANKENUM] = SortieRankEnum[data['api_win_rank']]
             self.last_battle[self.MAP_NODE] = self.current_node
             Log.log_msg(f"Battle rank in node {self.current_node}: {self.last_battle[self.RANKENUM].in_str}")
+            
+            self.gimmick_judge()
+            
 
     def _calculate_hps(self, new_hps, data):
         for phase in self.API_COMBAT_PHASES_TYPE1:
@@ -837,53 +845,85 @@ class CombatCore(CoreBase):
 
         return self.sortie_queue
     
-    def solve_gimmick(self):
-
+    def gimmick_init(self):
+        """
+            method to initialize the gimmick system
+        """
+        self.gimmick_list_init()
+        self.gimmick_reset()
+    
+    def gimmick_list_init(self):
+        """
+            method to initialize the gimmick list
+        """
         try:
             data = JsonData.load_json(GIMMICK)
         except FileNotFoundError:
             data = JsonData.load_json(GIMMICK_TEMPLATE)
+        self.gimmick_list = data
+        
+        
+    def gimmick_reset(self):
+        """
+            method to reset the gimmick list each month
+        """
+        
+        template = JsonData.load_json(GIMMICK_TEMPLATE)
 
-        try:
-            data[self.sortie_queue[0]][self.GIMMICK_CLEAR_COUNT] += 1
-            JsonData.dump_json(data, GIMMICK)
-            
-        except KeyError:
-            Log.log_debug_1(f"Invalid gimmick update for map {self.sortie_queue[0]} requested.")
+        for map in self.gimmick_list:
+            if not KCTime.is_same_month(self.gimmick_list[map][self.GIMMICK_TIMESTAMP], time.time()):
+                self.gimmick_list[map][self.GIMMICK_CLEAR_REMAINING]=template[map][self.GIMMICK_CLEAR_REMAINING]
+                self.gimmick_list[map][self.GIMMICK_TIMESTAMP]=time.time()
+                Log.log_success(f'Gimmick reset for {map}.')
+    
     def check_gimmick(self, map_enum: MapEnum):
         """
-            method to check what gimmick to go next for the current sortie map
+            method to check what gimmick available for the current sortie map
             return None if no gimmick is available
+            
+            input:
+                map_enum (MapEnum): The current sortie map
         """
-        try:
-            data = JsonData.load_json(GIMMICK)
-        except FileNotFoundError:
-            data = JsonData.load_json(GIMMICK_TEMPLATE)
-        map = map_enum.value
-
-        """Reset gimmick each month"""
-        try:
-            if not KCTime.is_same_month(data[map]["timestamp"], time.time()):
-                Log.log_debug_1("Gimmick renew")
-                data[map]["timestamp"] = time.time()
-                data[map][self.GIMMICK_CLEAR_COUNT] = 0
-                JsonData.dump_json(data, GIMMICK)
-        except KeyError:
-            Log.log_debug_1("No gimmick data found, skipping...")
-            pass
         
-        """gimmick clear count rules for each map(7-5 only for now)"""
-        if map_enum == MapEnum.W7_5_M and (self.sortie_map_stage ) > 1:
-            data[map][self.GIMMICK_CLEAR_COUNT] = 0
-            
-            if self.GIMMICK_CLEAR_COUNT == 0:
-                return map_enum
-            
-            Log.log_success(f'Gimmick already solved for map {map_enum.value}.')
-            pass
-        else:
-            Log.log_error(f'No gimmick for map {map_enum.value}.')
-
+        self.gimmick_attampt = None
+        map = map_enum.without_quest_and_node_enum
+        
+        
+        for gimmick_map_str in self.gimmick_list:
+            gimmick_map_enum = MapEnum(gimmick_map_str).without_quest_and_node_enum
+            if gimmick_map_enum == map:
+                if self.sortie_map_stage >= self.gimmick_list[gimmick_map_str][self.GIMMICK_MAP_STAGE_REQUIRE]:
+                    
+                    if self.gimmick_list[gimmick_map_str][self.GIMMICK_CLEAR_REMAINING] > 0:
+                        self.gimmick_attampt = MapEnum(gimmick_map_str)
+                        return MapEnum(gimmick_map_str)
+                    else:
+                        Log.log_success(f'Gimmick already solved for map {map_enum.value}.')
+                        return None
+                else:
+                    Log.log_warn(f'Gimmick for map {map_enum.value} not available yet.')
+                    return None
+                    
+        Log.log_error(f'No gimmick for map {map_enum.value}.')
         return None
-
+    
+    def gimmick_judge(self):
+        
+        if self.gimmick_attampt == None:
+            return
+        
+        current_map = self.map_data.enum
+        
+        #check if current map has gimmick
+        if current_map == self.gimmick_attampt.without_quest_and_node_enum\
+            and self.last_battle[self.MAP_NODE] == self.gimmick_attampt.variant:
+            
+            Log.log_msg(f"Battled in gimmick node {self.gimmick_attampt}")
+            
+            if self.last_battle[self.RANKENUM].is_at_least(RankEnum(self.gimmick_list[self.gimmick_attampt][self.GIMMICK_RANK_REQUIRE])):
+                Log.log_msg(f"Gimmick solved for map {current_map.value}.")
+                self.gimmick_list[self.gimmick_attampt][self.GIMMICK_CLEAR_REMAINING] -= 1
+                JsonData.dump_json(self.gimmick_list, GIMMICK)
+            
+    
 combat = CombatCore()
