@@ -217,6 +217,9 @@ class Kca(object):
                 start_x = (ref.shape[1] - clip_width) // 2
                 
                 ref = ref[start_y:start_y + clip_height, start_x:start_x + clip_width]
+                ref_entropy = self._calc_grayscale_entropy(ref)
+                Log.log_debug_1(f"browser ref clip entropy: {ref_entropy:.4f}")
+
                 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
                 if not os.path.exists("debug"):
                     os.makedirs("debug")
@@ -251,6 +254,17 @@ class Kca(object):
                         exit(1)
                     
                     return False
+
+    def _calc_grayscale_entropy(self, image):
+        """Calculate Shannon entropy for a grayscale image."""
+        hist = cv2.calcHist([image], [0], None, [256], [0, 256])
+        total = float(hist.sum())
+        if total == 0:
+            return 0.0
+
+        probabilities = hist / total
+        probabilities = probabilities[probabilities > 0]
+        return float(-np.sum(probabilities * np.log2(probabilities)))
 
     def find_kancolle(self):
         """Method that finds the Kancolle game on-screen and determine the UI
