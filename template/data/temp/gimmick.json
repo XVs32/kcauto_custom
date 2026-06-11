@@ -1,7 +1,8 @@
 {
     "B-7-5-M": {
         "timestamp": 0,
-        "clear_count": 0,
+        "clear_remaining": 1,
+        "map_stage_required": 1,
         "min_rank": "S"
     }
 }

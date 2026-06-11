@@ -78,6 +78,7 @@ class CombatCore(CoreBase):
     GIMMICK_CLEAR_REMAINING = "clear_remaining"
     GIMMICK_TIMESTAMP = "timestamp"
     GIMMICK_MAP_STAGE_REQUIRE = "map_stage_required"
+    GIMMICK_MIN_RANK = "min_rank"
 
     module_name = "combat"
     module_display_name = "Combat"
@@ -979,16 +980,22 @@ class CombatCore(CoreBase):
         Log.log_error(
             f"current_map.without_quest_and_node_enum: {current_map.without_quest_and_node_enum}, \
             gimmick_attampt.without_quest_and_node_enum: {self.gimmick_attampt.without_quest_and_node_enum}, \
-            last_battle_node: {self.last_battle[self.MAP_NODE]}, \
+            last_battle_node: {self.last_battle[self.MAP_NODE]} {type(self.last_battle[self.MAP_NODE])}, \
             last_battle_rank: {self.last_battle[self.RANKENUM]}, \
-            gimmick_attampt.variant: {self.gimmick_attampt.variant}"
+            gimmick_attampt.variant: {self.gimmick_attampt.variant} {type(self.gimmick_attampt.variant)}"
         )
+
+        if current_map.without_quest_and_node_enum == self.gimmick_attampt.without_quest_and_node_enum:
+            Log.log_error(f'1 pass')
+
+        if self.last_battle[self.MAP_NODE].name == self.gimmick_attampt.variant:
+            Log.log_error(f'2 pass')
 
         # check if current map has gimmick
         if (
             current_map.without_quest_and_node_enum
             == self.gimmick_attampt.without_quest_and_node_enum
-            and self.last_battle[self.MAP_NODE] == self.gimmick_attampt.variant
+            and self.last_battle[self.MAP_NODE].name == self.gimmick_attampt.variant
         ):
 
             Log.log_msg(f"Battled in gimmick node {self.gimmick_attampt}")
@@ -996,7 +1003,7 @@ class CombatCore(CoreBase):
             if self.last_battle[self.RANKENUM].is_at_least(
                 SortieRankEnum[
                     self.gimmick_list[self.gimmick_attampt.display_name][
-                        self.GIMMICK_RANK_REQUIRE
+                        self.GIMMICK_MIN_RANK
                     ]
                 ]
             ):
