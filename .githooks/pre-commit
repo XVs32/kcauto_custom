@@ -1,25 +1,53 @@
 #!/bin/sh
 
-STAGED_FILES=$(git diff --cached --name-only --diff-filter=d | grep '\.py$')
+STAGED_PY=$(git diff --cached --name-only --diff-filter=d | grep '\.py$')
+STAGED_JSON=$(git diff --cached --name-only --diff-filter=d | grep '\.json$')
 
-if [ -z "$STAGED_FILES" ]; then
+if [ -z "$STAGED_PY" ] && [ -z "$STAGED_JSON" ]; then
     exit 0
 fi
 
-echo "$STAGED_FILES" | xargs .venv/bin/python3 -m ruff format --check
+NEED_FIX=0
+REAL_GIT_DIR=$(git rev-parse --git-dir)
 
-if [ $? -ne 0 ]; then
+if [ -n "$STAGED_PY" ]; then
+    echo "$STAGED_PY" | xargs .venv/bin/python3 -m ruff format --check
+    if [ $? -ne 0 ]; then
+        echo "⚠️  Ruff detected Python formatting issues. Fixing..."
+        echo "$STAGED_PY" | xargs .venv/bin/python3 -m ruff format
+        echo "$STAGED_PY" | xargs env GIT_INDEX_FILE="$REAL_GIT_DIR/index" git add
+        NEED_FIX=1
+    fi
+fi
+
+if [ -n "$STAGED_JSON" ]; then
+    JSON_CHANGED=0
+    
+    for file in $STAGED_JSON; do
+        .venv/bin/python3 -m json.tool --indent 2 "$file" > "${file}.tmp.raw" 2>/dev/null
+        
+        printf "%s" "$(cat "${file}.tmp.raw")" > "${file}.tmp"
+        rm "${file}.tmp.raw"
+        
+        diff -q "$file" "${file}.tmp" > /dev/null 2>&1
+        if [ $? -ne 0 ]; then
+            mv "${file}.tmp" "$file"
+            JSON_CHANGED=1
+        else
+            rm "${file}.tmp"
+        fi
+    done
+
+    if [ $JSON_CHANGED -eq 1 ]; then
+        echo "⚠️  JSON formatting issues detected. Fixing..."
+        echo "$STAGED_JSON" | xargs env GIT_INDEX_FILE="$REAL_GIT_DIR/index" git add
+        NEED_FIX=1
+    fi
+fi
+
+if [ $NEED_FIX -eq 1 ]; then
     echo ""
-    echo "⚠️  Ruff detected formatting issues. Fixing and re-staging automatically..."
-    echo ""
-
-    echo "$STAGED_FILES" | xargs .venv/bin/python3 -m ruff format
-
-    REAL_GIT_DIR=$(git rev-parse --git-dir)
-    echo "$STAGED_FILES" | xargs env GIT_INDEX_FILE="$REAL_GIT_DIR/index" git add
-
     echo "✅ Files fixed and re-staged successfully. Please check before commit"
-
     exit 1
 fi
 
