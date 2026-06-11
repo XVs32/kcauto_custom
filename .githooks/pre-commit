@@ -1,0 +1,26 @@
+#!/bin/sh
+
+STAGED_FILES=$(git diff --cached --name-only --diff-filter=d | grep '\.py$')
+
+if [ -z "$STAGED_FILES" ]; then
+    exit 0
+fi
+
+echo "$STAGED_FILES" | xargs .venv/bin/python3 -m ruff format --check
+
+if [ $? -ne 0 ]; then
+    echo ""
+    echo "⚠️  Ruff detected formatting issues. Fixing and re-staging automatically..."
+    echo ""
+
+    echo "$STAGED_FILES" | xargs .venv/bin/python3 -m ruff format
+
+    REAL_GIT_DIR=$(git rev-parse --git-dir)
+    echo "$STAGED_FILES" | xargs env GIT_INDEX_FILE="$REAL_GIT_DIR/index" git add
+
+    echo "✅ Files fixed and re-staged successfully. Please check before commit"
+
+    exit 1
+fi
+
+exit 0
