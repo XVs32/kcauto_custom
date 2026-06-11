@@ -1,6 +1,4 @@
 {
-    "combat.retreat_points": [
-        "C"
-    ],
-    "combat.check_fatigue": false
+  "combat.retreat_points": ["C"],
+  "combat.check_fatigue": false
 }

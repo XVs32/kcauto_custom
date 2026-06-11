@@ -1,8 +1,4 @@
 {
-    "combat.node_formations": [
-	    "S:echelon"
-    ],
-    "combat.node_selects": [ 
-         "F>D"
-]
+  "combat.node_formations": ["S:echelon"],
+  "combat.node_selects": ["F>D"]
 }

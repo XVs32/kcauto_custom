@@ -1,5 +1,3 @@
 {
-    "combat.node_selects": [
-        "A>C"
-    ]
+  "combat.node_selects": ["A>C"]
 }

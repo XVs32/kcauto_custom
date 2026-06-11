@@ -1,6 +1,3 @@
 {
-    "combat.node_selects": [ 
-         "F>J",
-         "O>P"
-]
+  "combat.node_selects": ["F>J", "O>P"]
 }
