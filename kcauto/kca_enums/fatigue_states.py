@@ -13,7 +13,7 @@ class FatigueStateEnum(EnumBase):
 
     @property
     def display_name(self):
-        return self.name.replace('_', ' ').title()
+        return self.name.replace("_", " ").title()
 
     @classmethod
     def get_fatigue_state_from_morale(cls, condition):

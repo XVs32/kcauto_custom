@@ -4,6 +4,7 @@ import json
 INPUT_FILE_PATH = "../data/temp/get_data_ship.json"
 OUTPUT_FILE_PATH = "ship_name_api.json"
 
+
 def extract_data_from_json_file(input_path, output_path):
     """
     Reads a JSON file, extracts 'api_id' and 'api_name' from each object,
@@ -17,7 +18,7 @@ def extract_data_from_json_file(input_path, output_path):
     try:
         # Read the JSON data from the input file
         print(f"Reading data from {input_path}...")
-        with open(input_path, 'r', encoding='utf-8') as infile:
+        with open(input_path, "r", encoding="utf-8") as infile:
             data_string = infile.read()
             # We assume it's a single, valid JSON array string for this task.
             json_data = json.loads(data_string)
@@ -31,21 +32,22 @@ def extract_data_from_json_file(input_path, output_path):
         extracted_items = []
         for item in json_data:
             # Check if the required keys exist and if the api_id is not greater than 1500
-            if 'api_id' in item and 'api_name' in item and item['api_id'] <= 1500:
-                extracted_items.append({
-                    "id": item['api_id'],
-                    "name": item['api_name']
-                })
+            if "api_id" in item and "api_name" in item and item["api_id"] <= 1500:
+                extracted_items.append({"id": item["api_id"], "name": item["api_name"]})
             else:
                 # Provide a specific warning for items that are being ignored
-                if 'api_id' in item and item['api_id'] > 1500:
-                    print(f"Warning: Skipping item with api_id > 1500: {item['api_id']}")
+                if "api_id" in item and item["api_id"] > 1500:
+                    print(
+                        f"Warning: Skipping item with api_id > 1500: {item['api_id']}"
+                    )
                 else:
-                    print(f"Warning: Skipping item as 'api_id' or 'api_name' key is missing.")
+                    print(
+                        f"Warning: Skipping item as 'api_id' or 'api_name' key is missing."
+                    )
 
         # Write the extracted data to the output file as a JSON array
         print(f"Writing extracted data to {output_path}...")
-        with open(output_path, 'w', encoding='utf-8') as outfile:
+        with open(output_path, "w", encoding="utf-8") as outfile:
             # Use json.dumps to write the list of dictionaries as a formatted JSON string
             json.dump(extracted_items, outfile, indent=4, ensure_ascii=False)
 
@@ -57,6 +59,7 @@ def extract_data_from_json_file(input_path, output_path):
         print(f"Error: Failed to decode JSON from the file {input_path}.")
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
+
 
 # Run the extraction function
 if __name__ == "__main__":

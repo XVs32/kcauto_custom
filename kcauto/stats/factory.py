@@ -4,7 +4,7 @@ from util.logger import Log
 
 
 class FactoryStats(StatsBase):
-    work_phase= 0
+    work_phase = 0
 
     def __init__(self, start_time):
         super().__init__(start_time)

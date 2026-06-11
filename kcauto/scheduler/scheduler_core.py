@@ -7,7 +7,10 @@ import expedition.expedition_core as exp
 import pvp.pvp_core as pvp
 import ships.ships_core as shp
 from kca_enums.scheduler_slots import (
-    SchedulerSlot0Enum, SchedulerSlot2Enum, SchedulerSlot3Enum)
+    SchedulerSlot0Enum,
+    SchedulerSlot2Enum,
+    SchedulerSlot3Enum,
+)
 from scheduler.schedule_rule import ScheduleRule
 from util.kc_time import KCTime
 from util.logger import Log
@@ -45,6 +48,7 @@ class SchedulerCore(object):
                 self.stop_timers.append((rule.next_action_time, rule))
             elif rule.condition_runs:
                 import stats.stats_core as sts
+
                 if rule.condition_type is SchedulerSlot0Enum.SORTIES_RUN:
                     run = sts.stats.combat.combat_sorties
                 elif rule.condition_type is SchedulerSlot0Enum.EXPEDITIONS_RUN:
@@ -57,8 +61,10 @@ class SchedulerCore(object):
     def _set_misc_rules(self):
         for rule in self.rules:
             if rule.condition_type in (
-                    SchedulerSlot0Enum.RESCUE, SchedulerSlot0Enum.DOCKS_FULL,
-                    SchedulerSlot0Enum.CLEAR_STOP):
+                SchedulerSlot0Enum.RESCUE,
+                SchedulerSlot0Enum.DOCKS_FULL,
+                SchedulerSlot0Enum.CLEAR_STOP,
+            ):
                 self.misc_rules.append(rule)
 
     def check_and_process_rules(self):
@@ -79,13 +85,15 @@ class SchedulerCore(object):
                             f"Stopping {rule.action_module.display_name} "
                             f" module at local time "
                             f"~{rule.condition_time[0]:02}:"
-                            f"{rule.condition_time[1]:02}.")
+                            f"{rule.condition_time[1]:02}."
+                        )
                     elif rule.condition_type is SchedulerSlot0Enum.TIME_RUN:
                         Log.log_msg(
                             f"Stopping {rule.action_module.display_name} "
                             f" module after running for "
                             f"~{rule.condition_time[0]:02}:"
-                            f"{rule.condition_time[1]:02}.")
+                            f"{rule.condition_time[1]:02}."
+                        )
                 if rule.action is SchedulerSlot2Enum.SLEEP:
                     wake_time = rule.next_wake_time
                     if rule.condition_type is SchedulerSlot0Enum.TIME:
@@ -96,7 +104,8 @@ class SchedulerCore(object):
                             f"{rule.condition_time[1]:02} for "
                             f"~{rule.action_length[0]:02}:"
                             f"{rule.action_length[1]:02}. Waking at "
-                            f"{KCTime.datetime_to_str(wake_time)}.")
+                            f"{KCTime.datetime_to_str(wake_time)}."
+                        )
                     elif rule.condition_type is SchedulerSlot0Enum.TIME_RUN:
                         Log.log_msg(
                             f"Sleeping {rule.action_module.display_name} "
@@ -105,7 +114,8 @@ class SchedulerCore(object):
                             f"{rule.condition_time[1]:02} for "
                             f"~{rule.action_length[0]:02}:"
                             f"{rule.action_length[1]:02}. Waking at "
-                            f"{KCTime.datetime_to_str(wake_time)}.")
+                            f"{KCTime.datetime_to_str(wake_time)}."
+                        )
                     self.wake_timers.append((wake_time, rule))
                 self._set_module_enabled_state(rule, False)
             else:
@@ -116,17 +126,23 @@ class SchedulerCore(object):
         new_run_thresholds = []
         for threshold_tuple in self.run_thresholds:
             import stats.stats_core as sts
+
             threshold = threshold_tuple[0]
             rule = threshold_tuple[1]
             if (
-                    (rule.condition_type is SchedulerSlot0Enum.SORTIES_RUN
-                        and sts.stats.combat.combat_sorties >= threshold)
-                    or (rule.condition_type
-                        is SchedulerSlot0Enum.EXPEDITIONS_RUN
-                        and sts.stats.expedition.expeditions_received
-                        >= threshold)
-                    or (rule.condition_type is SchedulerSlot0Enum.PVP_RUN
-                        and sts.stats.pvp.pvp_done >= threshold)):
+                (
+                    rule.condition_type is SchedulerSlot0Enum.SORTIES_RUN
+                    and sts.stats.combat.combat_sorties >= threshold
+                )
+                or (
+                    rule.condition_type is SchedulerSlot0Enum.EXPEDITIONS_RUN
+                    and sts.stats.expedition.expeditions_received >= threshold
+                )
+                or (
+                    rule.condition_type is SchedulerSlot0Enum.PVP_RUN
+                    and sts.stats.pvp.pvp_done >= threshold
+                )
+            ):
                 self._set_module_enabled_state(rule, False)
             else:
                 new_run_thresholds.append(threshold_tuple)
@@ -139,7 +155,8 @@ class SchedulerCore(object):
                     if ship.sortno == rule.condition_rescue:
                         Log.log_success(
                             f"Ship {ship.name} (#{ship.sortno}) rescued. "
-                            "Executing scheduler rule.")
+                            "Executing scheduler rule."
+                        )
                         self._set_module_enabled_state(rule, False)
                         break
             elif rule.condition_type is SchedulerSlot0Enum.DOCKS_FULL:
@@ -148,8 +165,7 @@ class SchedulerCore(object):
                     self._set_module_enabled_state(rule, False)
             elif rule.condition_type is SchedulerSlot0Enum.CLEAR_STOP:
                 if com.combat.map_cleared:
-                    Log.log_success(
-                        "Sortie map cleared. Executing Scheduler rule.")
+                    Log.log_success("Sortie map cleared. Executing Scheduler rule.")
                     self._set_module_enabled_state(rule, False)
 
     def _check_and_process_wake_timers(self):
@@ -163,12 +179,14 @@ class SchedulerCore(object):
                         Log.log_msg(
                             f"Waking {rule.action_module.display_name} module "
                             f"after sleeping for ~{rule.action_length[0]:02}:"
-                            f"{rule.action_length[1]:02}.")
+                            f"{rule.action_length[1]:02}."
+                        )
                     elif rule.condition_type is SchedulerSlot0Enum.TIME_RUN:
                         Log.log_msg(
                             f"Waking {rule.action_module.display_name} module "
                             f"after sleeping for ~{rule.action_length[0]:02}:"
-                            f"{rule.action_length[1]:02}.")
+                            f"{rule.action_length[1]:02}."
+                        )
                     self.stop_timers.append((rule.next_action_time, rule))
                 self._set_module_enabled_state(rule, True)
             else:

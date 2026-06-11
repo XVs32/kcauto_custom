@@ -20,7 +20,7 @@ class ImageMatch(ABC):
     """
 
     # path to tesseract if it does not exist in the path
-    TESSERACT_PATH = ''
+    TESSERACT_PATH = ""
     # mouse movement speed
     MOUSE_MOVE_SPEED = 0.2
     # time in seconds to wait between searching for an asset in the wait() and
@@ -40,7 +40,7 @@ class ImageMatch(ABC):
     click_callback = None
 
     _captured = None
-    
+
     x = 0
     y = 0
     w = 0
@@ -48,7 +48,7 @@ class ImageMatch(ABC):
 
     def capture(self):
         """Private method for capturing the defined region using MSS.
-        
+
         Returns:
             PIL.Image: object representing captured region.
         """
@@ -56,16 +56,18 @@ class ImageMatch(ABC):
             # Ensure all coordinates are integers and not None
             # MSS uses {'top': y, 'left': x, 'width': w, 'height': h}
             region = {
-                'top': int(self.y),
-                'left': int(self.x),
-                'width': int(self.w),
-                'height': int(self.h)
+                "top": int(self.y),
+                "left": int(self.x),
+                "width": int(self.w),
+                "height": int(self.h),
             }
-            
+
             screenshot = sct.grab(region)
-            
+
             # Convert MSS screenshot to PIL Image
-            return Image.frombytes('RGB', screenshot.size, screenshot.bgra, 'raw', 'BGRX')
+            return Image.frombytes(
+                "RGB", screenshot.size, screenshot.bgra, "raw", "BGRX"
+            )
 
     def _match_template(self, target, template=None, cached=False):
         """Private method for finding matches from either the target asset
@@ -94,8 +96,7 @@ class ImageMatch(ABC):
             capture_rgb = np.array(capture)
             self._captured = cv2.cvtColor(capture_rgb, cv2.COLOR_BGR2GRAY)
 
-        return cv2.matchTemplate(
-            self._captured, template, cv2.TM_CCOEFF_NORMED)
+        return cv2.matchTemplate(self._captured, template, cv2.TM_CCOEFF_NORMED)
 
     def shift_region(self, new_x, new_y):
         """Method for shifting the x and y coordinates of an existing region.
@@ -134,8 +135,13 @@ class ImageMatch(ABC):
         if max_val < similarity:
             raise FindFailed(f"{target} not found in {self}!")
         return Match(
-            target, self.x + max_loc[0], self.y + max_loc[1], len(template[0]),
-            len(template), max_val)
+            target,
+            self.x + max_loc[0],
+            self.y + max_loc[1],
+            len(template[0]),
+            len(template),
+            max_val,
+        )
 
     def find_all(self, target, similarity, cached=False):
         """Method that finds all matches of the target asset within the region.
@@ -157,9 +163,16 @@ class ImageMatch(ABC):
         matches_filtered = np.where(matches >= similarity)
         match_list = []
         for match in zip(*matches_filtered[::-1]):
-            match_list.append(Match(
-                target, self.x + match[0], self.y + match[1], len(template[0]),
-                len(template), matches[match[1]][match[0]]))
+            match_list.append(
+                Match(
+                    target,
+                    self.x + match[0],
+                    self.y + match[1],
+                    len(template[0]),
+                    len(template),
+                    matches[match[1]][match[0]],
+                )
+            )
         return match_list
 
     def exists(self, target, similarity, cached=False):
@@ -208,7 +221,8 @@ class ImageMatch(ABC):
                 sleep(self.SCAN_RATE)
                 now = datetime.now()
         raise FindFailed(
-            f"{target} not found in {self} after waiting for {wait} seconds.")
+            f"{target} not found in {self} after waiting for {wait} seconds."
+        )
 
     def wait_vanish(self, target, wait, similarity):
         """Method that returns once the target asset no longer exists in the
@@ -234,7 +248,8 @@ class ImageMatch(ABC):
             sleep(self.SCAN_RATE)
             now = datetime.now()
         raise VanishFailed(
-            f"{target} still in {self} after waiting for {wait} seconds.")
+            f"{target} still in {self} after waiting for {wait} seconds."
+        )
 
     def hover(self, x=None, y=None):
         """Method to hover over a random point within the region. If an
@@ -242,7 +257,7 @@ class ImageMatch(ABC):
         pyautogui moveTo method. If a hover_callback is specified, it will be
         called after the hover action.
         """
-        
+
         if x is None or y is None:
             x = randint(self.x, self.x + self.w)
             y = randint(self.y, self.y + self.h)
@@ -262,7 +277,7 @@ class ImageMatch(ABC):
         it will be called after the click action.
 
         Args:
-            pad (tuple, optional): Tuple specifying the offset of 
+            pad (tuple, optional): Tuple specifying the offset of
                 click area. The order is (x1, y1, x2, y2)
                 Defaults to (0, 0, 0, 0).
         """
@@ -297,13 +312,13 @@ class ImageMatch(ABC):
         pytesseract.pytesseract.tesseract_cmd = self.TESSERACT_PATH
         capture = self.capture()
         try:
-            return pytesseract.image_to_string(
-                capture, lang=lang, config=config)
+            return pytesseract.image_to_string(capture, lang=lang, config=config)
         except pytesseract.pytesseract.TesseractNotFoundError:
             raise Exception(
                 "tesseract is not installed or it's not in your path, "
                 "or you've not specified the path to tesseract in "
-                "ImageMatch.TESSERACT_PATH")
+                "ImageMatch.TESSERACT_PATH"
+            )
 
     def save_screenshot(self, filename):
         """Method for saving a screenshot of the region to a file.
@@ -319,6 +334,7 @@ class Region(ImageMatch):
     """Class used to define a (search) region. Create a Region to visually
     search within it or to use other ImageMatch public methods.
     """
+
     def __init__(self, x=None, y=None, w=None, h=None):
         """Initialize a Region instance. Leave all parameters blank to create
         a region for the entire screen. Fill in all parameters otherwise.
@@ -339,10 +355,10 @@ class Region(ImageMatch):
         if x is None and y is None and w is None and h is None:
             with mss.mss() as sct:
                 screen = sct.monitors[0]
-            self.x = screen['left']
-            self.y = screen['top']
-            self.w = screen['width']
-            self.h = screen['height']
+            self.x = screen["left"]
+            self.y = screen["top"]
+            self.w = screen["width"]
+            self.h = screen["height"]
         else:
             if x is None or y is None or w is None or h is None:
                 raise ValueError("Parameters must be all or nothing.")
@@ -359,6 +375,7 @@ class Match(ImageMatch):
     """Class returned when an image asset search is successful. Not intended
     to be instantiated manually.
     """
+
     def __init__(self, name, x, y, w, h, similarity):
         self.MOUSE_MOVE_SPEED = Match.MOUSE_MOVE_SPEED
         self.name = name
@@ -371,12 +388,13 @@ class Match(ImageMatch):
     def __repr__(self):
         return (
             f"[ {self.name}: X:{self.x}, Y:{self.y}, W:{self.w}, H:{self.h}, "
-            f"{self.similarity:.5f} ]")
+            f"{self.similarity:.5f} ]"
+        )
 
 
 class FindFailed(Exception):
-    """Raised when an asset could not be found on screen.
-    """
+    """Raised when an asset could not be found on screen."""
+
     pass
 
 
@@ -384,4 +402,5 @@ class VanishFailed(Exception):
     """Raised when an asset expected to disappear does not disappear by the
     timeout time.
     """
+
     pass
