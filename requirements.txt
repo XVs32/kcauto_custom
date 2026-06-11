@@ -1,3 +1,9 @@
+# use "sudo apt-get install python3.11-dev" first if needed
+# use "sudo apt install python3.11-distutils" first if needed
+# use "sudo apt-get install python3.11-tk" first if needed
+# use "sudo apt-get install scrot" first if needed
+# use "pip install windows-curses" for windows system
+
 appdirs==1.4.4
 certifi==2025.6.15
 charset-normalizer==3.4.2
@@ -11,7 +17,6 @@ numpy==2.3.1
 opencv-python==4.11.0.86
 packaging==25.0
 pillow==11.3.0
-psutil==7.2.1
 PyAutoGUI==0.9.54
 PyChromeDevTools==1.0.4
 pyee==11.1.1
@@ -27,7 +32,6 @@ python-dateutil==2.9.0.post0
 python3-xlib==0.15
 pytweening==1.2.0
 requests==2.32.4
-ruff==0.15.16
 six==1.17.0
 tqdm==4.67.1
 typing_extensions==4.14.0
@@ -35,3 +39,4 @@ urllib3==1.26.20
 websocket-client==1.8.0
 websockets==10.4
 zipp==3.23.0
+psutil==7.2.1
