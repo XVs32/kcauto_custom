@@ -973,24 +973,6 @@ class CombatCore(CoreBase):
 
         current_map = self.map_data.enum
 
-        Log.log_error(
-            f"current_map: {current_map}, gimmick_attampt: {self.gimmick_attampt}, last_battle_node: {self.last_battle[self.MAP_NODE]}, last_battle_rank: {self.last_battle[self.RANKENUM]}"
-        )
-
-        Log.log_error(
-            f"current_map.without_quest_and_node_enum: {current_map.without_quest_and_node_enum}, \
-            gimmick_attampt.without_quest_and_node_enum: {self.gimmick_attampt.without_quest_and_node_enum}, \
-            last_battle_node: {self.last_battle[self.MAP_NODE]} {type(self.last_battle[self.MAP_NODE])}, \
-            last_battle_rank: {self.last_battle[self.RANKENUM]}, \
-            gimmick_attampt.variant: {self.gimmick_attampt.variant} {type(self.gimmick_attampt.variant)}"
-        )
-
-        if current_map.without_quest_and_node_enum == self.gimmick_attampt.without_quest_and_node_enum:
-            Log.log_error(f'1 pass')
-
-        if self.last_battle[self.MAP_NODE].name == self.gimmick_attampt.variant:
-            Log.log_error(f'2 pass')
-
         # check if current map has gimmick
         if (
             current_map.without_quest_and_node_enum
@@ -1007,7 +989,7 @@ class CombatCore(CoreBase):
                     ]
                 ]
             ):
-                Log.log_msg(f"Gimmick solved for map {current_map.value}.")
+                Log.log_success(f"Gimmick solved for map {current_map.value}.")
                 self.gimmick_list[self.gimmick_attampt.display_name][
                     self.GIMMICK_CLEAR_REMAINING
                 ] -= 1
