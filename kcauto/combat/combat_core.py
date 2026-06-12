@@ -127,7 +127,6 @@ class CombatCore(CoreBase):
             return
 
         if self.enabled:
-
             quest_name_len = len(value.split("-")[-1])
             if quest_name_len > 1:
                 value = value[: -quest_name_len - 1]
@@ -233,7 +232,7 @@ class CombatCore(CoreBase):
         if proposed_sortie_time > self.next_sortie_time or override:
             self.next_sortie_time = proposed_sortie_time
             Log.log_msg(
-                "Next sortie at " f"{KCTime.datetime_to_str(self.next_sortie_time)}"
+                f"Next sortie at {KCTime.datetime_to_str(self.next_sortie_time)}"
             )
 
     def _validate_sortie_map(self, sortie_map):
@@ -388,7 +387,6 @@ class CombatCore(CoreBase):
 
         conducting_sortie = True
         while conducting_sortie == True:
-
             # Go to next acrion needed node
             node_type = self._cycle_between_nodes(sortie_map)
 
@@ -397,11 +395,9 @@ class CombatCore(CoreBase):
                 or node_type == self.NODE_TYPE_COMBAT_FINISH
                 or node_type == self.NODE_TYPE_FORMATION_SKIP
             ):
-
                 Log.log_msg(f"Combat at node {self.current_node}.")
 
                 if node_type == self.NODE_TYPE_COMBAT:
-
                     self._resolve_smoke_prompt()
 
                     self._resolve_formation_prompt()
@@ -416,7 +412,6 @@ class CombatCore(CoreBase):
                     kca_u.kca.r["center"].click()
 
                 while not kca_u.kca.exists("lower_right_corner", "global|next.png"):
-
                     if kca_u.kca.exists("kc", "global|combat_nb_fight.png"):
                         Log.log_debug_1("Night battle prompt.")
 
@@ -512,7 +507,6 @@ class CombatCore(CoreBase):
         Log.log_debug_1("Between nodes.")
 
         while True:
-
             api_result = {"mock": "data"}
             while api_result != {}:
                 api_result = api.api.update_from_api(
@@ -721,7 +715,7 @@ class CombatCore(CoreBase):
                 raise ValueError("Valid FCF retreat escort ship not found.")
 
             Log.log_msg(
-                f"Retreating {damaged_ship.name} with {escort_ship.name} " "using FCF."
+                f"Retreating {damaged_ship.name} with {escort_ship.name} using FCF."
             )
             kca_u.kca.click_existing(
                 "lower", "combat|fcf_retreat_ship.png", cached=True
@@ -946,7 +940,6 @@ class CombatCore(CoreBase):
                         self.GIMMICK_MAP_STAGE_REQUIRE
                     ]
                 ):
-
                     if (
                         self.gimmick_list[gimmick_map_str][self.GIMMICK_CLEAR_REMAINING]
                         > 0
@@ -979,7 +972,6 @@ class CombatCore(CoreBase):
             == self.gimmick_attampt.without_quest_and_node_enum
             and self.last_battle[self.MAP_NODE].name == self.gimmick_attampt.variant
         ):
-
             Log.log_msg(f"Battled in gimmick node {self.gimmick_attampt}")
 
             if self.last_battle[self.RANKENUM].is_at_least(
