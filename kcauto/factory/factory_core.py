@@ -154,7 +154,7 @@ class FactoryCore(object):
                     while not kca_u.kca.exists('left', 'nav|side_menu_home.png'):
                         kca_u.kca.r['shipgirl'].click()
                         kca_u.kca.r['top'].hover()
-                    kca_u.kca.wait('lower', 'factory|factory_init.png', 20)
+                    kca_u.kca.wait('upper', 'nav|screen_development_ready.png', 20)
 
             """place the order on a empty slot"""
             for j in range(1,3):
@@ -198,7 +198,7 @@ class FactoryCore(object):
                             resource -= 1 * step_multiplier
 
                     kca_u.kca.r["order_confirm_region"].click()
-                    kca_u.kca.wait('lower', 'factory|factory_init.png', 20)
+                    kca_u.kca.wait('upper', 'nav|screen_development_ready.png', 20)
                     
                     count -= 1
                     if count <= 0:
