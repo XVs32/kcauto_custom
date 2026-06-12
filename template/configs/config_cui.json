@@ -38,9 +38,19 @@
   "expedition.desire_bauxite": 350000,
   "expedition.desire_steel": 350000,
   "expedition.desire_bucket": 3000,
-  "factory.build_recipe": [30, 30, 30, 30],
+  "factory.build_recipe": [
+    30,
+    30,
+    30,
+    30
+  ],
   "factory.build_secretary": 1234,
-  "factory.develop_recipe": [100, 10, 200, 10],
+  "factory.develop_recipe": [
+    100,
+    10,
+    200,
+    10
+  ],
   "factory.develop_secretary": 1234,
   "factory.enabled": false,
   "general.chrome_dev_port": 9222,
@@ -107,7 +117,10 @@
     "Ed2"
   ],
   "scheduler.enabled": true,
-  "scheduler.rules": ["time:0230:stop:kcauto", "sorties_run:15:stop:combat"],
+  "scheduler.rules": [
+    "time:0230:stop:kcauto",
+    "sorties_run:15:stop:combat"
+  ],
   "ship_switcher.enabled": false,
   "ship_switcher.slots": {}
 }

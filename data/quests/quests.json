@@ -2,46 +2,92 @@
   "Bd1": {
     "id": 201,
     "type": "daily",
-    "intervals": [1, 0, 0],
-    "recommended_map": ["B-1-1"]
+    "intervals": [
+      1,
+      0,
+      0
+    ],
+    "recommended_map": [
+      "B-1-1"
+    ]
   },
   "Bd2": {
     "id": 216,
     "type": "daily",
-    "intervals": [1, 0, 0],
-    "recommended_map": ["B-1-1"]
+    "intervals": [
+      1,
+      0,
+      0
+    ],
+    "recommended_map": [
+      "B-1-1"
+    ]
   },
   "Bd3": {
     "id": 210,
     "type": "daily",
-    "intervals": [5, 0, 0],
-    "recommended_map": ["B-1-1"]
+    "intervals": [
+      5,
+      0,
+      0
+    ],
+    "recommended_map": [
+      "B-1-1"
+    ]
   },
   "Bd4": {
     "id": 211,
     "type": "other",
-    "intervals": [2, 0, 0],
-    "enemy_context": ["carriers"],
-    "recommended_map": ["B-2-1"]
+    "intervals": [
+      2,
+      0,
+      0
+    ],
+    "enemy_context": [
+      "carriers"
+    ],
+    "recommended_map": [
+      "B-2-1"
+    ]
   },
   "Bd5": {
     "id": 218,
     "type": "daily",
-    "intervals": [2, 0, 0],
-    "enemy_context": ["transports"],
-    "recommended_map": ["B-2-2-A"]
+    "intervals": [
+      2,
+      0,
+      0
+    ],
+    "enemy_context": [
+      "transports"
+    ],
+    "recommended_map": [
+      "B-2-2-A"
+    ]
   },
   "Bd6": {
     "id": 212,
     "type": "other",
-    "intervals": [2, 0, 0],
-    "enemy_context": ["transports"],
-    "recommended_map": ["B-2-2-A"]
+    "intervals": [
+      2,
+      0,
+      0
+    ],
+    "enemy_context": [
+      "transports"
+    ],
+    "recommended_map": [
+      "B-2-2-A"
+    ]
   },
   "Bd7": {
     "id": 226,
     "type": "daily",
-    "intervals": [5, 0, 0],
+    "intervals": [
+      5,
+      0,
+      0
+    ],
     "map_context": [
       {
         "name": "B-2-1-H",
@@ -64,53 +110,105 @@
         "min_rank": "B"
       }
     ],
-    "recommended_map": ["B-2-1"]
+    "recommended_map": [
+      "B-2-1"
+    ]
   },
   "Bd8": {
     "id": 230,
     "type": "daily",
-    "intervals": [2, 0, 0],
-    "enemy_context": ["subs"],
-    "recommended_map": ["B-1-5"]
+    "intervals": [
+      2,
+      0,
+      0
+    ],
+    "enemy_context": [
+      "subs"
+    ],
+    "recommended_map": [
+      "B-1-5"
+    ]
   },
   "Bw1": {
     "id": 214,
     "type": "weekly",
-    "intervals": [12, 0, 0],
-    "recommended_map": ["B-1-1"]
+    "intervals": [
+      12,
+      0,
+      0
+    ],
+    "recommended_map": [
+      "B-1-1"
+    ]
   },
   "Bw2": {
     "id": 220,
     "type": "weekly",
-    "intervals": [5, 0, 0],
-    "enemy_context": ["carriers"],
-    "recommended_map": ["B-2-1"]
+    "intervals": [
+      5,
+      0,
+      0
+    ],
+    "enemy_context": [
+      "carriers"
+    ],
+    "recommended_map": [
+      "B-2-1"
+    ]
   },
   "Bw3": {
     "id": 213,
     "type": "weekly",
-    "intervals": [5, 0, 0],
-    "enemy_context": ["transports"],
-    "recommended_map": ["B-2-2-A"]
+    "intervals": [
+      5,
+      0,
+      0
+    ],
+    "enemy_context": [
+      "transports"
+    ],
+    "recommended_map": [
+      "B-2-2-A"
+    ]
   },
   "Bw4": {
     "id": 221,
     "type": "weekly",
-    "intervals": [10, 0, 0],
-    "enemy_context": ["transports"],
-    "recommended_map": ["B-2-2-A"]
+    "intervals": [
+      10,
+      0,
+      0
+    ],
+    "enemy_context": [
+      "transports"
+    ],
+    "recommended_map": [
+      "B-2-2-A"
+    ]
   },
   "Bw5": {
     "id": 228,
     "type": "weekly",
-    "intervals": [5, 0, 0],
-    "enemy_context": ["subs"],
-    "recommended_map": ["B-1-5"]
+    "intervals": [
+      5,
+      0,
+      0
+    ],
+    "enemy_context": [
+      "subs"
+    ],
+    "recommended_map": [
+      "B-1-5"
+    ]
   },
   "Bw6": {
     "id": 229,
     "type": "weekly",
-    "intervals": [12, 0, 0],
+    "intervals": [
+      12,
+      0,
+      0
+    ],
     "map_context": [
       {
         "name": "B-4-1-J",
@@ -133,12 +231,18 @@
         "min_rank": "B"
       }
     ],
-    "recommended_map": ["B-4-2"]
+    "recommended_map": [
+      "B-4-2"
+    ]
   },
   "Bw7": {
     "id": 241,
     "type": "weekly",
-    "intervals": [5, 0, 0],
+    "intervals": [
+      5,
+      0,
+      0
+    ],
     "map_context": [
       {
         "name": "B-3-3-M",
@@ -153,43 +257,63 @@
         "min_rank": "B"
       }
     ],
-    "recommended_map": ["B-3-5"]
+    "recommended_map": [
+      "B-3-5"
+    ]
   },
   "Bw8": {
     "id": 242,
     "type": "weekly",
-    "intervals": [1, 0, 0],
+    "intervals": [
+      1,
+      0,
+      0
+    ],
     "map_context": [
       {
         "name": "B-4-4-K",
         "min_rank": "B"
       }
     ],
-    "recommended_map": ["B-4-4"]
+    "recommended_map": [
+      "B-4-4"
+    ]
   },
   "Bw9": {
     "id": 243,
     "type": "weekly",
-    "intervals": [2, 0, 0],
+    "intervals": [
+      2,
+      0,
+      0
+    ],
     "map_context": [
       {
         "name": "B-5-2-O",
         "min_rank": "S"
       }
     ],
-    "recommended_map": ["B-5-2"]
+    "recommended_map": [
+      "B-5-2"
+    ]
   },
   "Bw10": {
     "id": 261,
     "type": "weekly",
-    "intervals": [3, 0, 0],
+    "intervals": [
+      3,
+      0,
+      0
+    ],
     "map_context": [
       {
         "name": "B-1-5-J",
         "min_rank": "A"
       }
     ],
-    "recommended_map": ["B-1-5"]
+    "recommended_map": [
+      "B-1-5"
+    ]
   },
   "Bm1": {
     "id": 249,
@@ -200,19 +324,33 @@
         "min_rank": "S"
       }
     ],
-    "recommended_map": ["Bm1-2-5"],
+    "recommended_map": [
+      "Bm1-2-5"
+    ],
     "fleet_composition": {
       "requirements": [
         {
-          "id": [62, 265, 319],
+          "id": [
+            62,
+            265,
+            319
+          ],
           "amount": 1
         },
         {
-          "id": [63, 266, 192],
+          "id": [
+            63,
+            266,
+            192
+          ],
           "amount": 1
         },
         {
-          "id": [65, 268, 194],
+          "id": [
+            65,
+            268,
+            194
+          ],
           "amount": 1
         }
       ]
@@ -221,14 +359,20 @@
   "Bm2": {
     "id": 256,
     "type": "monthly",
-    "intervals": [1, 0, 0],
+    "intervals": [
+      1,
+      0,
+      0
+    ],
     "map_context": [
       {
         "name": "B-6-1-K",
         "min_rank": "S"
       }
     ],
-    "recommended_map": ["B-6-1"]
+    "recommended_map": [
+      "B-6-1"
+    ]
   },
   "Bm3": {
     "id": 257,
@@ -239,30 +383,45 @@
         "min_rank": "S"
       }
     ],
-    "recommended_map": ["Bm3-1-4"],
+    "recommended_map": [
+      "Bm3-1-4"
+    ],
     "fleet_composition": {
       "requirements": [
         {
-          "stype": [3],
-          "position": [0]
+          "stype": [
+            3
+          ],
+          "position": [
+            0
+          ]
         },
         {
-          "stype": [3],
+          "stype": [
+            3
+          ],
           "count_rule": "at_most",
           "amount": 3
         },
         {
-          "stype": [2],
+          "stype": [
+            2
+          ],
           "count_rule": "at_least",
           "amount": 3
         },
         {
-          "stype": [2],
+          "stype": [
+            2
+          ],
           "count_rule": "at_most",
           "amount": 5
         },
         {
-          "allowed_ship_types": [2, 3]
+          "allowed_ship_types": [
+            2,
+            3
+          ]
         }
       ]
     }
@@ -276,15 +435,24 @@
         "min_rank": "S"
       }
     ],
-    "recommended_map": ["Bm4-5-1"],
+    "recommended_map": [
+      "Bm4-5-1"
+    ],
     "fleet_composition": {
       "requirements": [
         {
-          "ctype": [37, 19, 2, 26],
+          "ctype": [
+            37,
+            19,
+            2,
+            26
+          ],
           "amount": 3
         },
         {
-          "stype": [3],
+          "stype": [
+            3
+          ],
           "amount": 1
         }
       ]
@@ -293,14 +461,20 @@
   "Bm5": {
     "id": 265,
     "type": "monthly",
-    "intervals": [5, 0, 0],
+    "intervals": [
+      5,
+      0,
+      0
+    ],
     "map_context": [
       {
         "name": "B-1-5-J",
         "min_rank": "A"
       }
     ],
-    "recommended_map": ["B-1-5"]
+    "recommended_map": [
+      "B-1-5"
+    ]
   },
   "Bm6": {
     "id": 264,
@@ -311,16 +485,24 @@
         "min_rank": "S"
       }
     ],
-    "recommended_map": ["Bm6-4-2"],
+    "recommended_map": [
+      "Bm6-4-2"
+    ],
     "fleet_composition": {
       "requirements": [
         {
-          "stype": [7, 11, 18],
+          "stype": [
+            7,
+            11,
+            18
+          ],
           "count_rule": "at_least",
           "amount": 2
         },
         {
-          "stype": [2],
+          "stype": [
+            2
+          ],
           "count_rule": "at_least",
           "amount": 2
         }
@@ -336,25 +518,37 @@
         "min_rank": "S"
       }
     ],
-    "recommended_map": ["Bm7-2-5"],
+    "recommended_map": [
+      "Bm7-2-5"
+    ],
     "fleet_composition": {
       "requirements": [
         {
-          "stype": [2],
-          "position": [0]
+          "stype": [
+            2
+          ],
+          "position": [
+            0
+          ]
         },
         {
-          "stype": [5],
+          "stype": [
+            5
+          ],
           "count_rule": "exact",
           "amount": 1
         },
         {
-          "stype": [3],
+          "stype": [
+            3
+          ],
           "count_rule": "exact",
           "amount": 1
         },
         {
-          "stype": [2],
+          "stype": [
+            2
+          ],
           "count_rule": "exact",
           "amount": 4
         }
@@ -382,15 +576,28 @@
         "min_rank": "S"
       }
     ],
-    "recommended_map": ["Bm8-1-2", "Bm8-1-3", "Bm8-1-4", "Bm8-2-1"],
+    "recommended_map": [
+      "Bm8-1-2",
+      "Bm8-1-3",
+      "Bm8-1-4",
+      "Bm8-2-1"
+    ],
     "fleet_composition": {
       "requirements": [
         {
-          "stype": [3, 4, 7, 21],
+          "stype": [
+            3,
+            4,
+            7,
+            21
+          ],
           "amount": 1
         },
         {
-          "stype": [1, 2],
+          "stype": [
+            1,
+            2
+          ],
           "count_rule": "at_least",
           "amount": 3
         }
@@ -406,7 +613,9 @@
         "min_rank": "S"
       }
     ],
-    "recommended_map": ["B-2-4"]
+    "recommended_map": [
+      "B-2-4"
+    ]
   },
   "Bq2": {
     "id": 854,
@@ -429,7 +638,12 @@
         "min_rank": "S"
       }
     ],
-    "recommended_map": ["B-2-4", "B-6-1", "B-6-3", "B-6-4"]
+    "recommended_map": [
+      "B-2-4",
+      "B-6-1",
+      "B-6-3",
+      "B-6-4"
+    ]
   },
   "Bq3": {
     "id": 861,
@@ -439,11 +653,16 @@
         "name": "B-1-6-N"
       }
     ],
-    "recommended_map": ["Bq3-1-6"],
+    "recommended_map": [
+      "Bq3-1-6"
+    ],
     "fleet_composition": {
       "requirements": [
         {
-          "stype": [10, 22],
+          "stype": [
+            10,
+            22
+          ],
           "count_rule": "at_least",
           "amount": 2
         }
@@ -459,15 +678,21 @@
         "min_rank": "A"
       }
     ],
-    "recommended_map": ["Bq4-6-3"],
+    "recommended_map": [
+      "Bq4-6-3"
+    ],
     "fleet_composition": {
       "requirements": [
         {
-          "stype": [16],
+          "stype": [
+            16
+          ],
           "amount": 1
         },
         {
-          "stype": [3],
+          "stype": [
+            3
+          ],
           "count_rule": "at_least",
           "amount": 2
         }
@@ -491,11 +716,17 @@
         "min_rank": "A"
       }
     ],
-    "recommended_map": ["Bq5-3-3", "Bq5-3-1", "Bq5-3-2"],
+    "recommended_map": [
+      "Bq5-3-3",
+      "Bq5-3-1",
+      "Bq5-3-2"
+    ],
     "fleet_composition": {
       "requirements": [
         {
-          "stype": [3],
+          "stype": [
+            3
+          ],
           "count_rule": "at_least",
           "amount": 1
         }
@@ -511,15 +742,26 @@
         "min_rank": "S"
       }
     ],
-    "recommended_map": ["Bq6-5-4"],
+    "recommended_map": [
+      "Bq6-5-4"
+    ],
     "fleet_composition": {
       "requirements": [
         {
-          "id": [543],
+          "id": [
+            543
+          ],
           "amount": 1
         },
         {
-          "id": [345, 649, 359, 569, 344, 578],
+          "id": [
+            345,
+            649,
+            359,
+            569,
+            344,
+            578
+          ],
           "amount": 1
         }
       ]
@@ -542,13 +784,37 @@
         "min_rank": "S"
       }
     ],
-    "recommended_map": ["Bq7-5-1", "Bq7-5-3", "Bq7-5-4"],
+    "recommended_map": [
+      "Bq7-5-1",
+      "Bq7-5-3",
+      "Bq7-5-4"
+    ],
     "fleet_composition": {
       "requirements": [
         {
           "id": [
-            69, 272, 427, 61, 264, 123, 295, 142, 60, 263, 417, 59, 262, 416,
-            51, 213, 477, 115, 293, 622, 623, 624
+            69,
+            272,
+            427,
+            61,
+            264,
+            123,
+            295,
+            142,
+            60,
+            263,
+            417,
+            59,
+            262,
+            416,
+            51,
+            213,
+            477,
+            115,
+            293,
+            622,
+            623,
+            624
           ],
           "count_rule": "at_least",
           "amount": 4
@@ -617,12 +883,24 @@
         "min_rank": "S"
       }
     ],
-    "recommended_map": ["Bq9-1-3", "Bq9-1-4", "Bq9-2-1", "Bq9-2-2", "Bq9-2-3"],
+    "recommended_map": [
+      "Bq9-1-3",
+      "Bq9-1-4",
+      "Bq9-2-1",
+      "Bq9-2-2",
+      "Bq9-2-3"
+    ],
     "fleet_composition": {
       "requirements": [
         {
-          "stype": [7, 11, 18],
-          "position": [0]
+          "stype": [
+            7,
+            11,
+            18
+          ],
+          "position": [
+            0
+          ]
         }
       ]
     }
@@ -652,7 +930,12 @@
         "min_rank": "S"
       }
     ],
-    "recommended_map": ["Bq10-5-5", "Bq10-6-2", "Bq10-6-5", "Bq10-7-2-M"]
+    "recommended_map": [
+      "Bq10-5-5",
+      "Bq10-6-2",
+      "Bq10-6-5",
+      "Bq10-7-2-M"
+    ]
   },
   "Bq11": {
     "id": 284,
@@ -675,15 +958,28 @@
         "min_rank": "S"
       }
     ],
-    "recommended_map": ["Bq11-1-4", "Bq11-2-1", "Bq11-2-2", "Bq11-2-3"],
+    "recommended_map": [
+      "Bq11-1-4",
+      "Bq11-2-1",
+      "Bq11-2-2",
+      "Bq11-2-3"
+    ],
     "fleet_composition": {
       "requirements": [
         {
-          "stype": [3, 4, 7, 21],
+          "stype": [
+            3,
+            4,
+            7,
+            21
+          ],
           "amount": 1
         },
         {
-          "stype": [1, 2],
+          "stype": [
+            1,
+            2
+          ],
           "count_rule": "at_least",
           "amount": 3
         }
@@ -715,7 +1011,13 @@
         "min_rank": "S"
       }
     ],
-    "recommended_map": ["B-4-1", "B-4-2", "B-4-3", "B-4-4", "B-4-5"]
+    "recommended_map": [
+      "B-4-1",
+      "B-4-2",
+      "B-4-3",
+      "B-4-4",
+      "B-4-5"
+    ]
   },
   "Bq13": {
     "id": 903,
@@ -738,16 +1040,40 @@
         "min_rank": "S"
       }
     ],
-    "recommended_map": ["Bq13-5-1", "Bq13-5-4", "Bq13-6-4", "Bq13-6-5"],
+    "recommended_map": [
+      "Bq13-5-1",
+      "Bq13-5-4",
+      "Bq13-6-4",
+      "Bq13-6-5"
+    ],
     "fleet_composition": {
       "requirements_1": [
         {
-          "id": [622, 623, 624],
-          "position": [0]
+          "id": [
+            622,
+            623,
+            624
+          ],
+          "position": [
+            0
+          ]
         },
         {
           "id": [
-            1, 254, 434, 2, 255, 435, 164, 308, 165, 309, 30, 259, 31, 261
+            1,
+            254,
+            434,
+            2,
+            255,
+            435,
+            164,
+            308,
+            165,
+            309,
+            30,
+            259,
+            31,
+            261
           ],
           "count_rule": "at_least",
           "amount": 2
@@ -755,11 +1081,19 @@
       ],
       "requirements_2": [
         {
-          "id": [487, 488, 629],
-          "position": [0]
+          "id": [
+            487,
+            488,
+            629
+          ],
+          "position": [
+            0
+          ]
         },
         {
-          "id": [200]
+          "id": [
+            200
+          ]
         }
       ]
     }
@@ -785,11 +1119,19 @@
         "min_rank": "S"
       }
     ],
-    "recommended_map": ["By1-2-5", "By1-3-4", "By1-4-5", "By1-5-3"],
+    "recommended_map": [
+      "By1-2-5",
+      "By1-3-4",
+      "By1-4-5",
+      "By1-5-3"
+    ],
     "fleet_composition": {
       "requirements": [
         {
-          "id": [195, 627],
+          "id": [
+            195,
+            627
+          ],
           "amount": 2
         }
       ]
@@ -830,14 +1172,36 @@
     "fleet_composition": {
       "requirements": [
         {
-          "stype": [1],
+          "stype": [
+            1
+          ],
           "count_rule": "at_least",
           "amount": 3
         },
         {
           "stype": [
-            1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
-            20, 21, 22
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19,
+            20,
+            21,
+            22
           ],
           "count_rule": "at_most",
           "amount": 5
@@ -880,11 +1244,18 @@
     "fleet_composition": {
       "requirements": [
         {
-          "id": [182, 187],
-          "position": [0]
+          "id": [
+            182,
+            187
+          ],
+          "position": [
+            0
+          ]
         },
         {
-          "stype": [2],
+          "stype": [
+            2
+          ],
           "count_rule": "at_least",
           "amount": 3
         }
@@ -912,16 +1283,25 @@
         "min_rank": "A"
       }
     ],
-    "recommended_map": ["By4-4-1", "By4-4-2", "By4-4-3", "By4-4-4"],
+    "recommended_map": [
+      "By4-4-1",
+      "By4-4-2",
+      "By4-4-3",
+      "By4-4-4"
+    ],
     "fleet_composition": {
       "requirements": [
         {
-          "stype": [5],
+          "stype": [
+            5
+          ],
           "count_rule": "at_least",
           "amount": 3
         },
         {
-          "stype": [2],
+          "stype": [
+            2
+          ],
           "count_rule": "at_least",
           "amount": 1
         }
@@ -951,11 +1331,29 @@
         "min_rank": "S"
       }
     ],
-    "recommended_map": ["By5-7-2-M", "By5-7-3-P", "By5-4-2"],
+    "recommended_map": [
+      "By5-7-2-M",
+      "By5-7-3-P",
+      "By5-4-2"
+    ],
     "fleet_composition": {
       "requirements": [
         {
-          "id": [65, 268, 194, 64, 267, 193, 62, 265, 319, 66, 269, 471, 476],
+          "id": [
+            65,
+            268,
+            194,
+            64,
+            267,
+            193,
+            62,
+            265,
+            319,
+            66,
+            269,
+            471,
+            476
+          ],
           "count_rule": "at_least",
           "amount": 2
         }
@@ -979,16 +1377,34 @@
         "min_rank": "A"
       }
     ],
-    "recommended_map": ["By6-1-2", "By6-1-3", "By6-1-4"],
+    "recommended_map": [
+      "By6-1-2",
+      "By6-1-3",
+      "By6-1-4"
+    ],
     "fleet_composition": {
       "requirements": [
         {
-          "stype": [5, 2],
-          "position": [0]
+          "stype": [
+            5,
+            2
+          ],
+          "position": [
+            0
+          ]
         },
         {
-          "stype": [1, 2],
-          "position": [1, 2, 3, 4, 5],
+          "stype": [
+            1,
+            2
+          ],
+          "position": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
           "count_rule": "at_least",
           "amount": 3
         }
@@ -1012,16 +1428,35 @@
         "min_rank": "A"
       }
     ],
-    "recommended_map": ["By7-1-5", "By7-2-1", "By7-1-6-N"],
+    "recommended_map": [
+      "By7-1-5",
+      "By7-2-1",
+      "By7-1-6-N"
+    ],
     "fleet_composition": {
       "requirements": [
         {
-          "stype": [3, 21, 2],
-          "position": [0]
+          "stype": [
+            3,
+            21,
+            2
+          ],
+          "position": [
+            0
+          ]
         },
         {
-          "stype": [1, 2],
-          "position": [1, 2, 3, 4, 5],
+          "stype": [
+            1,
+            2
+          ],
+          "position": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
           "count_rule": "at_least",
           "amount": 3
         }
@@ -1045,15 +1480,28 @@
         "min_rank": "S"
       }
     ],
-    "recommended_map": ["By8-2-2", "By8-2-3", "By8-2-4"],
+    "recommended_map": [
+      "By8-2-2",
+      "By8-2-3",
+      "By8-2-4"
+    ],
     "fleet_composition": {
       "requirements": [
         {
-          "stype": [7, 11, 18],
-          "position": [0]
+          "stype": [
+            7,
+            11,
+            18
+          ],
+          "position": [
+            0
+          ]
         },
         {
-          "stype": [5, 6],
+          "stype": [
+            5,
+            6
+          ],
           "count_rule": "at_least",
           "amount": 2
         }
@@ -1081,11 +1529,18 @@
         "min_rank": "S"
       }
     ],
-    "recommended_map": ["By9-3-1", "By9-3-3", "By9-3-4", "By9-3-5"],
+    "recommended_map": [
+      "By9-3-1",
+      "By9-3-3",
+      "By9-3-4",
+      "By9-3-5"
+    ],
     "fleet_composition": {
       "requirements": [
         {
-          "stype": [7],
+          "stype": [
+            7
+          ],
           "count_rule": "at_least",
           "amount": 2
         }
@@ -1113,12 +1568,23 @@
         "min_rank": "S"
       }
     ],
-    "recommended_map": ["By10-5-2", "By10-5-5", "By10-6-4", "By10-6-5"],
+    "recommended_map": [
+      "By10-5-2",
+      "By10-5-5",
+      "By10-6-4",
+      "By10-6-5"
+    ],
     "fleet_composition": {
       "requirements": [
         {
-          "stype": [7, 11, 18],
-          "position": [0]
+          "stype": [
+            7,
+            11,
+            18
+          ],
+          "position": [
+            0
+          ]
         }
       ]
     }
@@ -1148,18 +1614,50 @@
         "min_rank": "A"
       }
     ],
-    "recommended_map": ["By11-3-1", "By11-3-3", "By11-4-3", "By11-7-3-P"],
+    "recommended_map": [
+      "By11-3-1",
+      "By11-3-3",
+      "By11-4-3",
+      "By11-7-3-P"
+    ],
     "fleet_composition": {
       "requirements": [
         {
-          "stype": [7, 11, 18],
+          "stype": [
+            7,
+            11,
+            18
+          ],
           "count_rule": "exact",
           "amount": 0
         },
         {
           "ctype": [
-            125, 93, 107, 102, 65, 69, 118, 105, 84, 116, 83, 95, 121, 110, 106,
-            99, 91, 122, 114, 67, 88, 78, 112, 108, 82
+            125,
+            93,
+            107,
+            102,
+            65,
+            69,
+            118,
+            105,
+            84,
+            116,
+            83,
+            95,
+            121,
+            110,
+            106,
+            99,
+            91,
+            122,
+            114,
+            67,
+            88,
+            78,
+            112,
+            108,
+            82
           ],
           "count_rule": "at_least",
           "amount": 3
@@ -1188,20 +1686,33 @@
         "min_rank": "S"
       }
     ],
-    "recommended_map": ["By12-1-5", "By12-2-3", "By12-3-2", "By12-5-3"],
+    "recommended_map": [
+      "By12-1-5",
+      "By12-2-3",
+      "By12-3-2",
+      "By12-5-3"
+    ],
     "fleet_composition": {
       "requirements": [
         {
-          "id": [666]
+          "id": [
+            666
+          ]
         },
         {
-          "id": [647]
+          "id": [
+            647
+          ]
         },
         {
-          "id": [195]
+          "id": [
+            195
+          ]
         },
         {
-          "id": [627]
+          "id": [
+            627
+          ]
         }
       ]
     }
@@ -1227,20 +1738,35 @@
         "min_rank": "A"
       }
     ],
-    "recommended_map": ["By13-1-2", "By13-1-3", "By13-1-5", "By13-3-2"],
+    "recommended_map": [
+      "By13-1-2",
+      "By13-1-3",
+      "By13-1-5",
+      "By13-3-2"
+    ],
     "fleet_composition": {
       "requirements": [
         {
-          "id": [230]
+          "id": [
+            230
+          ]
         },
         {
-          "id": [232]
+          "id": [
+            232
+          ]
         },
         {
-          "id": [231, 665]
+          "id": [
+            231,
+            665
+          ]
         },
         {
-          "id": [233, 407]
+          "id": [
+            233,
+            407
+          ]
         }
       ]
     }
@@ -1262,25 +1788,39 @@
         "min_rank": "A"
       }
     ],
-    "recommended_map": ["By14-1-1", "By14-1-2", "By14-1-5"],
+    "recommended_map": [
+      "By14-1-1",
+      "By14-1-2",
+      "By14-1-5"
+    ],
     "fleet_composition": {
       "requirements": [
         {
-          "ctype": [117],
-          "position": [0]
+          "ctype": [
+            117
+          ],
+          "position": [
+            0
+          ]
         },
         {
-          "stype": [1],
+          "stype": [
+            1
+          ],
           "count_rule": "at_least",
           "amount": 2
         },
         {
-          "stype": [1],
+          "stype": [
+            1
+          ],
           "count_rule": "at_most",
           "amount": 4
         },
         {
-          "allowed_ship_types": [1]
+          "allowed_ship_types": [
+            1
+          ]
         }
       ]
     }
@@ -1306,17 +1846,34 @@
         "min_rank": "A"
       }
     ],
-    "recommended_map": ["By15-5-1", "By15-5-3", "By15-5-4", "By15-5-5"],
+    "recommended_map": [
+      "By15-5-1",
+      "By15-5-3",
+      "By15-5-4",
+      "By15-5-5"
+    ],
     "fleet_composition": {
       "requirements": [
         {
-          "id": [86, 210, 150, 592]
+          "id": [
+            86,
+            210,
+            150,
+            592
+          ]
         },
         {
-          "id": [85, 212, 152, 694]
+          "id": [
+            85,
+            212,
+            152,
+            694
+          ]
         },
         {
-          "stype": [2],
+          "stype": [
+            2
+          ],
           "count_rule": "at_least",
           "amount": 2
         }
@@ -1358,12 +1915,20 @@
     "fleet_composition": {
       "requirements": [
         {
-          "id": [1040],
-          "position": [0]
+          "id": [
+            1040
+          ],
+          "position": [
+            0
+          ]
         },
         {
-          "ctype": [12],
-          "position": [1]
+          "ctype": [
+            12
+          ],
+          "position": [
+            1
+          ]
         }
       ]
     }
@@ -1371,22 +1936,38 @@
   "Cd1": {
     "id": 303,
     "type": "daily",
-    "intervals": [0, 1, 0]
+    "intervals": [
+      0,
+      1,
+      0
+    ]
   },
   "Cd2": {
     "id": 304,
     "type": "daily",
-    "intervals": [0, 1, 0]
+    "intervals": [
+      0,
+      1,
+      0
+    ]
   },
   "Cw1": {
     "id": 302,
     "type": "weekly",
-    "intervals": [0, 5, 0]
+    "intervals": [
+      0,
+      5,
+      0
+    ]
   },
   "Cm1": {
     "id": 311,
     "type": "monthly",
-    "intervals": [0, 5, 0]
+    "intervals": [
+      0,
+      5,
+      0
+    ]
   },
   "Cm2": {
     "id": 318,
@@ -1394,7 +1975,9 @@
     "fleet_composition": {
       "requirements": [
         {
-          "stype": [3],
+          "stype": [
+            3
+          ],
           "count_rule": "at_least",
           "amount": 2
         }
@@ -1407,16 +1990,28 @@
     "fleet_composition": {
       "requirements": [
         {
-          "stype": [7, 11, 18],
-          "position": [0]
+          "stype": [
+            7,
+            11,
+            18
+          ],
+          "position": [
+            0
+          ]
         },
         {
-          "stype": [7, 11, 18],
+          "stype": [
+            7,
+            11,
+            18
+          ],
           "count_rule": "at_least",
           "amount": 2
         },
         {
-          "stype": [2],
+          "stype": [
+            2
+          ],
           "count_rule": "at_least",
           "amount": 2
         }
@@ -1429,19 +2024,36 @@
     "fleet_composition": {
       "requirements": [
         {
-          "id": [49, 253, 464, 470],
+          "id": [
+            49,
+            253,
+            464,
+            470
+          ],
           "amount": 1
         },
         {
-          "id": [48, 252, 198],
+          "id": [
+            48,
+            252,
+            198
+          ],
           "amount": 1
         },
         {
-          "id": [17, 225, 566],
+          "id": [
+            17,
+            225,
+            566
+          ],
           "amount": 1
         },
         {
-          "id": [18, 226, 567],
+          "id": [
+            18,
+            226,
+            567
+          ],
           "amount": 1
         }
       ]
@@ -1453,19 +2065,35 @@
     "fleet_composition": {
       "requirements": [
         {
-          "id": [12, 206, 666],
+          "id": [
+            12,
+            206,
+            666
+          ],
           "amount": 1
         },
         {
-          "id": [486, 368, 647],
+          "id": [
+            486,
+            368,
+            647
+          ],
           "amount": 1
         },
         {
-          "id": [13, 207, 195],
+          "id": [
+            13,
+            207,
+            195
+          ],
           "amount": 1
         },
         {
-          "id": [14, 208, 627],
+          "id": [
+            14,
+            208,
+            627
+          ],
           "amount": 1
         }
       ]
@@ -1477,12 +2105,22 @@
     "fleet_composition": {
       "requirements": [
         {
-          "stype": [2, 1, 3, 4, 21],
+          "stype": [
+            2,
+            1,
+            3,
+            4,
+            21
+          ],
           "count_rule": "at_least",
           "amount": 4
         },
         {
-          "stype": [3, 4, 21],
+          "stype": [
+            3,
+            4,
+            21
+          ],
           "count_rule": "at_most",
           "amount": 1
         }
@@ -1496,7 +2134,20 @@
       "requirements": [
         {
           "id": [
-            439, 364, 78, 149, 591, 515, 393, 571, 576, 519, 394, 520, 893, 901,
+            439,
+            364,
+            78,
+            149,
+            591,
+            515,
+            393,
+            571,
+            576,
+            519,
+            394,
+            520,
+            893,
+            901,
             906
           ],
           "amount": 4
@@ -1510,19 +2161,27 @@
     "fleet_composition": {
       "requirements": [
         {
-          "id": [542],
+          "id": [
+            542
+          ],
           "amount": 1
         },
         {
-          "id": [563],
+          "id": [
+            563
+          ],
           "amount": 1
         },
         {
-          "id": [564],
+          "id": [
+            564
+          ],
           "amount": 1
         },
         {
-          "id": [648],
+          "id": [
+            648
+          ],
           "amount": 1
         }
       ]
@@ -1534,16 +2193,27 @@
     "fleet_composition": {
       "requirements": [
         {
-          "stype": [3, 21],
-          "position": [0]
+          "stype": [
+            3,
+            21
+          ],
+          "position": [
+            0
+          ]
         },
         {
-          "stype": [3, 4, 21],
+          "stype": [
+            3,
+            4,
+            21
+          ],
           "count_rule": "at_least",
           "amount": 3
         },
         {
-          "stype": [2],
+          "stype": [
+            2
+          ],
           "count_rule": "at_least",
           "amount": 2
         }
@@ -1556,16 +2226,30 @@
     "fleet_composition": {
       "requirements": [
         {
-          "id": [93, 230]
+          "id": [
+            93,
+            230
+          ]
         },
         {
-          "id": [15, 231, 665]
+          "id": [
+            15,
+            231,
+            665
+          ]
         },
         {
-          "id": [94, 232]
+          "id": [
+            94,
+            232
+          ]
         },
         {
-          "id": [16, 233, 407]
+          "id": [
+            16,
+            233,
+            407
+          ]
         }
       ]
     }
@@ -1576,16 +2260,26 @@
     "fleet_composition": {
       "requirements": [
         {
-          "stype": [5, 6],
-          "position": [0]
+          "stype": [
+            5,
+            6
+          ],
+          "position": [
+            0
+          ]
         },
         {
-          "stype": [5, 6],
+          "stype": [
+            5,
+            6
+          ],
           "count_rule": "at_least",
           "amount": 4
         },
         {
-          "stype": [2],
+          "stype": [
+            2
+          ],
           "count_rule": "at_least",
           "amount": 2
         }
@@ -1598,11 +2292,18 @@
     "fleet_composition": {
       "requirements": [
         {
-          "ctype": [83],
-          "position": [0]
+          "ctype": [
+            83
+          ],
+          "position": [
+            0
+          ]
         },
         {
-          "ctype": [91, 87],
+          "ctype": [
+            91,
+            87
+          ],
           "count_rule": "at_least",
           "amount": 2
         }
@@ -1615,8 +2316,14 @@
     "fleet_composition": {
       "requirements": [
         {
-          "id": [568, 670],
-          "position": [0, 1],
+          "id": [
+            568,
+            670
+          ],
+          "position": [
+            0,
+            1
+          ],
           "amount": 2
         }
       ]
@@ -1628,16 +2335,24 @@
     "fleet_composition": {
       "requirements": [
         {
-          "id": [195]
+          "id": [
+            195
+          ]
         },
         {
-          "id": [647]
+          "id": [
+            647
+          ]
         },
         {
-          "id": [666]
+          "id": [
+            666
+          ]
         },
         {
-          "id": [627]
+          "id": [
+            627
+          ]
         }
       ]
     }
@@ -1648,16 +2363,29 @@
     "fleet_composition": {
       "requirements": [
         {
-          "id": [131, 136, 911, 916]
+          "id": [
+            131,
+            136,
+            911,
+            916
+          ]
         },
         {
-          "id": [143, 148, 546]
+          "id": [
+            143,
+            148,
+            546
+          ]
         },
         {
-          "stype": [3]
+          "stype": [
+            3
+          ]
         },
         {
-          "stype": [2],
+          "stype": [
+            2
+          ],
           "amount": 2
         }
       ]
@@ -1669,16 +2397,32 @@
     "fleet_composition": {
       "requirements": [
         {
-          "id": [9, 201, 426]
+          "id": [
+            9,
+            201,
+            426
+          ]
         },
         {
-          "id": [10, 202, 986]
+          "id": [
+            10,
+            202,
+            986
+          ]
         },
         {
-          "id": [32, 203, 987]
+          "id": [
+            32,
+            203,
+            987
+          ]
         },
         {
-          "id": [11, 204, 959]
+          "id": [
+            11,
+            204,
+            959
+          ]
         }
       ]
     }
@@ -1689,7 +2433,18 @@
     "fleet_composition": {
       "requirements": [
         {
-          "id": [181, 316, 951, 20, 28, 656, 322, 186, 300, 190],
+          "id": [
+            181,
+            316,
+            951,
+            20,
+            28,
+            656,
+            322,
+            186,
+            300,
+            190
+          ],
           "amount": 2
         }
       ]
@@ -1701,12 +2456,32 @@
     "fleet_composition": {
       "requirements": [
         {
-          "id": [405, 323, 975],
-          "position": [0]
+          "id": [
+            405,
+            323,
+            975
+          ],
+          "position": [
+            0
+          ]
         },
         {
           "id": [
-            44, 244, 498, 45, 245, 144, 46, 246, 42, 242, 497, 43, 243, 145, 961
+            44,
+            244,
+            498,
+            45,
+            245,
+            144,
+            46,
+            246,
+            42,
+            242,
+            497,
+            43,
+            243,
+            145,
+            961
           ],
           "count_rule": "at_least",
           "amount": 3
@@ -1720,16 +2495,24 @@
     "fleet_composition": {
       "requirements": [
         {
-          "ctype": [54],
-          "position": [0]
+          "ctype": [
+            54
+          ],
+          "position": [
+            0
+          ]
         },
         {
-          "stype": [2],
+          "stype": [
+            2
+          ],
           "count_rule": "at_least",
           "amount": 3
         },
         {
-          "stype": [10],
+          "stype": [
+            10
+          ],
           "count_rule": "at_least",
           "amount": 2
         }
@@ -1742,11 +2525,23 @@
     "fleet_composition": {
       "requirements": [
         {
-          "ctype": [79, 70, 128, 129],
-          "position": [0]
+          "ctype": [
+            79,
+            70,
+            128,
+            129
+          ],
+          "position": [
+            0
+          ]
         },
         {
-          "ctype": [79, 70, 128, 129],
+          "ctype": [
+            79,
+            70,
+            128,
+            129
+          ],
           "count_rule": "at_least",
           "amount": 3
         }
@@ -1759,20 +2554,32 @@
     "fleet_composition": {
       "requirements": [
         {
-          "id": [86, 150, 592],
+          "id": [
+            86,
+            150,
+            592
+          ],
           "amount": 1
         },
         {
-          "id": [85, 152, 694],
+          "id": [
+            85,
+            152,
+            694
+          ],
           "amount": 1
         },
         {
-          "stype": [3],
+          "stype": [
+            3
+          ],
           "count_rule": "at_least",
           "amount": 1
         },
         {
-          "stype": [2],
+          "stype": [
+            2
+          ],
           "count_rule": "at_least",
           "amount": 2
         }
@@ -1785,13 +2592,36 @@
     "fleet_composition": {
       "requirements": [
         {
-          "id": [409, 324, 956, 625, 695, 410, 325, 955],
-          "position": [0],
+          "id": [
+            409,
+            324,
+            956,
+            625,
+            695,
+            410,
+            325,
+            955
+          ],
+          "position": [
+            0
+          ],
           "count_rule": "at_least",
           "amount": 1
         },
         {
-          "id": [409, 324, 956, 625, 695, 410, 325, 955, 425, 344, 578],
+          "id": [
+            409,
+            324,
+            956,
+            625,
+            695,
+            410,
+            325,
+            955,
+            425,
+            344,
+            578
+          ],
           "count_rule": "at_least",
           "amount": 3
         }
@@ -1801,120 +2631,233 @@
   "Dd1": {
     "id": 402,
     "type": "daily",
-    "intervals": [0, 0, 1]
+    "intervals": [
+      0,
+      0,
+      1
+    ]
   },
   "Dd2": {
     "id": 403,
     "type": "daily",
-    "intervals": [0, 0, 5]
+    "intervals": [
+      0,
+      0,
+      5
+    ]
   },
   "Dw1": {
     "id": 404,
     "type": "weekly",
-    "intervals": [0, 0, 10]
+    "intervals": [
+      0,
+      0,
+      10
+    ]
   },
   "Dw2": {
     "id": 410,
     "type": "weekly",
-    "intervals": [0, 0, 1],
-    "expedition_context": [37, 38]
+    "intervals": [
+      0,
+      0,
+      1
+    ],
+    "expedition_context": [
+      37,
+      38
+    ]
   },
   "Dw3": {
     "id": 411,
     "type": "weekly",
-    "intervals": [0, 0, 7],
-    "expedition_context": [37, 38]
+    "intervals": [
+      0,
+      0,
+      7
+    ],
+    "expedition_context": [
+      37,
+      38
+    ]
   },
   "Dm1": {
     "id": 424,
     "type": "monthly",
-    "intervals": [0, 0, 5],
-    "expedition_context": [5]
+    "intervals": [
+      0,
+      0,
+      5
+    ],
+    "expedition_context": [
+      5
+    ]
   },
   "Dq1": {
     "id": 426,
     "type": "other",
-    "expedition_context": [3, 4, 5, 10]
+    "expedition_context": [
+      3,
+      4,
+      5,
+      10
+    ]
   },
   "Dq2": {
     "id": 428,
     "type": "other",
-    "expedition_context": [4, 101, 102]
+    "expedition_context": [
+      4,
+      101,
+      102
+    ]
   },
   "Dy1": {
     "id": 434,
     "type": "other",
-    "expedition_context": [3, 5, 9, 101, 102]
+    "expedition_context": [
+      3,
+      5,
+      9,
+      101,
+      102
+    ]
   },
   "Dy2": {
     "id": 436,
     "type": "other",
-    "expedition_context": [1, 2, 3, 4, 10]
+    "expedition_context": [
+      1,
+      2,
+      3,
+      4,
+      10
+    ]
   },
   "Dy3": {
     "id": 437,
     "type": "other",
-    "expedition_context": [4, 104, 105, 110]
+    "expedition_context": [
+      4,
+      104,
+      105,
+      110
+    ]
   },
   "Dy4": {
     "id": 438,
     "type": "other",
-    "expedition_context": [4, 9, 100, 114]
+    "expedition_context": [
+      4,
+      9,
+      100,
+      114
+    ]
   },
   "Dy5": {
     "id": 439,
     "type": "other",
-    "expedition_context": [5, 11, 100, 110]
+    "expedition_context": [
+      5,
+      11,
+      100,
+      110
+    ]
   },
   "Dy6": {
     "id": 440,
     "type": "other",
-    "expedition_context": [5, 40, 41, 46, 142]
+    "expedition_context": [
+      5,
+      40,
+      41,
+      46,
+      142
+    ]
   },
   "Dy7": {
     "id": 442,
     "type": "other",
-    "expedition_context": [29, 30, 131, 133]
+    "expedition_context": [
+      29,
+      30,
+      131,
+      133
+    ]
   },
   "Dy8": {
     "id": 444,
     "type": "other",
-    "expedition_context": [5, 9, 11, 12, 110]
+    "expedition_context": [
+      5,
+      9,
+      11,
+      12,
+      110
+    ]
   },
   "Ed1": {
     "id": 503,
     "type": "daily",
-    "intervals": [15, 0, 0]
+    "intervals": [
+      15,
+      0,
+      0
+    ]
   },
   "Ed2": {
     "id": 504,
     "type": "daily",
-    "intervals": [15, 15, 15]
+    "intervals": [
+      15,
+      15,
+      15
+    ]
   },
   "Fd1": {
     "id": 605,
     "type": "daily",
-    "intervals": [0, 0, 0]
+    "intervals": [
+      0,
+      0,
+      0
+    ]
   },
   "Fd2": {
     "id": 606,
     "type": "daily",
-    "intervals": [0, 0, 0]
+    "intervals": [
+      0,
+      0,
+      0
+    ]
   },
   "Fd3": {
     "id": 607,
     "type": "daily",
-    "intervals": [0, 0, 0]
+    "intervals": [
+      0,
+      0,
+      0
+    ]
   },
   "Fd4": {
     "id": 608,
     "type": "daily",
-    "intervals": [0, 0, 0]
+    "intervals": [
+      0,
+      0,
+      0
+    ]
   },
   "2409C1": {
     "id": 374,
     "type": "weekly",
-    "intervals": [0, 3, 0]
+    "intervals": [
+      0,
+      3,
+      0
+    ]
   },
   "2412B5": {
     "id": 1022,
@@ -1937,17 +2880,40 @@
         "min_rank": "A"
       }
     ],
-    "recommended_map": ["2412B5-2-3", "2412B5-7-1", "2412B5-4-1", "2412B5-5-1"]
+    "recommended_map": [
+      "2412B5-2-3",
+      "2412B5-7-1",
+      "2412B5-4-1",
+      "2412B5-5-1"
+    ]
   },
   "2604C1": {
     "id": 363,
     "type": "weekly",
-    "intervals": [0, 5, 0],
+    "intervals": [
+      0,
+      5,
+      0
+    ],
     "fleet_composition": {
       "requirements": [
         {
-          "id": [973, 988, 995, 451, 992, 93, 15, 94, 16, 9],
-          "position": [0, 1]
+          "id": [
+            973,
+            988,
+            995,
+            451,
+            992,
+            93,
+            15,
+            94,
+            16,
+            9
+          ],
+          "position": [
+            0,
+            1
+          ]
         }
       ]
     }
@@ -1965,12 +2931,24 @@
         "min_rank": "S"
       }
     ],
-    "recommended_map": ["2604B7-1-3", "2604B7-1-4", "2604B7-1-6-N"]
+    "recommended_map": [
+      "2604B7-1-3",
+      "2604B7-1-4",
+      "2604B7-1-6-N"
+    ]
   },
   "2604D3": {
     "id": 451,
     "type": "weekly",
-    "intervals": [0, 0, 2],
-    "expedition_context": [5, 9, 11]
+    "intervals": [
+      0,
+      0,
+      2
+    ],
+    "expedition_context": [
+      5,
+      9,
+      11
+    ]
   }
 }
