@@ -16,7 +16,7 @@ class DamageStateEnum(EnumBase):
     @property
     def display_name(self):
         if self is self.NO:
-            return 'No Damage'
+            return "No Damage"
         return self.name.title()
 
     @classmethod

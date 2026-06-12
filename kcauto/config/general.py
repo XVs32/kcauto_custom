@@ -1,8 +1,12 @@
 from config.config_base import ConfigBase
 from kca_enums.interaction_modes import InteractionModeEnum
 from constants import (
-    DEFAULT_CHROME_DEV_PORT, MIN_JST_OFFSET, MAX_JST_OFFSET, MIN_PORT,
-    MAX_PORT)
+    DEFAULT_CHROME_DEV_PORT,
+    MIN_JST_OFFSET,
+    MAX_JST_OFFSET,
+    MIN_PORT,
+    MAX_PORT,
+)
 
 
 class ConfigGeneral(ConfigBase):
@@ -13,9 +17,9 @@ class ConfigGeneral(ConfigBase):
 
     def __init__(self, config):
         super().__init__(config)
-        self.jst_offset = config['general.jst_offset']
-        self.interaction_mode = config['general.interaction_mode']
-        self.chrome_dev_port = config['general.chrome_dev_port']
+        self.jst_offset = config["general.jst_offset"]
+        self.interaction_mode = config["general.interaction_mode"]
+        self.chrome_dev_port = config["general.chrome_dev_port"]
 
     @property
     def jst_offset(self):

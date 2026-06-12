@@ -10,20 +10,17 @@ from kca_enums.lbas_state import LBASStateEnum
 
 
 class LBASCore(object):
-    groups : dict[int, LBASGroup] = {}
+    groups: dict[int, LBASGroup] = {}
 
     def __init__(self):
-        self.enabled = (
-            True
-            if len(cfg.config.combat.lbas_groups) > 0
-            else False)
+        self.enabled = True if len(cfg.config.combat.lbas_groups) > 0 else False
         for group in LBASGroupEnum:
             self.groups[group.value] = LBASGroup(int(group.value))
 
     def update_lbas_groups(self, data):
         """
-            method to read the LBAS info from "api_air_base"
-            into LBAS module
+        method to read the LBAS info from "api_air_base"
+        into LBAS module
         """
         Log.log_debug_1("Updating LBAS group data from API.")
         for group in LBASGroupEnum:
@@ -34,30 +31,33 @@ class LBASCore(object):
         for group in data:
             Log.log_debug_1(f"group['api_area_id']:{group['api_area_id']}")
             Log.log_debug_1(f"sortie_map:{sortie_map}")
-            
-            #Pick the LBAS group that is in the same world as the sortie map
-            if sortie_world == 'E' and group['api_area_id'] < 40:
+
+            # Pick the LBAS group that is in the same world as the sortie map
+            if sortie_world == "E" and group["api_area_id"] < 40:
                 continue
-            elif sortie_world != 'E' and sortie_world != group['api_area_id']:
+            elif sortie_world != "E" and sortie_world != group["api_area_id"]:
                 continue
 
-            group_id = group['api_rid']
+            group_id = group["api_rid"]
             group_instance = self.groups[group_id]
             group_instance.api_enabled = True
             group_instance.config_enabled = (
                 True
                 if LBASGroupEnum(group_id) in cfg.config.combat.lbas_groups
-                else False)
-            group_instance.state = LBASStateEnum(group['api_action_kind'])
+                else False
+            )
+            group_instance.state = LBASStateEnum(group["api_action_kind"])
             planes = []
-            for plane in group['api_plane_info']:
-                if plane['api_state'] == 0:
+            for plane in group["api_plane_info"]:
+                if plane["api_state"] == 0:
                     continue
-                planes.append({
-                    'fatigue': LBASFatigueEnum(plane['api_cond']),
-                    'count': plane['api_count'],
-                    'count_max': plane['api_max_count']
-                })
+                planes.append(
+                    {
+                        "fatigue": LBASFatigueEnum(plane["api_cond"]),
+                        "count": plane["api_count"],
+                        "count_max": plane["api_max_count"],
+                    }
+                )
             group_instance.planes = planes
 
     def manage_lbas(self):
@@ -78,14 +78,15 @@ class LBASCore(object):
 
                 if group_id != 1:
                     kca_u.kca.click_existing(
-                        'upper_right', f'combat|lbas_group_tab_{group_id}.png')
+                        "upper_right", f"combat|lbas_group_tab_{group_id}.png"
+                    )
                     kca_u.kca.sleep(1)
                 if group_id in resupply_groups:
                     self._resupply(group_id)
                 if group_id in switch_state_groups:
                     self._set_to_desired_state(
-                        group_instance.state,
-                        group_instance.desired_group_state)
+                        group_instance.state, group_instance.desired_group_state
+                    )
             kca_u.kca.sleep(0.5)
             kca_u.kca.click("c_world")
             kca_u.kca.sleep(1)
@@ -98,44 +99,46 @@ class LBASCore(object):
             return False
 
         Log.log_msg("Assigning LBAS groups.")
-        kca_u.kca.r['lbas'].hover()
+        kca_u.kca.r["lbas"].hover()
         for group in self.assignable_lbas_groups:
             nodes = cfg.config.combat.nodes_for_lbas_group(group.group_id)
             Log.log_msg(
-                f"Assigning group {group.group_id} to nodes {nodes[0]} "
-                f"and {nodes[1]}.")
+                f"Assigning group {group.group_id} to nodes {nodes[0]} and {nodes[1]}."
+            )
             for node in nodes:
                 node_instance = map_data.nodes[node]
-                panel = kca_u.kca.wait(
-                    'kc', 'combat|lbas_panel_side.png', wait=90)
-                panel_pos = 'r' if panel.x - kca_u.kca.game_x > 600 else 'l'
-                if (
-                        (panel_pos == 'l' and node_instance.x < 420)
-                        or (panel_pos == 'r' and node_instance.x > 780)):
+                panel = kca_u.kca.wait("kc", "combat|lbas_panel_side.png", wait=90)
+                panel_pos = "r" if panel.x - kca_u.kca.game_x > 600 else "l"
+                if (panel_pos == "l" and node_instance.x < 420) or (
+                    panel_pos == "r" and node_instance.x > 780
+                ):
                     kca_u.kca.hover(panel)
                 kca_u.kca.sleep(3)
                 node_instance.select()
-            kca_u.kca.r['lbas'].hover()
-            kca_u.kca.click_existing('upper', 'combat|lbas_assign_confirm.png')
-            kca_u.kca.r['lbas'].hover()
+            kca_u.kca.r["lbas"].hover()
+            kca_u.kca.click_existing("upper", "combat|lbas_assign_confirm.png")
+            kca_u.kca.r["lbas"].hover()
             kca_u.kca.sleep(1)
 
     def _lbas_panel_check_cond(self):
         return (
             True
             if (
-                kca_u.kca.exists('upper_right', 'combat|lbas_group_tab_1.png')
-                or kca_u.kca.exists(
-                    'upper_right', 'combat|lbas_group_tab_1_only.png'))
-            else False)
+                kca_u.kca.exists("upper_right", "combat|lbas_group_tab_1.png")
+                or kca_u.kca.exists("upper_right", "combat|lbas_group_tab_1_only.png")
+            )
+            else False
+        )
 
     def _open_lbas_panel(self):
-        if cfg.config.combat.sortie_map.world == 'E':
+        if cfg.config.combat.sortie_map.world == "E":
             kca_u.kca.click_existing(
-                'lower_left', 'combat|lbas_resupply_menu_button_event.png')
+                "lower_left", "combat|lbas_resupply_menu_button_event.png"
+            )
         else:
             kca_u.kca.click_existing(
-                'upper_right', 'combat|lbas_resupply_menu_button.png')
+                "upper_right", "combat|lbas_resupply_menu_button.png"
+            )
         kca_u.kca.sleep()
         kca_u.kca.while_wrapper(self._lbas_panel_check_cond, timeout=10)
         kca_u.kca.sleep()
@@ -143,12 +146,12 @@ class LBASCore(object):
     def _lbas_panel_resupply_cond(self):
         return (
             True
-            if not kca_u.kca.exists('upper_right', 'combat|lbas_resupply.png')
-            else False)
+            if not kca_u.kca.exists("upper_right", "combat|lbas_resupply.png")
+            else False
+        )
 
     def _lbas_panel_resupply_func(self):
-        kca_u.kca.click_existing(
-            'upper_right', 'combat|lbas_resupply.png', cached=True)
+        kca_u.kca.click_existing("upper_right", "combat|lbas_resupply.png", cached=True)
         kca_u.kca.sleep(0.1)
 
     def _resupply(self, group_id):
@@ -158,24 +161,22 @@ class LBASCore(object):
         #     timeout=10)
         api_result = {}
         while KCSAPIEnum.LBAS_RESUPPLY_ACTION.name not in api_result:
-            kca_u.kca.click_existing(
-                'upper_right', 'combat|lbas_resupply.png')
+            kca_u.kca.click_existing("upper_right", "combat|lbas_resupply.png")
             api_result = api.api.update_from_api(
-                {KCSAPIEnum.LBAS_RESUPPLY_ACTION}, process_all=False, timeout=1)
+                {KCSAPIEnum.LBAS_RESUPPLY_ACTION}, process_all=False, timeout=1
+            )
             kca_u.kca.sleep()
 
-        kca_u.kca.wait_vanish(
-            'lower_right', 'combat|lbas_resupply_in_progress.png')
-        kca_u.kca.wait(
-            'upper_right', f'combat|lbas_group_tab_{group_id}.png')
+        kca_u.kca.wait_vanish("lower_right", "combat|lbas_resupply_in_progress.png")
+        kca_u.kca.wait("upper_right", f"combat|lbas_group_tab_{group_id}.png")
         kca_u.kca.sleep(1)
 
     def _set_to_desired_state(self, start, stop):
         if start is stop:
             return
         Log.log_msg(
-            f"Switching LBAS state from {start.display_name} to "
-            f"{stop.display_name}.")
+            f"Switching LBAS state from {start.display_name} to {stop.display_name}."
+        )
         state_order = list(LBASStateEnum)
         idx = state_order.index(start)
         relative_order = state_order[idx:] + state_order[:idx]
@@ -184,14 +185,15 @@ class LBASCore(object):
                 break
             Log.log_debug_1(
                 f"Switching LBAS state from {state.display_name} to "
-                f"{relative_order[idx + 1].display_name}.")
+                f"{relative_order[idx + 1].display_name}."
+            )
             cur_name = state.name.lower()
             next_name = relative_order[idx + 1].name.lower()
             kca_u.kca.click_existing(
-                'upper_right', f'combat|lbas_group_mode_{cur_name}.png')
-            kca_u.kca.r['top'].hover()
-            kca_u.kca.wait(
-                'upper_right', f'combat|lbas_group_mode_{next_name}.png')
+                "upper_right", f"combat|lbas_group_mode_{cur_name}.png"
+            )
+            kca_u.kca.r["top"].hover()
+            kca_u.kca.wait("upper_right", f"combat|lbas_group_mode_{next_name}.png")
             kca_u.kca.sleep(0.5)
         api.api.update_from_api({KCSAPIEnum.SORTIE_ASSIGN_LBAS})
 
@@ -200,12 +202,12 @@ class LBASCore(object):
         groups = []
         for group in LBASGroupEnum:
             group_instance = self.groups[group.value]
-            group_node_size = len(
-                cfg.config.combat.nodes_for_lbas_group(group.value))
+            group_node_size = len(cfg.config.combat.nodes_for_lbas_group(group.value))
             if (
-                    group_instance.api_enabled
-                    and group_instance.config_enabled
-                    and group_node_size == 2):
+                group_instance.api_enabled
+                and group_instance.config_enabled
+                and group_node_size == 2
+            ):
                 groups.append(group_instance)
         return groups
 

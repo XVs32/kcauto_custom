@@ -32,9 +32,11 @@ CONTEXT_AUTO_PVP = 8
 
 # chrome hook url targets
 DEFAULT_CHROME_DEV_PORT = 9222
-VISUAL_URL = 'https://play.games.dmm.com/game/kancolle'
-STRATEGY_ROOM_URL = 'chrome-extension://hkgmldnainaglpjngpajnnjfhpdjkohh/pages/strategy/strategy.html'
-API_URL = 'kcs2/index.php'
+VISUAL_URL = "https://play.games.dmm.com/game/kancolle"
+STRATEGY_ROOM_URL = (
+    "chrome-extension://hkgmldnainaglpjngpajnnjfhpdjkohh/pages/strategy/strategy.html"
+)
+API_URL = "kcs2/index.php"
 
 # similarity presets
 EXACT = 0.994
@@ -48,14 +50,70 @@ PAGE_NAV = (10, 8, -10, -8)
 
 # external urls
 WCTF_DB_URL = (
-    'https://raw.githubusercontent.com/TeamFleet/WhoCallsTheFleet/master'
-    '/app-db/ships.nedb')
+    "https://raw.githubusercontent.com/TeamFleet/WhoCallsTheFleet/master"
+    "/app-db/ships.nedb"
+)
 WCTF_SUFFIX_URL = (
-    'https://raw.githubusercontent.com/TeamFleet/WhoCallsTheFleet/master'
-    '/app-db/ship_namesuffix.nedb')
+    "https://raw.githubusercontent.com/TeamFleet/WhoCallsTheFleet/master"
+    "/app-db/ship_namesuffix.nedb"
+)
 
 # config_path
-COMBAT_CONFIG = 'data/config/combat/'
+COMBAT_CONFIG = "data/config/combat/"
 
-EMPTY_EQUIPMENT_API = {"api_id": -1, "api_sortno": -1, "api_name": "空装備", "api_type": [-1, -1, -1, -1, -1], "api_taik": -1, "api_souk": -1, "api_houg": -1, "api_raig": -1, "api_soku": -1, "api_baku": -1, "api_tyku": -1, "api_tais": -1, "api_atap": -1, "api_houm": -1, "api_raim": -1, "api_houk": -1, "api_raik": -1, "api_bakk": -1, "api_saku": -1, "api_sakb": -1, "api_luck": -1, "api_leng": -1, "api_rare": -1, "api_broken": [-1, -1, -1, -1], "api_usebull": "-1", "api_version": 2}
-TEMP_EQUIPMENT_API = {"api_id": 0, "api_sortno": 0, "api_name": "仮設装備", "api_type": [-1, -1, -1, -1, -1], "api_taik": -1, "api_souk": -1, "api_houg": -1, "api_raig": -1, "api_soku": -1, "api_baku": -1, "api_tyku": -1, "api_tais": -1, "api_atap": -1, "api_houm": -1, "api_raim": -1, "api_houk": -1, "api_raik": -1, "api_bakk": -1, "api_saku": -1, "api_sakb": -1, "api_luck": -1, "api_leng": -1, "api_rare": -1, "api_broken": [-1, -1, -1, -1], "api_usebull": "-1", "api_version": 2}
+EMPTY_EQUIPMENT_API = {
+    "api_id": -1,
+    "api_sortno": -1,
+    "api_name": "空装備",
+    "api_type": [-1, -1, -1, -1, -1],
+    "api_taik": -1,
+    "api_souk": -1,
+    "api_houg": -1,
+    "api_raig": -1,
+    "api_soku": -1,
+    "api_baku": -1,
+    "api_tyku": -1,
+    "api_tais": -1,
+    "api_atap": -1,
+    "api_houm": -1,
+    "api_raim": -1,
+    "api_houk": -1,
+    "api_raik": -1,
+    "api_bakk": -1,
+    "api_saku": -1,
+    "api_sakb": -1,
+    "api_luck": -1,
+    "api_leng": -1,
+    "api_rare": -1,
+    "api_broken": [-1, -1, -1, -1],
+    "api_usebull": "-1",
+    "api_version": 2,
+}
+TEMP_EQUIPMENT_API = {
+    "api_id": 0,
+    "api_sortno": 0,
+    "api_name": "仮設装備",
+    "api_type": [-1, -1, -1, -1, -1],
+    "api_taik": -1,
+    "api_souk": -1,
+    "api_houg": -1,
+    "api_raig": -1,
+    "api_soku": -1,
+    "api_baku": -1,
+    "api_tyku": -1,
+    "api_tais": -1,
+    "api_atap": -1,
+    "api_houm": -1,
+    "api_raim": -1,
+    "api_houk": -1,
+    "api_raik": -1,
+    "api_bakk": -1,
+    "api_saku": -1,
+    "api_sakb": -1,
+    "api_luck": -1,
+    "api_leng": -1,
+    "api_rare": -1,
+    "api_broken": [-1, -1, -1, -1],
+    "api_usebull": "-1",
+    "api_version": 2,
+}

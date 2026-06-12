@@ -9,9 +9,9 @@ class ConfigPassiveRepair(ConfigBase):
 
     def __init__(self, config):
         super().__init__(config)
-        self.enabled = config['passive_repair.enabled']
-        self.repair_threshold = config['passive_repair.repair_threshold']
-        self.slots_to_reserve = config['passive_repair.slots_to_reserve']
+        self.enabled = config["passive_repair.enabled"]
+        self.repair_threshold = config["passive_repair.repair_threshold"]
+        self.slots_to_reserve = config["passive_repair.slots_to_reserve"]
 
     @property
     def enabled(self):
@@ -21,7 +21,8 @@ class ConfigPassiveRepair(ConfigBase):
     def enabled(self, value):
         if type(value) is not bool:
             raise ValueError(
-                "Specified value for repair passive enabled is not a boolean.")
+                "Specified value for repair passive enabled is not a boolean."
+            )
         self._enabled = value
 
     @property
