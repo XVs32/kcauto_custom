@@ -1,8 +1,18 @@
 {
   "combat.repair_limit": 2,
   "combat.clear_stop": true,
-  "combat.node_selects": ["A>C", "C>E"],
+  "combat.node_selects": [
+    "A>C",
+    "C>E"
+  ],
   "combat.node_smoke": [],
-  "combat.lbas_groups": [1, 2, 3],
-  "combat.lbas_group_1_nodes": ["E2", "E2"]
+  "combat.lbas_groups": [
+    1,
+    2,
+    3
+  ],
+  "combat.lbas_group_1_nodes": [
+    "E2",
+    "E2"
+  ]
 }

@@ -33,9 +33,19 @@
   "expedition.fleet_3": [],
   "expedition.fleet_4": [],
   "expedition.fleet_preset": null,
-  "factory.build_recipe": [30, 30, 30, 30],
+  "factory.build_recipe": [
+    30,
+    30,
+    30,
+    30
+  ],
   "factory.build_secretary": 0,
-  "factory.develop_recipe": [10, 10, 10, 10],
+  "factory.develop_recipe": [
+    10,
+    10,
+    10,
+    10
+  ],
   "factory.develop_secretary": 0,
   "factory.enabled": false,
   "general.chrome_dev_port": 9222,

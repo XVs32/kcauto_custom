@@ -1,5 +1,10 @@
 {
-  "time_limited": ["2409C1", "2507C1", "2601C2", "2604C1"],
+  "time_limited": [
+    "2409C1",
+    "2507C1",
+    "2601C2",
+    "2604C1"
+  ],
   "exact_ship": [
     "Cq2",
     "Cq3",
@@ -16,7 +21,15 @@
     "Cy15",
     "Cy16"
   ],
-  "exact_ship_type": ["Cm2", "Cq1", "Cq4", "Cy3", "Cy5", "Cy13", "Cy14"],
+  "exact_ship_type": [
+    "Cm2",
+    "Cq1",
+    "Cq4",
+    "Cy3",
+    "Cy5",
+    "Cy13",
+    "Cy14"
+  ],
   "any_pvp": [
     "Cd1",
     "Cd2",
