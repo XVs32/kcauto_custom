@@ -29,11 +29,13 @@ class RepairStats(StatsBase):
             f"{self.repairs_done} repairs done "
             f"({self.repairs_done_ph:.2f}/hr) "
             f"/ {self.buckets_used} buckets used "
-            f"({self.buckets_used_ph:.2f}/hr)")
+            f"({self.buckets_used_ph:.2f}/hr)"
+        )
 
         if cfg.config.passive_repair.enabled:
             return_string += (
                 f" / {self.passive_repairs_done} passive repairs done "
-                f"({self.passive_repairs_done_ph:.2f}/hr)")
+                f"({self.passive_repairs_done_ph:.2f}/hr)"
+            )
 
         return return_string

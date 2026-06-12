@@ -1,16 +1,17 @@
-
 from kca_enums.enum_base import EnumBase
 from util.logger import Log
 from util.json_data import JsonData
 from typing import TYPE_CHECKING
+
+
 class MapEnum(EnumBase):
     @property
     def quest(self):
         if len(self.value.split("-")[0]) > 1:
             return self.value.split("-")[0][1:]
-        
+
         return None
-    
+
     @property
     def world(self):
         world = self.value.split("-")[1]
@@ -25,47 +26,49 @@ class MapEnum(EnumBase):
     @property
     def world_and_map(self):
         if self.value != "auto":
-            return self.value.split("-")[1] + "-" + self.value.split("-")[2] 
+            return self.value.split("-")[1] + "-" + self.value.split("-")[2]
         else:
             return "auto"
 
     @property
     def world_and_map_and_node(self):
         if self.value != "auto":
-            return self.value[self.value.index("-")+1:]
+            return self.value[self.value.index("-") + 1 :]
         else:
             return "auto"
-        
+
     @property
     def without_quest(self):
         if self.value != "auto":
-            #find the first "-"
-            return f'B{self.value[self.value.index("-"):]}'
+            # find the first "-"
+            return f"B{self.value[self.value.index('-') :]}"
         else:
             return "auto"
-        
+
     @property
     def without_quest_enum(self):
         if self.value != "auto":
-            #find the first "-"
-            return self.__class__("B" + self.value[self.value.index("-"):])
+            # find the first "-"
+            return self.__class__("B" + self.value[self.value.index("-") :])
         else:
             return self.__class__.auto_map_select
-        
+
     @property
     def without_quest_and_node(self):
         if self.value != "auto":
-            return "B-" + self.value.split("-")[1] + "-" + self.value.split("-")[2] 
+            return "B-" + self.value.split("-")[1] + "-" + self.value.split("-")[2]
         else:
             return "auto"
-            
+
     @property
     def without_quest_and_node_enum(self):
         if self.value != "auto":
-            return self.__class__("B-" + self.value.split("-")[1] + "-" + self.value.split("-")[2]) 
+            return self.__class__(
+                "B-" + self.value.split("-")[1] + "-" + self.value.split("-")[2]
+            )
         else:
             return self.__class__.auto_map_select
-            
+
     @property
     def is_map_variant(self):
         return len(self.value.split("-")) > 3
@@ -76,20 +79,21 @@ class MapEnum(EnumBase):
             return self.value.split("-")[3]
         else:
             return None
-        
+
     @property
     def is_eo(self):
         return self.map >= 5
-    
+
     @classmethod
     def _missing_(cls, value):
         Log.log_error(f"MapEnum: Unknown map value '{value}' encountered.")
         return None
 
+
 if not TYPE_CHECKING:
     try:
-        data_dict = JsonData.load_json('data|combat|map_enum.json')
+        data_dict = JsonData.load_json("data|combat|map_enum.json")
     except FileNotFoundError:
         Log.log_error(f"MapEnum: data/combat/map_enum.json not found.")
         exit(1)
-    MapEnum = MapEnum('MapEnum', data_dict)  # type: ignore[assignment]
+    MapEnum = MapEnum("MapEnum", data_dict)  # type: ignore[assignment]

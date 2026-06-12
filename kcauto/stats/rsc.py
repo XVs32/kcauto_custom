@@ -21,16 +21,16 @@ class ResourceStats(StatsBase):
     def update_resource_stats(self, data):
         Log.log_debug_1("Updating resource data from API.")
         for rsc in data:
-            if rsc['api_id'] == 1:
-                self.fuel = rsc['api_value']
-            if rsc['api_id'] == 2:
-                self.ammo = rsc['api_value']
-            if rsc['api_id'] == 3:
-                self.steel = rsc['api_value']
-            if rsc['api_id'] == 4:
-                self.bauxite = rsc['api_value']
-            if rsc['api_id'] == 6:
-                self.bucket = rsc['api_value']
+            if rsc["api_id"] == 1:
+                self.fuel = rsc["api_value"]
+            if rsc["api_id"] == 2:
+                self.ammo = rsc["api_value"]
+            if rsc["api_id"] == 3:
+                self.steel = rsc["api_value"]
+            if rsc["api_id"] == 4:
+                self.bauxite = rsc["api_value"]
+            if rsc["api_id"] == 6:
+                self.bucket = rsc["api_value"]
 
     @property
     def fuel(self):
@@ -133,4 +133,5 @@ class ResourceStats(StatsBase):
             f"Bauxite:{self.bauxite} "
             f"(Δ{self.bauxite_delta} : {self.bauxite_ph:.2f}/hr) / "
             f"Bucket:{self.bucket} "
-            f"(Δ{self.bucket_delta} : {self.bucket_ph:.2f}/hr)")
+            f"(Δ{self.bucket_delta} : {self.bucket_ph:.2f}/hr)"
+        )

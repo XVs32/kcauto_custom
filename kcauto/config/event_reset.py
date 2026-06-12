@@ -10,10 +10,10 @@ class ConfigEventReset(ConfigBase):
 
     def __init__(self, config):
         super().__init__(config)
-        self.enabled = config['event_reset.enabled']
-        self.frequency = config['event_reset.frequency']
-        self.reset_difficulty = config['event_reset.reset_difficulty']
-        self.farm_difficulty = config['event_reset.farm_difficulty']
+        self.enabled = config["event_reset.enabled"]
+        self.frequency = config["event_reset.frequency"]
+        self.reset_difficulty = config["event_reset.reset_difficulty"]
+        self.farm_difficulty = config["event_reset.farm_difficulty"]
 
     @property
     def enabled(self):
@@ -23,7 +23,8 @@ class ConfigEventReset(ConfigBase):
     def enabled(self, value):
         if type(value) is not bool:
             raise ValueError(
-                "Specified value for event reset enabled is not a boolean.")
+                "Specified value for event reset enabled is not a boolean."
+            )
         self._enabled = value
 
     @property

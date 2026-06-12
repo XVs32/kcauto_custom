@@ -7,8 +7,8 @@ class ConfigShipSwitcher(ConfigBase):
 
     def __init__(self, config):
         super().__init__(config)
-        self.enabled = config['ship_switcher.enabled']
-        self.slots = config['ship_switcher.slots']
+        self.enabled = config["ship_switcher.enabled"]
+        self.slots = config["ship_switcher.slots"]
 
     @property
     def enabled(self):
@@ -18,7 +18,8 @@ class ConfigShipSwitcher(ConfigBase):
     def enabled(self, value):
         if type(value) is not bool:
             raise ValueError(
-                "Specified value for ship switcher enabled is not a boolean.")
+                "Specified value for ship switcher enabled is not a boolean."
+            )
         self._enabled = value
 
     @property

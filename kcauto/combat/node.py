@@ -10,31 +10,31 @@ class MapNode(object):
 
     def __init__(self, name, data: dict):
         self.name = name
-        self.types = data.get('types', [])
-        self.x = data['coords'][0]
-        self.y = data['coords'][1]
+        self.types = data.get("types", [])
+        self.x = data["coords"][0]
+        self.y = data["coords"][1]
 
     @property
     def boss_node(self):
-        if 'boss' in self.types:
+        if "boss" in self.types:
             return True
         return False
 
     @property
     def sub_node(self):
-        if 'sub' in self.types:
+        if "sub" in self.types:
             return True
         return False
 
     @property
     def air_node(self):
-        if 'air' in self.types:
+        if "air" in self.types:
             return True
         return False
 
     @property
     def selection_node(self):
-        if 'select' in self.types:
+        if "select" in self.types:
             return True
         return False
 
@@ -43,10 +43,9 @@ class MapNode(object):
         return (self.x, self.y)
 
     def select(self):
-        kca_u.kca.click(Region(
-            kca_u.kca.game_x + self.x - 3,
-            kca_u.kca.game_y + self.y - 3,
-            7, 7))
+        kca_u.kca.click(
+            Region(kca_u.kca.game_x + self.x - 3, kca_u.kca.game_y + self.y - 3, 7, 7)
+        )
 
     def __str__(self):
         return self.name

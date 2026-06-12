@@ -9,10 +9,11 @@ from kca_enums.maps import MapEnum
 from util.logger import Log
 import combat.lbas_core as lbas
 
+
 class ConfigCombat(ConfigBase):
     _enabled = False
     _fleet_presets = []
-    _sortie_map : MapEnum = None
+    _sortie_map: MapEnum = None
     _sortie_map_read_only = None
     _fleet_mode = None
     _retreat_points = []
@@ -40,83 +41,79 @@ class ConfigCombat(ConfigBase):
     def __init__(self, config):
         Log.log_debug_1("Combat config init called")
         super().__init__(config)
-        self.enabled = config['combat.enabled']
-        self.fleet_presets = config['combat.fleet_presets']
-        self.sortie_map = config['combat.sortie_map']
-        self.sortie_map_read_only = config['combat.sortie_map']
-        self.fleet_mode = config['combat.fleet_mode']
-        self.retreat_points = config['combat.retreat_points']
-        self.node_smoke = config['combat.node_smoke']
-        self.node_selects = config['combat.node_selects']
-        self.node_formations = config['combat.node_formations']
-        self.node_night_battles = config['combat.node_night_battles']
-        self.push_nodes = config['combat.push_nodes']
-        self.retreat_limit = config['combat.retreat_limit']
-        self.repair_bucket_threshold = config['combat.repair_bucket_threshold']
-        self.repair_limit = config['combat.repair_limit']
-        self.repair_timelimit_hours = config['combat.repair_timelimit_hours']
-        self.repair_timelimit_minutes = config[
-            'combat.repair_timelimit_minutes']
-        self.lbas_groups = config['combat.lbas_groups']
-        self.lbas_group_1_nodes = config['combat.lbas_group_1_nodes']
-        self.lbas_group_2_nodes = config['combat.lbas_group_2_nodes']
-        self.lbas_group_3_nodes = config['combat.lbas_group_3_nodes']
-        self.check_fatigue = config['combat.check_fatigue']
-        self.check_lbas_fatigue = config['combat.check_lbas_fatigue']
-        self.reserve_repair_dock = config['combat.reserve_repair_dock']
-        self.port_check = config['combat.port_check']
-        self.clear_stop = config['combat.clear_stop']
-        self._override = config['combat.override']
+        self.enabled = config["combat.enabled"]
+        self.fleet_presets = config["combat.fleet_presets"]
+        self.sortie_map = config["combat.sortie_map"]
+        self.sortie_map_read_only = config["combat.sortie_map"]
+        self.fleet_mode = config["combat.fleet_mode"]
+        self.retreat_points = config["combat.retreat_points"]
+        self.node_smoke = config["combat.node_smoke"]
+        self.node_selects = config["combat.node_selects"]
+        self.node_formations = config["combat.node_formations"]
+        self.node_night_battles = config["combat.node_night_battles"]
+        self.push_nodes = config["combat.push_nodes"]
+        self.retreat_limit = config["combat.retreat_limit"]
+        self.repair_bucket_threshold = config["combat.repair_bucket_threshold"]
+        self.repair_limit = config["combat.repair_limit"]
+        self.repair_timelimit_hours = config["combat.repair_timelimit_hours"]
+        self.repair_timelimit_minutes = config["combat.repair_timelimit_minutes"]
+        self.lbas_groups = config["combat.lbas_groups"]
+        self.lbas_group_1_nodes = config["combat.lbas_group_1_nodes"]
+        self.lbas_group_2_nodes = config["combat.lbas_group_2_nodes"]
+        self.lbas_group_3_nodes = config["combat.lbas_group_3_nodes"]
+        self.check_fatigue = config["combat.check_fatigue"]
+        self.check_lbas_fatigue = config["combat.check_lbas_fatigue"]
+        self.reserve_repair_dock = config["combat.reserve_repair_dock"]
+        self.port_check = config["combat.port_check"]
+        self.clear_stop = config["combat.clear_stop"]
+        self._override = config["combat.override"]
 
     def config_override(self, config):
         if "combat.fleet_mode" in config:
-            self.fleet_mode = config['combat.fleet_mode']
+            self.fleet_mode = config["combat.fleet_mode"]
         if "combat.retreat_points" in config:
-            self.retreat_points = config['combat.retreat_points']
+            self.retreat_points = config["combat.retreat_points"]
         if "combat.node_smoke" in config:
-            self.node_smoke = config['combat.node_smoke']
+            self.node_smoke = config["combat.node_smoke"]
         if "combat.node_selects" in config:
-            self.node_selects = config['combat.node_selects']
+            self.node_selects = config["combat.node_selects"]
         if "combat.node_formations" in config:
-            self.node_formations = config['combat.node_formations']
+            self.node_formations = config["combat.node_formations"]
         if "combat.node_night_battles" in config:
-            self.node_night_battles = config['combat.node_night_battles']
+            self.node_night_battles = config["combat.node_night_battles"]
         if "combat.push_nodes" in config:
-            self.push_nodes = config['combat.push_nodes']
+            self.push_nodes = config["combat.push_nodes"]
         if "combat.retreat_limit" in config:
-            self.retreat_limit = config['combat.retreat_limit']
+            self.retreat_limit = config["combat.retreat_limit"]
         if "combat.repair_bucket_threshold" in config:
-            self.repair_bucket_threshold = config['combat.repair_bucket_threshold']
+            self.repair_bucket_threshold = config["combat.repair_bucket_threshold"]
         if "combat.repair_limit" in config:
-            self.repair_limit = config['combat.repair_limit']
+            self.repair_limit = config["combat.repair_limit"]
         if "combat.repair_timelimit_hours" in config:
-            self.repair_timelimit_hours = config['combat.repair_timelimit_hours']
+            self.repair_timelimit_hours = config["combat.repair_timelimit_hours"]
         if "combat.repair_timelimit_minutes" in config:
-            self.repair_timelimit_minutes = config['combat.repair_timelimit_minutes']
+            self.repair_timelimit_minutes = config["combat.repair_timelimit_minutes"]
         if "combat.lbas_groups" in config:
-            self.lbas_groups = config['combat.lbas_groups']
+            self.lbas_groups = config["combat.lbas_groups"]
 
-            lbas.lbas.enabled = (
-                True
-                if len(self.lbas_groups) > 0
-                else False)
+            lbas.lbas.enabled = True if len(self.lbas_groups) > 0 else False
 
         if "combat.lbas_group_1_nodes" in config:
-            self.lbas_group_1_nodes = config['combat.lbas_group_1_nodes']
+            self.lbas_group_1_nodes = config["combat.lbas_group_1_nodes"]
         if "combat.lbas_group_2_nodes" in config:
-            self.lbas_group_2_nodes = config['combat.lbas_group_2_nodes']
+            self.lbas_group_2_nodes = config["combat.lbas_group_2_nodes"]
         if "combat.lbas_group_3_nodes" in config:
-            self.lbas_group_3_nodes = config['combat.lbas_group_3_nodes']
+            self.lbas_group_3_nodes = config["combat.lbas_group_3_nodes"]
         if "combat.check_fatigue" in config:
-            self.check_fatigue = config['combat.check_fatigue']
+            self.check_fatigue = config["combat.check_fatigue"]
         if "combat.check_lbas_fatigue" in config:
-            self.check_lbas_fatigue = config['combat.check_lbas_fatigue']
+            self.check_lbas_fatigue = config["combat.check_lbas_fatigue"]
         if "combat.reserve_repair_dock" in config:
-            self.reserve_repair_dock = config['combat.reserve_repair_dock']
+            self.reserve_repair_dock = config["combat.reserve_repair_dock"]
         if "combat.port_check" in config:
-            self.port_check = config['combat.port_check']
+            self.port_check = config["combat.port_check"]
         if "combat.clear_stop" in config:
-            self.clear_stop = config['combat.clear_stop']
+            self.clear_stop = config["combat.clear_stop"]
 
     @property
     def enabled(self):
@@ -125,8 +122,7 @@ class ConfigCombat(ConfigBase):
     @enabled.setter
     def enabled(self, value):
         if type(value) is not bool:
-            raise ValueError(
-                "Specified value for combat enabled is not a boolean.")
+            raise ValueError("Specified value for combat enabled is not a boolean.")
         self._enabled = value
 
     @property
@@ -136,8 +132,7 @@ class ConfigCombat(ConfigBase):
     @override.setter
     def override(self, value):
         if type(value) is not bool:
-            raise ValueError(
-                "Specified value for combat override is not a boolean.")
+            raise ValueError("Specified value for combat override is not a boolean.")
         self._override = value
 
     @property
@@ -146,14 +141,14 @@ class ConfigCombat(ConfigBase):
 
     @fleet_presets.setter
     def fleet_presets(self, value):
-        for i  in range(0,len(value)):
+        for i in range(0, len(value)):
             if value[i] == "auto":
                 value[i] = AUTO_PRESET
                 continue
             if not 0 < value[i] <= MAX_FLEET_PRESETS:
                 raise ValueError("Invalid value specified for fleet preset")
         self._fleet_presets = value
-        
+
     @property
     def is_auto_mode(self):
         for preset in self.fleet_presets:
@@ -166,17 +161,17 @@ class ConfigCombat(ConfigBase):
         return self._sortie_map
 
     @sortie_map.setter
-    def sortie_map(self, value : str):
-        """ 
-            Method that set the value of _sortie_map
-        
-            args: 
-                value (str): The Id of a map, ex 1-1, 3-5, 6-4 
+    def sortie_map(self, value: str):
         """
-        
+        Method that set the value of _sortie_map
+
+        args:
+            value (str): The Id of a map, ex 1-1, 3-5, 6-4
+        """
+
         if value[0] != "B":
             value = "B-" + value
-            
+
         if not MapEnum.contains_value(value):
             raise ValueError("Invalid map specified:" + str(value))
         self._sortie_map = MapEnum(value)
@@ -187,13 +182,13 @@ class ConfigCombat(ConfigBase):
 
     @sortie_map_read_only.setter
     def sortie_map_read_only(self, value):
-        """ 
-            Method that set the value of _sortie_map_read_only
-        
-            args: 
-                value (str): The Id of a map, ex 1-1, 3-5, 6-4 
         """
-        
+        Method that set the value of _sortie_map_read_only
+
+        args:
+            value (str): The Id of a map, ex 1-1, 3-5, 6-4
+        """
+
         if value[0] != "B":
             value = "B-" + value
         if not MapEnum.contains_value(value):
@@ -211,19 +206,20 @@ class ConfigCombat(ConfigBase):
             raise ValueError("Invalid fleet mode specified.")
         fleet_mode = FleetModeEnum(value)
         if (
-                self._config['combat.enabled']
-                and self._config['pvp.enabled']
-                and CombinedFleetModeEnum.contains_value(value)):
-            raise ValueError(
-                "Combat fleet cannot be combined when PvP is enabled")
+            self._config["combat.enabled"]
+            and self._config["pvp.enabled"]
+            and CombinedFleetModeEnum.contains_value(value)
+        ):
+            raise ValueError("Combat fleet cannot be combined when PvP is enabled")
         if (
-                self._config['combat.enabled']
-                and CombinedFleetModeEnum.contains_value(value)
-                and self._config['expedition.enabled']
-                and len(self._config['expedition.fleet_2']) > 0):
+            self._config["combat.enabled"]
+            and CombinedFleetModeEnum.contains_value(value)
+            and self._config["expedition.enabled"]
+            and len(self._config["expedition.fleet_2"]) > 0
+        ):
             raise ValueError(
-                "Combat fleet cannot be combined if expedition 2 fleets are "
-                "defined")
+                "Combat fleet cannot be combined if expedition 2 fleets are defined"
+            )
         self._fleet_mode = fleet_mode
 
     @property
@@ -259,7 +255,7 @@ class ConfigCombat(ConfigBase):
     def node_selects(self, value):
         self._node_selects = {}
         for select in value:
-            split = select.split('>')
+            split = select.split(">")
             if len(split) != 2:
                 raise ValueError("Node select in wrong format.")
             self._node_selects[split[0]] = split[1]
@@ -272,7 +268,7 @@ class ConfigCombat(ConfigBase):
     def node_formations(self, value):
         node_formations = {}
         for formation in value:
-            split = formation.split(':')
+            split = formation.split(":")
             split[0] = int(split[0]) if split[0].isdigit() else split[0]
             if len(split) != 2:
                 raise ValueError("Node formation in wrong format.")
@@ -289,13 +285,13 @@ class ConfigCombat(ConfigBase):
     def node_night_battles(self, value):
         node_night_battles = {}
         for nb in value:
-            split = nb.split(':')
+            split = nb.split(":")
             split[0] = int(split[0]) if split[0].isdigit() else split[0]
             if len(split) != 2:
                 raise ValueError("Node night battle in wrong format.")
-            if split[1] not in ('True', 'False'):
+            if split[1] not in ("True", "False"):
                 raise ValueError("Bad bool specified for node nb.")
-            node_night_battles[split[0]] = split[1] == 'True'
+            node_night_battles[split[0]] = split[1] == "True"
         self._node_night_battles = node_night_battles
 
     @property
@@ -365,9 +361,7 @@ class ConfigCombat(ConfigBase):
 
     @lbas_group_1_nodes.setter
     def lbas_group_1_nodes(self, value):
-        if (
-                LBASGroupEnum.G01.value in self.lbas_groups
-                and len(value) not in (0, 2)):
+        if LBASGroupEnum.G01.value in self.lbas_groups and len(value) not in (0, 2):
             raise ValueError("0 or 2 nodes not specified for LBAS 1")
         self._lbas_group_1_nodes = value
 
@@ -377,9 +371,7 @@ class ConfigCombat(ConfigBase):
 
     @lbas_group_2_nodes.setter
     def lbas_group_2_nodes(self, value):
-        if (
-                LBASGroupEnum.G02.value in self.lbas_groups
-                and len(value) not in (0, 2)):
+        if LBASGroupEnum.G02.value in self.lbas_groups and len(value) not in (0, 2):
             raise ValueError("0 or 2 nodes not specified for LBAS 2")
         self._lbas_group_2_nodes = value
 
@@ -389,9 +381,7 @@ class ConfigCombat(ConfigBase):
 
     @lbas_group_3_nodes.setter
     def lbas_group_3_nodes(self, value):
-        if (
-                LBASGroupEnum.G03.value in self.lbas_groups
-                and len(value) not in (0, 2)):
+        if LBASGroupEnum.G03.value in self.lbas_groups and len(value) not in (0, 2):
             raise ValueError("0 or 2 nodes not specified for LBAS 3")
         self._lbas_group_3_nodes = value
 
@@ -448,4 +438,4 @@ class ConfigCombat(ConfigBase):
     def nodes_for_lbas_group(self, group):
         if not LBASGroupEnum.contains_value(group):
             raise ValueError("Invalid group id specified")
-        return getattr(self, f'lbas_group_{group}_nodes')
+        return getattr(self, f"lbas_group_{group}_nodes")

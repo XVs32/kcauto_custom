@@ -1,7 +1,5 @@
 {
-  "time_limited": [
-    "2604D3"
-  ],
+  "time_limited": ["2604D3"],
   "exact_expedition": [
     "Dw2",
     "Dw3",
@@ -17,9 +15,5 @@
     "Dy7",
     "Dy8"
   ],
-  "any_expedition": [
-    "Dd1",
-    "Dd2",
-    "Dw1"
-  ]
+  "any_expedition": ["Dd1", "Dd2", "Dw1"]
 }
