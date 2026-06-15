@@ -1885,6 +1885,15 @@
     "type": "other",
     "map_context": [
       {
+        "name": "B-7-5-K"
+      },
+      {
+        "name": "B-7-5-M"
+      },
+      {
+        "name": "B-7-5-Q"
+      },
+      {
         "name": "B-7-5-T",
         "min_rank": "S"
       },

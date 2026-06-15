@@ -1,7 +1,6 @@
 from datetime import datetime, timedelta
 from operator import sub
 import time
-import threading
 
 import api.api_core as api
 import combat.event_reset as erst
@@ -76,6 +75,10 @@ class CombatCore(CoreBase):
     NODE_TYPE_FORMATION_SKIP = 5
     MAP_NODE = 0
     RANKENUM = 1
+    GIMMICK_CLEAR_REMAINING = "clear_remaining"
+    GIMMICK_TIMESTAMP = "timestamp"
+    GIMMICK_MAP_STAGE_REQUIRE = "map_stage_required"
+    GIMMICK_MIN_RANK = "min_rank"
 
     module_name = "combat"
     module_display_name = "Combat"
@@ -95,6 +98,9 @@ class CombatCore(CoreBase):
     combat_api_listener_enable = True
     last_battle: dict[str, SortieRankEnum | MapNode] = {}
 
+    gimmick_list = {}
+    gimmick_attampt = None
+
     def __init__(self):
         """
         Method to init combat module
@@ -102,6 +108,7 @@ class CombatCore(CoreBase):
             sortie_map (str): The current sortie map, ex: "3-5", if input is empty, reload setting in config only
         """
         self.update_from_config()
+        self.gimmick_init()
 
     def update_from_config(self):
         super().update_from_config()
@@ -775,6 +782,8 @@ class CombatCore(CoreBase):
                 f"Battle rank in node {self.current_node}: {self.last_battle[self.RANKENUM].in_str}"
             )
 
+            self.gimmick_judge()
+
     def _calculate_hps(self, new_hps, data):
         for phase in self.API_COMBAT_PHASES_TYPE1:
             if phase in data and data[phase] is not None:
@@ -832,12 +841,19 @@ class CombatCore(CoreBase):
                 f"Duplicated front to back in sortie queue: {self.sortie_queue}"
             )
 
-    def insert_sortie_queue(self, sortie_map: MapEnum):
+    def insert_sortie_queue(self, sortie_map: MapEnum, allow_duplicate=False):
         """
         method for other modules to push a sortie_map to the start of sortie_queue in combat module
         Args:
             sortie_map (str): A sortie_map, ex: "1-1"
+            allow_duplicate (bool): when false, will prioritize the existing map in the queue than inserting a duplicate to the front, when true, will insert a duplicate to the front even if the same map already exists in the queue
         """
+        if not allow_duplicate and sortie_map in self.sortie_queue:
+            Log.log_debug_1(
+                f"Sortie map {sortie_map.value} already in queue, not inserting duplicate."
+            )
+            # put the existing map to the front
+            self.sortie_queue.remove(sortie_map)
         self.sortie_queue.insert(0, sortie_map)
         Log.log_debug_1(
             f"Inserted {sortie_map.value} to sortie queue {self.sortie_queue}"
@@ -870,57 +886,107 @@ class CombatCore(CoreBase):
 
         return self.sortie_queue
 
-    def solve_gimmick(self):
+    def gimmick_init(self):
+        """
+        method to initialize the gimmick system
+        """
+        self.gimmick_list_init()
+        self.gimmick_reset()
 
+    def gimmick_list_init(self):
+        """
+        method to initialize the gimmick list
+        """
         try:
             data = JsonData.load_json(GIMMICK)
         except FileNotFoundError:
             data = JsonData.load_json(GIMMICK_TEMPLATE)
+        self.gimmick_list = data
 
-        try:
-            data[self.sortie_queue[0]]["gimmick_level"] += 1
-            JsonData.dump_json(data, GIMMICK)
+    def gimmick_reset(self):
+        """
+        method to reset the gimmick list each month
+        """
 
-        except KeyError:
-            Log.log_debug_1(
-                f"Invalid gimmick update for map {self.sortie_queue[0]} requested."
-            )
+        template = JsonData.load_json(GIMMICK_TEMPLATE)
+
+        for map in self.gimmick_list:
+            if not KCTime.is_same_month(
+                self.gimmick_list[map][self.GIMMICK_TIMESTAMP], time.time()
+            ):
+                self.gimmick_list[map][self.GIMMICK_CLEAR_REMAINING] = template[map][
+                    self.GIMMICK_CLEAR_REMAINING
+                ]
+                self.gimmick_list[map][self.GIMMICK_TIMESTAMP] = time.time()
+                Log.log_success(f"Gimmick reset for {map}.")
 
     def check_gimmick(self, map_enum: MapEnum):
         """
-        method to check what gimmick to go next for the current sortie map
+        method to check what gimmick available for the current sortie map
         return None if no gimmick is available
+
+        input:
+            map_enum (MapEnum): The current sortie map
         """
-        try:
-            data = JsonData.load_json(GIMMICK)
-        except FileNotFoundError:
-            data = JsonData.load_json(GIMMICK_TEMPLATE)
-        map = map_enum.value
 
-        """Reset gimmick each month"""
-        try:
-            if not KCTime.is_same_month(data[map]["timestamp"], time.time()):
-                Log.log_debug_1("Gimmick renew")
-                data[map]["timestamp"] = time.time()
-                data[map]["gimmick_level"] = 0
-                JsonData.dump_json(data, GIMMICK)
-        except KeyError:
-            Log.log_debug_1("No gimmick data found, skipping...")
-            pass
+        self.gimmick_attampt = None
+        map = map_enum.without_quest_and_node_enum
 
-        """gimmick_level rules for each map(7-5 only for now)"""
-        if map_enum == MapEnum.W7_5_M and (self.sortie_map_stage) > 1:
-            gimmick_level = data[map]["gimmick_level"]
+        for gimmick_map_str in self.gimmick_list:
+            gimmick_map_enum = MapEnum(gimmick_map_str).without_quest_and_node_enum
+            if gimmick_map_enum == map:
+                if (
+                    self.sortie_map_stage
+                    >= self.gimmick_list[gimmick_map_str][
+                        self.GIMMICK_MAP_STAGE_REQUIRE
+                    ]
+                ):
+                    if (
+                        self.gimmick_list[gimmick_map_str][self.GIMMICK_CLEAR_REMAINING]
+                        > 0
+                    ):
+                        self.gimmick_attampt = MapEnum(gimmick_map_str)
+                        Log.log_msg(f"Attempt for {self.gimmick_attampt} gimmick.")
+                        return MapEnum(gimmick_map_str)
+                    else:
+                        Log.log_success(
+                            f"Gimmick already solved for map {map_enum.value}."
+                        )
+                        return None
+                else:
+                    Log.log_warn(f"Gimmick for map {map_enum.value} not available yet.")
+                    return None
 
-            if gimmick_level == 0:
-                return map_enum
-
-            Log.log_success(f"Gimmick already solved for map {map_enum.value}.")
-            pass
-        else:
-            Log.log_error(f"No gimmick for map {map_enum.value}.")
-
+        Log.log_error(f"No gimmick for map {map_enum.value}.")
         return None
+
+    def gimmick_judge(self):
+
+        if self.gimmick_attampt == None:
+            return
+
+        current_map = self.map_data.enum
+
+        # check if current map has gimmick
+        if (
+            current_map.without_quest_and_node_enum
+            == self.gimmick_attampt.without_quest_and_node_enum
+            and self.last_battle[self.MAP_NODE].name == self.gimmick_attampt.variant
+        ):
+            Log.log_msg(f"Battled in gimmick node {self.gimmick_attampt}")
+
+            if self.last_battle[self.RANKENUM].is_at_least(
+                SortieRankEnum[
+                    self.gimmick_list[self.gimmick_attampt.display_name][
+                        self.GIMMICK_MIN_RANK
+                    ]
+                ]
+            ):
+                Log.log_success(f"Gimmick solved for map {current_map.value}.")
+                self.gimmick_list[self.gimmick_attampt.display_name][
+                    self.GIMMICK_CLEAR_REMAINING
+                ] -= 1
+                JsonData.dump_json(self.gimmick_list, GIMMICK)
 
 
 combat = CombatCore()
