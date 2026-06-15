@@ -2950,5 +2950,232 @@
       9,
       11
     ]
+  },
+  "2605C1": {
+    "id": 367,
+    "type": "daily",
+    "intervals": [
+      0,
+      1,
+      0
+    ],
+    "fleet_composition": {
+      "requirements_1": [
+        {
+          "stype": [
+            1
+          ],
+          "count_rule": "at_least",
+          "amount": 3
+        }
+      ],
+      "requirements_2": [
+        {
+          "stype": [
+            2
+          ],
+          "count_rule": "at_least",
+          "amount": 5
+        }
+      ]
+    }
+  },
+  "2605B2": {
+    "id": 953,
+    "type": "weekly",
+    "map_context": [
+      {
+        "name": "B-1-2-E",
+        "min_rank": "A"
+      },
+      {
+        "name": "B-1-4-L",
+        "min_rank": "A"
+      },
+      {
+        "name": "B-2-1-H",
+        "min_rank": "A"
+      },
+      {
+        "name": "B-2-2-K",
+        "min_rank": "A"
+      }
+    ],
+    "recommended_map": [
+      "2605B2-1-2",
+      "2605B2-1-4",
+      "2605B2-2-1",
+      "2605B2-2-2"
+    ],
+    "fleet_composition": {
+      "requirements_1": [
+        {
+          "stype": [
+            1
+          ],
+          "position": [
+            0,
+            1
+          ],
+          "amount": 2
+        },
+        {
+          "stype": [
+            2
+          ],
+          "count_rule": "at_least",
+          "amount": 2
+        }
+      ],
+      "requirements_2": [
+        {
+          "stype": [
+            16
+          ],
+          "position": [
+            0,
+            1
+          ],
+          "amount": 2
+        },
+        {
+          "stype": [
+            2
+          ],
+          "count_rule": "at_least",
+          "amount": 2
+        }
+      ]
+    }
+  },
+  "2605B3": {
+    "id": 954,
+    "type": "weekly",
+    "map_context": [
+      {
+        "name": "B-1-3-J",
+        "min_rank": "A"
+      },
+      {
+        "name": "B-1-5-J",
+        "min_rank": "A"
+      },
+      {
+        "name": "B-2-3-N",
+        "min_rank": "A"
+      },
+      {
+        "name": "B-7-4-P",
+        "min_rank": "A"
+      },
+      {
+        "name": "B-1-6-N"
+      }
+    ],
+    "recommended_map": [
+      "2605B3-1-3",
+      "2605B3-1-5",
+      "2605B3-2-3",
+      "2605B3-7-4",
+      "2605B3-1-6-N"
+    ],
+    "fleet_composition": {
+      "requirements": [
+        {
+          "stype": [
+            7
+          ],
+          "position": [
+            0
+          ]
+        },
+        {
+          "stype": [
+            2
+          ],
+          "count_rule": "at_least",
+          "amount": 2
+        }
+      ]
+    }
+  },
+  "2605B4": {
+    "id": 955,
+    "type": "monthly",
+    "map_context": [
+      {
+        "name": "B-5-1-J",
+        "min_rank": "A"
+      },
+      {
+        "name": "B-5-2-O",
+        "min_rank": "A"
+      },
+      {
+        "name": "B-5-3-Q",
+        "min_rank": "A"
+      },
+      {
+        "name": "B-5-4-P",
+        "min_rank": "A"
+      },
+      {
+        "name": "B-5-5-S",
+        "min_rank": "A"
+      },
+      {
+        "name": "B-5-6-Z",
+        "min_rank": "A"
+      }
+    ],
+    "recommended_map": [
+      "2605B4-5-1",
+      "2605B4-5-2",
+      "2605B4-5-3",
+      "2605B4-5-4",
+      "2605B4-5-5",
+      "2605B4-5-6"
+    ],
+    "fleet_composition": {
+      "requirements_1": [
+        {
+          "stype": [
+            8,
+            9,
+            10,
+            12
+          ],
+          "count_rule": "at_least",
+          "amount": 1
+        },
+        {
+          "stype": [
+            5,
+            6
+          ],
+          "count_rule": "at_least",
+          "amount": 2
+        }
+      ],
+      "requirements_2": [
+        {
+          "stype": [
+            8,
+            9,
+            10,
+            12
+          ],
+          "count_rule": "at_least",
+          "amount": 1
+        },
+        {
+          "ctype": [
+            38
+          ],
+          "count_rule": "at_least",
+          "amount": 2
+        }
+      ]
+    }
   }
 }
