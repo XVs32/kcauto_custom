@@ -422,8 +422,7 @@ class Kcauto(object):
                     for required_map in selected_quest.map_context:
                         if current_map == required_map.without_quest_and_node_enum:
                             map_is_required = True
-                            if required_map.is_map_variant == True:
-                                required_node.append(required_map.variant)
+                            required_node = required_map.variant  # could be None
                             required_rank = selected_quest.rank_requirement.get(
                                 required_map, SortieRankEnum["E"]
                             )
@@ -440,13 +439,13 @@ class Kcauto(object):
                         last_node = com.combat.last_battle.get(com.combat.MAP_NODE)
 
                         if last_node is not None:
-                            if not required_node:
+                            if required_node == None:
                                 Log.log_debug_1(
                                     f"No specific node required for quest {selected_quest.name}, current node: {last_node}."
                                 )
-                            elif last_node.name in required_node:
+                            elif last_node.name == required_node:
                                 Log.log_success(
-                                    f"Required node {last_node.name} reached for quest {selected_quest.name}."
+                                    f"Required node {required_node} reached for quest {selected_quest.name}."
                                 )
                                 last_rank = com.combat.last_battle.get(
                                     com.combat.RANKENUM

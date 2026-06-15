@@ -1,92 +1,92 @@
 {
-    "radar": {
-        "factory.develop_recipe": [
-            10,
-            10,
-            250,
-            250
-        ],
-        "factory.develop_secretary": "CV",
-        "comment": "Radar recipe. CV secretary recommended."
-    },
-    "91 & 三式": {
-        "factory.develop_recipe": [
-            10,
-            90,
-            90,
-            30
-        ],
-        "factory.develop_secretary": "BB",
-        "comment": "Type 91 AP shell & Type 3 shell. BB secretary."
-    },
-    "463 砲": {
-        "factory.develop_recipe": [
-            10,
-            251,
-            250,
-            10
-        ],
-        "factory.develop_secretary": "BB",
-        "comment": "46cm gun recipe. Yamato class recommended."
-    },
-    "発煙装置": {
-        "factory.develop_recipe": [
-            10,
-            10,
-            10,
-            10
-        ],
-        "factory.develop_secretary": "DD",
-        "comment": "Smoke generator. DD secretary required."
-    },
-    "大発": {
-        "factory.develop_recipe": [
-            10,
-            10,
-            10,
-            10
-        ],
-        "factory.develop_secretary": "LHA",
-        "comment": "Landing craft. LHA secretary required."
-    },
-    "anti-sub": {
-        "factory.develop_recipe": [
-            10,
-            30,
-            10,
-            31
-        ],
-        "factory.develop_secretary": "DD",
-        "comment": "Anti-submarine equipment. DD secretary."
-    },
-    "plane all": {
-        "factory.develop_recipe": [
-            20,
-            60,
-            10,
-            110
-        ],
-        "factory.develop_secretary": "CV",
-        "comment": "General aircraft recipe. CV secretary."
-    },
-    "Fighter": {
-        "factory.develop_recipe": [
-            20,
-            20,
-            10,
-            90
-        ],
-        "factory.develop_secretary": "CV",
-        "comment": "Fighter aircraft recipe. CV secretary."
-    },
-    "LBAA": {
-        "factory.develop_recipe": [
-            240,
-            260,
-            10,
-            250
-        ],
-        "factory.develop_secretary": "CV",
-        "comment": "Land-based attack aircraft recipe. CV secretary."
-    }
+  "radar": {
+    "factory.develop_recipe": [
+      10,
+      10,
+      250,
+      250
+    ],
+    "factory.develop_secretary": "CV",
+    "comment": "Radar recipe. CV secretary recommended."
+  },
+  "91 & \u4e09\u5f0f": {
+    "factory.develop_recipe": [
+      10,
+      90,
+      90,
+      30
+    ],
+    "factory.develop_secretary": "BB",
+    "comment": "Type 91 AP shell & Type 3 shell. BB secretary."
+  },
+  "463 \u7832": {
+    "factory.develop_recipe": [
+      10,
+      251,
+      250,
+      10
+    ],
+    "factory.develop_secretary": "BB",
+    "comment": "46cm gun recipe. Yamato class recommended."
+  },
+  "\u767a\u7159\u88c5\u7f6e": {
+    "factory.develop_recipe": [
+      10,
+      10,
+      10,
+      10
+    ],
+    "factory.develop_secretary": "DD",
+    "comment": "Smoke generator. DD secretary required."
+  },
+  "\u5927\u767a": {
+    "factory.develop_recipe": [
+      10,
+      10,
+      10,
+      10
+    ],
+    "factory.develop_secretary": "LHA",
+    "comment": "Landing craft. LHA secretary required."
+  },
+  "anti-sub": {
+    "factory.develop_recipe": [
+      10,
+      30,
+      10,
+      31
+    ],
+    "factory.develop_secretary": "DD",
+    "comment": "Anti-submarine equipment. DD secretary."
+  },
+  "plane all": {
+    "factory.develop_recipe": [
+      20,
+      60,
+      10,
+      110
+    ],
+    "factory.develop_secretary": "CV",
+    "comment": "General aircraft recipe. CV secretary."
+  },
+  "Fighter": {
+    "factory.develop_recipe": [
+      20,
+      20,
+      10,
+      90
+    ],
+    "factory.develop_secretary": "CV",
+    "comment": "Fighter aircraft recipe. CV secretary."
+  },
+  "LBAA": {
+    "factory.develop_recipe": [
+      240,
+      260,
+      10,
+      250
+    ],
+    "factory.develop_secretary": "CV",
+    "comment": "Land-based attack aircraft recipe. CV secretary."
+  }
 }

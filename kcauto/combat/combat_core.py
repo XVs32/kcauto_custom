@@ -97,6 +97,7 @@ class CombatCore(CoreBase):
     first_init = True
     combat_api_listener_enable = True
     last_battle: dict[str, SortieRankEnum | MapNode] = {}
+
     gimmick_list = {}
     gimmick_attampt = None
 
