@@ -13,8 +13,8 @@ pyautogui.FAILSAFE = False
 
 
 class Recovery(object):
-    """Recovery module.
-    """
+    """Recovery module."""
+
     @classmethod
     def attempt_recovery(cls):
         """Primary method that runs through all the various recovery options.
@@ -35,9 +35,9 @@ class Recovery(object):
             sts.stats.recovery.basic_recoveries_done += 1
             return True
 
-        if (
-                kca_u.kca.exists(screen, 'global|next.png')
-                or kca_u.kca.exists(screen, 'global|next_alt.png')):
+        if kca_u.kca.exists(screen, "global|next.png") or kca_u.kca.exists(
+            screen, "global|next_alt.png"
+        ):
             Log.log_warn("Results screen detected.")
             if cls.recovery_from_results(screen):
                 Log.log_success("Results Recovery successful.")
@@ -46,7 +46,7 @@ class Recovery(object):
                 return True
             return False
 
-        if kca_u.kca.exists(screen, 'global|catbomb.png'):
+        if kca_u.kca.exists(screen, "global|catbomb.png"):
             Log.log_warn("Catbomb detected.")
             if cls.recovery_from_catbomb(screen=screen):
                 return True
@@ -54,14 +54,14 @@ class Recovery(object):
                 Log.log_error("Catbomb Recovery failed.")
             return False
 
-        if kca_u.kca.exists(screen, 'global|chrome_crash.png'):
+        if kca_u.kca.exists(screen, "global|chrome_crash.png"):
             Log.log_warn("Chrome Crash (Type 1) detected.")
             if cls.recovery_from_chrome_crash(screen, crash_type=1):
                 return True
 
         visual_events = kca_u.kca.visual_hook.pop_messages()
         for event in visual_events:
-            if event['method'] == 'Inspector.targetCrashed':
+            if event["method"] == "Inspector.targetCrashed":
                 Log.log_warn("Chrome Crash (Type 2) detected.")
                 if cls.recovery_from_chrome_crash(screen, crash_type=2):
                     return True
@@ -78,11 +78,11 @@ class Recovery(object):
 
         if cfg.config.general.is_direct_control:
             pyautogui.moveTo(1, 1)
-            pyautogui.press('esc')
+            pyautogui.press("esc")
             kca_u.kca.sleep(0.5)
-            pyautogui.press('space')
+            pyautogui.press("space")
             kca_u.kca.sleep(0.5)
-            pyautogui.press('f10')
+            pyautogui.press("f10")
             kca_u.kca.sleep(0.5)
 
         try:
@@ -107,14 +107,13 @@ class Recovery(object):
         """
         retry = 0
         while retry < 10:
-            if kca_u.kca.exists(screen, 'global|next.png'):
-                region = kca_u.kca.find(screen, 'global|next.png', cached=True)
+            if kca_u.kca.exists(screen, "global|next.png"):
+                region = kca_u.kca.find(screen, "global|next.png", cached=True)
 
-            elif kca_u.kca.exists(screen, 'global|next_alt.png', cached=True):
-                region = kca_u.kca.find(
-                    screen, 'global|next_alt.png', cached=True)
+            elif kca_u.kca.exists(screen, "global|next_alt.png", cached=True):
+                region = kca_u.kca.find(screen, "global|next_alt.png", cached=True)
 
-            elif kca_u.kca.exists(screen, 'nav|home_menu_sortie.png'):
+            elif kca_u.kca.exists(screen, "nav|home_menu_sortie.png"):
                 kca_u.kca.find_kancolle()
                 kca_u.kca.receive_expedition()
                 return True
@@ -123,12 +122,12 @@ class Recovery(object):
                 retry += 1
                 kca_u.kca.sleep(1)
                 continue
-            
+
             region.x -= 100
             region.y -= 100
             region.click()
             kca_u.kca.sleep(1)
-        
+
         return False
 
     @classmethod
@@ -150,7 +149,8 @@ class Recovery(object):
         if catbomb_201:
             if sts.stats.recovery.catbomb_201_encountered > 0:
                 Log.log_error(
-                    "Multiple 201 catbombs encountered. Shutting down kcauto.")
+                    "Multiple 201 catbombs encountered. Shutting down kcauto."
+                )
                 return False
             else:
                 kca_u.kca.sleep(300)
@@ -167,10 +167,9 @@ class Recovery(object):
                 else:
                     sts.stats.recovery.catbomb_recoveries_done += 1
                 return True
-            elif kca_u.kca.exists(screen, 'global|catbomb.png'):
+            elif kca_u.kca.exists(screen, "global|catbomb.png"):
                 if catbomb_201:
-                    Log.log_error(
-                        "Persistent 201 catbomb. Shutting down kcauto.")
+                    Log.log_error("Persistent 201 catbomb. Shutting down kcauto.")
                     return False
 
                 catbomb_count += 1
@@ -178,7 +177,8 @@ class Recovery(object):
                 sleep_len = pow(4, catbomb_count + 1)
                 Log.log_warn(
                     f"Catbomb Recovery attempt {catbomb_count}. Sleeping for "
-                    f"{sleep_len} seconds before next recovery attempt.")
+                    f"{sleep_len} seconds before next recovery attempt."
+                )
                 kca_u.kca.sleep(sleep_len)
             else:
                 return False
@@ -217,17 +217,17 @@ class Recovery(object):
             screen (Region, optional): screen region.
         """
         if cfg.config.general.is_direct_control:
-            pyautogui.press('f5')
+            pyautogui.press("f5")
             kca_u.kca.sleep(0.5)
-            pyautogui.press('space')
+            pyautogui.press("space")
             kca_u.kca.sleep(0.5)
-            pyautogui.press('tab')
+            pyautogui.press("tab")
             kca_u.kca.sleep(0.5)
-            pyautogui.press('space')
+            pyautogui.press("space")
             kca_u.kca.sleep(5)
         else:
             kca_u.kca.visual_hook.Page.reload()
             kca_u.kca.sleep(0.5)
 
-        kca_u.kca.wait(screen, 'global|game_start.png', 90)
+        kca_u.kca.wait(screen, "global|game_start.png", 90)
         kca_u.kca.sleep(3)

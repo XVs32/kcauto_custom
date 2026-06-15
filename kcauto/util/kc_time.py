@@ -5,8 +5,8 @@ import config.config_core as cfg
 
 
 class KCTime(ABC):
-    """kcauto datetime helper module.
-    """
+    """kcauto datetime helper module."""
+
     @staticmethod
     def convert_epoch(epoch):
         """Method that converts epoch timestamp to a datetime object. Primarily
@@ -43,7 +43,7 @@ class KCTime(ABC):
         Returns:
             str: human-readable representation of datetime.
         """
-        return input_datetime.strftime('%Y-%m-%d %H:%M:%S')
+        return input_datetime.strftime("%Y-%m-%d %H:%M:%S")
 
     @classmethod
     def timedelta_to_str(cls, input_timedelta):
@@ -56,9 +56,7 @@ class KCTime(ABC):
             str: human-readable representation of timedelta.
         """
         dhms = cls._seconds_to_dhms_dict(input_timedelta.seconds)
-        return (
-            f"{dhms['days']}d {dhms['hours']}h "
-            f"{dhms['minutes']}m {dhms['seconds']}s")
+        return f"{dhms['days']}d {dhms['hours']}h {dhms['minutes']}m {dhms['seconds']}s"
 
     @classmethod
     def seconds_to_timedelta(cls, seconds):
@@ -112,9 +110,9 @@ class KCTime(ABC):
             dict: dict of days, hours, minutes, and seconds
         """
         dhms = {}
-        dhms['days'], rem = divmod(seconds, 24 * 60 * 60)
-        dhms['hours'], rem = divmod(rem, 60 * 60)
-        dhms['minutes'], dhms['seconds'] = divmod(rem, 60)
+        dhms["days"], rem = divmod(seconds, 24 * 60 * 60)
+        dhms["hours"], rem = divmod(rem, 60 * 60)
+        dhms["minutes"], dhms["seconds"] = divmod(rem, 60)
         return dhms
 
     @staticmethod

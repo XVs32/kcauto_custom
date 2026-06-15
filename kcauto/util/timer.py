@@ -1,8 +1,8 @@
 import time
 
+
 class Timer(object):
-    """kcauto timer module.
-    """
+    """kcauto timer module."""
 
     alarm_time = 0
 
@@ -14,5 +14,3 @@ class Timer(object):
 
     def is_time_up(self):
         return time.time() > self.alarm_time
-
-

@@ -1,7 +1,10 @@
 from config.config_base import ConfigBase
 
 from kca_enums.scheduler_slots import (
-    SchedulerSlot0Enum, SchedulerSlot2Enum, SchedulerSlot3Enum)
+    SchedulerSlot0Enum,
+    SchedulerSlot2Enum,
+    SchedulerSlot3Enum,
+)
 
 
 class ConfigScheduler(ConfigBase):
@@ -9,8 +12,8 @@ class ConfigScheduler(ConfigBase):
 
     def __init__(self, config):
         super().__init__(config)
-        self.enabled = config['scheduler.enabled']
-        self.rules = config['scheduler.rules']
+        self.enabled = config["scheduler.enabled"]
+        self.rules = config["scheduler.rules"]
 
     @property
     def enabled(self):
@@ -19,8 +22,7 @@ class ConfigScheduler(ConfigBase):
     @enabled.setter
     def enabled(self, value):
         if type(value) is not bool:
-            raise ValueError(
-                "Specified value for scheduler enabled is not a boolean.")
+            raise ValueError("Specified value for scheduler enabled is not a boolean.")
         self._enabled = value
 
     @property
@@ -30,7 +32,7 @@ class ConfigScheduler(ConfigBase):
     @rules.setter
     def rules(self, value):
         for rule in value:
-            split_rule = rule.split(':')
+            split_rule = rule.split(":")
             if len(split_rule) not in (4, 5):
                 raise ValueError("Malformed Scheduler rule.")
             if not SchedulerSlot0Enum.contains_value(split_rule[0]):

@@ -9,13 +9,13 @@ from kca_enums.fleet_modes import FleetModeEnum
 
 from util.lzstring import LZString
 
+
 class Noro6(object):
-    
-    NORO6_CONFIG = 'configs/noro6/noro6'
-    NORO6_TEMPLATE = 'template/configs/noro6/noro6'
-    
+    NORO6_CONFIG = "configs/noro6/noro6"
+    NORO6_TEMPLATE = "template/configs/noro6/noro6"
+
     data = None
-    
+
     presets = []
     map = None
     fleet = None
@@ -23,42 +23,40 @@ class Noro6(object):
     item = None
 
     def __init__(self, filepath=NORO6_CONFIG):
-        
+
         self.presets = []
-        
+
         if filepath is not None:
-            
             if not os.path.isfile(filepath):
                 filepath = self.NORO6_TEMPLATE
 
             try:
-                with open(filepath, 'r', encoding='utf-8') as file:
+                with open(filepath, "r", encoding="utf-8") as file:
                     compressed = file.read()
             except OSError as e:
                 return
 
             decompressed = LZString.decompressFromUTF16(compressed)
-            
-            #read decompress as json
+
+            # read decompress as json
             data = JsonData.load_json_str(decompressed)
             self.data = data["savedata"]
             self.get_presets(self.data)
-            
+
         self.map = None
         self.fleet = None
         self.ship = None
         self.item = None
-                
+
     def get_presets(self, config):
-        
+
         if config["isDirectory"] == True:
             for item in config["childItems"]:
                 self.get_presets(item)
         else:
             self.presets.append(config)
-            
+
     def get_map(self, name):
-        
         """
         method to get the config by name
         name(str): map name
@@ -71,25 +69,27 @@ class Noro6(object):
                 self.ship = None
                 self.item = None
                 return preset
-            
+
         Log.log_warn(f"Map {name} not found in Noro6.")
         return None
-            
-        
+
     def get_variant(self, map_name):
         """
-            method to get all variant under a map
-            map_name(str): map name
-            Returns:
-                list: list of variant name
+        method to get all variant under a map
+        map_name(str): map name
+        Returns:
+            list: list of variant name
         """
         ret = []
         for preset in self.presets:
-            if preset["name"] == map_name or preset["name"][:preset["name"].rfind("-")] == map_name:
+            if (
+                preset["name"] == map_name
+                or preset["name"][: preset["name"].rfind("-")] == map_name
+            ):
                 ret.append(preset["name"])
-                
+
         return ret
-            
+
     def get_preset_type(self):
         """
         method to get the preset type of the noro6 file
@@ -98,12 +98,12 @@ class Noro6(object):
         """
         if self.map is None:
             return None
-        
-        if self.map["name"][0] == 'B':
+
+        if self.map["name"][0] == "B":
             return FleetEnum.COMBAT
-        elif self.map["name"][0] == 'C':
+        elif self.map["name"][0] == "C":
             return FleetEnum.COMBAT
-        elif self.map["name"][0] == 'D':
+        elif self.map["name"][0] == "D":
             return FleetEnum.EXPEDITION
         else:
             return FleetEnum.COMBAT
@@ -117,24 +117,24 @@ class Noro6(object):
         Returns:
             ret : the dict of the fleet or None if not found
         """
-        #handle key not found error
-        
+        # handle key not found error
+
         if "manager" not in self.map:
             return None
         if "fleetInfo" not in self.map["manager"]:
             return None
-        #read string in self.map["manager"] as json
+        # read string in self.map["manager"] as json
         fleetInfo = JsonData.load_json_str(self.map["manager"])["fleetInfo"]
-        
+
         if fleetInfo is None:
             return 0
         if len(fleetInfo["fleets"]) < fleet_id:
             return None
-        
+
         self.ship = None
         self.item = None
-        
-        self.fleet = fleetInfo["fleets"][fleet_id-1]
+
+        self.fleet = fleetInfo["fleets"][fleet_id - 1]
         return self.fleet
 
     def get_fleet_mode(self):
@@ -144,20 +144,20 @@ class Noro6(object):
         Returns:
             ret : FleetModeEnum
         """
-        #handle key not found error
-        
+        # handle key not found error
+
         if "manager" not in self.map:
             return None
         if "fleetInfo" not in self.map["manager"]:
             return None
-        #read string in self.map["manager"] as json
+        # read string in self.map["manager"] as json
         fleetInfo = JsonData.load_json_str(self.map["manager"])["fleetInfo"]
-        
+
         if fleetInfo is None:
             return 0
         if "fleetType" not in fleetInfo:
             return None
-        
+
         self.get_fleet(1)
         ship_count = self.get_ship_count()
         if ship_count == 7:
@@ -193,10 +193,9 @@ class Noro6(object):
             return None
 
         self.item = None
-        self.ship = self.fleet["ships"][ship_id-1]
+        self.ship = self.fleet["ships"][ship_id - 1]
         return self.ship
-        
-        
+
     def get_equipment(self, item_id):
         """
         method to get an item's raw json by id
@@ -213,15 +212,15 @@ class Noro6(object):
         if len(self.ship["is"]) < item_id:
             return None
 
-        self.item = self.ship["is"][item_id-1]
-        
-        if 'r' not in self.item:
-            self.item['r'] = 0
-        if 'l' not in self.item:
-            self.item['l'] = 0
-        
+        self.item = self.ship["is"][item_id - 1]
+
+        if "r" not in self.item:
+            self.item["r"] = 0
+        if "l" not in self.item:
+            self.item["l"] = 0
+
         return self.item
-    
+
     def get_reinforce_equipment(self):
         """
         method to get the reinforce equipment
@@ -231,19 +230,19 @@ class Noro6(object):
         """
         if self.ship is None:
             return None
-        
+
         self.item = self.ship["ex"]
-        
-        #if reinforce slot enable but empty
-        if self.ship["re"] is True and self.item['i'] == 0:
-            self.item['i'] = -1
-        
-        if 'r' not in self.item:
-            self.item['r'] = 0
-        if 'l' not in self.item:
-            self.item['l'] = 0
+
+        # if reinforce slot enable but empty
+        if self.ship["re"] is True and self.item["i"] == 0:
+            self.item["i"] = -1
+
+        if "r" not in self.item:
+            self.item["r"] = 0
+        if "l" not in self.item:
+            self.item["l"] = 0
         return self.item
-        
+
     def get_fleet_count(self):
         """
         method to get the vaild fleet count
@@ -254,11 +253,11 @@ class Noro6(object):
             return 0
         if self.map["manager"] is None:
             return 0
-        
-        #read string in self.map["manager"] as json
-        Log.log_debug_1(f'Loading {self.map}\'s config')
+
+        # read string in self.map["manager"] as json
+        Log.log_debug_1(f"Loading {self.map}'s config")
         fleetInfo = JsonData.load_json_str(self.map["manager"])["fleetInfo"]
-        
+
         if fleetInfo is None:
             return 0
         count = len(fleetInfo["fleets"])
@@ -276,11 +275,11 @@ class Noro6(object):
             return 0
         count = 0
         for ship in self.fleet["ships"]:
-            if ship["i"] != 0 :
+            if ship["i"] != 0:
                 count += 1
-        
+
         return count
-    
+
     def get_equipment_count(self):
         """
         method to get the vaild equipment count
@@ -292,9 +291,9 @@ class Noro6(object):
         if self.ship is None:
             return 0
         count = len(self.ship["is"])
-                
+
         return count
-    
+
     def print_status(self):
         Log.log_debug_1(f"map: {self.map['name']}")
         Log.log_debug_1(f"fleet: {self.fleet}") if self.fleet is not None else None

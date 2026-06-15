@@ -23,7 +23,7 @@ class LBASGroup(object):
         if not self.is_active:
             return False
         for plane in self.planes:
-            if plane['count'] < plane['count_max']:
+            if plane["count"] < plane["count_max"]:
                 return True
         return False
 
@@ -39,8 +39,8 @@ class LBASGroup(object):
     def highest_fatigue(self):
         highest_fatigue = LBASFatigueEnum.NO_FATIGUE
         for plane in self.planes:
-            if plane['fatigue'] > highest_fatigue:
-                highest_fatigue = plane['fatigue']
+            if plane["fatigue"] > highest_fatigue:
+                highest_fatigue = plane["fatigue"]
         return highest_fatigue
 
     @property
@@ -50,8 +50,7 @@ class LBASGroup(object):
         if self.needs_rest:
             return LBASStateEnum.REST
 
-        group_node_size = len(
-            cfg.config.combat.nodes_for_lbas_group(self.group_id))
+        group_node_size = len(cfg.config.combat.nodes_for_lbas_group(self.group_id))
         if LBASGroupEnum(self.group_id) in cfg.config.combat.lbas_groups:
             if group_node_size == 2:
                 return LBASStateEnum.SORTIE

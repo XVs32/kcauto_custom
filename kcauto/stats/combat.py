@@ -42,13 +42,15 @@ class CombatStats(StatsBase):
             if com.combat.enabled:
                 return_string = (
                     "Next sortie at "
-                    f"{KCTime.datetime_to_str(com.combat.next_sortie_time)}")
+                    f"{KCTime.datetime_to_str(com.combat.next_sortie_time)}"
+                )
             else:
                 time_disabled = com.combat.time_disabled
                 if time_disabled:
                     return_string = (
                         f"Combat module disabled as of "
-                        f"{KCTime.datetime_to_str(time_disabled)}")
+                        f"{KCTime.datetime_to_str(time_disabled)}"
+                    )
 
             return_string += (
                 f" / {self.combat_sorties} sorties "
@@ -56,15 +58,17 @@ class CombatStats(StatsBase):
                 f"{self.nodes_fought} nodes fought "
                 f"({self.nodes_fought_ph:.2f}/hr) / "
                 f"{self.ships_rescued} ships rescued "
-                f"({self.ships_rescued_ph:.2f}/hr)")
+                f"({self.ships_rescued_ph:.2f}/hr)"
+            )
             if self.fcfs_done:
                 return_string += (
-                    f" / {self.fcfs_done} FCF retreats "
-                    f"({self.fcfs_done_ph:.2f}/hr)")
+                    f" / {self.fcfs_done} FCF retreats ({self.fcfs_done_ph:.2f}/hr)"
+                )
             if cfg.config.event_reset.enabled:
                 return_string += (
                     f" / {self.event_resets} event resets "
-                    f"({self.event_resets_ph:.2f}/hr)")
+                    f"({self.event_resets_ph:.2f}/hr)"
+                )
         else:
             return_string = "Combat module is disabled."
 
