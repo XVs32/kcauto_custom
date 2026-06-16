@@ -1,5 +1,5 @@
 # open/create file called test.py
-f = open("map_enum.json", "w", encoding="utf-8")
+f = open("../../data/combat/map_enum.json", "w", encoding="utf-8")
 
 f.write(
     "\n\
@@ -203,7 +203,7 @@ f.write(
     "W1-5-2605B3": "2605B3-1-5",\n\
     "W2-3-2605B3": "2605B3-2-3",\n\
     "W7-4-2605B3": "2605B3-7-4",\n\
-    "W1-6-N-2605B3": "2605B3-1-6-N",\n\
+    "W1-6-N-2605B3": "2605B3-1-6-N"\n\
 \n'
 )
 
