@@ -12,7 +12,11 @@ f.write(
 import os
 import json
 
-for file in os.listdir("../../data/combat"):
+# read file in alphabet order
+map_file_list = os.listdir("../../data/combat")
+map_file_list.sort()
+
+for file in map_file_list:
     if file.endswith(".json") and len(file.split("-")) > 1:
         world = file.split("-")[0]
         stage = file.split("-")[1].split(".")[0]
