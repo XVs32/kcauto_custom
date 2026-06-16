@@ -10,4 +10,4 @@ class LBASStateEnum(EnumBase):
 
     @property
     def display_name(self):
-        return self.name.replace('_', ' ').title()
+        return self.name.replace("_", " ").title()

@@ -10,26 +10,26 @@ import args.args_core as arg
 
 
 class Log(ABC):
-    CLR_MSG = '\033[94m'
-    CLR_SUCCESS = '\033[92m'
-    CLR_WARNING = '\033[93m'
-    CLR_ERROR = '\033[91m'
-    CLR_END = '\033[0m'
+    CLR_MSG = "\033[94m"
+    CLR_SUCCESS = "\033[92m"
+    CLR_WARNING = "\033[93m"
+    CLR_ERROR = "\033[91m"
+    CLR_END = "\033[0m"
 
     log_file = None
-    
+
     _enabled = False
 
     @classmethod
     def init(cls):
-        
+
         cls.enabled = True
 
         # Force stdout to use UTF-8
-        sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+        sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
 
         # Specify the directory path
-        directory = 'log'
+        directory = "log"
 
         # Calculate the date one month ago from the current date
         one_month_ago = datetime.now() - relativedelta(months=1)
@@ -37,7 +37,6 @@ class Log(ABC):
         # Iterate over the file names in the directory
         for filename in os.listdir(directory):
             if os.path.isfile(os.path.join(directory, filename)):
-
                 # Extract the date and time part from the filename
                 date_time_str = filename[:-4]  # Remove the '.log' extension
 
@@ -45,30 +44,28 @@ class Log(ABC):
                 date_time_format = "%Y-%m-%d-%H-%M-%S"
 
                 # Parse the date and time string into a datetime object
-                
+
                 try:
                     date_time_obj = datetime.strptime(date_time_str, date_time_format)
                     # Check if date_time_obj is one month or older
-                    if date_time_obj <= one_month_ago :
+                    if date_time_obj <= one_month_ago:
                         os.remove(os.path.join(directory, filename))
                 except ValueError:
                     os.remove(os.path.join(directory, filename))
 
         # YY/mm/dd H:M:S
         dt_string = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
-        cls.log_file = open( "log/" + dt_string + ".log", "w", encoding='utf-8')
-        
+        cls.log_file = open("log/" + dt_string + ".log", "w", encoding="utf-8")
+
     @property
     def enabled(self):
-        """Indicates whether or not the module is enabled.
-        """
+        """Indicates whether or not the module is enabled."""
         return self._enabled
-    
+
     @enabled.setter
     def enabled(cls, value):
         if type(value) is not bool:
-            raise TypeError(
-                f"Enabled setting for module Log is not a bool.")
+            raise TypeError(f"Enabled setting for module Log is not a bool.")
         cls._enabled = value
 
     @staticmethod
@@ -92,13 +89,10 @@ class Log(ABC):
         """
         if not cls.enabled:
             return
-        
-        print(
-            f"{cls.CLR_MSG}{cls._log_format(msg)}{cls.CLR_END}",
-            flush=True)
-        cls.log_file.write(f'[INFO]{cls._log_format(msg)}\n')
+
+        print(f"{cls.CLR_MSG}{cls._log_format(msg)}{cls.CLR_END}", flush=True)
+        cls.log_file.write(f"[INFO]{cls._log_format(msg)}\n")
         cls.log_file.flush()
-        
 
     @classmethod
     def log_success(cls, msg):
@@ -110,11 +104,9 @@ class Log(ABC):
         """
         if not cls.enabled:
             return
-        
-        print(
-            f"{cls.CLR_SUCCESS}{cls._log_format(msg)}{cls.CLR_END}",
-            flush=True)
-        cls.log_file.write(f'[SUCCESS]{cls._log_format(msg)}\n')
+
+        print(f"{cls.CLR_SUCCESS}{cls._log_format(msg)}{cls.CLR_END}", flush=True)
+        cls.log_file.write(f"[SUCCESS]{cls._log_format(msg)}\n")
         cls.log_file.flush()
 
     @classmethod
@@ -127,11 +119,9 @@ class Log(ABC):
         """
         if not cls.enabled:
             return
-        
-        print(
-            f"{cls.CLR_WARNING}{cls._log_format(msg)}{cls.CLR_END}",
-            flush=True)
-        cls.log_file.write(f'[WARNING]{cls._log_format(msg)}\n')
+
+        print(f"{cls.CLR_WARNING}{cls._log_format(msg)}{cls.CLR_END}", flush=True)
+        cls.log_file.write(f"[WARNING]{cls._log_format(msg)}\n")
         cls.log_file.flush()
 
     @classmethod
@@ -144,11 +134,9 @@ class Log(ABC):
         """
         if not cls.enabled:
             return
-        
-        print(
-            f"{cls.CLR_ERROR}{cls._log_format(msg)}{cls.CLR_END}",
-            flush=True)
-        cls.log_file.write(f'[ERROR]{cls._log_format(msg)}\n')
+
+        print(f"{cls.CLR_ERROR}{cls._log_format(msg)}{cls.CLR_END}", flush=True)
+        cls.log_file.write(f"[ERROR]{cls._log_format(msg)}\n")
         cls.log_file.flush()
 
     @classmethod
@@ -161,11 +149,11 @@ class Log(ABC):
         """
         if not cls.enabled:
             return
-        
+
         if arg.args.parsed_args != None and arg.args.parsed_args.debug_output:
             print(cls._log_format(msg), flush=True)
 
-        cls.log_file.write(f'[DEBUG]{cls._log_format(msg)}\n')
+        cls.log_file.write(f"[DEBUG]{cls._log_format(msg)}\n")
         cls.log_file.flush()
 
     @classmethod
@@ -178,9 +166,9 @@ class Log(ABC):
         """
         if not cls.enabled:
             return
-        
+
         if arg.args.parsed_args != None and arg.args.parsed_args.debug_output:
             print(cls._log_format(msg), flush=True)
 
-            cls.log_file.write(f'[DEBUG]{cls._log_format(msg)}\n')
+            cls.log_file.write(f"[DEBUG]{cls._log_format(msg)}\n")
             cls.log_file.flush()

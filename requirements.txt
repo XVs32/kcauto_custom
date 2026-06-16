@@ -40,3 +40,4 @@ websocket-client==1.8.0
 websockets==10.4
 zipp==3.23.0
 psutil==7.2.1
+ruff==0.15.16

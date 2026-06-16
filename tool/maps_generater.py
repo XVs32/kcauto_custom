@@ -1,48 +1,75 @@
+# open/create file called test.py
+f = open("map_enum.json", "w", encoding="utf-8")
 
-#open/create file called test.py
-f = open("map_enum.json", "w", encoding='utf-8')
-
-f.write('\n\
+f.write(
+    "\n\
 {\n\
-\n')
+\n"
+)
 
 
-#read all .json file under data/combat folder
+# read all .json file under data/combat folder
 import os
 import json
+
 for file in os.listdir("../data/combat"):
-    if file.endswith(".json") and len(file.split("-"))>1 :
-        
+    if file.endswith(".json") and len(file.split("-")) > 1:
         world = file.split("-")[0]
         stage = file.split("-")[1].split(".")[0]
-        
-        f.write("\"W"+ str(world) + "_" + str(stage) + "\": " +  "\"B-" + str(world) + "-" + str(stage) + "\",\n")
-        #open file
-        with open("../data/combat/" + file, "r", encoding='utf-8') as map_json:
-            #read file
+
+        f.write(
+            '"W'
+            + str(world)
+            + "_"
+            + str(stage)
+            + '": '
+            + '"B-'
+            + str(world)
+            + "-"
+            + str(stage)
+            + '",\n'
+        )
+        # open file
+        with open("../data/combat/" + file, "r", encoding="utf-8") as map_json:
+            # read file
             data = json.load(map_json)
-            
-            #get the map name
-            
+
+            # get the map name
+
             nodes = []
             DISTINATION = 1
             NODE_NAME_MAX_LEN = 4
             for key in data["edges"]:
-                
-                #if not a node
-                if len( data["edges"][key][DISTINATION]) > NODE_NAME_MAX_LEN:
+                # if not a node
+                if len(data["edges"][key][DISTINATION]) > NODE_NAME_MAX_LEN:
                     continue
-                
-                nodes.append(data["edges"][key][DISTINATION])
-                #write the following code to the file
-                
-            nodes = list(set(nodes))
-            
-            for node in nodes:
-                f.write("\"W"+ str(world) + "_" + str(stage) + "_" + node + "\": " +  "\"B-" + str(world) + "-" + str(stage) + "-" + node + "\",\n")
 
-#write the following code to the file
-f.write('\n\
+                nodes.append(data["edges"][key][DISTINATION])
+                # write the following code to the file
+
+            nodes = list(set(nodes))
+
+            for node in nodes:
+                f.write(
+                    '"W'
+                    + str(world)
+                    + "_"
+                    + str(stage)
+                    + "_"
+                    + node
+                    + '": '
+                    + '"B-'
+                    + str(world)
+                    + "-"
+                    + str(stage)
+                    + "-"
+                    + node
+                    + '",\n'
+                )
+
+# write the following code to the file
+f.write(
+    '\n\
     "W1_1_Bw1": "Bw1-1-1",\n\
     "W1_5_Bw1": "Bw1-1-5",\n\
     "W5_2_C_Bw1": "Bw1-5-2-C",\n\
@@ -162,11 +189,14 @@ f.write('\n\
     "W7-1-2412B5": "2412B5-7-1",\n\
     "W4-1-2412B5": "2412B5-4-1",\n\
     "W5-1-2412B5": "2412B5-5-1"\n\
-\n')
+\n'
+)
 
-f.write('\n\
+f.write(
+    "\n\
 }\n\
-\n')
+\n"
+)
 
-#close the file
+# close the file
 f.close()
