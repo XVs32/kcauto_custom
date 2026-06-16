@@ -94,7 +94,8 @@ def getLastEventWorldId(data):
     # get the max world id
     worldIds = list(worldIds)
     worldIds.sort()
-    return str(worldIds[-1])
+    # return str(worldIds[-1])
+    return str(5)
 
 
 def getMapList(data, worldId):
@@ -176,7 +177,7 @@ def on_click(x, y, button, pressed):
 
             print(f"All nodes are clicked. Saving to file...")
             print(mapData)
-            with open(f"../data/combat/E-{mapData['subworld']}.json", "w") as f:
+            with open(f"../../data/combat/E-{mapData['subworld']}.json", "w") as f:
                 json.dump(mapData, f, indent=4)
             global fileSaved
             fileSaved = True
