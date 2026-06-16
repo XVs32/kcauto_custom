@@ -12,7 +12,7 @@ f.write(
 import os
 import json
 
-for file in os.listdir("../data/combat"):
+for file in os.listdir("../../data/combat"):
     if file.endswith(".json") and len(file.split("-")) > 1:
         world = file.split("-")[0]
         stage = file.split("-")[1].split(".")[0]
@@ -30,7 +30,7 @@ for file in os.listdir("../data/combat"):
             + '",\n'
         )
         # open file
-        with open("../data/combat/" + file, "r", encoding="utf-8") as map_json:
+        with open("../../data/combat/" + file, "r", encoding="utf-8") as map_json:
             # read file
             data = json.load(map_json)
 
@@ -188,7 +188,22 @@ f.write(
     "W2-3-2412B5": "2412B5-2-3",\n\
     "W7-1-2412B5": "2412B5-7-1",\n\
     "W4-1-2412B5": "2412B5-4-1",\n\
-    "W5-1-2412B5": "2412B5-5-1"\n\
+    "W5-1-2412B5": "2412B5-5-1",\n\
+    "W1-2-2605B2": "2605B2-1-2",\n\
+    "W1-4-2605B2": "2605B2-1-4",\n\
+    "W2-1-2605B2": "2605B2-2-1",\n\
+    "W2-2-2605B2": "2605B2-2-2",\n\
+    "W5-1-2605B4": "2605B4-5-1",\n\
+    "W5-2-2605B4": "2605B4-5-2",\n\
+    "W5-3-2605B4": "2605B4-5-3",\n\
+    "W5-4-2605B4": "2605B4-5-4",\n\
+    "W5-5-2605B4": "2605B4-5-5",\n\
+    "W5-6-2605B4": "2605B4-5-6",\n\
+    "W1-3-2605B3": "2605B3-1-3",\n\
+    "W1-5-2605B3": "2605B3-1-5",\n\
+    "W2-3-2605B3": "2605B3-2-3",\n\
+    "W7-4-2605B3": "2605B3-7-4",\n\
+    "W1-6-N-2605B3": "2605B3-1-6-N",\n\
 \n'
 )
 
