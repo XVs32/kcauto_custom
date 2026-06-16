@@ -48,6 +48,7 @@ for file in os.listdir("../../data/combat"):
                 # write the following code to the file
 
             nodes = list(set(nodes))
+            nodes.sort()
 
             for node in nodes:
                 f.write(
