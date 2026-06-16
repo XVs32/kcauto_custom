@@ -12,7 +12,7 @@ f.write(
 import os
 import json
 
-for file in os.listdir("../data/combat"):
+for file in os.listdir("../../data/combat"):
     if file.endswith(".json") and len(file.split("-")) > 1:
         world = file.split("-")[0]
         stage = file.split("-")[1].split(".")[0]
@@ -30,7 +30,7 @@ for file in os.listdir("../data/combat"):
             + '",\n'
         )
         # open file
-        with open("../data/combat/" + file, "r", encoding="utf-8") as map_json:
+        with open("../../data/combat/" + file, "r", encoding="utf-8") as map_json:
             # read file
             data = json.load(map_json)
 
