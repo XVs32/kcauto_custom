@@ -153,7 +153,7 @@ class CombatCore(CoreBase):
                     "cleared": map_data["api_cleared"] == 1,
                 }
 
-                MULTI_STAGE_MAP_ID = [72, 73, 75]
+                MULTI_STAGE_MAP_ID = [72, 73, 75, 56]
                 if api_id in MULTI_STAGE_MAP_ID:
                     self.available_maps[map_enum.world_and_map] = {
                         "gauge_num": (
