@@ -145,18 +145,20 @@ class Kcauto(object):
 
         anything_is_done = False
 
+        """@todo: check equipment pool fix 
+        """
         quest_configs = [
             {
                 "id": "Fd1",
                 "type": "develop",
                 "count": 1,
-                "is_full": equ.equipment.is_equipment_pool_full,
+                "is_full": lambda: False,
             },
             {
                 "id": "Fd3",
                 "type": "develop",
                 "count": 3,
-                "is_full": equ.equipment.is_equipment_pool_full,
+                "is_full": lambda: False,
             },
             {
                 "id": "Fd2",
@@ -300,8 +302,10 @@ class Kcauto(object):
                 MapEnum.W5_6: [MapEnum.W5_6_G, MapEnum.W5_6_N, MapEnum.W5_6_Z],
             }
 
-            GIMMICK_MAPS = {MapEnum.W7_5: [MapEnum.W7_5_M],
-                            MapEnum.W5_6: [MapEnum.W5_6_R]}
+            GIMMICK_MAPS = {
+                MapEnum.W7_5: [MapEnum.W7_5_M],
+                MapEnum.W5_6: [MapEnum.W5_6_R],
+            }
             map_enum = cfg.config.combat.sortie_map.without_quest_and_node_enum
             if map_enum in MULTI_STAGE_MAPS:
                 nav.navigate.to("combat")
