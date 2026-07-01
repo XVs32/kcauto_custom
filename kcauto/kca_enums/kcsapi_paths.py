@@ -57,3 +57,5 @@ class KCSAPIEnum(EnumBase):
     EXPEDITION_START = "kcsapi/api_req_mission/start"
     # equipment
     FREE_EQUIPMENT = "kcsapi/api_get_member/ship3"
+    # static resources
+    MAP_INFO_JSON = "kcs2/resources/map"

@@ -76,9 +76,21 @@ class ApiWrapper(object):
                     request_url = message["params"]["response"]["url"]
                     # found_target = None
                     for target_api in target_apis:
-                        if target_api.value in request_url and request_url.split("?")[
-                            0
-                        ].endswith(target_api.value.split("/")[-1]):
+                        is_match = False
+                        if target_api is KCSAPIEnum.MAP_INFO_JSON:
+                            is_match = (
+                                target_api.value in request_url
+                                and request_url.split("?")[0].endswith("_info.json")
+                            )
+                        elif target_api.value is not None:
+                            is_match = (
+                                target_api.value in request_url
+                                and request_url.split("?")[0].endswith(
+                                    target_api.value.split("/")[-1]
+                                )
+                            )
+
+                        if is_match:
                             caught_apis.add(target_api)
                             request_id = message["params"]["requestId"]
                             Log.log_debug_1(
@@ -110,11 +122,16 @@ class ApiWrapper(object):
                             response_body_attempt += 1
                         try:
                             if platform == "linux" or platform == "linux2":
-                                raw_svdata = response_body[0]["result"]["body"][7:]
+                                raw_body = response_body[0]["result"]["body"]
                             elif platform == "darwin":
-                                raw_svdata = response_body["result"]["body"][7:]
+                                raw_body = response_body["result"]["body"]
                             elif platform == "win32":
-                                raw_svdata = response_body[0]["result"]["body"][7:]
+                                raw_body = response_body[0]["result"]["body"]
+
+                            if raw_body.startswith("svdata="):
+                                raw_svdata = raw_body[7:]
+                            else:
+                                raw_svdata = raw_body
 
                         except Exception:
                             raise ApiException("Empty or invalid API response.")
@@ -151,14 +168,15 @@ class ApiWrapper(object):
 
     def _load_api_data(self, request_data, data):
         request_type = request_data["type"]
-        if data["api_result"] != 1:
-            Log.log_debug_1("Encountered non-1 API result.")
-            Log.log_debug_1(data)
-            if data["api_result"] == 201:
-                Log.log_error("Encountered catbomb.")
-                raise Catbomb201Exception
-            else:
-                raise ApiException
+        if "api_result" in data:
+            if data["api_result"] != 1:
+                Log.log_debug_1("Encountered non-1 API result.")
+                Log.log_debug_1(data)
+                if data["api_result"] == 201:
+                    Log.log_error("Encountered catbomb.")
+                    raise Catbomb201Exception
+                else:
+                    raise ApiException
         if request_type is KCSAPIEnum.GET_DATA:
             return self._process_get_data(data)
         elif request_type is KCSAPIEnum.REQUIRE_INFO:
@@ -245,6 +263,8 @@ class ApiWrapper(object):
             return True
         elif request_type is KCSAPIEnum.FREE_EQUIPMENT:
             return self._process_free_equipment_data(data)
+        elif request_type is KCSAPIEnum.MAP_INFO_JSON:
+            return self._process_map_info_json(data)
 
         return None
 
@@ -624,6 +644,14 @@ class ApiWrapper(object):
                 equipment_data.pop(i)
 
         return equipment_data
+
+    def _process_map_info_json(self, data):
+        try:
+            JsonData.dump_json(data, "data|temp|map_info.json")
+            Log.log_debug_1("Map coordinate info JSON dumped successfully.")
+        except Exception as e:
+            Log.log_error(f"Failed to dump map coordinate info JSON: {e}")
+        return data
 
 
 api = ApiWrapper()
