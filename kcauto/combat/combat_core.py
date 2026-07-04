@@ -385,7 +385,7 @@ class CombatCore(CoreBase):
         # Sortie start
         kca_u.kca.r["top"].hover()
         result = api.api.update_from_api(
-            {KCSAPIEnum.SORTIE_START, KCSAPIEnum.MAP_INFO_JSON}, process_all=True
+            {KCSAPIEnum.SORTIE_START, KCSAPIEnum.MAP_INFO_JSON, KCSAPIEnum.GAUGE}, process_all=True
         )
         lbas.lbas.assign_lbas(self.map_data)
 

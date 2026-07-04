@@ -42,15 +42,14 @@ class ApiWrapper(object):
             return {}
 
         target_apis = set(target_apis)
-        caught_apis = set()
+        received_apis = set()
 
         Log.log_debug_1("Begin waiting for API payload(s).")
-        kcapi_received = False
         kcapi_requests = {}
         results = {}
         end_time = datetime.now() + timedelta(seconds=timeout)
 
-        while not kcapi_received or len(kcapi_requests) > 0 or len(target_apis) > 0:
+        while True:
             # Block waiting for a message. Use the remaining overall timeout
             # when one is set so we don't wake unnecessarily.
             remaining = (end_time - datetime.now()).total_seconds()
@@ -58,20 +57,28 @@ class ApiWrapper(object):
                 break
             wait_timeout = min(remaining, 1)
 
-            message = kca_u.kca.api_hook.wait_message(timeout=wait_timeout)
-            if not message:
-                if len(caught_apis) == len(target_apis):
+            [first_message] = kca_u.kca.api_hook.wait_message(timeout=wait_timeout)
+            if first_message == [None]:
+                first_message = []
+
+            # process the received message and any that have queued up
+            self._pending_messages = (
+                self._pending_messages + first_message + kca_u.kca.api_hook.pop_messages()
+            )
+
+            if not self._pending_messages:
+                if len(target_apis) <= len(received_apis):
                     Log.log_debug_1("All target APIs received, ending wait.")
                     break
                 # timed out waiting for a message; re-evaluate loop conditions
                 continue
-            # process the received message and any that have queued up
-            self._pending_messages = (
-                self._pending_messages + [message] + kca_u.kca.api_hook.pop_messages()
-            )
+
+            if process_all == False and len(target_apis) <= len(received_apis):
+                Log.log_debug_1("All target APIs received, ending wait.")
+                break
 
             pending_id = 0
-            for idx, message in enumerate(self._pending_messages):
+            for pending_id, message in enumerate(self._pending_messages):
                 if message["method"] == "Network.responseReceived":
                     request_url = message["params"]["response"]["url"]
                     # found_target = None
@@ -82,6 +89,8 @@ class ApiWrapper(object):
                                 target_api.value in request_url
                                 and request_url.split("?")[0].endswith("_info.json")
                             )
+                        elif target_api is KCSAPIEnum.GAUGE:
+                            is_match = True
                         elif target_api.value is not None:
                             is_match = (
                                 target_api.value in request_url
@@ -91,7 +100,6 @@ class ApiWrapper(object):
                             )
 
                         if is_match:
-                            caught_apis.add(target_api)
                             request_id = message["params"]["requestId"]
                             Log.log_debug_1(
                                 f"Waiting for request {request_id} ({request_url})"
@@ -101,25 +109,25 @@ class ApiWrapper(object):
                                 "url": request_url,
                             }
                             break
+
                 elif message["method"] == "Network.loadingFinished":
                     message_request_id = message["params"]["requestId"]
                     if message_request_id in kcapi_requests:
                         Log.log_debug_1(f"Request {message_request_id} received")
-                        kcapi_received = True
                         request_data = kcapi_requests.pop(message_request_id)
-                        response_body = kca_u.kca.api_hook.Network.getResponseBody(
-                            requestId=message_request_id
-                        )
-                        response_body_attempt = 0
-                        while not response_body and response_body_attempt < 5:
-                            Log.log_debug_1("Empty API response. Trying again.")
+                        received_apis.add(request_data["type"])
+
+                        response_body_attempt = 1
+                        while True:
                             response_body = kca_u.kca.api_hook.Network.getResponseBody(
                                 requestId=message_request_id
                             )
-                            if response_body:
+                            if response_body or response_body_attempt > 5:
                                 break
+                            Log.log_debug_1("Empty API response. Trying again.")
                             kca_u.kca.sleep(0.5)
                             response_body_attempt += 1
+
                         try:
                             if platform == "linux" or platform == "linux2":
                                 raw_body = response_body[0]["result"]["body"]
@@ -128,32 +136,26 @@ class ApiWrapper(object):
                             elif platform == "win32":
                                 raw_body = response_body[0]["result"]["body"]
 
-                            if raw_body.startswith("svdata="):
-                                raw_svdata = raw_body[7:]
-                            else:
-                                raw_svdata = raw_body
-
+                            raw_svdata = raw_body.removeprefix("svdata=")
                         except Exception:
                             raise ApiException("Empty or invalid API response.")
-                        res = self._load_api_data(
-                            request_data, JsonData.load_json_str(raw_svdata)
-                        )
+
+                        try:
+                            parsed_data = JsonData.load_json_str(raw_svdata)
+                        except Exception:
+                            parsed_data = raw_svdata
+
+                        res = self._load_api_data(request_data, parsed_data)
+
                         if request_data["type"].name in results:
                             results[request_data["type"].name].append(res)
                         else:
                             results[request_data["type"].name] = [res]
 
-                        if not process_all:
-                            # Save any messages not yet processed in this
-                            # batch so the next call can pick them up.
-                            pending_id = idx
+                        if not process_all and len(target_apis) <= len(received_apis):
+                            break
 
-            if process_all:
-                # All messages in this batch have been processed; clear the list
-                # so they are not re-processed on the next while-loop iteration.
-                self._pending_messages = []
-            else:
-                self._pending_messages = self._pending_messages[pending_id + 1 :]
+            self._pending_messages = self._pending_messages[pending_id + 1 :]
 
         self._check_for_chrome_crash()
 
