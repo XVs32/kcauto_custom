@@ -79,6 +79,7 @@ class CombatCore(CoreBase):
     GIMMICK_TIMESTAMP = "timestamp"
     GIMMICK_MAP_STAGE_REQUIRE = "map_stage_required"
     GIMMICK_MIN_RANK = "min_rank"
+    GIMMICK_NODE_JSON = "node_json"
 
     module_name = "combat"
     module_display_name = "Combat"
@@ -383,7 +384,9 @@ class CombatCore(CoreBase):
 
         # Sortie start
         kca_u.kca.r["top"].hover()
-        result = api.api.update_from_api({KCSAPIEnum.SORTIE_START})
+        result = api.api.update_from_api(
+            {KCSAPIEnum.SORTIE_START, KCSAPIEnum.MAP_INFO_JSON}, process_all=True
+        )
         lbas.lbas.assign_lbas(self.map_data)
 
         conducting_sortie = True
@@ -987,6 +990,18 @@ class CombatCore(CoreBase):
                     self.GIMMICK_CLEAR_REMAINING
                 ] -= 1
                 JsonData.dump_json(self.gimmick_list, GIMMICK)
+
+    def gimmick_startup_judge(self, file_name):
+
+        for display_name in self.gimmick_list:
+            if (
+                self.gimmick_list[display_name][self.GIMMICK_NODE_JSON] == file_name
+                and self.gimmick_list[display_name][self.GIMMICK_CLEAR_REMAINING] > 0
+            ):
+                self.gimmick_list[display_name][self.GIMMICK_CLEAR_REMAINING] = 0
+                JsonData.dump_json(self.gimmick_list, GIMMICK)
+
+                Log.log_success(f"Gimmick solved for map {display_name} detected.")
 
 
 combat = CombatCore()

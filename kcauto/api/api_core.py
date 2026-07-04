@@ -1,5 +1,6 @@
 import sys
 from sys import platform
+import os
 
 from datetime import datetime, timedelta
 
@@ -33,7 +34,6 @@ class ApiWrapper(object):
         self, target_apis={KCSAPIEnum.ANY}, process_all=True, timeout=30
     ):
         """
-
         Args: target_apis (set of KCSAPIEnum): Set of API endpoints to wait for. Use KCSAPIEnum.ANY to wait for any API, or KCSAPIEnum.NONE to skip waiting and return immediately. Default is KCSAPIEnum.ANY.
             process_all (bool): Whether to process all API messages received during the wait period (True) or just the first message for each target API (False). Default is True.
             timeout (int): Maximum time in seconds to wait for the target API payload(s). Default is 30 seconds.
@@ -264,7 +264,7 @@ class ApiWrapper(object):
         elif request_type is KCSAPIEnum.FREE_EQUIPMENT:
             return self._process_free_equipment_data(data)
         elif request_type is KCSAPIEnum.MAP_INFO_JSON:
-            return self._process_map_info_json(data)
+            return self._process_map_info_json(request_data)
 
         return None
 
@@ -646,12 +646,12 @@ class ApiWrapper(object):
         return equipment_data
 
     def _process_map_info_json(self, data):
-        try:
-            JsonData.dump_json(data, "data|temp|map_info.json")
-            Log.log_debug_1("Map coordinate info JSON dumped successfully.")
-        except Exception as e:
-            Log.log_error(f"Failed to dump map coordinate info JSON: {e}")
-        return data
+
+        filename = os.path.basename(data["url"])
+        Log.log_debug_1(f"map info json received: {filename}")
+        com.combat.gimmick_startup_judge(filename)
+
+        return
 
 
 api = ApiWrapper()
