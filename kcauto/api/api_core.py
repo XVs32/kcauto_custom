@@ -57,9 +57,11 @@ class ApiWrapper(object):
                 break
             wait_timeout = min(remaining, 1)
 
-            [first_message] = kca_u.kca.api_hook.wait_message(timeout=wait_timeout)
-            if first_message == [None]:
+            first_message = kca_u.kca.api_hook.wait_message(timeout=wait_timeout)
+            if first_message == None:
                 first_message = []
+            else:
+                first_message = [first_message]
 
             # process the received message and any that have queued up
             self._pending_messages = (
@@ -87,7 +89,7 @@ class ApiWrapper(object):
                         if target_api is KCSAPIEnum.MAP_INFO_JSON:
                             is_match = (
                                 target_api.value in request_url
-                                and request_url.split("?")[0].endswith("_info.json")
+                                and request_url.split("?")[0].endswith(".json")
                             )
                         elif target_api is KCSAPIEnum.GAUGE:
                             is_match = True
