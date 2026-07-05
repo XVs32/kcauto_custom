@@ -59,6 +59,7 @@ class CombatCore(CoreBase):
     RESULT_APIS = {KCSAPIEnum.SORTIE_RESULT, KCSAPIEnum.SORTIE_CF_RESULT}
     SHIPDECK_API = {KCSAPIEnum.SORTIE_SHIPDECK}
     EQUIP_API = {KCSAPIEnum.SORTIE_END}
+    MAP_API = {KCSAPIEnum.MAP_INFO_JSON}
     API_COMBAT_PHASES_TYPE1 = (
         "api_hougeki",
         "api_hougeki1",
@@ -385,7 +386,7 @@ class CombatCore(CoreBase):
         # Sortie start
         kca_u.kca.r["top"].hover()
         result = api.api.update_from_api(
-            {KCSAPIEnum.SORTIE_START, KCSAPIEnum.MAP_INFO_JSON, KCSAPIEnum.GAUGE}, process_all=True
+            {KCSAPIEnum.SORTIE_START, KCSAPIEnum.MAP_INFO_JSON}, process_all=False
         )
         lbas.lbas.assign_lbas(self.map_data)
 
@@ -517,7 +518,8 @@ class CombatCore(CoreBase):
                     self.COMBAT_APIS
                     | self.RESULT_APIS
                     | self.SHIPDECK_API
-                    | self.EQUIP_API,
+                    | self.EQUIP_API
+                    | self.MAP_API,
                     process_all=False,
                     timeout=5,
                 )
