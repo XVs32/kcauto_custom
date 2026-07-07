@@ -36,7 +36,7 @@ VISUAL_URL = "https://play.games.dmm.com/game/kancolle"
 STRATEGY_ROOM_URL = (
     "chrome-extension://hkgmldnainaglpjngpajnnjfhpdjkohh/pages/strategy/strategy.html"
 )
-API_URL = "kcs2/index.php"
+API_URL = VISUAL_URL
 
 # similarity presets
 EXACT = 0.994

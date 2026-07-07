@@ -54,6 +54,7 @@ class Kca(object):
     visual_hook = None
     api_hook = None
     kc3_hook = None
+    poi_hook = None
     css_x = None
     css_y = None
     game_x = None
@@ -91,12 +92,16 @@ class Kca(object):
         Log.log_msg("Hooking into Chrome.")
         self.cdt_init(target="api")
         self.cdt_init(target="visual")
+        self.cdt_init(target="poi")
 
         visual_tab = None
         visual_tab_id = None
         api_tab = None
         api_tab_id = None
+        poi_tab = None
+        poi_tab_id = None
         for n, tab in enumerate(self.visual_hook.tabs):
+            print(tab["url"])
             if VISUAL_URL == tab["url"]:
                 visual_tab = n
                 visual_tab_id = tab["id"]
@@ -104,6 +109,12 @@ class Kca(object):
             if API_URL in tab["url"]:
                 api_tab = n
                 api_tab_id = tab["id"]
+            if "file:///opt/poi/resources/app.asar/index.html" in tab["url"]:
+                poi_tab = n
+                poi_tab_id = tab["id"]
+
+        self.poi_hook.connect_targetID(poi_tab_id)
+        Log.log_debug_1(f"Connected to poi tab ({poi_tab}:{poi_tab_id})")
 
         if visual_tab_id is None or api_tab_id is None:
             Log.log_error(
@@ -1251,6 +1262,8 @@ class Kca(object):
             self.visual_hook = PyChromeDevTools.ChromeInterface(host=host, port=port)
         elif target == "kc3":
             self.kc3_hook = PyChromeDevTools.ChromeInterface(host=host, port=port)
+        elif target == "poi":
+            self.poi_hook = PyChromeDevTools.ChromeInterface(host=host, port=port)
         else:
             raise ValueError("Hook target must be either api, visual or kc3.")
 
