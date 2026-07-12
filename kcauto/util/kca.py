@@ -1289,14 +1289,14 @@ class Kca(object):
 
             if target_quest.name.startswith("D"):
                 import expedition.expedition_core as exp
-                exp_name = val.get("description", "")
+                exp_name = val.get("description", None)
 
-                if exp_name != "":
-                    map_enum = exp.expedition.get_exp_enum_from_name(exp_name)
-                    if map_enum:
-                        action[map_enum] = remaining
-                    else:
-                        continue
+                if exp_name == None:
+                    continue
+
+                map_enum = exp.expedition.get_exp_enum_from_name(exp_name)
+                if map_enum:
+                    action[map_enum] = remaining
                 else:
                     continue
 
