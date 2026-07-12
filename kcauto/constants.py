@@ -32,11 +32,8 @@ CONTEXT_AUTO_PVP = 8
 
 # chrome hook url targets
 DEFAULT_CHROME_DEV_PORT = 9222
-VISUAL_URL = "https://play.games.dmm.com/game/kancolle"
-STRATEGY_ROOM_URL = (
-    "chrome-extension://hkgmldnainaglpjngpajnnjfhpdjkohh/pages/strategy/strategy.html"
-)
-API_URL = VISUAL_URL
+API_URL = "https://play.games.dmm.com/game/kancolle"
+POI_URL_POSTFIX = "resources/app.asar/index.html"
 
 # similarity presets
 EXACT = 0.994

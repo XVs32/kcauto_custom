@@ -95,7 +95,6 @@ class Kca(object):
         poi_tab = None
         poi_tab_id = None
         for n, tab in enumerate(self.api_hook.tabs):
-            print(tab["url"])
             if API_URL in tab["url"]:
                 api_tab = n
                 api_tab_id = tab["id"]
@@ -1144,7 +1143,6 @@ class Kca(object):
 
         self._draw_debug_visualization(corners, arg.args.parsed_args.debug_output)
 
-        # self.visual_hook.Input.synthesizeTapGesture(x= x + offset_x , y=y + offset_y)
         self.api_hook.Input.dispatchMouseEvent(
             type="mouseMoved", x=x + offset_x, y=y + offset_y
         )
@@ -1248,76 +1246,6 @@ class Kca(object):
 
         return
 
-    async def get_html(self, url):
-
-        port = cfg.config.general.chrome_dev_port
-        # Connect to the Chrome browser
-        browser = await connect(browserURL="http://localhost:" + str(port))
-
-        # Create a new background tab
-        page = await browser.newPage()
-
-        # Navigate the background tab to a desired URL
-        await page.goto(url)
-
-        # Retrieve the HTML content
-        self.html = await page.content()
-        # Log.log_debug(f"kca.html: {self.html}")
-
-        # Close the background tab
-        await page.close()
-
-        # Close the connection to the browser
-        await browser.disconnect()
-
-    def reload_kc3_strategy_page(self, subpage=""):
-        """method to open/refresh the kc3 strategy page in chrome
-
-        Args:
-            subpage (string): The name of sub page to open. (ex. flowchart)
-        """
-        try:
-            asyncio.get_event_loop().run_until_complete(
-                self.get_html(
-                    f"chrome-extension://{self.kc3_id}/pages/strategy/strategy.html{subpage}"
-                )
-            )
-            # Wait for quest panel finish closing
-            self.find_kancolle()
-        except Exception as e:
-            Log.log_warn(f"KC3 strategy page unavailable: {e}")
-            self.html = None
-
-        return
-
-    def get_quest_dom(self):
-        """method to get the raw quest info form KC3.
-
-        Return:
-            raw html text of KC3 quest page
-        """
-
-        import quest.quest_core as qst
-
-        if qst.quest.is_quest_dom_cache_dirty == False:
-            return qst.quest._quest_dom_cache
-
-        self.reload_kc3_strategy_page(subpage="#flowchart")
-
-        if self.html is None:
-            Log.log_warn(
-                "KC3 unavailable; quest DOM cache not updated, falling back to config defaults."
-            )
-            return None
-
-        dom = PyQuery(self.html, parser="html")
-
-        qst.quest._quest_dom_cache = dom("ul#questBox_rootFlow.questTree")
-        # Log.log_debug(f"kac.quest_tree_dom:{quest_tree_dom}")
-        qst.quest.is_quest_dom_cache_dirty = False
-
-        return qst.quest._quest_dom_cache
-
     def get_quest_count(self, target_quest: Quest) -> dict[MapEnum, int] | None:
         """method to get the remaining action needed for the specified quest.
             For example, the remaining sorties needed for quest Bm3 could be {1-4:1, 3-5:0}
@@ -1330,111 +1258,157 @@ class Kca(object):
             return None if quest is not combat type, KC3 is unavailable, or quest count cannot be read.
         """
 
-        target_quest_name = target_quest.name
+        poi_quest_stats=self.get_poi_quest_stats()
 
-        quest_tree_dom = self.get_quest_dom()
-
-        if quest_tree_dom is None:
-            Log.log_warn(
-                f"KC3 unavailable; cannot get quest count for {target_quest_name}, using config defaults."
-            )
+        if not poi_quest_stats:
+            Log.log_warn(f"poi API data unavailable; cannot get quest count for {target_quest.name}.")
             return None
 
-        i = 0
-        while True:
-            quest_name = quest_tree_dom("div.questInfo").eq(i)(".questIcon").text()
-            # Log.log_debug(f"quest_name:{quest_name}")
+        quest_id = str(target_quest.quest_id)
+        records = poi_quest_stats.get("records", {})
 
-            if quest_name == target_quest_name:
-                action_raw = (
-                    quest_tree_dom("div.questInfo").eq(i)(".questCount").attr("title")
-                )
-                Log.log_debug_1(f"action_raw:{action_raw}")
-                if action_raw == None:
-                    return None
-                action_raw_line = action_raw.split("\n")
-                action = {}
+        if quest_id not in records:
+            Log.log_debug(f"Quest {quest_id} ({target_quest.name}) is not currently tracked.")
+            return None
 
-                if quest_name == "Bw1":
-                    action_raw_line[3] = action_raw_line[3].replace(" ", "/")
-                    s_count = int(action_raw_line[3].split("/")[1]) - int(
-                        action_raw_line[3].split("/")[0]
-                    )
-                    action_raw_line[2] = action_raw_line[2].replace(" ", "/")
-                    boss_win_count = int(action_raw_line[2].split("/")[1]) - int(
-                        action_raw_line[2].split("/")[0]
-                    )
-                    action_raw_line[1] = action_raw_line[1].replace(" ", "/")
-                    boss_count = int(action_raw_line[1].split("/")[1]) - int(
-                        action_raw_line[1].split("/")[0]
-                    )
-                    action_raw_line[0] = action_raw_line[0].replace(" ", "/")
-                    sortie_count = int(action_raw_line[0].split("/")[1]) - int(
-                        action_raw_line[0].split("/")[0]
-                    )
+        quest_record = records[quest_id]
+        action = {}
 
-                    if s_count > 0:
-                        action[MapEnum.W1_1] = s_count
-                    elif boss_win_count > 0:
-                        action[MapEnum.W1_5] = boss_win_count
-                    elif boss_count > 0:
-                        action[MapEnum.W1_5] = boss_count
-                    elif sortie_count > 0:
-                        action[MapEnum.W1_1] = sortie_count
+        def get_remaining(obj):
+            if not isinstance(obj, dict):
+                return 0
+            return max(0, obj.get("required", 0) - obj.get("count", 0))
 
-                elif quest_name == "Bq8":
-                    action_raw_line[0] = action_raw_line[0].replace(" ", "/")
-                    s_1_5_count = int(action_raw_line[0].split("/")[1]) - int(
-                        action_raw_line[0].split("/")[0]
-                    )
-                    action_raw_line[1] = action_raw_line[1].replace(" ", "/")
-                    s_7_1_count = int(action_raw_line[1].split("/")[1]) - int(
-                        action_raw_line[1].split("/")[0]
-                    )
-                    action_raw_line[2] = action_raw_line[2].replace(" ", "/")
-                    s_7_2_G_count = int(action_raw_line[2].split("/")[1]) - int(
-                        action_raw_line[2].split("/")[0]
-                    )
-                    action_raw_line[3] = action_raw_line[3].replace(" ", "/")
-                    s_7_2_M_count = int(action_raw_line[3].split("/")[1]) - int(
-                        action_raw_line[3].split("/")[0]
-                    )
+        for key, val in quest_record.items():
+            if key == "id" or not isinstance(val, dict): # skip non-quest-requirements keys
+                continue
 
-                    if s_1_5_count > 0:
-                        action[MapEnum.W1_5] = s_1_5_count
-                    elif s_7_1_count > 0:
-                        action[MapEnum.W7_1] = s_7_1_count
-                    elif s_7_2_G_count > 0:
-                        action[MapEnum.W7_2_G] = s_7_2_G_count
-                    elif s_7_2_M_count > 0:
-                        action[MapEnum.W7_2_M] = s_7_2_M_count
+            remaining = get_remaining(val)
+            if remaining <= 0:
+                continue
 
-                elif quest_name[0] == "D":
-                    for line in action_raw_line:
-                        line = line.replace(" ", "/")
-                        count = int(line.split("/")[1]) - int(line.split("/")[0])
-                        import expedition.expedition_core as exp
+            if target_quest.name.startswith("D"):
+                import expedition.expedition_core as exp
+                exp_name = val.get("description", "")
 
-                        map = exp.expedition.get_exp_enum_from_name(line.split("/")[-1])
-                        if count > 0:
-                            action[map] = count
+                if exp_name != "":
+                    map_enum = exp.expedition.get_exp_enum_from_name(exp_name)
+                    if map_enum:
+                        action[map_enum] = remaining
+                    else:
+                        continue
                 else:
-                    for line in action_raw_line:
-                        line = line.replace(" ", "/")
-                        count = int(line.split("/")[1]) - int(line.split("/")[0])
-                        line = line.replace("]", "[")
-                        map = line.split("[")[1][1:]
-                        if count > 0:
-                            if MapEnum("B-" + map).without_quest_enum == MapEnum.W1_6_N:
-                                # patch to turn B1-6-N from quest to B1-6
-                                action[MapEnum.W1_6] = count
-                            else:
-                                action[MapEnum("B-" + map).without_quest_enum] = count
+                    continue
 
-                return action
-            elif quest_name == "":
-                return None
-            i = i + 1
+            elif "@" in key:  # for sortie with format like "battle_boss_win_rank_s@12", "@54", "@722", "@5-4"
+                raw_condition = key.split("@")[-1]  # get "12", "54", "722", "5-4"
+                
+                try:
+                    mapped_enum = self.string_to_mapenum(raw_condition)
+                    if mapped_enum:
+                        action[mapped_enum] = remaining
+                except Exception as e:
+                    Log.log_debug(f"Failed to map condition '{raw_condition}': {e}")
+                    continue
+
+            else:
+                desc = val.get("description", "") # fallback for sortie without @
+                if "-" in desc:
+                    try:
+                        raw_num = desc.split(" ")[0]
+                        mapped_enum = self.string_to_mapenum(raw_num)
+                        if mapped_enum:
+                            action[mapped_enum] = remaining
+                    except Exception:
+                        continue
+
+        return action if action else None
+
+    def string_to_mapenum(self, raw_num: str) -> MapEnum:
+        """Converts raw poi map identifier strings (like '15', '16', '722', '732', '5-4') 
+        to the corresponding standardized MapEnum.
+        
+        Handles multi-phase map bosses (e.g., 7-2-G, 7-2-M, 7-3-E, 7-3-P).
+        """
+        if not raw_num:
+            return None
+        num = raw_num.strip()
+
+        special_mappings = {
+            "16": MapEnum.W1_6_N,    
+            
+            "721": MapEnum.W7_2_G, 
+            "722": MapEnum.W7_2_M, 
+
+            "731": MapEnum.W7_3_E,
+            "732": MapEnum.W7_3_P, 
+            
+            "7-2-1": MapEnum.W7_2_G,
+            "7-2-2": MapEnum.W7_2_M,
+            "7-3-1": MapEnum.W7_3_E,
+            "7-3-2": MapEnum.W7_3_P,
+        }
+
+        if num in special_mappings:
+            return special_mappings[num]
+
+        if "-" in num:
+            map_str = f"B-{num}"
+        
+        elif num.isdigit() and len(num) == 2:
+            map_str = f"B-{num[0]}-{num[1]}"
+            
+        else:
+            Log.log_error(f"Unknown map string format found: {map_str} (Original input: {num})")
+            return None
+
+        try:
+            enum_item = MapEnum(map_str)
+            return enum_item.without_quest_enum
+        except (ValueError, KeyError):
+            Log.log_warn(f"MapEnum not found for map string: {map_str} (Original input: {num})")
+            return None
+
+    def get_poi_quest_stats(self):
+        import json
+
+        Log.log_debug_1("get poi quests stats...")
+
+        js_code = """
+        (() => {
+            try {
+                const store = window.getStore();
+                if (store && store.info && store.info.quests) {
+                    return JSON.stringify(store.info.quests);
+                }
+                return "{}";
+            } catch (e) {
+                return JSON.stringify({error: e.message});
+            }
+        })()
+        """
+
+        try:
+            response = self.poi_hook.Runtime.evaluate(
+                expression=js_code, returnByValue=True
+            )
+
+            if isinstance(response, (list, tuple)) and len(response) > 0:
+                resp_dict = response[0]
+            else:
+                resp_dict = response
+
+            if resp_dict and "result" in resp_dict and "result" in resp_dict["result"]:
+                raw_json = resp_dict["result"]["result"].get("value", "{}")
+                poi_quests = json.loads(raw_json)
+                return poi_quests
+            else:
+                Log.log_error("Failed to parse CDP response data structure from poi.")
+                return {}
+
+        except Exception as e:
+            Log.log_error(f"Failed to get poi quests stats: {str(e)}")
+            return {}
 
     def save_screenshots(self):
 

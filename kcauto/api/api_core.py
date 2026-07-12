@@ -164,7 +164,7 @@ class ApiWrapper(object):
         return results
 
     def _check_for_chrome_crash(self):
-        visual_events = kca_u.kca.visual_hook.pop_messages()
+        visual_events = kca_u.kca.api_hook.pop_messages()
         for event in visual_events:
             if event["method"] == "Inspector.targetCrashed":
                 Log.log_warn("Chrome Crash detected.")

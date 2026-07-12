@@ -382,8 +382,8 @@ class ExpeditionCore(CoreBase):
             if exp.expedition == exp_id:
                 return exp
 
-        Log.log_error(f"Expedition {exp_id} not found")
-        return -1
+        Log.log_debug_1(f"Expedition {exp_id} not found")
+        return None
 
     @property
     def available_expeditions(self) -> list[ExpeditionEnum]:

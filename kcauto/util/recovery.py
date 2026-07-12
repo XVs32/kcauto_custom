@@ -59,7 +59,7 @@ class Recovery(object):
             if cls.recovery_from_chrome_crash(screen, crash_type=1):
                 return True
 
-        visual_events = kca_u.kca.visual_hook.pop_messages()
+        visual_events = kca_u.kca.api_hook.pop_messages()
         for event in visual_events:
             if event["method"] == "Inspector.targetCrashed":
                 Log.log_warn("Chrome Crash (Type 2) detected.")
@@ -226,7 +226,7 @@ class Recovery(object):
             pyautogui.press("space")
             kca_u.kca.sleep(5)
         else:
-            kca_u.kca.visual_hook.Page.reload()
+            kca_u.kca.api_hook.Page.reload()
             kca_u.kca.sleep(0.5)
 
         kca_u.kca.wait(screen, "global|game_start.png", 90)
