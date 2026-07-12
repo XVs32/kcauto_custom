@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 import os
+import re
 import glob
 from sys import platform, exit
 import requests
@@ -23,9 +24,8 @@ import stats.stats_core as sts
 from constants import (
     GAME_W,
     GAME_H,
-    VISUAL_URL,
-    STRATEGY_ROOM_URL,
     API_URL,
+    POI_URL_POSTFIX,
     EXACT,
     DEFAULT,
     SLEEP_MODIFIER,
@@ -50,10 +50,7 @@ class Kca(object):
     BROWSER_REF_SIZE = 100
 
     ASSETS_FOLDER = "assets"
-    visual_tab_id = None
-    visual_hook = None
     api_hook = None
-    kc3_hook = None
     poi_hook = None
     css_x = None
     css_y = None
@@ -91,43 +88,32 @@ class Kca(object):
         """
         Log.log_msg("Hooking into Chrome.")
         self.cdt_init(target="api")
-        self.cdt_init(target="visual")
         self.cdt_init(target="poi")
 
-        visual_tab = None
-        visual_tab_id = None
         api_tab = None
         api_tab_id = None
         poi_tab = None
         poi_tab_id = None
-        for n, tab in enumerate(self.visual_hook.tabs):
+        for n, tab in enumerate(self.api_hook.tabs):
             print(tab["url"])
-            if VISUAL_URL == tab["url"]:
-                visual_tab = n
-                visual_tab_id = tab["id"]
-                self.visual_tab_id = visual_tab_id
             if API_URL in tab["url"]:
                 api_tab = n
                 api_tab_id = tab["id"]
-            if "file:///opt/poi/resources/app.asar/index.html" in tab["url"]:
+            if tab["url"].endswith(POI_URL_POSTFIX):
                 poi_tab = n
                 poi_tab_id = tab["id"]
 
         self.poi_hook.connect_targetID(poi_tab_id)
         Log.log_debug_1(f"Connected to poi tab ({poi_tab}:{poi_tab_id})")
 
-        if visual_tab_id is None or api_tab_id is None:
+        if api_tab_id is None or api_tab_id is None:
             Log.log_error(
                 "No Kantai Collection tab found in Chrome. Shutting down kcauto."
             )
             raise Exception("No running Kantai Collection tab found in Chrome.")
 
-        self.visual_hook.connect_targetID(visual_tab_id)
-
-        Log.log_debug_1(f"Connected to visual tab ({visual_tab}:{visual_tab_id})")
-        self.visual_hook.Page.enable()
-
         self.api_hook.connect_targetID(api_tab_id)
+        self.api_hook.Page.enable()
         self.api_hook.Network.enable()
         Log.log_debug_1(f"Connected to API tab ({api_tab}:{api_tab_id})")
         Log.log_success("Connected to Chrome")
@@ -143,14 +129,11 @@ class Kca(object):
             ChromeCrashException: Chrome tab crash was detected.
         """
         api_events = self.api_hook.pop_messages()
-        visual_events = self.visual_hook.pop_messages()
         for event in api_events:
             if event["method"] == "Inspector.detached":
                 Log.log_warn("Chrome API hook is stale. Reconnecting.")
                 self.hook_chrome()
                 return
-        visual_events = self.visual_hook.pop_messages()
-        for event in visual_events:
             if event["method"] == "Page.frameDetached":
                 Log.log_warn("Chrome visual hook is stale. Reconnecting.")
                 self.hook_chrome()
@@ -289,7 +272,7 @@ class Kca(object):
 
         import base64
 
-        screenshot_raw = self.visual_hook.Page.captureScreenshot()
+        screenshot_raw = self.api_hook.Page.captureScreenshot()
 
         if screenshot_raw is None or not screenshot_raw:
             raise ValueError("Failed to capture screenshot from Chrome")
@@ -1162,11 +1145,11 @@ class Kca(object):
         self._draw_debug_visualization(corners, arg.args.parsed_args.debug_output)
 
         # self.visual_hook.Input.synthesizeTapGesture(x= x + offset_x , y=y + offset_y)
-        self.visual_hook.Input.dispatchMouseEvent(
+        self.api_hook.Input.dispatchMouseEvent(
             type="mouseMoved", x=x + offset_x, y=y + offset_y
         )
         self.sleep()
-        self.visual_hook.Input.dispatchMouseEvent(
+        self.api_hook.Input.dispatchMouseEvent(
             type="mousePressed",
             x=x + offset_x,
             y=y + offset_y,
@@ -1174,7 +1157,7 @@ class Kca(object):
             button="left",
         )
         self.sleep(0.1, 0.2)
-        self.visual_hook.Input.dispatchMouseEvent(
+        self.api_hook.Input.dispatchMouseEvent(
             type="mouseReleased",
             x=x + offset_x,
             y=y + offset_y,
@@ -1196,11 +1179,11 @@ class Kca(object):
         x = r_a.x - self.css_x
         y = r_a.y - self.css_y
 
-        self.visual_hook.Input.dispatchMouseEvent(
+        self.api_hook.Input.dispatchMouseEvent(
             type="mouseMoved", x=x + offset_x, y=y + offset_y
         )
         self.sleep()
-        self.visual_hook.Input.dispatchMouseEvent(
+        self.api_hook.Input.dispatchMouseEvent(
             type="mousePressed",
             x=x + offset_x,
             y=y + offset_y,
@@ -1214,11 +1197,11 @@ class Kca(object):
         x = r_b.x - self.css_x
         y = r_b.y - self.css_y
 
-        self.visual_hook.Input.dispatchMouseEvent(
+        self.api_hook.Input.dispatchMouseEvent(
             type="mouseMoved", x=x + offset_x, y=y + offset_y
         )
         self.sleep()
-        self.visual_hook.Input.dispatchMouseEvent(
+        self.api_hook.Input.dispatchMouseEvent(
             type="mouseReleased",
             x=x + offset_x,
             y=y + offset_y,
@@ -1239,7 +1222,7 @@ class Kca(object):
         x = r.x - self.css_x
         y = r.y - self.css_y
 
-        self.visual_hook.Input.dispatchMouseEvent(
+        self.api_hook.Input.dispatchMouseEvent(
             type="mouseMoved", x=x + offset_x, y=y + offset_y
         )
 
@@ -1258,10 +1241,6 @@ class Kca(object):
         chrome = PyChromeDevTools.ChromeInterface(host="localhost", port=port)
         if target == "api":
             self.api_hook = PyChromeDevTools.ChromeInterface(host=host, port=port)
-        elif target == "visual":
-            self.visual_hook = PyChromeDevTools.ChromeInterface(host=host, port=port)
-        elif target == "kc3":
-            self.kc3_hook = PyChromeDevTools.ChromeInterface(host=host, port=port)
         elif target == "poi":
             self.poi_hook = PyChromeDevTools.ChromeInterface(host=host, port=port)
         else:
