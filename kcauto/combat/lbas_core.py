@@ -162,9 +162,7 @@ class LBASCore(object):
         api_result = {}
         while KCSAPIEnum.LBAS_RESUPPLY_ACTION.name not in api_result:
             kca_u.kca.click_existing("upper_right", "combat|lbas_resupply.png")
-            api_result = api.api.update_from_api(
-                {KCSAPIEnum.LBAS_RESUPPLY_ACTION}, process_all=False, timeout=1
-            )
+            api_result = api.api.update_from_api({KCSAPIEnum.LBAS_RESUPPLY_ACTION}, process_all=False)
             kca_u.kca.sleep()
 
         kca_u.kca.wait_vanish("lower_right", "combat|lbas_resupply_in_progress.png")

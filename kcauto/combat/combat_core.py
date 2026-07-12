@@ -400,7 +400,7 @@ class CombatCore(CoreBase):
                 or node_type == self.NODE_TYPE_COMBAT_FINISH
                 or node_type == self.NODE_TYPE_FORMATION_SKIP
             ):
-                Log.log_msg(f"Combat at node {self.current_node}.")
+                Log.log_debug_1(f"Node type combat {self.current_node.name}.")
 
                 if node_type == self.NODE_TYPE_COMBAT:
                     self._resolve_smoke_prompt()
@@ -467,7 +467,7 @@ class CombatCore(CoreBase):
                     conducting_sortie = False
 
             elif node_type == self.NODE_TYPE_SELECT:
-                Log.log_msg(f"Node selection.")
+                Log.log_msg(f"Node type select {self.current_node.name}.")
                 next_node = cfg.config.combat.node_selects.get(
                     self.current_node.name, None
                 )
@@ -477,8 +477,10 @@ class CombatCore(CoreBase):
                     Log.log_msg(f"Selecting node {next_node}")
                     self.map_data.nodes[next_node].select()
             elif node_type == self.NODE_TYPE_NOTHING:
+                Log.log_debug_1(f"Node type nothing {self.current_node.name}.")
                 pass
             elif node_type == self.NODE_TYPE_END:
+                Log.log_debug_1(f"Node type end {self.current_node.name}.")
                 conducting_sortie = False
                 continue
 
@@ -498,8 +500,7 @@ class CombatCore(CoreBase):
                     | self.RESULT_APIS
                     | self.SHIPDECK_API
                     | self.EQUIP_API,
-                    process_all=True,
-                    timeout=3,
+                    process_all=True
                 )
 
                 if KCSAPIEnum.PORT.name not in api_result:
@@ -520,8 +521,7 @@ class CombatCore(CoreBase):
                     | self.SHIPDECK_API
                     | self.EQUIP_API
                     | self.MAP_API,
-                    process_all=False,
-                    timeout=5,
+                    process_all=False
                 )
 
             if kca_u.kca.exists("kc", "combat|compass.png"):
