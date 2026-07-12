@@ -541,8 +541,8 @@ class FleetSwitcherCore(object):
 
         kca_u.kca.wait("lower", "shipswitcher|equipment_panel.png")
 
-        if ship.slot_ex != None and ship.slot_ex != Equipment():
-            Log.log_debug_1(f"reinforce slot ship")
+        if ship.slot_ex != None and ship.slot_ex.is_empty_equipment == False:
+            Log.log_debug_1(f"reinforce slot ship, slot_ex = {ship.slot_ex.name}")
             kca_u.kca.click("reinforce_slot_unload_equipment")
 
         kca_u.kca.wait("lower", "shipswitcher|equipment_panel.png")
