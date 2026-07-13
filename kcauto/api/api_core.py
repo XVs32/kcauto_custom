@@ -1,9 +1,11 @@
+from constants import API_URL
 import sys
 from sys import platform
 import os
 
 from datetime import datetime, timedelta
 
+import api.api_listener as api_listener
 import combat.combat_core as com
 import combat.lbas_core as lbas
 import expedition.expedition_core as exp
@@ -26,9 +28,11 @@ from constants import EMPTY_EQUIPMENT_API, TEMP_EQUIPMENT_API
 
 
 class ApiWrapper(object):
+    API_URL = "path"
+    BODY = "response"
+
     def __init__(self):
         Log.log_debug_1("API Wrapper module initialized.")
-        self._pending_messages = []
 
     def update_from_api(
         self, target_apis={KCSAPIEnum.ANY}, process_all=True, timeout=30
@@ -52,112 +56,52 @@ class ApiWrapper(object):
         while True:
             # Block waiting for a message. Use the remaining overall timeout
             # when one is set so we don't wake unnecessarily.
+
+            if len(target_apis) <= len(received_apis):
+                if process_all == False:
+                    Log.log_debug_1("All target APIs received, breaking wait.")
+                    break
+                elif process_all == True and msg == None:
+                    Log.log_debug_1(
+                        "All target APIs received, queue emptied, breaking wait."
+                    )
+                    break
+
             remaining = (end_time - datetime.now()).total_seconds()
             if remaining <= 0:
+                Log.log_warn(f"API timeout.")
                 break
-            wait_timeout = min(remaining, 1)
 
-            first_message = kca_u.kca.api_hook.wait_message(timeout=wait_timeout)
-            if first_message == None:
-                first_message = []
-            else:
-                first_message = [first_message]
-
-            # process the received message and any that have queued up
-            self._pending_messages = (
-                self._pending_messages + first_message + kca_u.kca.api_hook.pop_messages()
-            )
-
-            if not self._pending_messages:
-                if len(target_apis) <= len(received_apis):
-                    Log.log_debug_1("All target APIs received, ending wait.")
-                    break
-                # timed out waiting for a message; re-evaluate loop conditions
+            msg = api_listener.api_listener.pop_msg(block=True, timeout=remaining)
+            if msg == None:
                 continue
 
-            if process_all == False and len(target_apis) <= len(received_apis):
-                Log.log_debug_1("All target APIs received, ending wait.")
-                break
+            request_url = msg[self.API_URL]
+            request_url = request_url.lstrip("/")
+            api_type = KCSAPIEnum(request_url)
 
-            pending_id = 0
-            for pending_id, message in enumerate(self._pending_messages):
-                if message["method"] == "Network.responseReceived":
-                    request_url = message["params"]["response"]["url"]
-                    # found_target = None
-                    for target_api in target_apis:
-                        is_match = False
-                        if target_api is KCSAPIEnum.MAP_INFO_JSON:
-                            is_match = (
-                                target_api.value in request_url
-                                and request_url.split("?")[0].endswith(".json")
-                            )
-                        elif target_api is KCSAPIEnum.GAUGE:
-                            is_match = True
-                        elif target_api.value is not None:
-                            is_match = (
-                                target_api.value in request_url
-                                and request_url.split("?")[0].endswith(
-                                    target_api.value.split("/")[-1]
-                                )
-                            )
+            is_match = False
+            for target_api in target_apis:
+                if target_api is KCSAPIEnum.MAP_INFO_JSON:
+                    is_match = api_type is target_api and request_url.split("?")[
+                        0
+                    ].endswith(".json")
+                elif target_api is not KCSAPIEnum.NONE:
+                    is_match = api_type is target_api
 
-                        if is_match:
-                            request_id = message["params"]["requestId"]
-                            Log.log_debug_1(
-                                f"Waiting for request {request_id} ({request_url})"
-                            )
-                            kcapi_requests[request_id] = {
-                                "type": target_api,
-                                "url": request_url,
-                            }
-                            break
+                if is_match:
+                    break
 
-                elif message["method"] == "Network.loadingFinished":
-                    message_request_id = message["params"]["requestId"]
-                    if message_request_id in kcapi_requests:
-                        Log.log_debug_1(f"Request {message_request_id} received")
-                        request_data = kcapi_requests.pop(message_request_id)
-                        received_apis.add(request_data["type"])
+            if is_match:
+                raw_body = msg[self.BODY]
+                parsed_data = JsonData.load_json_str(raw_body)
 
-                        response_body_attempt = 1
-                        while True:
-                            response_body = kca_u.kca.api_hook.Network.getResponseBody(
-                                requestId=message_request_id
-                            )
-                            if response_body or response_body_attempt > 5:
-                                break
-                            Log.log_debug_1("Empty API response. Trying again.")
-                            kca_u.kca.sleep(0.5)
-                            response_body_attempt += 1
+                res = self._load_api_data(api_type, parsed_data)
 
-                        try:
-                            if platform == "linux" or platform == "linux2":
-                                raw_body = response_body[0]["result"]["body"]
-                            elif platform == "darwin":
-                                raw_body = response_body["result"]["body"]
-                            elif platform == "win32":
-                                raw_body = response_body[0]["result"]["body"]
-
-                            raw_svdata = raw_body.removeprefix("svdata=")
-                        except Exception:
-                            raise ApiException("Empty or invalid API response.")
-
-                        try:
-                            parsed_data = JsonData.load_json_str(raw_svdata)
-                        except Exception:
-                            parsed_data = raw_svdata
-
-                        res = self._load_api_data(request_data, parsed_data)
-
-                        if request_data["type"].name in results:
-                            results[request_data["type"].name].append(res)
-                        else:
-                            results[request_data["type"].name] = [res]
-
-                        if not process_all and len(target_apis) <= len(received_apis):
-                            break
-
-            self._pending_messages = self._pending_messages[pending_id + 1 :]
+                if api_type.name in results:
+                    results[api_type.name].append(res)
+                else:
+                    results[api_type.name] = [res]
 
         self._check_for_chrome_crash()
 
@@ -170,8 +114,7 @@ class ApiWrapper(object):
                 Log.log_warn("Chrome Crash detected.")
                 raise ChromeCrashException
 
-    def _load_api_data(self, request_data, data):
-        request_type = request_data["type"]
+    def _load_api_data(self, request_url: KCSAPIEnum, data):
         if "api_result" in data:
             if data["api_result"] != 1:
                 Log.log_debug_1("Encountered non-1 API result.")
@@ -181,93 +124,93 @@ class ApiWrapper(object):
                     raise Catbomb201Exception
                 else:
                     raise ApiException
-        if request_type is KCSAPIEnum.GET_DATA:
+        if request_url is KCSAPIEnum.GET_DATA:
             return self._process_get_data(data)
-        elif request_type is KCSAPIEnum.REQUIRE_INFO:
+        elif request_url is KCSAPIEnum.REQUIRE_INFO:
             return self._process_require_info(data)
-        elif request_type is KCSAPIEnum.PORT:
+        elif request_url is KCSAPIEnum.PORT:
             return self._process_port(data)
-        elif request_type is KCSAPIEnum.SORTIE_MAPS:
+        elif request_url is KCSAPIEnum.SORTIE_MAPS:
             return self._process_sortie_maps(data)
-        elif request_type is KCSAPIEnum.SORTIE_START:
+        elif request_url is KCSAPIEnum.SORTIE_START:
             return self._process_sortie_start(data)
-        elif request_type is KCSAPIEnum.SORTIE_NEXT:
+        elif request_url is KCSAPIEnum.SORTIE_NEXT:
             return self._process_sortie_next(data)
-        elif request_type is KCSAPIEnum.SORTIE_BATTLE:
+        elif request_url is KCSAPIEnum.SORTIE_BATTLE:
             return self._process_battle(data)
-        elif request_type is KCSAPIEnum.SORTIE_NIGHTBATTLE:
+        elif request_url is KCSAPIEnum.SORTIE_NIGHTBATTLE:
             return self._process_battle(data)
-        elif request_type is KCSAPIEnum.SORTIE_AIRBATTLE:
+        elif request_url is KCSAPIEnum.SORTIE_AIRBATTLE:
             return self._process_battle(data)
-        elif request_type is KCSAPIEnum.SORTIE_LD_AIRBATTLE:
+        elif request_url is KCSAPIEnum.SORTIE_LD_AIRBATTLE:
             return self._process_battle(data)
-        elif request_type is KCSAPIEnum.SORTIE_LD_SHOOTING:
+        elif request_url is KCSAPIEnum.SORTIE_LD_SHOOTING:
             return self._process_battle(data)
-        elif request_type is KCSAPIEnum.SORTIE_N2D:
+        elif request_url is KCSAPIEnum.SORTIE_N2D:
             return self._process_battle(data)
-        elif request_type is KCSAPIEnum.SORTIE_NIGHT_ONLY:
+        elif request_url is KCSAPIEnum.SORTIE_NIGHT_ONLY:
             return self._process_battle(data)
-        elif request_type is KCSAPIEnum.SORTIE_ECF_BATTLE:
+        elif request_url is KCSAPIEnum.SORTIE_ECF_BATTLE:
             return self._process_battle(data)
-        elif request_type is KCSAPIEnum.SORTIE_ECF_NIGHTBATTLE:
+        elif request_url is KCSAPIEnum.SORTIE_ECF_NIGHTBATTLE:
             return self._process_battle(data)
-        elif request_type is KCSAPIEnum.SORTIE_CF_BATTLE:
+        elif request_url is KCSAPIEnum.SORTIE_CF_BATTLE:
             return self._process_battle(data)
-        elif request_type is KCSAPIEnum.SORTIE_CF_NIGHTBATTLE:
+        elif request_url is KCSAPIEnum.SORTIE_CF_NIGHTBATTLE:
             return self._process_battle(data)
-        elif request_type is KCSAPIEnum.SORTIE_CF_AIRBATTLE:
+        elif request_url is KCSAPIEnum.SORTIE_CF_AIRBATTLE:
             return self._process_battle(data)
-        elif request_type is KCSAPIEnum.SORTIE_CF_WATERBATTLE:
+        elif request_url is KCSAPIEnum.SORTIE_CF_WATERBATTLE:
             return self._process_battle(data)
-        elif request_type is KCSAPIEnum.SORTIE_CF_LD_AIRBATTLE:
+        elif request_url is KCSAPIEnum.SORTIE_CF_LD_AIRBATTLE:
             return self._process_battle(data)
-        elif request_type is KCSAPIEnum.SORTIE_CF_LD_SHOOTING:
+        elif request_url is KCSAPIEnum.SORTIE_CF_LD_SHOOTING:
             return self._process_battle(data)
-        elif request_type is KCSAPIEnum.SORTIE_CF_N2D:
+        elif request_url is KCSAPIEnum.SORTIE_CF_N2D:
             return self._process_battle(data)
-        elif request_type is KCSAPIEnum.SORTIE_CF_NIGHT_ONLY:
+        elif request_url is KCSAPIEnum.SORTIE_CF_NIGHT_ONLY:
             return self._process_battle(data)
-        elif request_type is KCSAPIEnum.SORTIE_CF_EACH_NIGHT_ONLY:
+        elif request_url is KCSAPIEnum.SORTIE_CF_EACH_NIGHT_ONLY:
             return self._process_battle(data)
-        elif request_type is KCSAPIEnum.SORTIE_CF_ECF_BATTLE:
+        elif request_url is KCSAPIEnum.SORTIE_CF_ECF_BATTLE:
             return self._process_battle(data)
-        elif request_type is KCSAPIEnum.SORTIE_CF_ECF_AIRBATTLE:
+        elif request_url is KCSAPIEnum.SORTIE_CF_ECF_AIRBATTLE:
             return self._process_battle(data)
-        elif request_type is KCSAPIEnum.SORTIE_CF_ECF_WATERBATTLE:
+        elif request_url is KCSAPIEnum.SORTIE_CF_ECF_WATERBATTLE:
             return self._process_battle(data)
-        elif request_type is KCSAPIEnum.SORTIE_CF_ECF_LD_AIRBATTLE:
+        elif request_url is KCSAPIEnum.SORTIE_CF_ECF_LD_AIRBATTLE:
             return self._process_battle(data)
-        elif request_type is KCSAPIEnum.SORTIE_CF_ECF_LD_SHOOTING:
+        elif request_url is KCSAPIEnum.SORTIE_CF_ECF_LD_SHOOTING:
             return self._process_battle(data)
-        elif request_type is KCSAPIEnum.SORTIE_RESULT:
+        elif request_url is KCSAPIEnum.SORTIE_RESULT:
             return self._process_battle_result(data)
-        elif request_type is KCSAPIEnum.SORTIE_CF_RESULT:
+        elif request_url is KCSAPIEnum.SORTIE_CF_RESULT:
             return self._process_battle_result(data)
-        elif request_type is KCSAPIEnum.SORTIE_SHIPDECK:
+        elif request_url is KCSAPIEnum.SORTIE_SHIPDECK:
             return self._process_battle_deck(data)
-        elif request_type is KCSAPIEnum.SORTIE_END:
+        elif request_url is KCSAPIEnum.SORTIE_END:
             return self._process_equipment_data(data)
-        elif request_type is KCSAPIEnum.EXPEDITION_LIST:
+        elif request_url is KCSAPIEnum.EXPEDITION_LIST:
             return self._process_expedition_list(data)
-        elif request_type is KCSAPIEnum.EXPEDITION_START:
+        elif request_url is KCSAPIEnum.EXPEDITION_START:
             return self._process_expedition_start(data)
-        elif request_type is KCSAPIEnum.PVP_LIST:
+        elif request_url is KCSAPIEnum.PVP_LIST:
             return self._process_pvp_list(data)
-        elif request_type is KCSAPIEnum.PVP_ENEMY_INFO:
+        elif request_url is KCSAPIEnum.PVP_ENEMY_INFO:
             return self._process_pvp_enemy_info(data)
-        elif request_type is KCSAPIEnum.FLEETCOMP_PRESETS:
+        elif request_url is KCSAPIEnum.FLEETCOMP_PRESETS:
             return self._process_fleetcomp_presets(data)
-        elif request_type is KCSAPIEnum.REPAIR_DOCKS:
+        elif request_url is KCSAPIEnum.REPAIR_DOCKS:
             return self._process_repair_dock_data(data)
-        elif request_type is KCSAPIEnum.QUEST_LIST:
+        elif request_url is KCSAPIEnum.QUEST_LIST:
             return self._process_quest_data(data)
-        elif request_type is KCSAPIEnum.RESUPPLY_ACTION:
+        elif request_url is KCSAPIEnum.RESUPPLY_ACTION:
             return True
-        elif request_type is KCSAPIEnum.LBAS_RESUPPLY_ACTION:
+        elif request_url is KCSAPIEnum.LBAS_RESUPPLY_ACTION:
             return True
-        elif request_type is KCSAPIEnum.FREE_EQUIPMENT:
+        elif request_url is KCSAPIEnum.FREE_EQUIPMENT:
             return self._process_free_equipment_data(data)
-        elif request_type is KCSAPIEnum.MAP_INFO_JSON:
+        elif request_url is KCSAPIEnum.MAP_INFO_JSON:
             return self._process_map_info_json(request_data)
 
         return None

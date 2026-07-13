@@ -32,6 +32,7 @@ CONTEXT_AUTO_PVP = 8
 
 # chrome hook url targets
 DEFAULT_CHROME_DEV_PORT = 9222
+DEFAULT_POI_API_PORT = 9223
 API_URL = "https://play.games.dmm.com/game/kancolle"
 POI_URL_POSTFIX = "resources/app.asar/index.html"
 

@@ -15,6 +15,7 @@ from time import sleep
 
 from quest.quest import Quest
 import api.api_core as api
+import api.api_listener as api_listener
 import args.args_core as arg
 import config.config_core as cfg
 import ships.ships_core as shp
@@ -89,6 +90,8 @@ class Kca(object):
         Log.log_msg("Hooking into Chrome.")
         self.cdt_init(target="api")
         self.cdt_init(target="poi")
+        api_listener.api_listener.set_port(cfg.config.general.poi_api_port)
+        api_listener.api_listener.start()
 
         api_tab = None
         api_tab_id = None
@@ -1258,17 +1261,21 @@ class Kca(object):
             return None if quest is not combat type, KC3 is unavailable, or quest count cannot be read.
         """
 
-        poi_quest_stats=self.get_poi_quest_stats()
+        poi_quest_stats = self.get_poi_quest_stats()
 
         if not poi_quest_stats:
-            Log.log_warn(f"poi API data unavailable; cannot get quest count for {target_quest.name}.")
+            Log.log_warn(
+                f"poi API data unavailable; cannot get quest count for {target_quest.name}."
+            )
             return None
 
         quest_id = str(target_quest.quest_id)
         records = poi_quest_stats.get("records", {})
 
         if quest_id not in records:
-            Log.log_debug(f"Quest {quest_id} ({target_quest.name}) is not currently tracked.")
+            Log.log_debug(
+                f"Quest {quest_id} ({target_quest.name}) is not currently tracked."
+            )
             return None
 
         quest_record = records[quest_id]
@@ -1280,7 +1287,9 @@ class Kca(object):
             return max(0, obj.get("required", 0) - obj.get("count", 0))
 
         for key, val in quest_record.items():
-            if key == "id" or not isinstance(val, dict): # skip non-quest-requirements keys
+            if key == "id" or not isinstance(
+                val, dict
+            ):  # skip non-quest-requirements keys
                 continue
 
             remaining = get_remaining(val)
@@ -1289,6 +1298,7 @@ class Kca(object):
 
             if target_quest.name.startswith("D"):
                 import expedition.expedition_core as exp
+
                 exp_name = val.get("description", None)
 
                 if exp_name == None:
@@ -1300,9 +1310,11 @@ class Kca(object):
                 else:
                     continue
 
-            elif "@" in key:  # for sortie with format like "battle_boss_win_rank_s@12", "@54", "@722", "@5-4"
+            elif (
+                "@" in key
+            ):  # for sortie with format like "battle_boss_win_rank_s@12", "@54", "@722", "@5-4"
                 raw_condition = key.split("@")[-1]  # get "12", "54", "722", "5-4"
-                
+
                 try:
                     mapped_enum = self.string_to_mapenum(raw_condition)
                     if mapped_enum:
@@ -1312,7 +1324,7 @@ class Kca(object):
                     continue
 
             else:
-                desc = val.get("description", "") # fallback for sortie without @
+                desc = val.get("description", "")  # fallback for sortie without @
                 if "-" in desc:
                     try:
                         raw_num = desc.split(" ")[0]
@@ -1325,9 +1337,9 @@ class Kca(object):
         return action if action else None
 
     def string_to_mapenum(self, raw_num: str) -> MapEnum:
-        """Converts raw poi map identifier strings (like '15', '16', '722', '732', '5-4') 
+        """Converts raw poi map identifier strings (like '15', '16', '722', '732', '5-4')
         to the corresponding standardized MapEnum.
-        
+
         Handles multi-phase map bosses (e.g., 7-2-G, 7-2-M, 7-3-E, 7-3-P).
         """
         if not raw_num:
@@ -1335,14 +1347,11 @@ class Kca(object):
         num = raw_num.strip()
 
         special_mappings = {
-            "16": MapEnum.W1_6_N,    
-            
-            "721": MapEnum.W7_2_G, 
-            "722": MapEnum.W7_2_M, 
-
+            "16": MapEnum.W1_6_N,
+            "721": MapEnum.W7_2_G,
+            "722": MapEnum.W7_2_M,
             "731": MapEnum.W7_3_E,
-            "732": MapEnum.W7_3_P, 
-            
+            "732": MapEnum.W7_3_P,
             "7-2-1": MapEnum.W7_2_G,
             "7-2-2": MapEnum.W7_2_M,
             "7-3-1": MapEnum.W7_3_E,
@@ -1354,19 +1363,23 @@ class Kca(object):
 
         if "-" in num:
             map_str = f"B-{num}"
-        
+
         elif num.isdigit() and len(num) == 2:
             map_str = f"B-{num[0]}-{num[1]}"
-            
+
         else:
-            Log.log_error(f"Unknown map string format found: {map_str} (Original input: {num})")
+            Log.log_error(
+                f"Unknown map string format found: {map_str} (Original input: {num})"
+            )
             return None
 
         try:
             enum_item = MapEnum(map_str)
             return enum_item.without_quest_enum
         except (ValueError, KeyError):
-            Log.log_warn(f"MapEnum not found for map string: {map_str} (Original input: {num})")
+            Log.log_warn(
+                f"MapEnum not found for map string: {map_str} (Original input: {num})"
+            )
             return None
 
     def get_poi_quest_stats(self):
