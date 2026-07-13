@@ -13,7 +13,7 @@ class PoiWebhookServer:
         self.api_queue: queue.Queue = queue.Queue()
         # Default filter: allow all APIs starting with '/kcsapi/'
         self.filter_func: Callable[[str, Dict[str, Any]], bool] = lambda path, data: (
-            path.startswith("/kcsapi/")
+            path.startswith("/kcsapi/") or "kcs2/resources/map" in path
         )
         self.server: Optional[HTTPServer] = None
         self.server_thread: Optional[threading.Thread] = None
@@ -43,7 +43,6 @@ class PoiWebhookServer:
             return None
 
     def _start_http_server(self):
-        # Use closure to pass reference of queue and filter to the HTTP Handler
         outer_self = self
 
         class WebhookHandler(BaseHTTPRequestHandler):
@@ -54,14 +53,41 @@ class PoiWebhookServer:
 
                     try:
                         data = json.loads(post_data.decode("utf-8"))
-                        api_path = data.get("path", "")
+                        raw_path = data.get("path", "")
+                        stage = data.get("stage", "")
 
-                        # Check if the API matches developer's filter condition
-                        if outer_self.filter_func(api_path, data):
-                            outer_self.api_queue.put(data)
-                            status = "ACCEPTED & QUEUED"
+                        is_kcsapi = raw_path.startswith("/kcsapi/")
+                        is_map_resource = "kcs2/resources/map" in raw_path
+
+                        if is_kcsapi or is_map_resource:
+                            formatted_msg = {}
+
+                            if is_map_resource:
+                                relative_path = raw_path.split(".com/")[-1] if ".com/" in raw_path else raw_path
+                                
+                                formatted_msg = {
+                                    "path": relative_path,         
+                                    "response": {"url": raw_path},  
+                                    "request": None,
+                                    "stage": stage,
+                                    "timestamp": data.get("timestamp")
+                                }
+                            else:
+                                formatted_msg = {
+                                    "path": raw_path,
+                                    "response": data.get("response"),
+                                    "request": data.get("request"),
+                                    "stage": stage,
+                                    "timestamp": data.get("timestamp")
+                                }
+
+                            if outer_self.filter_func(formatted_msg["path"], formatted_msg):
+                                outer_self.api_queue.put(formatted_msg) 
+                                status = "ACCEPTED & QUEUED"
+                            else:
+                                status = "FILTERED OUT BY CUSTOM FILTER"
                         else:
-                            status = "FILTERED OUT"
+                            status = "FILTERED OUT (UNKNOWN RESOURCE)"
 
                         # Respond to poi browser
                         self.send_response(200)

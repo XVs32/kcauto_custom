@@ -85,17 +85,16 @@ class ApiWrapper(object):
             api_type = KCSAPIEnum.get_by_value(request_url)
 
             is_match = False
-            for target_api in target_apis:
-                if target_api is KCSAPIEnum.MAP_INFO_JSON:
-                    is_match = api_type is target_api and request_url.split("?")[
-                        0
-                    ].endswith(".json")
-                elif target_api is not KCSAPIEnum.NONE:
-                    is_match = api_type is target_api
 
-                if is_match:
-                    break
-
+            if api_type == KCSAPIEnum.MAP_INFO_JSON:
+                if api_type in target_apis:
+                    Log.log_debug_1(f"GOT MAP_INFO_JSON API: {request_url}")
+                    if request_url.endswith(".json"):
+                        is_match = True
+            elif api_type in target_apis:
+                Log.log_debug_1(f"GOT API: {request_url}")
+                is_match = True
+            
             if is_match:
                 Log.log_debug_1(f"Processing API: {api_type}")
                 res = self._load_api_data(api_type, msg[self.BODY])
