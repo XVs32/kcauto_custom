@@ -2,6 +2,7 @@ from kca_enums.enum_base import EnumBase
 
 
 class KCSAPIEnum(EnumBase):
+    UNKNOWN = "unknown"
     NONE = None
     ANY = "kcsapi"
     GET_DATA = "kcsapi/api_start2/getData"
