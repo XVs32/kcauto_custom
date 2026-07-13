@@ -60,3 +60,12 @@ class KCSAPIEnum(EnumBase):
     FREE_EQUIPMENT = "kcsapi/api_get_member/ship3"
     # static resources
     MAP_INFO_JSON = "kcs2/resources/map"
+
+    @classmethod
+    def get_by_value(cls, value):
+        if value.startswith(cls.MAP_INFO_JSON.value):
+            return cls.MAP_INFO_JSON
+
+        if cls.contains_value(value):
+            return cls(value)
+        return cls.get_default()
