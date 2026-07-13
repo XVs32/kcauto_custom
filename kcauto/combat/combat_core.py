@@ -521,7 +521,9 @@ class CombatCore(CoreBase):
                     | self.SHIPDECK_API
                     | self.EQUIP_API
                     | self.MAP_API,
-                    process_all=False
+                    process_all=False,
+                    needed_all=False,
+                    timeout=5
                 )
 
             if kca_u.kca.exists("kc", "combat|compass.png"):

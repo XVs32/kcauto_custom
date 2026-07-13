@@ -35,7 +35,7 @@ class ApiWrapper(object):
         Log.log_debug_1("API Wrapper module initialized.")
 
     def update_from_api(
-        self, target_apis={KCSAPIEnum.ANY}, process_all=True, timeout=30
+        self, target_apis={KCSAPIEnum.ANY}, process_all=True, needed_all=True, timeout=30
     ):
         """
         Args: target_apis (set of KCSAPIEnum): Set of API endpoints to wait for. Use KCSAPIEnum.ANY to wait for any API, or KCSAPIEnum.NONE to skip waiting and return immediately. Default is KCSAPIEnum.ANY.
@@ -59,13 +59,14 @@ class ApiWrapper(object):
 
             remaining = (end_time - datetime.now()).total_seconds()
             if remaining <= 0:
-                Log.log_warn(f"API timeout.")
-                for missing_api in target_apis:
-                    if missing_api not in received_apis:
-                        Log.log_warn(f"Missing API: {missing_api}")
+                if needed_all:
+                    Log.log_warn(f"API timeout.")
+                    for missing_api in target_apis:
+                        if missing_api not in received_apis:
+                            Log.log_warn(f"Missing API: {missing_api}")
                 break
 
-            if len(received_apis) >= len(target_apis)  :
+            if len(received_apis) >= len(target_apis):
                 if process_all == False:
                     Log.log_debug_1("All target APIs received, breaking wait.")
                     break
@@ -214,7 +215,7 @@ class ApiWrapper(object):
         elif request_url is KCSAPIEnum.FREE_EQUIPMENT:
             return self._process_free_equipment_data(data)
         elif request_url is KCSAPIEnum.MAP_INFO_JSON:
-            return self._process_map_info_json(request_data)
+            return self._process_map_info_json(request_url)
 
         return None
 
@@ -595,9 +596,9 @@ class ApiWrapper(object):
 
         return equipment_data
 
-    def _process_map_info_json(self, data):
+    def _process_map_info_json(self, request_url: KCSAPIEnum):
 
-        filename = os.path.basename(data["url"])
+        filename = os.path.basename(request_url.value)
         Log.log_debug_1(f"map info json received: {filename}")
         com.combat.gimmick_startup_judge(filename)
 
