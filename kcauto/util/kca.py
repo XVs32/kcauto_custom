@@ -60,18 +60,10 @@ class Kca(object):
     last_ui = None
     r = {}
     html = None
-    kc3_id = None
 
     screenshot_log = [None, None, None, None, None]
 
     def __init__(self):
-        if self.kc3_id == None:
-            try:
-                data = JsonData.load_json("data|config|kc3_id.json")
-                self.kc3_id = data.get("id", "hkgmldnainaglpjngpajnnjfhpdjkohh")
-            except FileNotFoundError:
-                Log.log_warn("kc3_id.json not found, using default KC3 id.")
-                self.kc3_id = "hkgmldnainaglpjngpajnnjfhpdjkohh"
         Log.log_debug_1("Kca module initialized.")
 
     def hook_chrome(self):
@@ -1245,7 +1237,7 @@ class Kca(object):
         elif target == "poi":
             self.poi_hook = PyChromeDevTools.ChromeInterface(host=host, port=port)
         else:
-            raise ValueError("Hook target must be either api, visual or kc3.")
+            raise ValueError("Hook target must be either api or poi.")
 
         return
 
@@ -1258,7 +1250,7 @@ class Kca(object):
 
         Return:
             dict with key of quest name, and value of remaining actions needed.
-            return None if quest is not combat type, KC3 is unavailable, or quest count cannot be read.
+            return None if quest is not combat type, poi is unavailable, or quest count cannot be read.
         """
 
         poi_quest_stats = self.get_poi_quest_stats()
