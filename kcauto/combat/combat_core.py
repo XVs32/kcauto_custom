@@ -413,8 +413,9 @@ class CombatCore(CoreBase):
                 if self.current_node.boss_node or self.boss_api:
                     # Todo: only trigger when screen doesn't change at all
                     kca_u.kca.sleep(8)
-                    Log.log_msg("Dismissing boss dialogue.")
-                    kca_u.kca.r["center"].click()
+                    if not kca_u.kca.exists("lower_right_corner", "global|next.png"):
+                        Log.log_msg("Dismissing boss dialogue.")
+                        kca_u.kca.r["center"].click()
 
                 while not kca_u.kca.exists("lower_right_corner", "global|next.png"):
                     if kca_u.kca.exists("kc", "global|combat_nb_fight.png"):
@@ -500,7 +501,7 @@ class CombatCore(CoreBase):
                     | self.RESULT_APIS
                     | self.SHIPDECK_API
                     | self.EQUIP_API,
-                    process_all=True
+                    process_all=True,
                 )
 
                 if KCSAPIEnum.PORT.name not in api_result:
@@ -523,7 +524,7 @@ class CombatCore(CoreBase):
                     | self.MAP_API,
                     process_all=False,
                     needed_all=False,
-                    timeout=5
+                    timeout=5,
                 )
 
             if kca_u.kca.exists("kc", "combat|compass.png"):
