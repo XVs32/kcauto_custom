@@ -479,11 +479,12 @@ class CombatCore(CoreBase):
                     self.map_data.nodes[next_node].select()
             elif node_type == self.NODE_TYPE_NOTHING:
                 Log.log_debug_1(f"Node type nothing {self.current_node.name}.")
-                pass
             elif node_type == self.NODE_TYPE_END:
                 Log.log_debug_1(f"Node type end {self.current_node.name}.")
                 conducting_sortie = False
-                continue
+
+            
+            self.gimmick_judge(node_type=node_type)
 
         self._click_until_port()
         Log.log_msg(f"Sortie handling complete.")
@@ -790,8 +791,6 @@ class CombatCore(CoreBase):
                 f"Battle rank in node {self.current_node}: {self.last_battle[self.RANKENUM].in_str}"
             )
 
-            self.gimmick_judge()
-
     def _calculate_hps(self, new_hps, data):
         for phase in self.API_COMBAT_PHASES_TYPE1:
             if phase in data and data[phase] is not None:
@@ -968,7 +967,7 @@ class CombatCore(CoreBase):
         Log.log_error(f"No gimmick for map {map_enum.value}.")
         return None
 
-    def gimmick_judge(self):
+    def gimmick_judge(self, node_type: int):
 
         if self.gimmick_attampt == None:
             return
@@ -976,29 +975,39 @@ class CombatCore(CoreBase):
         current_map = self.map_data.enum
 
         # check if current map has gimmick
-        if (
-            current_map.without_quest_and_node_enum
-            == self.gimmick_attampt.without_quest_and_node_enum
-            and self.last_battle[self.MAP_NODE].name == self.gimmick_attampt.variant
-        ):
-            Log.log_msg(f"Battled in gimmick node {self.gimmick_attampt}")
+        if current_map.without_quest_and_node_enum == self.gimmick_attampt.without_quest_and_node_enum:
 
-            if self.last_battle[self.RANKENUM].is_at_least(
-                SortieRankEnum[
+            if (node_type == self.NODE_TYPE_COMBAT or node_type == self.NODE_TYPE_COMBAT_FINISH):
+                if self.last_battle[self.MAP_NODE].name == self.gimmick_attampt.variant:
+                    Log.log_msg(f"Battled in gimmick node {self.gimmick_attampt}")
+
+                    if self.last_battle[self.RANKENUM].is_at_least(
+                        SortieRankEnum[
+                            self.gimmick_list[self.gimmick_attampt.display_name][
+                                self.GIMMICK_MIN_RANK
+                            ]
+                        ]
+                    ):
+                        Log.log_success(f"Gimmick solved for map {current_map.value}.")
+                        self.gimmick_list[self.gimmick_attampt.display_name][
+                            self.GIMMICK_CLEAR_REMAINING
+                        ] -= 1
+                        JsonData.dump_json(self.gimmick_list, GIMMICK)
+
+            elif node_type == self.NODE_TYPE_END:
+                if self.current_node.name == self.gimmick_attampt.variant:
+                    Log.log_msg(f"Reached gimmick node {self.gimmick_attampt}")
                     self.gimmick_list[self.gimmick_attampt.display_name][
-                        self.GIMMICK_MIN_RANK
-                    ]
-                ]
-            ):
-                Log.log_success(f"Gimmick solved for map {current_map.value}.")
-                self.gimmick_list[self.gimmick_attampt.display_name][
-                    self.GIMMICK_CLEAR_REMAINING
-                ] -= 1
-                JsonData.dump_json(self.gimmick_list, GIMMICK)
+                        self.GIMMICK_CLEAR_REMAINING
+                    ] -= 1
+                    JsonData.dump_json(self.gimmick_list, GIMMICK)
 
     def gimmick_startup_judge(self, file_name):
 
         for display_name in self.gimmick_list:
+
+            Log.log_debug_1(f"Checking gimmick for map {display_name}, checking file {self.gimmick_list[display_name][self.GIMMICK_NODE_JSON]}, filename is {file_name}")
+
             if (
                 self.gimmick_list[display_name][self.GIMMICK_NODE_JSON] == file_name
                 and self.gimmick_list[display_name][self.GIMMICK_CLEAR_REMAINING] > 0

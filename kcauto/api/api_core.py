@@ -214,7 +214,7 @@ class ApiWrapper(object):
         elif request_url is KCSAPIEnum.FREE_EQUIPMENT:
             return self._process_free_equipment_data(data)
         elif request_url is KCSAPIEnum.MAP_INFO_JSON:
-            return self._process_map_info_json(request_url)
+            return self._process_map_info_json(data)
 
         return None
 
@@ -595,9 +595,9 @@ class ApiWrapper(object):
 
         return equipment_data
 
-    def _process_map_info_json(self, request_url: KCSAPIEnum):
+    def _process_map_info_json(self, data):
 
-        filename = os.path.basename(request_url.value)
+        filename = os.path.basename(data.get("url"))
         Log.log_debug_1(f"map info json received: {filename}")
         com.combat.gimmick_startup_judge(filename)
 
