@@ -1,12 +1,12 @@
 {
   "combat.node_selects": [
-    "B>E"
+    "M>P"
   ],
   "combat.lbas_groups": [
     1
   ],
   "combat.lbas_group_1_nodes": [
-    "I",
-    "I"
+    "X",
+    "X"
   ]
 }

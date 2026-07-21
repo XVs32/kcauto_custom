@@ -1,6 +1,9 @@
 {
-  "combat.repair_limit": 2,
   "combat.node_selects": [
-    "A>B"
+    "B>C",
+    "C>C1"
+  ],
+  "combat.node_night_battles": [
+    "C2:True"
   ]
 }

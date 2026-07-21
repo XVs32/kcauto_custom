@@ -1,8 +1,11 @@
 {
   "combat.node_selects": [
-    "D>E"
+    "H>M"
   ],
   "combat.node_night_battles": [
-    "E2:True"
+    "Y3:True"
+  ],
+  "combat.retreat_points": [
+    "Y3"
   ]
 }

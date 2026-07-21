@@ -1,8 +1,8 @@
 {
   "combat.node_selects": [
-    "D>E"
+    "B>B1"
   ],
   "combat.node_night_battles": [
-    "E2:True"
+    "B2:True"
   ]
 }
