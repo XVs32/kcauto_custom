@@ -1,0 +1,13 @@
+{
+  "combat.node_selects": [
+    "H>I"
+  ],
+  "combat.lbas_groups": [
+    1,
+    2
+  ],
+  "combat.lbas_group_1_nodes": [
+    "O",
+    "O"
+  ]
+}
