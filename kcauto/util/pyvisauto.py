@@ -8,6 +8,7 @@ from abc import ABC
 from datetime import datetime
 from random import randint
 from time import sleep
+from kca_enums.scroll_directions import ScrollDirectionEnum
 
 
 # disable pyautogui failsafe when mouse moves to corner of screen
@@ -35,6 +36,9 @@ class ImageMatch(ABC):
     # assign the method for overriding the click methods to this class
     # variable. Should accept the parameters (region, x, y, pad)
     override_click_method = None
+    # assign the method for overriding the scroll methods to this class
+    # variable. Should accept the parameters (region, x, y, pad, direction, amount)
+    override_scroll_method = None
     # assign the callback method for click to this class variable. Should
     # accept the parameters (region, x, y)
     click_callback = None
@@ -292,6 +296,37 @@ class ImageMatch(ABC):
 
         if self.click_callback:
             self.click_callback(self, x, y)
+
+    def scroll(self, pad=(0, 0, 0, 0), *, direction, amount=1):
+        """Method to scroll at a random point within the region. If an
+        override_scroll_method exists, it will be used instead of the default
+        pyautogui moveTo and scroll methods.
+
+        Args:
+            pad (tuple, optional): Tuple specifying the offset of
+                scroll area. The order is (x1, y1, x2, y2)
+                Defaults to (0, 0, 0, 0).
+            direction (ScrollDirectionEnum): Scroll direction.
+            amount (int, optional): Number of scroll steps to perform.
+        """
+        x = randint(self.x + pad[0], self.x + self.w + pad[2])
+        y = randint(self.y + pad[1], self.y + self.h + pad[3])
+
+        if self.override_scroll_method:
+            self.override_scroll_method(self, x, y, pad, direction, amount)
+            return
+
+        pyautogui.moveTo(x, y, self.MOUSE_MOVE_SPEED)
+
+        if amount < 1:
+            raise ValueError(f"Unsupported scroll amount: {amount}")
+
+        if direction is ScrollDirectionEnum.UP:
+            pyautogui.scroll(amount)
+        elif direction is ScrollDirectionEnum.DOWN:
+            pyautogui.scroll(-amount)
+        else:
+            raise ValueError(f"Unsupported scroll direction: {direction}")
 
     def ocr(self, lang, config):
         """Method for running Optical Character Recognition (OCR) on the region
