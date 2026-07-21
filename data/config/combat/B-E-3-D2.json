@@ -1,0 +1,8 @@
+{
+  "combat.node_selects": [
+    "D>D1"
+  ],
+  "combat.node_night_battles": [
+    "D2:True"
+  ]
+}
