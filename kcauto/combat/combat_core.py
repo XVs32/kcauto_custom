@@ -522,7 +522,6 @@ class CombatCore(CoreBase):
                     | self.EQUIP_API
                     | self.MAP_API,
                     process_all=False,
-                    needed_all=False,
                     timeout=5,
                 )
 
