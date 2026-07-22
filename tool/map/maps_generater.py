@@ -1,5 +1,5 @@
 # open/create file called test.py
-f = open("map_enum.json", "w", encoding="utf-8")
+f = open("../../data/combat/map_enum.json", "w", encoding="utf-8")
 
 f.write(
     "\n\
@@ -12,7 +12,11 @@ f.write(
 import os
 import json
 
-for file in os.listdir("../../data/combat"):
+# read file in alphabet order
+map_file_list = os.listdir("../../data/combat")
+map_file_list.sort()
+
+for file in map_file_list:
     if file.endswith(".json") and len(file.split("-")) > 1:
         world = file.split("-")[0]
         stage = file.split("-")[1].split(".")[0]
@@ -48,6 +52,7 @@ for file in os.listdir("../../data/combat"):
                 # write the following code to the file
 
             nodes = list(set(nodes))
+            nodes.sort()
 
             for node in nodes:
                 f.write(
@@ -198,12 +203,12 @@ f.write(
     "W5-3-2605B4": "2605B4-5-3",\n\
     "W5-4-2605B4": "2605B4-5-4",\n\
     "W5-5-2605B4": "2605B4-5-5",\n\
-    "W5-6-2605B4": "2605B4-5-6",\n\
+    "W5-6-Z-2605B4": "2605B4-5-6-Z",\n\
     "W1-3-2605B3": "2605B3-1-3",\n\
     "W1-5-2605B3": "2605B3-1-5",\n\
     "W2-3-2605B3": "2605B3-2-3",\n\
     "W7-4-2605B3": "2605B3-7-4",\n\
-    "W1-6-N-2605B3": "2605B3-1-6-N",\n\
+    "W1-6-N-2605B3": "2605B3-1-6-N"\n\
 \n'
 )
 

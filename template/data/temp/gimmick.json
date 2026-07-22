@@ -1,8 +1,16 @@
 {
+  "B-5-6-R": {
+    "timestamp": 0,
+    "clear_remaining": 1,
+    "map_stage_required": 2,
+    "min_rank": "S",
+    "node_json": "06_info20.json"
+  },
   "B-7-5-M": {
     "timestamp": 0,
     "clear_remaining": 1,
-    "map_stage_required": 1,
-    "min_rank": "S"
+    "map_stage_required": 3,
+    "min_rank": "S",
+    "node_json": "05_info22.json"
   }
 }
