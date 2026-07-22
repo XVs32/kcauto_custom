@@ -2,7 +2,7 @@ from util.pyvisauto import Region
 from random import choice
 import math
 
-from constants import MAX_RESOURCE, PASSIVE_TIME_INTERVAL, OVERNIGHT_TIME_INTERVAL
+from constants import PASSIVE_TIME_INTERVAL, OVERNIGHT_TIME_INTERVAL
 import api.api_core as api
 import combat.combat_core as com
 import config.config_core as cfg
