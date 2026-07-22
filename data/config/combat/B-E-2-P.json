@@ -1,12 +1,10 @@
 {
-  "combat.node_selects": [
-    "B>E"
-  ],
+  "combat.fleet_mode": "strike",
   "combat.lbas_groups": [
     1
   ],
   "combat.lbas_group_1_nodes": [
-    "I",
-    "I"
+    "P",
+    "P"
   ]
 }

@@ -1,16 +1,14 @@
 {
-  "combat.repair_limit": 2,
+  "combat.fleet_mode": "strike",
   "combat.node_selects": [
-    "A>F",
-    "F>J"
+    "B>C"
   ],
   "combat.lbas_groups": [
     1,
     2
   ],
   "combat.lbas_group_1_nodes": [
-    "N",
-    "N"
-  ],
-  "combat.lbas_group_2_nodes": []
+    "Q",
+    "Q"
+  ]
 }
