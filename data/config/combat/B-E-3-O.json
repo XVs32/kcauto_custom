@@ -1,4 +1,5 @@
 {
+  "combat.fleet_mode": "ctf",
   "combat.node_selects": [
     "H>I"
   ],
