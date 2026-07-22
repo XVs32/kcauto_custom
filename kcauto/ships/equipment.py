@@ -64,17 +64,20 @@ class Equipment:
         input: model_id (int): the equipment model id
         output: equipment static data (dict)
         """
-        return Equipment.equipment_static_data.get(self.model_id, None)
+        ret = Equipment.equipment_static_data.get(self.model_id, None)
 
-        Log.log_error(
-            f"Cannot find model_id:{self.model_id} in equipment static data, something is wrong with the api data"
-        )
-        Log.log_debug_1(f"equipment data:")
-        Log.log_debug_1(f"model_id: {self.model_id}")
-        Log.log_debug_1(f"production_id: {self.production_id}")
-        Log.log_debug_1(f"stars: {self.stars}")
-        Log.log_debug_1(f"lock: {self.lock}")
-        Log.log_debug_1(f"ace: {self.ace}")
+        if ret == None:
+            Log.log_error(
+                f"Cannot find model_id:{self.model_id} in equipment static data, something is wrong with the api data"
+            )
+            Log.log_debug_1(f"equipment data:")
+            Log.log_debug_1(f"model_id: {self.model_id}")
+            Log.log_debug_1(f"production_id: {self.production_id}")
+            Log.log_debug_1(f"stars: {self.stars}")
+            Log.log_debug_1(f"lock: {self.lock}")
+            Log.log_debug_1(f"ace: {self.ace}")
+
+        return ret
 
     def category_patch(model_id, new_category):
         """
