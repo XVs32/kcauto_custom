@@ -24,7 +24,6 @@ from constants import (
     GAME_W,
     GAME_H,
     VISUAL_URL,
-    STRATEGY_ROOM_URL,
     API_URL,
     EXACT,
     DEFAULT,

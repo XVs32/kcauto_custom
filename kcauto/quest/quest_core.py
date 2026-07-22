@@ -532,22 +532,6 @@ class QuestCore(CoreBase):
 
         return
 
-    def meets_min_sortie_rank(
-        self, current_context, last_sortie_result: SortieRankEnum = None
-    ) -> bool:
-        """Return True if sortie_rank (or last_sortie_result) meets quest.min_sortie_rank."""
-
-        if current_context == CONTEXT_PVP:
-            pass
-        elif current_context == CONTEXT_SORTIE:
-            return last_sortie_result.is_at_least(
-                self.auto_select_quest[CONTEXT_SORTIE].rank_requirement.get(
-                    com.combat.get_sortie_queue()[0].without_quest_enum,
-                    SortieRankEnum.E,
-                )
-            )
-            self.auto_select_quest[CONTEXT_PVP] = pvp.pvp.next_pvp_quest
-
     def _generate_intervals(self, quest: Quest):
         next_combat = (
             quest.intervals[0] + sts.stats.combat.combat_sorties

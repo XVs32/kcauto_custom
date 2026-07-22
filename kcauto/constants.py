@@ -11,8 +11,6 @@ AUTO_PRESET = 0
 
 OTHER_FLEET_ID = 999
 
-MAX_RESOURCE = 350000
-
 PASSIVE_TIME_INTERVAL = 180
 OVERNIGHT_TIME_INTERVAL = 600
 
@@ -33,9 +31,6 @@ CONTEXT_AUTO_PVP = 8
 # chrome hook url targets
 DEFAULT_CHROME_DEV_PORT = 9222
 VISUAL_URL = "https://play.games.dmm.com/game/kancolle"
-STRATEGY_ROOM_URL = (
-    "chrome-extension://hkgmldnainaglpjngpajnnjfhpdjkohh/pages/strategy/strategy.html"
-)
 API_URL = "kcs2/index.php"
 
 # similarity presets
