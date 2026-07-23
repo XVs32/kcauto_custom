@@ -195,7 +195,6 @@ class LBASCore(object):
             kca_u.kca.r["top"].hover()
             kca_u.kca.wait("upper_right", f"combat|lbas_group_mode_{next_name}.png")
             kca_u.kca.sleep(0.5)
-        api.api.update_from_api({KCSAPIEnum.SORTIE_ASSIGN_LBAS})
 
     @property
     def assignable_lbas_groups(self):
