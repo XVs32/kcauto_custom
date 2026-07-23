@@ -57,6 +57,7 @@
   "general.interaction_mode": "chrome_driver",
   "general.jst_offset": 0,
   "general.paused": false,
+  "general.paused_after_fleetswitch": false,
   "passive_repair.enabled": false,
   "passive_repair.repair_threshold": 1,
   "passive_repair.slots_to_reserve": 2,
