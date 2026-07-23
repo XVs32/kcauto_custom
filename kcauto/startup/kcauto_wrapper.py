@@ -5,16 +5,14 @@ from time import sleep
 import startup.kcauto as _
 import args.args_core as arg
 from constants import LOOP_BREAK_SECONDS
-from util.exceptions import (
-    ApiException, Catbomb201Exception, ChromeCrashException)
+from util.exceptions import ApiException, Catbomb201Exception, ChromeCrashException
 from util.logger import Log
 from util.recovery import Recovery
-import ships.equipment_core as equ 
+import ships.equipment_core as equ
 
 
 def kcauto_main():
-    """Primary method that contains kcauto and various recovery logic.
-    """
+    """Primary method that contains kcauto and various recovery logic."""
     active_loop = True
     kca_loop = True
     while active_loop:
@@ -28,7 +26,7 @@ def kcauto_main():
                 _.kcauto.hook_health_check()
                 _.kcauto.check_config()
                 if _.kcauto.scheduler_kca_active:
-                    #if first_loop == True:
+                    # if first_loop == True:
 
                     Log.log_debug_1("New kca_loop started")
 

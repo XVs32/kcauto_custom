@@ -46,34 +46,40 @@ class RecoveryStats(StatsBase):
 
     def __str__(self):
         return_string = (
-            f"{self.recoveries_done} Recoveries done "
-            f"{self.recoveries_done_ph:.2f}/hr)")
+            f"{self.recoveries_done} Recoveries done {self.recoveries_done_ph:.2f}/hr)"
+        )
         string_list = []
         if self.basic_recoveries_done:
             string_list.append(
                 f"{self.basic_recoveries_done} Basic Recoveries "
-                f"({self.basic_recoveries_done_ph:.2f}/hr)")
+                f"({self.basic_recoveries_done_ph:.2f}/hr)"
+            )
         if self.results_recoveries_done:
             string_list.append(
                 f"{self.results_recoveries_done} Results Recoveries "
-                f"({self.results_recoveries_done_ph:.2f}/hr)")
+                f"({self.results_recoveries_done_ph:.2f}/hr)"
+            )
         if self.catbomb_recoveries_done:
             string_list.append(
                 f"{self.catbomb_recoveries_done} Catbomb Recoveries "
-                f"({self.catbomb_recoveries_done_ph:.2f}/hr)")
+                f"({self.catbomb_recoveries_done_ph:.2f}/hr)"
+            )
         if self.catbomb_201_recoveries_done:
             string_list.append(
                 f"{self.catbomb_201_recoveries_done} 201 Recoveries "
-                f"({self.catbomb_201_recoveries_done_ph:.2f}/hr)")
+                f"({self.catbomb_201_recoveries_done_ph:.2f}/hr)"
+            )
         if self.chrome_crash_t1_recoveries_done:
             string_list.append(
                 f"{self.chrome_crash_t1_recoveries_done} "
                 "Chrome Crash (Type 1) "
-                f"({self.chrome_crash_t1_recoveries_done_ph:.2f}/hr)")
+                f"({self.chrome_crash_t1_recoveries_done_ph:.2f}/hr)"
+            )
         if self.chrome_crash_t2_recoveries_done:
             string_list.append(
                 f"{self.chrome_crash_t2_recoveries_done} "
                 "Chrome Crash (Type 2) "
-                f"({self.chrome_crash_t2_recoveries_done_ph:.2f}/hr)")
+                f"({self.chrome_crash_t2_recoveries_done_ph:.2f}/hr)"
+            )
 
-        return return_string + ' / ' + ' / '.join(string_list)
+        return return_string + " / " + " / ".join(string_list)

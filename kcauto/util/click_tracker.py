@@ -8,8 +8,8 @@ class ClickTracker(object):
 
     def __init__(self):
         try:
-            raw = np.load('click_matrix.npz')
-            self.click_matrix = raw['click_matrix']
+            raw = np.load("click_matrix.npz")
+            self.click_matrix = raw["click_matrix"]
         except FileNotFoundError:
             self.click_matrix = np.zeros(shape=(GAME_H, GAME_W))
 
@@ -19,7 +19,7 @@ class ClickTracker(object):
         self.click_matrix[game_y][game_x] += 1
 
     def export(self):
-        np.savez('click_matrix', click_matrix=self.click_matrix)
+        np.savez("click_matrix", click_matrix=self.click_matrix)
 
 
 click_tracker = ClickTracker()

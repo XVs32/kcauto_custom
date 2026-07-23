@@ -11,7 +11,7 @@ class LBASFatigueEnum(EnumBase):
     NO_FATIGUE = 0
 
     def display_name(self):
-        return self.name.replace('_', ' ').title()
+        return self.name.replace("_", " ").title()
 
     def __lt__(self, other):
         if self.__class__ is other.__class__:

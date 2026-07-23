@@ -2,23 +2,24 @@ from kca_enums.enum_base import EnumBase
 
 
 class FleetModeEnum(EnumBase):
-    STANDARD = 'standard'
-    STRIKE = 'strike'
-    TCF = 'tcf'
-    CTF = 'ctf'
-    STF = 'stf'
+    STANDARD = "standard"
+    STRIKE = "strike"
+    TCF = "tcf"
+    CTF = "ctf"
+    STF = "stf"
 
     @property
     def display_name(self):
         if self is self.STANDARD:
             return self.name.title()
         return self.name
-    
+
     @property
     def config_name(self):
         return self.value
 
+
 class CombinedFleetModeEnum(EnumBase):
-    TCF = 'tcf'
-    CTF = 'ctf'
-    STF = 'stf'
+    TCF = "tcf"
+    CTF = "ctf"
+    STF = "stf"

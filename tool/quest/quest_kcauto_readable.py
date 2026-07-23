@@ -1,21 +1,22 @@
-            
 import json
+
 
 def convert_ids_to_strings(requirements_list, lookup_table):
     """
     Converts integer IDs to strings within the requirements list.
     """
     for requirement in requirements_list:
-        if 'id' in requirement and isinstance(requirement['id'], list):
+        if "id" in requirement and isinstance(requirement["id"], list):
             converted_ids = []
-            for id_num in requirement['id']:
+            for id_num in requirement["id"]:
                 if id_num in lookup_table:
                     converted_ids.append(lookup_table[id_num])
                 else:
                     print(f"Warning: ID {id_num} not found in the lookup table.")
                     converted_ids.append(id_num)
-            requirement['id'] = converted_ids
+            requirement["id"] = converted_ids
     return requirements_list
+
 
 def convert_strings_to_ids(requirements_list, lookup_table):
     """
@@ -25,15 +26,17 @@ def convert_strings_to_ids(requirements_list, lookup_table):
     reverse_lookup = {name: id_num for id_num, name in lookup_table.items()}
 
     for requirement in requirements_list:
-        if 'id' in requirement and isinstance(requirement['id'], list):
+        if "id" in requirement and isinstance(requirement["id"], list):
             converted_names = []
-            for name in requirement['id']:
+            for name in requirement["id"]:
                 if name in reverse_lookup:
                     converted_names.append(reverse_lookup[name])
                 else:
-                    print(f"Warning: Name '{name}' not found in the reverse lookup table.")
-                    converted_names.append(name) # Keep the original if not found
-            requirement['id'] = converted_names
+                    print(
+                        f"Warning: Name '{name}' not found in the reverse lookup table."
+                    )
+                    converted_names.append(name)  # Keep the original if not found
+            requirement["id"] = converted_names
     return requirements_list
 
 
@@ -44,15 +47,15 @@ def main():
     """
     try:
         # Load the lookup table from ship_name.json
-        with open('../../reference/ship_name_api.json', 'r', encoding='utf-8') as f:
+        with open("../../reference/ship_name_api.json", "r", encoding="utf-8") as f:
             lookup_list = json.load(f)
-        
+
         # Convert the list of dictionaries into a dictionary for faster lookup
-        id_lookup = {item['id']: item['name'] for item in lookup_list}
+        id_lookup = {item["id"]: item["name"] for item in lookup_list}
 
         # Load the human-readable JSON data to be converted
-        input_filename = 'quest_human_readable.json'
-        with open(input_filename, 'r', encoding='utf-8') as f:
+        input_filename = "quest_human_readable.json"
+        with open(input_filename, "r", encoding="utf-8") as f:
             json_data = json.load(f)
 
         print(f"Original JSON data from {input_filename}:")
@@ -61,22 +64,28 @@ def main():
         # Perform the reverse conversion only on the 'requirements' sections
         for key in json_data:
             entry = json_data[key]
-            if 'fleet_composition' in entry and 'requirements' in entry['fleet_composition']:
-                entry['fleet_composition']['requirements'] = convert_strings_to_ids(
-                    entry['fleet_composition']['requirements'], id_lookup
+            if (
+                "fleet_composition" in entry
+                and "requirements" in entry["fleet_composition"]
+            ):
+                entry["fleet_composition"]["requirements"] = convert_strings_to_ids(
+                    entry["fleet_composition"]["requirements"], id_lookup
                 )
 
         # Write the converted data to a new file
-        output_filename = './quest_reverted.json'
-        with open(output_filename, 'w', encoding='utf-8') as f:
+        output_filename = "./quest_reverted.json"
+        with open(output_filename, "w", encoding="utf-8") as f:
             json.dump(json_data, f, indent=2, ensure_ascii=False)
 
         print(f"\nConverted JSON data has been saved to '{output_filename}'")
-        
+
     except FileNotFoundError as e:
         print(f"Error: One of the required files was not found: {e}")
     except json.JSONDecodeError:
-        print("Error: Could not decode one of the JSON files. Please check the file content for errors.")
+        print(
+            "Error: Could not decode one of the JSON files. Please check the file content for errors."
+        )
+
 
 if __name__ == "__main__":
     main()

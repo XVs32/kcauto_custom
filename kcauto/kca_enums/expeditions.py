@@ -8,37 +8,77 @@ class ExpeditionEnum(EnumBase):
     ACTIVE = "active"
     PASSIVE = "passive"
     OVERNIGHT = "overnight"
-    E1_1, E1_2, E1_3, E1_4, E1_5, E1_6, E1_7,  E1_8 = 1, 2, 3, 4, 5, 6, 7, 8
+    E1_1, E1_2, E1_3, E1_4, E1_5, E1_6, E1_7, E1_8 = 1, 2, 3, 4, 5, 6, 7, 8
     E1_A1, E1_A2, E1_A3, E1_A4, E1_A5, E1_A6 = 100, 101, 102, 103, 104, 105
-    
-    E2_9, E2_10, E2_11, E2_12, E2_13, E2_14, E2_15, E2_16 = 9, 10, 11, 12, 13, 14, 15, 16
+
+    E2_9, E2_10, E2_11, E2_12, E2_13, E2_14, E2_15, E2_16 = (
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+    )
     E2_B1, E2_B2, E2_B3, E2_B4, E2_B5, E2_B6 = 110, 111, 112, 113, 114, 115
-    
-    E3_17, E3_18, E3_19, E3_20, E3_21, E3_22, E3_23, E3_24 = 17, 18, 19, 20, 21, 22, 23, 24
 
-    E4_25, E4_26, E4_27, E4_28, E4_29, E4_30, E4_31, E4_32 = 25, 26, 27, 28, 29, 30, 31, 32
-    E4_D1, E4_D2, E4_D3 = 131, 132, 133 #It is strange but D1: 131 is correct while A1: 100, check api api_mst_mission
-    
-    E5_33, E5_34, E5_35, E5_36, E5_37, E5_38, E5_39, E5_40 = 33, 34, 35, 36, 37, 38, 39, 40
-    E5_E1, E5_E2 = 141, 142  
+    E3_17, E3_18, E3_19, E3_20, E3_21, E3_22, E3_23, E3_24 = (
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+    )
 
-    E7_41, E7_42, E7_43, E7_44 , E7_45, E7_46= 41, 42, 43, 44, 45, 46
-    
+    E4_25, E4_26, E4_27, E4_28, E4_29, E4_30, E4_31, E4_32 = (
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+    )
+    E4_D1, E4_D2, E4_D3 = (
+        131,
+        132,
+        133,
+    )  # It is strange but D1: 131 is correct while A1: 100, check api api_mst_mission
+
+    E5_33, E5_34, E5_35, E5_36, E5_37, E5_38, E5_39, E5_40 = (
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+    )
+    E5_E1, E5_E2 = 141, 142
+
+    E7_41, E7_42, E7_43, E7_44, E7_45, E7_46 = 41, 42, 43, 44, 45, 46
+
     EE_S1, EE_S2 = 301, 302
 
     @property
     def world(self):
-        if len(self.name.split("_"))<2:
+        if len(self.name.split("_")) < 2:
             return ""
         else:
-            return self.name.split('_')[0][1]
+            return self.name.split("_")[0][1]
 
     @property
     def expedition(self):
-        if len(self.name.split("_"))<2:
+        if len(self.name.split("_")) < 2:
             return ""
         else:
-            return self.name.split('_')[1]
+            return self.name.split("_")[1]
 
     @property
     def duration(self):
@@ -47,14 +87,15 @@ class ExpeditionEnum(EnumBase):
     @property
     def display_name(self):
         if self.value == 33:
-            return '33 - Node Support'
+            return "33 - Node Support"
         elif self.value == 34:
-            return '34 - Boss Support'
+            return "34 - Boss Support"
         elif self.value == 301:
-            return 'S1 - Event Node Support'
+            return "S1 - Event Node Support"
         elif self.value == 302:
-            return 'S2 - Event Boss Node Support'
-        return self.name.split('_')[1]
+            return "S2 - Event Boss Node Support"
+        return self.name.split("_")[1]
+
 
 DURATIONS = {
     1: timedelta(minutes=14, seconds=30),
@@ -108,5 +149,5 @@ DURATIONS = {
     43: timedelta(hours=11, minutes=59, seconds=30),
     444: timedelta(hours=9, minutes=59, seconds=30),
     301: timedelta(minutes=15),
-    302: timedelta(minutes=30)
+    302: timedelta(minutes=30),
 }

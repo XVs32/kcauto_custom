@@ -1,7 +1,7 @@
 [
   {
     "id": 1,
-    "ja_jp": "練習航海",
+    "ja_jp": "\u7df4\u7fd2\u822a\u6d77",
     "english": "Practice Voyage",
     "time": 15,
     "reqFlagLevel": 1,
@@ -24,7 +24,7 @@
   },
   {
     "id": 2,
-    "ja_jp": "長距離練習航海",
+    "ja_jp": "\u9577\u8ddd\u96e2\u7df4\u7fd2\u822a\u6d77",
     "english": "Long-Distance Training Voyage",
     "time": 30,
     "reqFlagLevel": 2,
@@ -47,7 +47,7 @@
   },
   {
     "id": 3,
-    "ja_jp": "警備任務",
+    "ja_jp": "\u8b66\u5099\u4efb\u52d9",
     "english": "Security Tasks",
     "time": 20,
     "reqFlagLevel": 3,
@@ -70,7 +70,7 @@
   },
   {
     "id": 4,
-    "ja_jp": "対潜警戒任務",
+    "ja_jp": "\u5bfe\u6f5c\u8b66\u6212\u4efb\u52d9",
     "english": "Anti-Submarine Alert",
     "time": 50,
     "reqFlagLevel": 3,
@@ -93,7 +93,7 @@
   },
   {
     "id": 5,
-    "ja_jp": "海上護衛任務",
+    "ja_jp": "\u6d77\u4e0a\u8b77\u885b\u4efb\u52d9",
     "english": "Maritime Security Missions",
     "time": 90,
     "reqFlagLevel": 3,
@@ -116,7 +116,7 @@
   },
   {
     "id": 6,
-    "ja_jp": "防空射撃演習",
+    "ja_jp": "\u9632\u7a7a\u5c04\u6483\u6f14\u7fd2",
     "english": "Anti-Air Exercises",
     "time": 40,
     "reqFlagLevel": 4,
@@ -139,7 +139,7 @@
   },
   {
     "id": 7,
-    "ja_jp": "観艦式予行",
+    "ja_jp": "\u89b3\u8266\u5f0f\u4e88\u884c",
     "english": "Ceremonial Dress Rehearsal",
     "time": 60,
     "reqFlagLevel": 5,
@@ -162,7 +162,7 @@
   },
   {
     "id": 8,
-    "ja_jp": "観艦式",
+    "ja_jp": "\u89b3\u8266\u5f0f",
     "english": "Naval Review",
     "time": 180,
     "reqFlagLevel": 6,
@@ -185,7 +185,7 @@
   },
   {
     "id": 9,
-    "ja_jp": "タンカー護衛任務",
+    "ja_jp": "\u30bf\u30f3\u30ab\u30fc\u8b77\u885b\u4efb\u52d9",
     "english": "Tanker Escort Duties",
     "time": 240,
     "reqFlagLevel": 3,
@@ -208,7 +208,7 @@
   },
   {
     "id": 10,
-    "ja_jp": "強行偵察任務",
+    "ja_jp": "\u5f37\u884c\u5075\u5bdf\u4efb\u52d9",
     "english": "Attack Force Recon Missions",
     "time": 90,
     "reqFlagLevel": 3,
@@ -231,7 +231,7 @@
   },
   {
     "id": 11,
-    "ja_jp": "ボーキサイト輸送任務",
+    "ja_jp": "\u30dc\u30fc\u30ad\u30b5\u30a4\u30c8\u8f38\u9001\u4efb\u52d9",
     "english": "Bauxite Transport Missions",
     "time": 300,
     "reqFlagLevel": 6,
@@ -254,7 +254,7 @@
   },
   {
     "id": 12,
-    "ja_jp": "資源輸送任務",
+    "ja_jp": "\u8cc7\u6e90\u8f38\u9001\u4efb\u52d9",
     "english": "Resource Transportation Missions",
     "time": 480,
     "reqFlagLevel": 4,
@@ -277,7 +277,7 @@
   },
   {
     "id": 13,
-    "ja_jp": "鼠輸送作戦",
+    "ja_jp": "\u9f20\u8f38\u9001\u4f5c\u6226",
     "english": "Rat Transportation\" Strategy",
     "time": 240,
     "reqFlagLevel": 5,
@@ -300,7 +300,7 @@
   },
   {
     "id": 14,
-    "ja_jp": "包囲陸戦隊撤収作戦",
+    "ja_jp": "\u5305\u56f2\u9678\u6226\u968a\u64a4\u53ce\u4f5c\u6226",
     "english": "Besieged Troop Evacuation Strategies",
     "time": 360,
     "reqFlagLevel": 6,
@@ -323,7 +323,7 @@
   },
   {
     "id": 15,
-    "ja_jp": "囮機動部隊支援作戦",
+    "ja_jp": "\u56ee\u6a5f\u52d5\u90e8\u968a\u652f\u63f4\u4f5c\u6226",
     "english": "Decoy Task Force Assistance Operations",
     "time": 720,
     "reqFlagLevel": 8,
@@ -346,7 +346,7 @@
   },
   {
     "id": 16,
-    "ja_jp": "艦隊決戦援護作戦",
+    "ja_jp": "\u8266\u968a\u6c7a\u6226\u63f4\u8b77\u4f5c\u6226",
     "english": "Fleet Battle Support Strategy",
     "time": 900,
     "reqFlagLevel": 10,
@@ -369,7 +369,7 @@
   },
   {
     "id": 17,
-    "ja_jp": "敵地偵察作戦",
+    "ja_jp": "\u6575\u5730\u5075\u5bdf\u4f5c\u6226",
     "english": "Enemy Territory Reconnaissance Operations",
     "time": 45,
     "reqFlagLevel": 20,
@@ -392,7 +392,7 @@
   },
   {
     "id": 18,
-    "ja_jp": "航空機輸送作戦",
+    "ja_jp": "\u822a\u7a7a\u6a5f\u8f38\u9001\u4f5c\u6226",
     "english": "Aircraft Transport Strategy",
     "time": 300,
     "reqFlagLevel": 15,
@@ -415,7 +415,7 @@
   },
   {
     "id": 19,
-    "ja_jp": "北号作戦",
+    "ja_jp": "\u5317\u53f7\u4f5c\u6226",
     "english": "Northern Offensive Operations",
     "time": 360,
     "reqFlagLevel": 20,
@@ -438,7 +438,7 @@
   },
   {
     "id": 20,
-    "ja_jp": "潜水艦哨戒任務",
+    "ja_jp": "\u6f5c\u6c34\u8266\u54e8\u6212\u4efb\u52d9",
     "english": "Submarine Patrol",
     "time": 120,
     "reqFlagLevel": 1,
@@ -461,7 +461,7 @@
   },
   {
     "id": 21,
-    "ja_jp": "北方鼠輸送作戦",
+    "ja_jp": "\u5317\u65b9\u9f20\u8f38\u9001\u4f5c\u6226",
     "english": "Northern \"Rat Transportation\" Strategy",
     "time": 140,
     "reqFlagLevel": 15,
@@ -484,7 +484,7 @@
   },
   {
     "id": 22,
-    "ja_jp": "艦隊演習",
+    "ja_jp": "\u8266\u968a\u6f14\u7fd2",
     "english": "Fleet Exercises",
     "time": 180,
     "reqFlagLevel": 30,
@@ -507,7 +507,7 @@
   },
   {
     "id": 23,
-    "ja_jp": "航空戦艦運用演習",
+    "ja_jp": "\u822a\u7a7a\u6226\u8266\u904b\u7528\u6f14\u7fd2",
     "english": "Aviation Battleship Exercises",
     "time": 240,
     "reqFlagLevel": 50,
@@ -530,7 +530,7 @@
   },
   {
     "id": 24,
-    "ja_jp": "北方航路海上護衛",
+    "ja_jp": "\u5317\u65b9\u822a\u8def\u6d77\u4e0a\u8b77\u885b",
     "english": "Guard the North Sea Route!",
     "time": 500,
     "reqFlagLevel": 50,
@@ -553,7 +553,7 @@
   },
   {
     "id": 25,
-    "ja_jp": "通商破壊作戦",
+    "ja_jp": "\u901a\u5546\u7834\u58ca\u4f5c\u6226",
     "english": "Trade Route Destruction Strategy",
     "time": 2400,
     "reqFlagLevel": 25,
@@ -576,9 +576,9 @@
   },
   {
     "id": 26,
-    "ja_jp": "敵母港空襲作戦",
+    "ja_jp": "\u6575\u6bcd\u6e2f\u7a7a\u8972\u4f5c\u6226",
     "english": "Enemy Home Port Bombing Campaign",
-    "time": 1920,
+    "time": 4800,
     "reqFlagLevel": 30,
     "reqCombinedLevel": 0,
     "reqDrum": 0,
@@ -599,7 +599,7 @@
   },
   {
     "id": 27,
-    "ja_jp": "潜水艦通商破壊作戦",
+    "ja_jp": "\u6f5c\u6c34\u8266\u901a\u5546\u7834\u58ca\u4f5c\u6226",
     "english": "Submarine Commerce Destruction Strategy",
     "time": 1200,
     "reqFlagLevel": 1,
@@ -622,7 +622,7 @@
   },
   {
     "id": 28,
-    "ja_jp": "西方海域封鎖作戦",
+    "ja_jp": "\u897f\u65b9\u6d77\u57df\u5c01\u9396\u4f5c\u6226",
     "english": "Western Sea Blockade Operation",
     "time": 1500,
     "reqFlagLevel": 30,
@@ -645,7 +645,7 @@
   },
   {
     "id": 29,
-    "ja_jp": "潜水艦派遣演習",
+    "ja_jp": "\u6f5c\u6c34\u8266\u6d3e\u9063\u6f14\u7fd2",
     "english": "Submarine Dispatch Exercises",
     "time": 1440,
     "reqFlagLevel": 50,
@@ -668,7 +668,7 @@
   },
   {
     "id": 30,
-    "ja_jp": "潜水艦派遣作戦",
+    "ja_jp": "\u6f5c\u6c34\u8266\u6d3e\u9063\u4f5c\u6226",
     "english": "Submarine Dispatch Operations",
     "time": 2880,
     "reqFlagLevel": 55,
@@ -691,7 +691,7 @@
   },
   {
     "id": 31,
-    "ja_jp": "海外艦との接触",
+    "ja_jp": "\u6d77\u5916\u8266\u3068\u306e\u63a5\u89e6",
     "english": "Contacting Foreign Vessels",
     "time": 120,
     "reqFlagLevel": 60,
@@ -714,7 +714,7 @@
   },
   {
     "id": 32,
-    "ja_jp": "遠洋練習航海",
+    "ja_jp": "\u9060\u6d0b\u7df4\u7fd2\u822a\u6d77",
     "english": "Seafaring Training",
     "time": 1440,
     "reqFlagLevel": 5,
@@ -737,7 +737,7 @@
   },
   {
     "id": 33,
-    "ja_jp": "前衛支援任務",
+    "ja_jp": "\u524d\u885b\u652f\u63f4\u4efb\u52d9",
     "english": "Node Support Expedition",
     "time": 15,
     "reqFlagLevel": 0,
@@ -760,7 +760,7 @@
   },
   {
     "id": 34,
-    "ja_jp": "艦隊決戦支援任務",
+    "ja_jp": "\u8266\u968a\u6c7a\u6226\u652f\u63f4\u4efb\u52d9",
     "english": "Boss Support Expedition",
     "time": 30,
     "reqFlagLevel": 0,
@@ -783,7 +783,7 @@
   },
   {
     "id": 35,
-    "ja_jp": "ＭＯ作戦",
+    "ja_jp": "\uff2d\uff2f\u4f5c\u6226",
     "english": "Operation MO",
     "time": 420,
     "reqFlagLevel": 40,
@@ -806,7 +806,7 @@
   },
   {
     "id": 36,
-    "ja_jp": "水上機基地建設",
+    "ja_jp": "\u6c34\u4e0a\u6a5f\u57fa\u5730\u5efa\u8a2d",
     "english": "Water Base Construction",
     "time": 540,
     "reqFlagLevel": 30,
@@ -829,7 +829,7 @@
   },
   {
     "id": 37,
-    "ja_jp": "東京急行",
+    "ja_jp": "\u6771\u4eac\u6025\u884c",
     "english": "Tokyo Express I",
     "time": 165,
     "reqFlagLevel": 50,
@@ -852,7 +852,7 @@
   },
   {
     "id": 38,
-    "ja_jp": "東京急行(弐)",
+    "ja_jp": "\u6771\u4eac\u6025\u884c(\u5f10)",
     "english": "Tokyo Express II",
     "time": 175,
     "reqFlagLevel": 65,
@@ -875,7 +875,7 @@
   },
   {
     "id": 39,
-    "ja_jp": "遠洋潜水艦作戦",
+    "ja_jp": "\u9060\u6d0b\u6f5c\u6c34\u8266\u4f5c\u6226",
     "english": "Deep-Sea Submarine Warfare",
     "time": 1800,
     "reqFlagLevel": 3,
@@ -898,7 +898,7 @@
   },
   {
     "id": 40,
-    "ja_jp": "水上機前線輸送",
+    "ja_jp": "\u6c34\u4e0a\u6a5f\u524d\u7dda\u8f38\u9001",
     "english": "Front-Line Seaplane Delivery",
     "time": 410,
     "reqFlagLevel": 25,
@@ -921,7 +921,7 @@
   },
   {
     "id": 42,
-    "ja_jp": "ミ船団護衛(一号船団)",
+    "ja_jp": "\u30df\u8239\u56e3\u8b77\u885b(\u4e00\u53f7\u8239\u56e3)",
     "english": "Mi Convoy Escort (Fleet No.1)",
     "time": 480,
     "reqFlagLevel": 45,
@@ -944,7 +944,7 @@
   },
   {
     "id": 100,
-    "ja_jp": "兵站強化任務",
+    "ja_jp": "\u5175\u7ad9\u5f37\u5316\u4efb\u52d9",
     "english": "Supply Line Strengthening Mission",
     "time": 25,
     "reqFlagLevel": 5,

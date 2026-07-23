@@ -4,8 +4,8 @@ from util.logger import Log
 
 
 class Debug(object):
-    """kcauto debug module.
-    """
+    """kcauto debug module."""
+
     @staticmethod
     def find_all(asset, similarity):
         region = Region()
