@@ -46,12 +46,10 @@ class FactoryCore(object):
         return time.time() > self.disable_timer + (60 * 60)
 
     def develop_logic(self, count):
-        self.goto()
         oil, ammo, steel, bauxite = self.read_config_develop()
         return self.develop(oil, ammo, steel, bauxite, count)
 
     def build_logic(self, count):
-        self.goto()
         oil, ammo, steel, bauxite = self.read_config_build()
         return self.build(oil, ammo, steel, bauxite, count)
 
