@@ -250,9 +250,7 @@ class QuestCore(CoreBase):
                 if deactivate_needed == True:
                     Log.log_msg(f"Deactivating quest {quest.name}.")
                     self._click_quest_idx(i)
-                    api.api.update_from_api(
-                        {KCSAPIEnum.QUEST_LIST}, process_all=False
-                    )
+                    api.api.update_from_api({KCSAPIEnum.QUEST_LIST}, process_all=False)
                     self._untrack_quest(quest)
                     sts.stats.quest.quests_deactivated += 1
                 elif deactivate_needed == False:
@@ -360,9 +358,7 @@ class QuestCore(CoreBase):
                 if self._is_relevent_quest(quest, context=context):
                     Log.log_msg(f"Activating quest {quest.name}.")
                     self._click_quest_idx(i)
-                    api.api.update_from_api(
-                        {KCSAPIEnum.QUEST_LIST}, process_all=False
-                    )
+                    api.api.update_from_api({KCSAPIEnum.QUEST_LIST}, process_all=False)
                     self._track_quest(quest)
                     remain_quest_slot -= 1
                     if remain_quest_slot <= 0:

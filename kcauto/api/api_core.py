@@ -65,7 +65,9 @@ class ApiWrapper(object):
 
             # process the received message and any that have queued up
             self._pending_messages = (
-                self._pending_messages + first_message + kca_u.kca.api_hook.pop_messages()
+                self._pending_messages
+                + first_message
+                + kca_u.kca.api_hook.pop_messages()
             )
 
             if not self._pending_messages:
