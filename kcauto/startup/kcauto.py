@@ -399,6 +399,8 @@ class Kcauto(object):
         if self._run_fleetswitch_logic("combat") == 0:
             port_api_update = True
 
+        kca_u.kca.pause_if_configured("Combat fleetswitch dryrun enabled.")
+
         self.run_repair_logic(back_to_home=port_api_update)
         self.skip_one_repair = True
 
