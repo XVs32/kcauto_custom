@@ -2,17 +2,19 @@ from util.pyvisauto import Region
 from random import choice
 import math
 
-from constants import MAX_RESOURCE, PASSIVE_TIME_INTERVAL, OVERNIGHT_TIME_INTERVAL
+from constants import PASSIVE_TIME_INTERVAL, OVERNIGHT_TIME_INTERVAL
 import api.api_core as api
 import combat.combat_core as com
 import config.config_core as cfg
 import fleet.fleet_core as flt
+import random
 import resupply.resupply_core as res
 import stats.stats_core as sts
 import util.kca as kca_u
 from util.timer import Timer
 from kca_enums.expeditions import ExpeditionEnum
 from kca_enums.kcsapi_paths import KCSAPIEnum
+from kca_enums.scroll_directions import ScrollDirectionEnum
 from util.core_base import CoreBase
 from util.logger import Log
 from util.json_data import JsonData
@@ -575,19 +577,15 @@ class ExpeditionCore(CoreBase):
 
     def _scroll_list_up(self):
         """Method to scroll the expedition list all the way up."""
-        while not kca_u.kca.exists("upper_left", "global|scroll_prev_404.png"):
-            kca_u.kca.click("expedition_scoll_up")
-            pass
+        kca_u.kca.scroll(
+            "kc", direction=ScrollDirectionEnum.UP, amount=random.randint(10, 15)
+        )
 
     def _scroll_list_down(self):
         """Method to scroll the expedition list all the way down."""
-        while not kca_u.kca.exists(
-            "expedition_scoll_down_mark", "global|scroll_next_404_1.png"
-        ) and not kca_u.kca.exists(
-            "expedition_scoll_down_mark", "global|scroll_next_404_2.png"
-        ):
-            kca_u.kca.click("expedition_scoll_down")
-            pass
+        kca_u.kca.scroll(
+            "kc", direction=ScrollDirectionEnum.DOWN, amount=random.randint(10, 15)
+        )
 
 
 expedition = ExpeditionCore()

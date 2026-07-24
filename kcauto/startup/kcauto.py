@@ -145,18 +145,20 @@ class Kcauto(object):
 
         anything_is_done = False
 
+        """@todo: check equipment pool fix 
+        """
         quest_configs = [
             {
                 "id": "Fd1",
                 "type": "develop",
                 "count": 1,
-                "is_full": equ.equipment.is_equipment_pool_full,
+                "is_full": lambda: False,
             },
             {
                 "id": "Fd3",
                 "type": "develop",
                 "count": 3,
-                "is_full": equ.equipment.is_equipment_pool_full,
+                "is_full": lambda: False,
             },
             {
                 "id": "Fd2",
@@ -297,27 +299,24 @@ class Kcauto(object):
                 MapEnum.W7_2: [MapEnum.W7_2_G, MapEnum.W7_2_M],
                 MapEnum.W7_3: [MapEnum.W7_3_E, MapEnum.W7_3_P],
                 MapEnum.W7_5: [MapEnum.W7_5_K, MapEnum.W7_5_Q, MapEnum.W7_5_T],
+                MapEnum.W5_6: [MapEnum.W5_6_G, MapEnum.W5_6_N, MapEnum.W5_6_Z],
             }
 
-            GIMMICK_MAPS = {MapEnum.W7_5: [MapEnum.W7_5_M]}
+            GIMMICK_MAPS = {
+                MapEnum.W7_5: [MapEnum.W7_5_M],
+                MapEnum.W5_6: [MapEnum.W5_6_R],
+            }
             map_enum = cfg.config.combat.sortie_map.without_quest_and_node_enum
             if map_enum in MULTI_STAGE_MAPS:
                 nav.navigate.to("combat")
                 Log.log_success(f"Multi map stage: {com.combat.sortie_map_stage}")
 
-                is_gimmick_await = False
-                if map_enum in GIMMICK_MAPS:
+                gimmick_await = com.combat.check_gimmick(map_enum)
+                if gimmick_await is not None:
                     Log.log_debug_1(f"Gimmick needs to be finished.")
-                    for gimmick_map in GIMMICK_MAPS[map_enum]:
-                        next_gimmick_map = com.combat.check_gimmick(gimmick_map)
-                        if next_gimmick_map is not None:
-                            Log.log_warn(f"Gimmick not finished.")
-                            current_stage = next_gimmick_map
-                            com.combat.insert_sortie_queue(current_stage)
-                            is_gimmick_await = True
-                            break
-
-                if is_gimmick_await == False:
+                    current_stage = gimmick_await
+                    com.combat.insert_sortie_queue(current_stage)
+                else:
                     try:
                         target_stage = MULTI_STAGE_MAPS[map_enum].index(
                             cfg.config.combat.sortie_map.without_quest_enum
@@ -424,12 +423,12 @@ class Kcauto(object):
                     )
 
                     map_is_required = False
-                    required_node = None
+                    required_node = []
                     required_rank = SortieRankEnum["E"]
                     for required_map in selected_quest.map_context:
                         if current_map == required_map.without_quest_and_node_enum:
                             map_is_required = True
-                            required_node = required_map.variant  # could be None
+                            required_node.append(required_map.variant)  # could be None
                             required_rank = selected_quest.rank_requirement.get(
                                 required_map, SortieRankEnum["E"]
                             )
@@ -446,11 +445,11 @@ class Kcauto(object):
                         last_node = com.combat.last_battle.get(com.combat.MAP_NODE)
 
                         if last_node is not None:
-                            if required_node == None:
+                            if required_node == []:
                                 Log.log_debug_1(
                                     f"No specific node required for quest {selected_quest.name}, current node: {last_node}."
                                 )
-                            elif last_node.name == required_node:
+                            elif last_node.name in required_node:
                                 Log.log_success(
                                     f"Required node {required_node} reached for quest {selected_quest.name}."
                                 )
