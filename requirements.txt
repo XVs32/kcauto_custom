@@ -31,7 +31,7 @@ pytesseract==0.3.13
 python-dateutil==2.9.0.post0
 python3-xlib==0.15
 pytweening==1.2.0
-requests==2.32.4
+requests==2.33.0
 six==1.17.0
 tqdm==4.67.1
 typing_extensions==4.14.0
