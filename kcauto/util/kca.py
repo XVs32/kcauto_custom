@@ -55,8 +55,10 @@ class Kca(object):
     visual_hook = None
     api_hook = None
     kc3_hook = None
-    css_x = None
-    css_y = None
+
+    # See https://github.com/XVs32/kcauto_custom/issues/239 for coord system info
+    viewport_x = None
+    viewport_y = None
     game_x = None
     game_y = None
     last_ui = None
@@ -203,19 +205,19 @@ class Kca(object):
                 whole_screen_rgb = np.array(whole_screen)
                 whole_screen_gray = cv2.cvtColor(whole_screen_rgb, cv2.COLOR_BGR2GRAY)
 
-                screenshot_gray = self._capture_browser_screenshot_gray()
+                viewport_screenshot = self._capture_browser_screenshot_gray()
 
                 if arg.args.parsed_args.debug_output:
-                    self._debug_save_all_browser_refs(screenshot_gray)
-                    self._debug_draw_browser_slide_windows(screenshot_gray)
+                    self._debug_save_all_browser_refs(viewport_screenshot)
+                    self._debug_draw_browser_slide_windows(viewport_screenshot)
 
                 Log.log_debug_1(
-                    f"chrome driver browser size: {(screenshot_gray.shape[1], screenshot_gray.shape[0])}"
+                    f"chrome driver browser size: {(viewport_screenshot.shape[1], viewport_screenshot.shape[0])}"
                 )
 
                 valid_ref_found = False
 
-                for ref_info in self._iter_browser_ref_regions(screenshot_gray):
+                for ref_info in self._iter_browser_ref_regions(viewport_screenshot):
                     ref_entropy = ref_info["entropy"]
                     window_x = ref_info["window_x"]
                     window_y = ref_info["window_y"]
@@ -241,7 +243,11 @@ class Kca(object):
                         "No valid reference clip found in sliding windows, falling back to full browser screenshot."
                     )
                     if self._try_browser_offset_match(
-                        whole_screen_origin, whole_screen_gray, screenshot_gray, 0, 0
+                        whole_screen_origin,
+                        whole_screen_gray,
+                        viewport_screenshot,
+                        0,
+                        0,
                     ):
                         return True
                     raise ValueError(
@@ -259,7 +265,7 @@ class Kca(object):
                 else:
                     Log.log_error("Failed to find browser offset after max retries")
 
-                    if self.css_x is None or self.css_y is None:
+                    if self.viewport_x is None or self.viewport_y is None:
                         Log.log_error(
                             "Browser offset not found. Please check your Chrome setup."
                         )
@@ -366,9 +372,11 @@ class Kca(object):
             Log.log_error(f"Match value {max_val} is below threshold")
             return False
 
-        self.css_x = whole_screen_origin[0] + max_loc[0] - start_x
-        self.css_y = whole_screen_origin[1] + max_loc[1] - start_y
-        Log.log_success(f"Browser offset found at X: {self.css_x}, Y: {self.css_y}")
+        self.viewport_x = whole_screen_origin[0] + max_loc[0] - start_x
+        self.viewport_y = whole_screen_origin[1] + max_loc[1] - start_y
+        Log.log_success(
+            f"Browser offset found at X: {self.viewport_x}, Y: {self.viewport_y}"
+        )
         return True
 
     def _debug_save_all_browser_refs(self, screenshot_gray):
@@ -1210,8 +1218,8 @@ class Kca(object):
 
         offset_x = randint(pad[0], r.w + pad[2])
         offset_y = randint(pad[1], r.h + pad[3])
-        x = r.x - self.css_x
-        y = r.y - self.css_y
+        x = r.x - self.viewport_x
+        y = r.y - self.viewport_y
 
         # Draw debug visualization
 
@@ -1258,8 +1266,8 @@ class Kca(object):
 
         offset_x = randint(pad[0], r.w + pad[2])
         offset_y = randint(pad[1], r.h + pad[3])
-        x = r.x - self.css_x
-        y = r.y - self.css_y
+        x = r.x - self.viewport_x
+        y = r.y - self.viewport_y
 
         # Draw debug visualization
 
@@ -1312,8 +1320,8 @@ class Kca(object):
 
         offset_x = randint(-pad_a[3], r_a.w + pad_a[1])
         offset_y = randint(-pad_a[0], r_a.h + pad_a[2])
-        x = r_a.x - self.css_x
-        y = r_a.y - self.css_y
+        x = r_a.x - self.viewport_x
+        y = r_a.y - self.viewport_y
 
         self.visual_hook.Input.dispatchMouseEvent(
             type="mouseMoved", x=x + offset_x, y=y + offset_y
@@ -1330,8 +1338,8 @@ class Kca(object):
 
         offset_x = randint(-pad_b[3], r_b.w + pad_b[1])
         offset_y = randint(-pad_b[0], r_b.h + pad_b[2])
-        x = r_b.x - self.css_x
-        y = r_b.y - self.css_y
+        x = r_b.x - self.viewport_x
+        y = r_b.y - self.viewport_y
 
         self.visual_hook.Input.dispatchMouseEvent(
             type="mouseMoved", x=x + offset_x, y=y + offset_y
@@ -1355,8 +1363,8 @@ class Kca(object):
 
         offset_x = randint(0, r.w)
         offset_y = randint(0, r.h)
-        x = r.x - self.css_x
-        y = r.y - self.css_y
+        x = r.x - self.viewport_x
+        y = r.y - self.viewport_y
 
         self.visual_hook.Input.dispatchMouseEvent(
             type="mouseMoved", x=x + offset_x, y=y + offset_y
