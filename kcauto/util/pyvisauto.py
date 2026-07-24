@@ -3,7 +3,6 @@ from PIL import Image
 import cv2
 import numpy as np
 import pyautogui
-import pytesseract
 from abc import ABC
 from datetime import datetime
 from random import randint
@@ -327,33 +326,6 @@ class ImageMatch(ABC):
             pyautogui.scroll(-amount)
         else:
             raise ValueError(f"Unsupported scroll direction: {direction}")
-
-    def ocr(self, lang, config):
-        """Method for running Optical Character Recognition (OCR) on the region
-        using TesseractOCR. Tesseract must be installed separately and
-        available in your path, or the path to it must be specified in the
-        ImageMatch.TESSERACT_PATH class variable.
-
-        Args:
-            lang (str): language to OCR for (see pytesseract docs).
-            config (str): pytesseract config for OCR (see pytesseract docs).
-
-        Raises:
-            Exception: raised when tesseract is not available.
-
-        Returns:
-            str: result of OCR attempt.
-        """
-        pytesseract.pytesseract.tesseract_cmd = self.TESSERACT_PATH
-        capture = self.capture()
-        try:
-            return pytesseract.image_to_string(capture, lang=lang, config=config)
-        except pytesseract.pytesseract.TesseractNotFoundError:
-            raise Exception(
-                "tesseract is not installed or it's not in your path, "
-                "or you've not specified the path to tesseract in "
-                "ImageMatch.TESSERACT_PATH"
-            )
 
     def save_screenshot(self, filename):
         """Method for saving a screenshot of the region to a file.

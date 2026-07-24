@@ -27,7 +27,6 @@ pyppeteer==2.0.0
 pyquery==2.0.1
 PyRect==0.2.0
 PyScreeze==1.0.1
-pytesseract==0.3.13
 python-dateutil==2.9.0.post0
 python3-xlib==0.15
 pytweening==1.2.0
