@@ -60,6 +60,7 @@ class CombatCore(CoreBase):
     SHIPDECK_API = {KCSAPIEnum.SORTIE_SHIPDECK}
     EQUIP_API = {KCSAPIEnum.SORTIE_END}
     MAP_API = {KCSAPIEnum.MAP_INFO_JSON}
+    MAP_API = {KCSAPIEnum.MAP_INFO_JSON}
     API_COMBAT_PHASES_TYPE1 = (
         "api_hougeki",
         "api_hougeki1",
@@ -483,7 +484,6 @@ class CombatCore(CoreBase):
                 Log.log_debug_1(f"Node type end {self.current_node.name}.")
                 conducting_sortie = False
 
-            
             self.gimmick_judge(node_type=node_type)
 
         self._click_until_port()
@@ -975,9 +975,14 @@ class CombatCore(CoreBase):
         current_map = self.map_data.enum
 
         # check if current map has gimmick
-        if current_map.without_quest_and_node_enum == self.gimmick_attampt.without_quest_and_node_enum:
-
-            if (node_type == self.NODE_TYPE_COMBAT or node_type == self.NODE_TYPE_COMBAT_FINISH):
+        if (
+            current_map.without_quest_and_node_enum
+            == self.gimmick_attampt.without_quest_and_node_enum
+        ):
+            if (
+                node_type == self.NODE_TYPE_COMBAT
+                or node_type == self.NODE_TYPE_COMBAT_FINISH
+            ):
                 if self.last_battle[self.MAP_NODE].name == self.gimmick_attampt.variant:
                     Log.log_msg(f"Battled in gimmick node {self.gimmick_attampt}")
 
@@ -1005,8 +1010,9 @@ class CombatCore(CoreBase):
     def gimmick_startup_judge(self, file_name):
 
         for display_name in self.gimmick_list:
-
-            Log.log_debug_1(f"Checking gimmick for map {display_name}, checking file {self.gimmick_list[display_name][self.GIMMICK_NODE_JSON]}, filename is {file_name}")
+            Log.log_debug_1(
+                f"Checking gimmick for map {display_name}, checking file {self.gimmick_list[display_name][self.GIMMICK_NODE_JSON]}, filename is {file_name}"
+            )
 
             if (
                 self.gimmick_list[display_name][self.GIMMICK_NODE_JSON] == file_name

@@ -250,9 +250,7 @@ class QuestCore(CoreBase):
                 if deactivate_needed == True:
                     Log.log_msg(f"Deactivating quest {quest.name}.")
                     self._click_quest_idx(i)
-                    api.api.update_from_api(
-                        {KCSAPIEnum.QUEST_LIST}, process_all=False
-                    )
+                    api.api.update_from_api({KCSAPIEnum.QUEST_LIST}, process_all=False)
                     self._untrack_quest(quest)
                     sts.stats.quest.quests_deactivated += 1
                 elif deactivate_needed == False:
@@ -360,9 +358,7 @@ class QuestCore(CoreBase):
                 if self._is_relevent_quest(quest, context=context):
                     Log.log_msg(f"Activating quest {quest.name}.")
                     self._click_quest_idx(i)
-                    api.api.update_from_api(
-                        {KCSAPIEnum.QUEST_LIST}, process_all=False
-                    )
+                    api.api.update_from_api({KCSAPIEnum.QUEST_LIST}, process_all=False)
                     self._track_quest(quest)
                     remain_quest_slot -= 1
                     if remain_quest_slot <= 0:
@@ -531,22 +527,6 @@ class QuestCore(CoreBase):
         ].next_intervals = self._generate_intervals(quest)
 
         return
-
-    def meets_min_sortie_rank(
-        self, current_context, last_sortie_result: SortieRankEnum = None
-    ) -> bool:
-        """Return True if sortie_rank (or last_sortie_result) meets quest.min_sortie_rank."""
-
-        if current_context == CONTEXT_PVP:
-            pass
-        elif current_context == CONTEXT_SORTIE:
-            return last_sortie_result.is_at_least(
-                self.auto_select_quest[CONTEXT_SORTIE].rank_requirement.get(
-                    com.combat.get_sortie_queue()[0].without_quest_enum,
-                    SortieRankEnum.E,
-                )
-            )
-            self.auto_select_quest[CONTEXT_PVP] = pvp.pvp.next_pvp_quest
 
     def _generate_intervals(self, quest: Quest):
         next_combat = (

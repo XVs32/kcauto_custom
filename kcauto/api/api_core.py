@@ -2,6 +2,7 @@ from constants import API_URL
 import sys
 from sys import platform
 import os
+import os
 
 from datetime import datetime, timedelta
 
@@ -35,7 +36,11 @@ class ApiWrapper(object):
         Log.log_debug_1("API Wrapper module initialized.")
 
     def update_from_api(
-        self, target_apis={KCSAPIEnum.ANY}, process_all=True, needed_all=True, timeout=30
+        self,
+        target_apis={KCSAPIEnum.ANY},
+        process_all=True,
+        needed_all=True,
+        timeout=30,
     ):
         """
         Args: target_apis (set of KCSAPIEnum): Set of API endpoints to wait for. Use KCSAPIEnum.ANY to wait for any API, or KCSAPIEnum.NONE to skip waiting and return immediately. Default is KCSAPIEnum.ANY.
@@ -76,7 +81,9 @@ class ApiWrapper(object):
                     )
                     break
 
-            msg = api_listener.api_listener.pop_msg(block=len(received_apis)<len(target_apis), timeout=remaining)
+            msg = api_listener.api_listener.pop_msg(
+                block=len(received_apis) < len(target_apis), timeout=remaining
+            )
             if msg == None:
                 continue
 
@@ -94,7 +101,7 @@ class ApiWrapper(object):
             elif api_type in target_apis:
                 Log.log_debug_1(f"GOT API: {request_url}")
                 is_match = True
-            
+
             if is_match:
                 Log.log_debug_1(f"Processing API: {api_type}")
                 res = self._load_api_data(api_type, msg[self.BODY])
@@ -224,12 +231,8 @@ class ApiWrapper(object):
             shp.ships.update_ship_library(get_data_ship)
             JsonData.dump_json(get_data_ship, "data|temp|get_data_ship.json")
 
-            equ.equipment.reinforce_general_category = data[
-                "api_mst_equip_exslot"
-            ]
-            equ.equipment.reinforce_special = data[
-                "api_mst_equip_exslot_ship"
-            ]
+            equ.equipment.reinforce_general_category = data["api_mst_equip_exslot"]
+            equ.equipment.reinforce_special = data["api_mst_equip_exslot_ship"]
             equipment_static_data = data["api_mst_slotitem"]
             equipment_static_data.append(EMPTY_EQUIPMENT_API)
             equipment_static_data.append(TEMP_EQUIPMENT_API)
@@ -243,9 +246,7 @@ class ApiWrapper(object):
             JsonData.dump_json(equipment_static_data, "data|temp|equipment_static.json")
             Equipment.staic_data_reload()
 
-            JsonData.dump_json(
-                data["api_mst_stype"], "data|temp|ship_type.json"
-            )
+            JsonData.dump_json(data["api_mst_stype"], "data|temp|ship_type.json")
             JsonData.dump_json(
                 data["api_mst_equip_ship"],
                 "data|temp|equipment_ship_special.json",
@@ -487,9 +488,7 @@ class ApiWrapper(object):
         equ.equipment.equipment_pool[equ.equipment.RAW] = {}
         equ.equipment.equipment_pool[equ.equipment.FREE] = []
         try:
-            equ.equipment.equipment_pool[equ.equipment.RAW] = data[
-                "api_slot_data"
-            ]
+            equ.equipment.equipment_pool[equ.equipment.RAW] = data["api_slot_data"]
 
             equipment_pool_temp: dict[str, list[Equipment]] = {}
 
