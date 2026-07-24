@@ -24,6 +24,7 @@
   "combat.retreat_limit": 4,
   "combat.retreat_points": [],
   "combat.sortie_map": "1-1",
+  "combat.paused_after_fleetswitch": false,
   "event_reset.enabled": false,
   "event_reset.farm_difficulty": 2,
   "event_reset.frequency": 3,

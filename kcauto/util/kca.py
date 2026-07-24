@@ -1598,5 +1598,12 @@ class Kca(object):
             except Exception as e:
                 print(f"Failed to save screenshot {i}: {e}")
 
+    def pause_if_configured(self, dialog=None):
+        if cfg.config.combat.paused_after_fleetswitch:
+            if dialog:
+                Log.log_msg(dialog)
+            Log.log_warn("Press Enter to continue")
+            input()
+
 
 kca = Kca()

@@ -1,9 +1,8 @@
-import sys, os
+import sys
 import io
 import signal
 import curses
 import threading
-import subprocess
 
 import time
 
@@ -20,7 +19,6 @@ import cui.util as util
 from config.macro import CONFIG_DEFAULT, CONFIG_CUI
 from util.json_data import JsonData
 
-process = None
 panels = None
 
 config = None
@@ -307,45 +305,53 @@ def open_pop_up(thread, stdscr, active_panel):
         factory.set_config(config)
 
     elif active_panel == LOG:
-        is_yes = False
-        while 1:
-            x, y = util.get_center_str_location(popup_win, "Reload config?")
-            popup_win.addstr(y - 1, x, "Reload config?", curses.color_pair(LOG))
-            if is_yes:
-                x, y = util.get_center_str_location(popup_win, "Yes")
-                popup_win.addstr(y, x, "Yes", curses.color_pair(LOG_GREEN_ACTIVE))
-                x, y = util.get_center_str_location(popup_win, "No")
-                popup_win.addstr(y + 1, x, "No", curses.color_pair(LOG))
-            else:
-                x, y = util.get_center_str_location(popup_win, "Yes")
-                popup_win.addstr(y, x, "Yes", curses.color_pair(LOG))
-                x, y = util.get_center_str_location(popup_win, "No")
-                popup_win.addstr(y + 1, x, "No", curses.color_pair(LOG_GREEN_ACTIVE))
-            popup_win.refresh()
-            for panel in panels:
-                # Refresh the sub-panels
-                panels[panel].refresh()
+        if util.paused_lock == True:
+            # Send Enter to child process
+            util.process.stdin.write("\n")
+            util.process.stdin.flush()
+            util.paused_lock = False
+        else:
+            is_yes = False
+            while 1:
+                x, y = util.get_center_str_location(popup_win, "Reload config?")
+                popup_win.addstr(y - 1, x, "Reload config?", curses.color_pair(LOG))
+                if is_yes:
+                    x, y = util.get_center_str_location(popup_win, "Yes")
+                    popup_win.addstr(y, x, "Yes", curses.color_pair(LOG_GREEN_ACTIVE))
+                    x, y = util.get_center_str_location(popup_win, "No")
+                    popup_win.addstr(y + 1, x, "No", curses.color_pair(LOG))
+                else:
+                    x, y = util.get_center_str_location(popup_win, "Yes")
+                    popup_win.addstr(y, x, "Yes", curses.color_pair(LOG))
+                    x, y = util.get_center_str_location(popup_win, "No")
+                    popup_win.addstr(
+                        y + 1, x, "No", curses.color_pair(LOG_GREEN_ACTIVE)
+                    )
+                popup_win.refresh()
+                for panel in panels:
+                    # Refresh the sub-panels
+                    panels[panel].refresh()
 
-            # Wait for next input
-            key = stdscr.getch()
+                # Wait for next input
+                key = stdscr.getch()
 
-            if key == curses.KEY_DOWN or key == ord("j"):
-                is_yes = False
-            elif key == curses.KEY_UP or key == ord("k"):
-                is_yes = True
-            elif key == KEY_ENTER:
-                if is_yes == True:
-                    # open the file for writing
-                    JsonData.dump_json(config, CONFIG_CUI, pretty=True)
+                if key == curses.KEY_DOWN or key == ord("j"):
+                    is_yes = False
+                elif key == curses.KEY_UP or key == ord("k"):
+                    is_yes = True
+                elif key == KEY_ENTER:
+                    if is_yes == True:
+                        # open the file for writing
+                        JsonData.dump_json(config, CONFIG_CUI, pretty=True)
 
-                    # send a SIGTERM signal to terminate the subprocess
-                    if util.psutil_proc and util.psutil_proc.is_running():
-                        util.psutil_proc.kill()
-                        util.psutil_proc.wait(timeout=5)
-                        util.print_log(panels[LOG], "kcauto terminated\n")
+                        # send a SIGTERM signal to terminate the subprocess
+                        if util.psutil_proc and util.psutil_proc.is_running():
+                            util.psutil_proc.kill()
+                            util.psutil_proc.wait(timeout=5)
+                            util.print_log(panels[LOG], "kcauto terminated\n")
 
-                    thread = kc_auto_kick_start(panels[LOG])
-                break
+                        thread = kc_auto_kick_start(panels[LOG])
+                    break
 
     util.pop_up_lock = False
 

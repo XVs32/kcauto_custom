@@ -31,7 +31,7 @@ class LBASGroup(object):
     def needs_rest(self):
         if not self.is_active or not cfg.config.combat.check_lbas_fatigue:
             return False
-        if self.highest_fatigue > LBASFatigueEnum.NO_FATIGUE:
+        if self.highest_fatigue > LBASFatigueEnum.NORMAL_FATIGUE:
             return True
         return False
 

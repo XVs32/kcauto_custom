@@ -46,12 +46,10 @@ class FactoryCore(object):
         return time.time() > self.disable_timer + (60 * 60)
 
     def develop_logic(self, count):
-        self.goto()
         oil, ammo, steel, bauxite = self.read_config_develop()
         return self.develop(oil, ammo, steel, bauxite, count)
 
     def build_logic(self, count):
-        self.goto()
         oil, ammo, steel, bauxite = self.read_config_build()
         return self.build(oil, ammo, steel, bauxite, count)
 
@@ -169,7 +167,7 @@ class FactoryCore(object):
                     while not kca_u.kca.exists("left", "nav|side_menu_home.png"):
                         kca_u.kca.r["shipgirl"].click()
                         kca_u.kca.r["top"].hover()
-                    kca_u.kca.wait("upper", "nav|screen_development_ready.png", 20)
+                    kca_u.kca.wait("upper_left", "factory|factory_init.png", 20)
 
             """place the order on a empty slot"""
             for j in range(1, 3):
@@ -223,7 +221,7 @@ class FactoryCore(object):
                             resource -= 1 * step_multiplier
 
                     kca_u.kca.r["order_confirm_region"].click()
-                    kca_u.kca.wait("upper", "nav|screen_development_ready.png", 20)
+                    kca_u.kca.wait("upper_left", "factory|factory_init.png", 20)
 
                     count -= 1
                     if count <= 0:

@@ -13,6 +13,7 @@ WINDOW_MIN_WIDTH = 45
 POP_UP_MAX_HEIGHT = 20
 
 pop_up_lock = False
+paused_lock = False
 
 log_buffer = []
 
@@ -98,9 +99,9 @@ def run_external_program(panel):
         cmd = [python_cmd, "kcauto"] + common_args
         msg = f"{filename} does not exist\nStart kcauto in Python instead\n"
 
-    # 3. 統一執行 subprocess
     process = subprocess.Popen(
         cmd,
+        stdin=subprocess.PIPE,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         text=True,
@@ -119,6 +120,10 @@ def run_external_program(panel):
         output = line.strip()
         if output:
             print_log(panel, f"{output}\n")
+
+            if "Press Enter to continue" in output:
+                global paused_lock
+                paused_lock = True
 
     process.stdout.close()
     process.wait()

@@ -37,6 +37,7 @@ class ConfigCombat(ConfigBase):
     _port_check = False
     _clear_stop = False
     _override = False
+    _paused_after_fleetswitch = False
 
     def __init__(self, config):
         Log.log_debug_1("Combat config init called")
@@ -67,6 +68,7 @@ class ConfigCombat(ConfigBase):
         self.port_check = config["combat.port_check"]
         self.clear_stop = config["combat.clear_stop"]
         self._override = config["combat.override"]
+        self._paused_after_fleetswitch = config["combat.paused_after_fleetswitch"]
 
     def config_override(self, config):
         if "combat.fleet_mode" in config:
@@ -114,6 +116,8 @@ class ConfigCombat(ConfigBase):
             self.port_check = config["combat.port_check"]
         if "combat.clear_stop" in config:
             self.clear_stop = config["combat.clear_stop"]
+        if "combat.paused_after_fleetswitch" in config:
+            self._paused_after_fleetswitch = config["combat.paused_after_fleetswitch"]
 
     @property
     def enabled(self):
@@ -439,3 +443,13 @@ class ConfigCombat(ConfigBase):
         if not LBASGroupEnum.contains_value(group):
             raise ValueError("Invalid group id specified")
         return getattr(self, f"lbas_group_{group}_nodes")
+
+    @property
+    def paused_after_fleetswitch(self):
+        return self._paused_after_fleetswitch
+
+    @paused_after_fleetswitch.setter
+    def paused_after_fleetswitch(self, value):
+        if type(value) is not bool:
+            raise ValueError("Paused after fleetswitch is not a bool.")
+        self._paused_after_fleetswitch = value
