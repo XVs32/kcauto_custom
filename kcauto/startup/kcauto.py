@@ -152,13 +152,17 @@ class Kcauto(object):
                 "id": "Fd1",
                 "type": "develop",
                 "count": 1,
-                "is_full": lambda: False,
+                "is_full": lambda: (
+                    False
+                ),  # @todo check equipment pool full, disabled due to api returning wrong data, did affect KC3 too
             },
             {
                 "id": "Fd3",
                 "type": "develop",
                 "count": 3,
-                "is_full": lambda: False,
+                "is_full": lambda: (
+                    False
+                ),  # @todo check equipment pool full, disabled due to api returning wrong data, did affect KC3 too
             },
             {
                 "id": "Fd2",
@@ -398,6 +402,8 @@ class Kcauto(object):
         port_api_update = False
         if self._run_fleetswitch_logic("combat") == 0:
             port_api_update = True
+
+        kca_u.kca.pause_if_configured("Combat fleetswitch dryrun enabled.")
 
         self.run_repair_logic(back_to_home=port_api_update)
         self.skip_one_repair = True
