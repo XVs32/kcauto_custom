@@ -1265,7 +1265,7 @@ class Kca(object):
             action=ActionEnum.SCROLL,
         )
 
-        self.visual_hook.Input.dispatchMouseEvent(
+        self.api_hook.Input.dispatchMouseEvent(
             type="mouseMoved", x=x + offset_x, y=y + offset_y
         )
         self.sleep()
@@ -1281,7 +1281,7 @@ class Kca(object):
             raise ValueError(f"Unsupported scroll direction: {direction}")
 
         for _ in range(amount):
-            self.visual_hook.Input.dispatchMouseEvent(
+            self.api_hook.Input.dispatchMouseEvent(
                 type="mouseWheel",
                 x=x + offset_x,
                 y=y + offset_y,
