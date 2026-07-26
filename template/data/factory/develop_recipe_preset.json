@@ -9,7 +9,7 @@
     "factory.develop_secretary": "CV",
     "comment": "Radar recipe. CV secretary recommended."
   },
-  "91 & \u4e09\u5f0f": {
+  "91 & AA shell": {
     "factory.develop_recipe": [
       10,
       90,
@@ -19,7 +19,7 @@
     "factory.develop_secretary": "BB",
     "comment": "Type 91 AP shell & Type 3 shell. BB secretary."
   },
-  "463 \u7832": {
+  "463 gun": {
     "factory.develop_recipe": [
       10,
       251,
@@ -29,7 +29,7 @@
     "factory.develop_secretary": "BB",
     "comment": "46cm gun recipe. Yamato class recommended."
   },
-  "\u767a\u7159\u88c5\u7f6e": {
+  "Smoke generator": {
     "factory.develop_recipe": [
       10,
       10,
@@ -39,7 +39,7 @@
     "factory.develop_secretary": "DD",
     "comment": "Smoke generator. DD secretary required."
   },
-  "\u5927\u767a": {
+  "Landing craft": {
     "factory.develop_recipe": [
       10,
       10,
@@ -88,5 +88,15 @@
     ],
     "factory.develop_secretary": "CV",
     "comment": "Land-based attack aircraft recipe. CV secretary."
+  },
+  "Swordfish": {
+    "factory.develop_recipe": [
+      20,
+      60,
+      10,
+      110
+    ],
+    "factory.develop_secretary": 14860,
+    "comment": "Swordfish recipe. Ark royal is needed"
   }
 }
