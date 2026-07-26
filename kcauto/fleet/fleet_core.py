@@ -17,7 +17,7 @@ from constants import AUTO_PRESET
 
 import os
 import copy
-
+import sys
 
 class FleetCore(object):
     EMPTY = None
@@ -384,7 +384,7 @@ class FleetCore(object):
                         Log.log_error(
                             f"Something went wrong when setting up Noro6 {preset['name']} fleet, exiting..."
                         )
-                        exit()
+                        sys.exit()
 
                     ship.equipments = []
 
