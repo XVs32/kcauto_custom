@@ -32,6 +32,7 @@ from kca_enums.maps import MapEnum
 from kca_enums.scroll_directions import ScrollDirectionEnum
 
 import util.coordinate_system as coordinate_system
+import util.click_tracker as clt
 from util.exceptions import ChromeCrashException
 from util.logger import Log
 
@@ -49,16 +50,30 @@ class Kca(object):
     kc3_hook = None
 
     # See https://github.com/XVs32/kcauto_custom/issues/239 for coord system info
-    viewport_x = None
-    viewport_y = None
-    game_x = None
-    game_y = None
-    last_ui = None
-    r = {}
     html = None
     kc3_id = None
 
     screenshot_log = [None, None, None, None, None]
+
+    @property
+    def r(self):
+        return coordinate_system.coor.r
+
+    @property
+    def last_ui(self):
+        return coordinate_system.coor.last_ui
+
+    @last_ui.setter
+    def last_ui(self, value):
+        coordinate_system.coor.last_ui = value
+
+    @property
+    def game_x(self):
+        return coordinate_system.coor.game_x
+
+    @property
+    def game_y(self):
+        return coordinate_system.coor.game_y
 
     def __init__(self):
         if self.kc3_id == None:
@@ -142,6 +157,88 @@ class Kca(object):
             if event["method"] == "Inspector.targetCrashed":
                 Log.log_warn("Chrome crash detected.")
                 raise ChromeCrashException
+
+    def find_kancolle(self):
+        """Method that finds the Kancolle game on-screen and determine the UI
+        being used as well as the position of the game. On first startup the
+        method will look for all UIs until one is found; on subsequent runs
+        it will first look for the last found UI. Generates or modifies
+        pre-defined regions accordingly.
+
+        Raises:
+            FindFailed: could not find the game on-screen.
+        """
+        Log.log_msg("Finding kancolle.")
+        ref_r = None
+        attempt = 0
+        whole_screen_region = Region()
+
+        # look for last-seen UI, if set
+        if self.last_ui:
+            try:
+                ref_r = self.find(
+                    whole_screen_region, f"global|kc_ref_point_{self.last_ui}.png", EXACT
+                )
+            except FindFailed:
+                self.last_ui = None
+                Log.log_debug_1("Last known UI not found.")
+
+        # if last-seen UI was not found, or if kcauto is in first start
+        while not ref_r:
+            try:
+                ref_r = self.find(whole_screen_region, "global|kc_ref_point_1.png", EXACT)
+                self.last_ui = 1
+                Log.log_debug_1("Using UI 1 or 2")
+                break
+            except FindFailed:
+                Log.log_debug_1("Not using UI 1 or 2")
+            try:
+                ref_r = self.find(whole_screen_region, "global|kc_ref_point_2.png", EXACT)
+                self.last_ui = 2
+                Log.log_debug_1("Using UI 3")
+                break
+            except FindFailed:
+                Log.log_debug_1("Not using UI 3")
+            try:
+                ref_r = self.find(whole_screen_region, "global|kc_ref_point_3.png", EXACT)
+                self.last_ui = 3
+                Log.log_debug_1("Using UI 4 or 5")
+                break
+            except FindFailed:
+                Log.log_debug_1("Not using UI 4 or 5")
+            attempt += 1
+            self.sleep(1)
+            if attempt > 3:
+                Log.log_error("Could not find Kancolle reference point.")
+                raise FindFailed()
+
+        new_game_x = ref_r.x + coordinate_system.coor.KC_REF_OFFSET[0]
+        new_game_y = ref_r.y + coordinate_system.coor.KC_REF_OFFSET[1]
+        Log.log_debug_1(f"Game X:{new_game_x}, Y:{new_game_y}")
+
+        # define click callback as needed
+        if not arg.args.parsed_args.no_click_track:
+            ImageMatch.click_callback = clt.click_tracker.track_click
+
+        # define click and hover method overrides as needed
+        if cfg.config.general.interaction_mode is InteractionModeEnum.CHROME_DRIVER:
+            ImageMatch.override_click_method = self._override_click_method
+            ImageMatch.override_hover_method = self._override_hover_method
+            ImageMatch.override_scroll_method = self._override_scroll_method
+
+        if new_game_x != coordinate_system.coor.game_x or new_game_y != coordinate_system.coor.game_y:
+            if not coordinate_system.coor.game_x or coordinate_system.coor.game_y:
+                Log.log_success("Game found. Initializing regions.")
+            else:
+                Log.log_msg("Game has moved. Shifting regions.")
+            coordinate_system.coor.game_x = new_game_x
+            coordinate_system.coor.game_y = new_game_y
+            coordinate_system.coor._update_regions()
+
+        coordinate_system.coor.find_game_window_offset()
+
+        return True
+
 
     def start_kancolle(self):
         """Method that attempts to start Kancolle from the game's splash
@@ -505,22 +602,24 @@ class Kca(object):
             corners (list, optional): List of corner points visited
         """
 
-        if self.game_x is None or self.game_y is None:
+        if coordinate_system.coor.game_x is None or coordinate_system.coor.game_y is None:
             return
-        screen = Region(self.game_x, self.game_y, GAME_W, GAME_H)
+        screen = Region(coordinate_system.coor.game_x, coordinate_system.coor.game_y, GAME_W, GAME_H)
         screen = screen.capture()
         screen = cv2.cvtColor(np.array(screen), cv2.COLOR_RGB2BGR)
 
+        src = Region()
+        src.x = corners[0]
+        src.y = corners[1]
+        src.w = corners[2] - corners[0]
+        src.h = corners[3] - corners[1]
+
+        dst = coordinate_system.coor.convert(src, coordinate_system.coor.WHOLE_TO_GAME)
+
         cv2.rectangle(
             screen,
-            (
-                int(corners[0] - self.game_x),
-                int(corners[1] - self.game_y),
-            ),  # Top-left point
-            (
-                int(corners[2] - self.game_x),
-                int(corners[3] - self.game_y),
-            ),  # Bottom-right point
+            (int(dst.x), int(dst.y)),  # Top-left point
+            (int(dst.x + dst.w), int(dst.y + dst.h)),  # Bottom-right point
             border_color,
             2,
         )
@@ -563,14 +662,14 @@ class Kca(object):
         received_expeditions = False
         while self.find_expedition_flag():
             Log.log_msg("Expedition received.")
-            self.r["shipgirl"].click()
+            coordinate_system.coor.r["shipgirl"].click()
             api.api.update_from_api({KCSAPIEnum.PORT})
             sts.stats.expedition.expeditions_received += 1
             self.wait("lower_right_corner", "global|next.png", 20)
             while self.exists("lower_right_corner", "global|next.png"):
                 self.sleep()
-                self.r["shipgirl"].click()
-                self.r["top"].hover()
+                coordinate_system.coor.r["shipgirl"].click()
+                coordinate_system.coor.r["top"].hover()
                 received_expeditions = True
                 self.sleep()
 
@@ -694,8 +793,9 @@ class Kca(object):
 
         offset_x = randint(pad[0], r.w + pad[2])
         offset_y = randint(pad[1], r.h + pad[3])
-        x = r.x - self.viewport_x
-        y = r.y - self.viewport_y
+
+        dst = Region()
+        dst = coordinate_system.coor.convert(r, coordinate_system.coor.WHOLE_TO_VIEWPORT) 
 
         # Draw debug visualization
 
@@ -710,21 +810,21 @@ class Kca(object):
 
         # self.visual_hook.Input.synthesizeTapGesture(x= x + offset_x , y=y + offset_y)
         self.visual_hook.Input.dispatchMouseEvent(
-            type="mouseMoved", x=x + offset_x, y=y + offset_y
+            type="mouseMoved", x=dst.x + offset_x, y=dst.y + offset_y
         )
         self.sleep()
         self.visual_hook.Input.dispatchMouseEvent(
             type="mousePressed",
-            x=x + offset_x,
-            y=y + offset_y,
+            x=dst.x + offset_x,
+            y=dst.y + offset_y,
             clickCount=1,
             button="left",
         )
         self.sleep(0.1, 0.2)
         self.visual_hook.Input.dispatchMouseEvent(
             type="mouseReleased",
-            x=x + offset_x,
-            y=y + offset_y,
+            x=dst.x + offset_x,
+            y=dst.y + offset_y,
             clickCount=1,
             button="left",
         )
@@ -742,8 +842,9 @@ class Kca(object):
 
         offset_x = randint(pad[0], r.w + pad[2])
         offset_y = randint(pad[1], r.h + pad[3])
-        x = r.x - self.viewport_x
-        y = r.y - self.viewport_y
+
+        dst = Region()
+        dst = coordinate_system.coor.convert(r, coordinate_system.coor.WHOLE_TO_VIEWPORT) 
 
         # Draw debug visualization
 
@@ -762,7 +863,7 @@ class Kca(object):
         )
 
         self.visual_hook.Input.dispatchMouseEvent(
-            type="mouseMoved", x=x + offset_x, y=y + offset_y
+            type="mouseMoved", x=dst.x + offset_x, y=dst.y + offset_y
         )
         self.sleep()
 
@@ -779,8 +880,8 @@ class Kca(object):
         for _ in range(amount):
             self.visual_hook.Input.dispatchMouseEvent(
                 type="mouseWheel",
-                x=x + offset_x,
-                y=y + offset_y,
+                x=dst.x + offset_x,
+                y=dst.y + offset_y,
                 deltaX=0,
                 deltaY=delta_y,
             )
@@ -794,37 +895,39 @@ class Kca(object):
             pad (tuple): padding parameter used to modify click coordinate
         """
 
+        dst_a = Region()
+        dst_a = coordinate_system.coor.convert(r_a, coordinate_system.coor.WHOLE_TO_VIEWPORT) 
+
         offset_x = randint(-pad_a[3], r_a.w + pad_a[1])
         offset_y = randint(-pad_a[0], r_a.h + pad_a[2])
-        x = r_a.x - self.viewport_x
-        y = r_a.y - self.viewport_y
 
         self.visual_hook.Input.dispatchMouseEvent(
-            type="mouseMoved", x=x + offset_x, y=y + offset_y
+            type="mouseMoved", x=dst_a.x + offset_x, y=dst_a.y + offset_y
         )
         self.sleep()
         self.visual_hook.Input.dispatchMouseEvent(
             type="mousePressed",
-            x=x + offset_x,
-            y=y + offset_y,
+            x=dst_a.x + offset_x,
+            y=dst_a.y + offset_y,
             clickCount=1,
             button="left",
         )
         self.sleep()
 
+        dst_b = Region()
+        dst_b = coordinate_system.coor.convert(r_b, coordinate_system.coor.WHOLE_TO_VIEWPORT) 
+
         offset_x = randint(-pad_b[3], r_b.w + pad_b[1])
         offset_y = randint(-pad_b[0], r_b.h + pad_b[2])
-        x = r_b.x - self.viewport_x
-        y = r_b.y - self.viewport_y
 
         self.visual_hook.Input.dispatchMouseEvent(
-            type="mouseMoved", x=x + offset_x, y=y + offset_y
+            type="mouseMoved", x=dst_b.x + offset_x, y=dst_b.y + offset_y
         )
         self.sleep()
         self.visual_hook.Input.dispatchMouseEvent(
             type="mouseReleased",
-            x=x + offset_x,
-            y=y + offset_y,
+            x=dst_b.x + offset_x,
+            y=dst_b.y + offset_y,
             clickCount=1,
             button="left",
         )
@@ -837,13 +940,14 @@ class Kca(object):
             r (Region, Match): Region/Match region to hover
         """
 
+        dst = Region()
+        dst = coordinate_system.coor.convert(r, coordinate_system.coor.WHOLE_TO_VIEWPORT) 
+
         offset_x = randint(0, r.w)
         offset_y = randint(0, r.h)
-        x = r.x - self.viewport_x
-        y = r.y - self.viewport_y
 
         self.visual_hook.Input.dispatchMouseEvent(
-            type="mouseMoved", x=x + offset_x, y=y + offset_y
+            type="mouseMoved", x=dst.x + offset_x, y=dst.y + offset_y
         )
 
     def cdt_init(self, host="localhost", target="visual"):
@@ -863,6 +967,7 @@ class Kca(object):
             self.api_hook = PyChromeDevTools.ChromeInterface(host=host, port=port)
         elif target == "visual":
             self.visual_hook = PyChromeDevTools.ChromeInterface(host=host, port=port)
+            coordinate_system.coor.visual_hook = self.visual_hook
         elif target == "kc3":
             self.kc3_hook = PyChromeDevTools.ChromeInterface(host=host, port=port)
         else:

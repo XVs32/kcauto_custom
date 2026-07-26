@@ -2,6 +2,7 @@
 from enum import Enum
 import cv2
 import numpy as np
+import time
 
 from datetime import datetime
 import os
@@ -11,7 +12,6 @@ import config.config_core as cfg
 from kca_enums.interaction_modes import InteractionModeEnum
 from util.logger import Log
 from util.pyvisauto import Region, FindFailed, ImageMatch
-import util.click_tracker as clt
 
 from constants import (
     GAME_W,
@@ -29,10 +29,15 @@ class CoordinateSystem(object):
     BROWSER_REF_SIZE = 100
     KC_REF_OFFSET = (-144, 0)
 
+    visual_hook = None
+    last_ui = None
+
     viewport_x = None
     viewport_y = None
     game_x = None
     game_y = None
+
+    r = {}
 
     WHOLE_TO_VIEWPORT = 0
     VIEWPORT_TO_WHOLE = 1
@@ -121,7 +126,7 @@ class CoordinateSystem(object):
                 Log.log_error(f"Attempt {retry + 1}/{max_retries} failed: {str(e)}")
                 retry += 1
                 if retry < max_retries:
-                    self.sleep(retry_delay)
+                    time.sleep(retry_delay)
                     continue
                 else:
                     Log.log_error("Failed to find browser offset after max retries")
@@ -317,112 +322,36 @@ class CoordinateSystem(object):
         probabilities = probabilities[probabilities > 0]
         return float(-np.sum(probabilities * np.log2(probabilities)))
 
-    def find_kancolle(self):
-        """Method that finds the Kancolle game on-screen and determine the UI
-        being used as well as the position of the game. On first startup the
-        method will look for all UIs until one is found; on subsequent runs
-        it will first look for the last found UI. Generates or modifies
-        pre-defined regions accordingly.
 
-        Raises:
-            FindFailed: could not find the game on-screen.
-        """
-        Log.log_msg("Finding kancolle.")
-        ref_r = None
-        attempt = 0
-        whole_screen_region = Region()
 
-        # look for last-seen UI, if set
-        if self.last_ui:
-            try:
-                ref_r = self.find(
-                    whole_screen_region, f"global|kc_ref_point_{self.last_ui}.png", EXACT
-                )
-            except FindFailed:
-                self.last_ui = None
-                Log.log_debug_1("Last known UI not found.")
-
-        # if last-seen UI was not found, or if kcauto is in first start
-        while not ref_r:
-            try:
-                ref_r = self.find(whole_screen_region, "global|kc_ref_point_1.png", EXACT)
-                self.last_ui = 1
-                Log.log_debug_1("Using UI 1 or 2")
-                break
-            except FindFailed:
-                Log.log_debug_1("Not using UI 1 or 2")
-            try:
-                ref_r = self.find(whole_screen_region, "global|kc_ref_point_2.png", EXACT)
-                self.last_ui = 2
-                Log.log_debug_1("Using UI 3")
-                break
-            except FindFailed:
-                Log.log_debug_1("Not using UI 3")
-            try:
-                ref_r = self.find(whole_screen_region, "global|kc_ref_point_3.png", EXACT)
-                self.last_ui = 3
-                Log.log_debug_1("Using UI 4 or 5")
-                break
-            except FindFailed:
-                Log.log_debug_1("Not using UI 4 or 5")
-            attempt += 1
-            self.sleep(1)
-            if attempt > 3:
-                Log.log_error("Could not find Kancolle reference point.")
-                raise FindFailed()
-
-        new_game_x = ref_r.x + self.KC_REF_OFFSET[0]
-        new_game_y = ref_r.y + self.KC_REF_OFFSET[1]
-        Log.log_debug_1(f"Game X:{new_game_x}, Y:{new_game_y}")
-
-        # define click callback as needed
-        if not arg.args.parsed_args.no_click_track:
-            ImageMatch.click_callback = clt.click_tracker.track_click
-
-        # define click and hover method overrides as needed
-        if cfg.config.general.interaction_mode is InteractionModeEnum.CHROME_DRIVER:
-            ImageMatch.override_click_method = self._override_click_method
-            ImageMatch.override_hover_method = self._override_hover_method
-            ImageMatch.override_scroll_method = self._override_scroll_method
-
-        if new_game_x != self.game_x or new_game_y != self.game_y:
-            if not self.game_x or self.game_y:
-                Log.log_success("Game found. Initializing regions.")
-            else:
-                Log.log_msg("Game has moved. Shifting regions.")
-            self.game_x = new_game_x
-            self.game_y = new_game_y
-            self._update_regions()
-
-        self.find_game_window_offset()
-
-        return True
-
-    def convert(self, dst, src, mode):
+    def convert(self, src, mode):
+        dst = Region()
         if mode == self.WHOLE_TO_VIEWPORT:
             dst.x = src.x - self.viewport_x
             dst.y = src.y - self.viewport_y
-            return 
+            return dst
         elif mode == self.VIEWPORT_TO_WHOLE:
             dst.x = src.x + self.viewport_x
             dst.y = src.y + self.viewport_y
-            return 
+            return  dst
         elif mode == self.WHOLE_TO_GAME:
             dst.x = src.x -  self.game_x
             dst.y = src.y - self.game_y
-            return 
+            return dst
         elif mode == self.GAME_TO_WHOLE:
             dst.x = src.x + self.game_x
             dst.y = src.y + self.game_y
-            return 
+            return dst
         elif mode == self.VIEWPORT_TO_GAME:
             dst.x = src.x + self.viewport_x - self.game_x
             dst.y = src.y + self.viewport_y - self.game_y
-            return 
+            return dst
         elif mode == self.GAME_TO_VIEWPORT:
             dst.x = src.x + self.game_x - self.viewport_x
             dst.y = src.y + self.game_y - self.viewport_y
-            return 
+            return dst
+        else:
+            raise ValueError("Invalid mode")
 
     def _update_regions(self):
         """Method that generates or updates all pre-defined regions

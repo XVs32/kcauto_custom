@@ -5,7 +5,6 @@ import config.config_core as cfg
 import stats.stats_core as sts
 import expedition.expedition_core as exp
 
-import util.coordinate_system as coordinate_system
 import util.kca as kca_u
 from util.logger import Log
 
@@ -87,7 +86,7 @@ class Recovery(object):
             kca_u.kca.sleep(0.5)
 
         try:
-            if coordinate_system.coor.find_kancolle():
+            if kca_u.kca.find_kancolle():
                 return True
         except FindFailed:
             pass
@@ -115,7 +114,7 @@ class Recovery(object):
                 region = kca_u.kca.find(screen, "global|next_alt.png", cached=True)
 
             elif kca_u.kca.exists(screen, "nav|home_menu_sortie.png"):
-                coordinate_system.coor.find_kancolle()
+                kca_u.kca.find_kancolle()
                 kca_u.kca.receive_expedition()
                 return True
 
