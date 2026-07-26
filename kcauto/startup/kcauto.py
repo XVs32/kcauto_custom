@@ -17,6 +17,7 @@ import ships.ships_core as shp
 import ships.equipment_core as equ
 import stats.stats_core as sts
 import util.kca as kca_u
+import util.coordinate_system as coordinate_system
 from fleet.noro6 import Noro6
 from kca_enums.expeditions import ExpeditionEnum
 from kca_enums.sorite_rank import SortieRankEnum
@@ -45,7 +46,7 @@ class Kcauto(object):
         kca_u.kca.start_kancolle()
 
     def find_kancolle(self):
-        kca_u.kca.find_kancolle()
+        coordinate_system.coor.find_kancolle()
 
     def hook_health_check(self):
         kca_u.kca.hook_health_check()
