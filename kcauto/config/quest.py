@@ -7,8 +7,8 @@ class ConfigQuest(ConfigBase):
 
     def __init__(self, config):
         super().__init__(config)
-        self.enabled = config['quest.enabled']
-        self.quests = config['quest.quests']
+        self.enabled = config["quest.enabled"]
+        self.quests = config["quest.quests"]
 
     @property
     def enabled(self):
@@ -17,8 +17,7 @@ class ConfigQuest(ConfigBase):
     @enabled.setter
     def enabled(self, value):
         if type(value) is not bool:
-            raise ValueError(
-                "Specified value for quests enabled is not a boolean.")
+            raise ValueError("Specified value for quests enabled is not a boolean.")
         self._enabled = value
 
     @property

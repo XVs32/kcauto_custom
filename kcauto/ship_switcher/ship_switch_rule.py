@@ -4,9 +4,12 @@ import fleet.fleet_core as flt
 import repair.repair_core as rep
 from kca_enums.damage_states import DamageStateEnum
 from kca_enums.ship_switcher_slots import (
-    ShipSwitcherConditionSlot0Enum, ShipSwitcherCriteriaSlot0Enum,
-    ShipSwitcherOperatorEnum, ShipSwitcherCriteriaSlot8Enum,
-    ShipSwitcherCriteriaSlot9Enum)
+    ShipSwitcherConditionSlot0Enum,
+    ShipSwitcherCriteriaSlot0Enum,
+    ShipSwitcherOperatorEnum,
+    ShipSwitcherCriteriaSlot8Enum,
+    ShipSwitcherCriteriaSlot9Enum,
+)
 from kca_enums.ship_types import ShipTypeEnum
 from util.logger import Log
 
@@ -18,10 +21,10 @@ class ShipSwitchRule(object):
 
     def __init__(self, slot_id, rule_string):
         self.slot_id = slot_id
-        split_rule = rule_string.split('|')
+        split_rule = rule_string.split("|")
         conditions = split_rule[0]
         criteria = split_rule[1]
-        
+
         """self.conditions and self.criteria init---by XVs32"""
         """Or the "conditions" and "criteria" will stay for the next slot"""
         """For example, having the following rules in the config json file:"""
@@ -36,9 +39,9 @@ class ShipSwitchRule(object):
         self.conditions = []
         self.criteria = []
 
-        split_conditions = conditions.split(',')
+        split_conditions = conditions.split(",")
         for condition in split_conditions:
-            split_cond = condition.split(':')
+            split_cond = condition.split(":")
             split_cond[0] = ShipSwitcherConditionSlot0Enum(split_cond[0])
             if split_cond[1]:
                 split_cond[1] = ShipSwitcherOperatorEnum(split_cond[1])
@@ -50,9 +53,9 @@ class ShipSwitchRule(object):
                 split_cond[2] = int(split_cond[2])
             self.conditions.append(split_cond)
 
-        split_criteria = criteria.split(',')
+        split_criteria = criteria.split(",")
         for criterion in split_criteria:
-            split_crit = criterion.split(':')
+            split_crit = criterion.split(":")
             split_crit[0] = ShipSwitcherCriteriaSlot0Enum(split_crit[0])
             if split_crit[0] is ShipSwitcherCriteriaSlot0Enum.SHIP:
                 split_crit[1] = int(split_crit[1])
@@ -81,56 +84,64 @@ class ShipSwitchRule(object):
         """Return None if the slot is empty -- XVs32"""
         if len(flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][1].ships) < self.slot_id:
             return None
-            
+
         return flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][1].ships[self.slot_id - 1]
 
     def is_switch_out(self):
         slot_ship = self.ship_in_slot
-        
+
         for condition in self.conditions:
-            
             """This slot could be switch if it is empty -- XVs32"""
             if slot_ship == None:
                 return True
-            
+
             op = self._get_operator(condition[1])
-            
+
             if condition[0] is ShipSwitcherConditionSlot0Enum.LEVEL:
                 if op(slot_ship.level, condition[2]):
-                    Log.log_debug_1("""log_msg log_debug"""
+                    Log.log_debug_1(
+                        """log_msg log_debug"""
                         f"{slot_ship.name} in Slot {self.slot_id} has met "
-                        "level threshold to be switched out.")
+                        "level threshold to be switched out."
+                    )
 
                     return True
             elif condition[0] is ShipSwitcherConditionSlot0Enum.DAMAGE:
                 if op(slot_ship.damage, condition[2]):
                     Log.log_debug_1(
                         f"{slot_ship.name} in Slot {self.slot_id} has met "
-                        "damage threshold to be switched out.")
+                        "damage threshold to be switched out."
+                    )
                     return True
             elif condition[0] is ShipSwitcherConditionSlot0Enum.MORALE:
                 if op(slot_ship.morale, condition[2]):
                     Log.log_debug_1(
                         f"{slot_ship.name} in Slot {self.slot_id} has met "
-                        "morale threshold to be switched out.")
+                        "morale threshold to be switched out."
+                    )
                     return True
         return False
 
     def is_meet_criteria(self, ship):
-        
+
         if ship is None:
             for criterion in self.criteria:
-                if criterion[0] is ShipSwitcherCriteriaSlot0Enum.SHIP and criterion[1] == -1:
+                if (
+                    criterion[0] is ShipSwitcherCriteriaSlot0Enum.SHIP
+                    and criterion[1] == -1
+                ):
                     Log.log_msg(f"Switch-in criteria says remove this slot.")
                     return True
             return False
-        
-        if ship.production_id in [ship_in_fleet.production_id for ship_in_fleet in flt.fleets.ships_in_fleets]:
+
+        if ship.production_id in [
+            ship_in_fleet.production_id for ship_in_fleet in flt.fleets.ships_in_fleets
+        ]:
             return False
-        
+
         if ship.production_id in rep.repair.ships_under_repair:
             return False
-        
+
         for criterion in self.criteria:
             if criterion[0] is ShipSwitcherCriteriaSlot0Enum.SHIP:
                 if not ship.sortno == criterion[1]:
@@ -152,22 +163,24 @@ class ShipSwitchRule(object):
                     continue
             if criterion[8]:
                 if (
-                        criterion[8] is ShipSwitcherCriteriaSlot8Enum.LOCKED
-                        and not ship.locked):
+                    criterion[8] is ShipSwitcherCriteriaSlot8Enum.LOCKED
+                    and not ship.locked
+                ):
                     continue
                 elif (
-                        criterion[8] is ShipSwitcherCriteriaSlot8Enum.LOCKED
-                        and ship.locked):
+                    criterion[8] is ShipSwitcherCriteriaSlot8Enum.LOCKED and ship.locked
+                ):
                     continue
             if criterion[9]:
                 if (
-                        criterion[9] is ShipSwitcherCriteriaSlot9Enum.RINGED
-                        and not ship.ringed):
+                    criterion[9] is ShipSwitcherCriteriaSlot9Enum.RINGED
+                    and not ship.ringed
+                ):
                     continue
                 elif (
-                        criterion[9]
-                        is ShipSwitcherCriteriaSlot9Enum.NOT_RINGED
-                        and ship.ringed):
+                    criterion[9] is ShipSwitcherCriteriaSlot9Enum.NOT_RINGED
+                    and ship.ringed
+                ):
                     continue
             Log.log_msg(f"{ship.name} meets switch-in criteria.")
             return True

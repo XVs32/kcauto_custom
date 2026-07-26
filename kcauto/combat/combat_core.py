@@ -1,7 +1,6 @@
 from datetime import datetime, timedelta
 from operator import sub
 import time
-import threading
 
 import api.api_core as api
 import combat.event_reset as erst
@@ -31,29 +30,44 @@ from kca_enums.sorite_rank import SortieRankEnum
 
 class CombatCore(CoreBase):
     COMBAT_APIS = {
-        KCSAPIEnum.SORTIE_NEXT, KCSAPIEnum.SORTIE_BATTLE,
-        KCSAPIEnum.SORTIE_NIGHTBATTLE, KCSAPIEnum.SORTIE_AIRBATTLE,
-        KCSAPIEnum.SORTIE_LD_AIRBATTLE, KCSAPIEnum.SORTIE_LD_SHOOTING,
-        KCSAPIEnum.SORTIE_N2D, KCSAPIEnum.SORTIE_NIGHT_ONLY,
-        KCSAPIEnum.SORTIE_ECF_BATTLE, KCSAPIEnum.SORTIE_ECF_NIGHTBATTLE,
-        KCSAPIEnum.SORTIE_CF_BATTLE, KCSAPIEnum.SORTIE_CF_NIGHTBATTLE,
-        KCSAPIEnum.SORTIE_CF_AIRBATTLE, KCSAPIEnum.SORTIE_CF_WATERBATTLE,
-        KCSAPIEnum.SORTIE_CF_LD_AIRBATTLE, KCSAPIEnum.SORTIE_CF_LD_SHOOTING,
-        KCSAPIEnum.SORTIE_CF_N2D, KCSAPIEnum.SORTIE_CF_NIGHT_ONLY,
-        KCSAPIEnum.SORTIE_CF_EACH_NIGHT_ONLY, KCSAPIEnum.SORTIE_CF_ECF_BATTLE,
+        KCSAPIEnum.SORTIE_NEXT,
+        KCSAPIEnum.SORTIE_BATTLE,
+        KCSAPIEnum.SORTIE_NIGHTBATTLE,
+        KCSAPIEnum.SORTIE_AIRBATTLE,
+        KCSAPIEnum.SORTIE_LD_AIRBATTLE,
+        KCSAPIEnum.SORTIE_LD_SHOOTING,
+        KCSAPIEnum.SORTIE_N2D,
+        KCSAPIEnum.SORTIE_NIGHT_ONLY,
+        KCSAPIEnum.SORTIE_ECF_BATTLE,
+        KCSAPIEnum.SORTIE_ECF_NIGHTBATTLE,
+        KCSAPIEnum.SORTIE_CF_BATTLE,
+        KCSAPIEnum.SORTIE_CF_NIGHTBATTLE,
+        KCSAPIEnum.SORTIE_CF_AIRBATTLE,
+        KCSAPIEnum.SORTIE_CF_WATERBATTLE,
+        KCSAPIEnum.SORTIE_CF_LD_AIRBATTLE,
+        KCSAPIEnum.SORTIE_CF_LD_SHOOTING,
+        KCSAPIEnum.SORTIE_CF_N2D,
+        KCSAPIEnum.SORTIE_CF_NIGHT_ONLY,
+        KCSAPIEnum.SORTIE_CF_EACH_NIGHT_ONLY,
+        KCSAPIEnum.SORTIE_CF_ECF_BATTLE,
         KCSAPIEnum.SORTIE_CF_ECF_AIRBATTLE,
         KCSAPIEnum.SORTIE_CF_ECF_WATERBATTLE,
         KCSAPIEnum.SORTIE_CF_ECF_LD_AIRBATTLE,
         KCSAPIEnum.SORTIE_CF_ECF_LD_SHOOTING,
-        KCSAPIEnum.PORT
+        KCSAPIEnum.PORT,
     }
     RESULT_APIS = {KCSAPIEnum.SORTIE_RESULT, KCSAPIEnum.SORTIE_CF_RESULT}
     SHIPDECK_API = {KCSAPIEnum.SORTIE_SHIPDECK}
     EQUIP_API = {KCSAPIEnum.SORTIE_END}
+    MAP_API = {KCSAPIEnum.MAP_INFO_JSON}
     API_COMBAT_PHASES_TYPE1 = (
-        'api_hougeki', 'api_hougeki1', 'api_hougeki2', 'api_hougeki3')
-    API_COMBAT_PHASES_TYPE2 = ('api_opening_atack', 'api_raigeki')
-    API_COMBAT_PHASES_TYPE3 = ('api_kouku', 'api_kouku2')
+        "api_hougeki",
+        "api_hougeki1",
+        "api_hougeki2",
+        "api_hougeki3",
+    )
+    API_COMBAT_PHASES_TYPE2 = ("api_opening_atack", "api_raigeki")
+    API_COMBAT_PHASES_TYPE3 = ("api_kouku", "api_kouku2")
     NODE_TYPE_END = 0
     NODE_TYPE_COMBAT = 1
     NODE_TYPE_COMBAT_FINISH = 2
@@ -62,9 +76,14 @@ class CombatCore(CoreBase):
     NODE_TYPE_FORMATION_SKIP = 5
     MAP_NODE = 0
     RANKENUM = 1
-    
-    module_name = 'combat'
-    module_display_name = 'Combat'
+    GIMMICK_CLEAR_REMAINING = "clear_remaining"
+    GIMMICK_TIMESTAMP = "timestamp"
+    GIMMICK_MAP_STAGE_REQUIRE = "map_stage_required"
+    GIMMICK_MIN_RANK = "min_rank"
+    GIMMICK_NODE_JSON = "node_json"
+
+    module_name = "combat"
+    module_display_name = "Combat"
     available_maps = {}
     next_sortie_time = datetime.now()
     select_nodes = []
@@ -80,14 +99,18 @@ class CombatCore(CoreBase):
     first_init = True
     combat_api_listener_enable = True
     last_battle: dict[str, SortieRankEnum | MapNode] = {}
-   
+
+    gimmick_list = {}
+    gimmick_attampt = None
+
     def __init__(self):
         """
-            Method to init combat module
-            Args:
-                sortie_map (str): The current sortie map, ex: "3-5", if input is empty, reload setting in config only
+        Method to init combat module
+        Args:
+            sortie_map (str): The current sortie map, ex: "3-5", if input is empty, reload setting in config only
         """
         self.update_from_config()
+        self.gimmick_init()
 
     def update_from_config(self):
         super().update_from_config()
@@ -96,47 +119,50 @@ class CombatCore(CoreBase):
 
     def update_from_combat_map(self, value):
         """
-            Method to update the utility data for combat module
-            only runs in auto select sortie map mode
-            
-            Args:
-                value (str): The current sortie map, ex: "3-5"
+        Method to update the utility data for combat module
+        only runs in auto select sortie map mode
+
+        Args:
+            value (str): The current sortie map, ex: "3-5"
         """
         """No map has been selected yet, it will be selected by auto map select in quest module"""
         if value == "":
-            return 
+            return
 
         if self.enabled:
-            
-            quest_name_len = len(value.split("-")[-1]) 
+            quest_name_len = len(value.split("-")[-1])
             if quest_name_len > 1:
-                value = value[:-quest_name_len - 1]
+                value = value[: -quest_name_len - 1]
 
             self.load_map_data(MapEnum(value))
             self.set_next_sortie_time()
         else:
-            raise ValueError("Using auto select sortie map mode but combat module disabled")
-
-
+            raise ValueError(
+                "Using auto select sortie map mode but combat module disabled"
+            )
 
     def update_combat_map_list(self, data):
         Log.log_debug_1("Updating Combat map data from API.")
         self.available_maps = {}
         event_map_id_start = None
         for map_data in data:
-            api_id = map_data['api_id']
+            api_id = map_data["api_id"]
             if api_id < 400:
                 map_enum = MapEnum(f"B-{str(api_id)[0]}-{str(api_id)[1]}")
 
                 self.available_maps[map_enum.world_and_map] = {
-                    'enum': map_enum,
-                    'cleared': map_data['api_cleared'] == 1
+                    "enum": map_enum,
+                    "cleared": map_data["api_cleared"] == 1,
                 }
 
-                MULTI_STAGE_MAP_ID = [72, 73, 75]
+                MULTI_STAGE_MAP_ID = [72, 73, 75, 56]
                 if api_id in MULTI_STAGE_MAP_ID:
                     self.available_maps[map_enum.world_and_map] = {
-                    'gauge_num': (map_data['api_gauge_num'] if "api_required_defeat_count" in map_data else 0),
+                        "gauge_num": (
+                            map_data["api_gauge_num"]
+                            if "api_required_defeat_count" in map_data
+                            else 0
+                        ),
                     }
 
             else:
@@ -146,17 +172,18 @@ class CombatCore(CoreBase):
                 map_enum = MapEnum(f"B-E-{event_map_delta}")
 
                 self.available_maps[map_enum.world_and_map] = {
-                    'enum': map_enum,
-                    'cleared': map_data.get('api_cleared', 0) == 1,
-                    'lbas_bases': map_data.get('api_air_base_decks', []),
-                    'difficulty': EventDifficultyEnum(
-                        map_data['api_eventmap']['api_selected_rank']),
-                    'gauge_num': map_data['api_gauge_num']
+                    "enum": map_enum,
+                    "cleared": map_data.get("api_cleared", 0) == 1,
+                    "lbas_bases": map_data.get("api_air_base_decks", []),
+                    "difficulty": EventDifficultyEnum(
+                        map_data["api_eventmap"]["api_selected_rank"]
+                    ),
+                    "gauge_num": map_data["api_gauge_num"],
                 }
 
-    def should_and_able_to_sortie(self, ignore_supply = False):
+    def should_and_able_to_sortie(self, ignore_supply=False):
         """
-            @note Port api needs to be updated before using this function
+        @note Port api needs to be updated before using this function
         """
         if not self.enabled or not self.time_to_sortie:
             return False
@@ -165,15 +192,17 @@ class CombatCore(CoreBase):
                 Log.log_msg("Port is full.")
                 self.set_next_sortie_time(15)
                 return False
-        if cfg.config.combat.sortie_map == MapEnum.auto_map_select: #No map available in auto sortie map select mode
-                return False
-        if cfg.config.combat.sortie_map.world == 'E':
+        if (
+            cfg.config.combat.sortie_map == MapEnum.auto_map_select
+        ):  # No map available in auto sortie map select mode
+            return False
+        if cfg.config.combat.sortie_map.world == "E":
             if shp.ships.is_ship_pool_full(is_event=True):
                 Log.log_warn("Port is too full for event map.")
                 self.set_next_sortie_time(15)
                 return False
         if cfg.config.combat.check_fatigue:
-            #fleet update
+            # fleet update
             for fleet in flt.fleets.combat_fleets:
                 if fleet.highest_fatigue > FatigueStateEnum.NO_FATIGUE:
                     Log.log_warn("Combat fleet is fatigued.")
@@ -189,8 +218,7 @@ class CombatCore(CoreBase):
                 if rep.repair.docks_are_available:
                     self.set_next_sortie_time()
                 else:
-                    self.set_next_sortie_time(
-                        rep.repair.soonest_complete_time)
+                    self.set_next_sortie_time(rep.repair.soonest_complete_time)
                 return False
             if fleet.needs_resupply and ignore_supply == False:
                 Log.log_warn("Combat fleet needs resupply.")
@@ -207,8 +235,8 @@ class CombatCore(CoreBase):
         if proposed_sortie_time > self.next_sortie_time or override:
             self.next_sortie_time = proposed_sortie_time
             Log.log_msg(
-                "Next sortie at "
-                f"{KCTime.datetime_to_str(self.next_sortie_time)}")
+                f"Next sortie at {KCTime.datetime_to_str(self.next_sortie_time)}"
+            )
 
     def _validate_sortie_map(self, sortie_map):
         if sortie_map.world_and_map in self.available_maps:
@@ -217,18 +245,20 @@ class CombatCore(CoreBase):
 
     @property
     def _sortie_map_is_cleared(self):
-        if self.available_maps[cfg.config.combat.sortie_map.world_and_map]['cleared']:
+        if self.available_maps[cfg.config.combat.sortie_map.world_and_map]["cleared"]:
             return True
         return False
 
     @property
     def sortie_map_stage(self):
-        return self.available_maps[cfg.config.combat.sortie_map.world_and_map]['gauge_num']
+        return self.available_maps[cfg.config.combat.sortie_map.world_and_map][
+            "gauge_num"
+        ]
 
     def load_map_data(self, sortie_map):
         if self.map_data is None or self.map_data.enum != sortie_map.world_and_map:
             Log.log_debug_1("Loading map with " + str(sortie_map.world_and_map))
-            data = JsonData.load_json(f'data|combat|{sortie_map.world_and_map}.json')
+            data = JsonData.load_json(f"data|combat|{sortie_map.world_and_map}.json")
             self.map_data = MapData(sortie_map, data)
 
     @property
@@ -240,20 +270,28 @@ class CombatCore(CoreBase):
     def conduct_sortie(self):
         return self._conduct_sortie(cfg.config.combat.sortie_map)
 
-    def _conduct_sortie(self, sortie_map:MapEnum):
+    def _conduct_sortie(self, sortie_map: MapEnum):
         if not self._validate_sortie_map(sortie_map):
             Log.log_warn(f"Map {sortie_map.world_and_map} is not available.")
-            
+
             if sortie_map.is_eo:
-                Log.log_warn(f"EO map {sortie_map.world_and_map} is not available, likely due to not meeting requirements.")
-                
+                Log.log_warn(
+                    f"EO map {sortie_map.world_and_map} is not available, likely due to not meeting requirements."
+                )
+
                 if cfg.config.combat.sortie_map_read_only == MapEnum.auto_map_select:
-                    Log.log_msg("Auto map select mode is on, attempting to finish precondition map.")
-                    self.insert_sortie_queue(MapEnum("B-" + str(sortie_map.world) + "-" + str(sortie_map.map-1)))
+                    Log.log_msg(
+                        "Auto map select mode is on, attempting to finish precondition map."
+                    )
+                    self.insert_sortie_queue(
+                        MapEnum(
+                            "B-" + str(sortie_map.world) + "-" + str(sortie_map.map - 1)
+                        )
+                    )
             else:
-                Log.log_error(f'Disabling combat module.')
+                Log.log_error(f"Disabling combat module.")
                 self.enabled = False
-            
+
             return False
         if cfg.config.combat.clear_stop and self._sortie_map_is_cleared:
             Log.log_msg(f"Map {sortie_map.world_and_map} has been cleared.")
@@ -280,56 +318,55 @@ class CombatCore(CoreBase):
         return False
 
     def _select_world(self, sortie_map):
-        kca_u.kca.click_existing(
-            'lower', f'combat|c_world_{sortie_map.world}.png')
+        kca_u.kca.click_existing("lower", f"combat|c_world_{sortie_map.world}.png")
 
     def _select_map(self, sortie_map):
-        if sortie_map.world == 'E':
+        if sortie_map.world == "E":
             self._select_event_map(sortie_map)
         else:
             self._select_normal_map(sortie_map)
 
     def _select_normal_map(self, sortie_map):
         if self.map_data.page == 2:
-            kca_u.kca.click_existing('right', 'combat|c_world_eo_arrow.png')
-        kca_u.kca.r['top'].hover()
-        kca_u.kca.click_existing(
-            'kc', f'combat|c_world_{sortie_map.world_and_map}.png')
-        kca_u.kca.r['top'].hover()
+            kca_u.kca.click_existing("right", "combat|c_world_eo_arrow.png")
+        kca_u.kca.r["top"].hover()
+        kca_u.kca.click_existing("kc", f"combat|c_world_{sortie_map.world_and_map}.png")
+        kca_u.kca.r["top"].hover()
 
     def _select_event_map(self, sortie_map):
         cur_page = 1
-        if sortie_map.world == 'E':
+        if sortie_map.world == "E":
             while cur_page < self.map_data.page:
-                kca_u.kca.r['top'].hover()
+                kca_u.kca.r["top"].hover()
                 kca_u.kca.click_existing(
-                    'kc', f'combat|_event_next_page_{cur_page}.png')
+                    "kc", f"combat|_event_next_page_{cur_page}.png"
+                )
                 cur_page += 1
-        kca_u.kca.r['top'].hover()
+        kca_u.kca.r["top"].hover()
         kca_u.kca.click_existing(
-            'kc', f'combat|_event_world_{sortie_map.world_and_map}.png')
+            "kc", f"combat|_event_world_{sortie_map.world_and_map}.png"
+        )
         if erst.reset.need_to_reset:
             erst.reset.reset_event_difficulty()
         else:
-            while not kca_u.kca.exists(
-                    'lower_right', 'global|sortie_select.png'):
-                kca_u.kca.r['center'].click()
+            while not kca_u.kca.exists("lower_right", "global|sortie_select.png"):
+                kca_u.kca.r["center"].click()
                 kca_u.kca.sleep(1)
-        kca_u.kca.r['top'].hover()
+        kca_u.kca.r["top"].hover()
 
     def _begin_sortie(self):
-        if kca_u.kca.click_existing('lower_right', 'global|sortie_select.png'):
-            kca_u.kca.r['top'].hover()
+        if kca_u.kca.click_existing("lower_right", "global|sortie_select.png"):
+            kca_u.kca.r["top"].hover()
             kca_u.sleep(2)
 
-            sortie_button_asset = 'combat|combat_start.png'
+            sortie_button_asset = "combat|combat_start.png"
             if lbas.lbas.enabled and len(lbas.lbas.assignable_lbas_groups) > 0:
-                sortie_button_asset = 'combat|combat_start_lbas.png'
+                sortie_button_asset = "combat|combat_start_lbas.png"
 
             if flt.fleets.strike_force_fleet:
-                kca_u.kca.wait_and_click('upper_right', 'fleet|fleet_3.png')
+                kca_u.kca.wait_and_click("upper_right", "fleet|fleet_3.png")
 
-            if kca_u.kca.click_existing('lower_right', sortie_button_asset):
+            if kca_u.kca.click_existing("lower_right", sortie_button_asset):
                 for fleet in flt.fleets.combat_fleets:
                     Log.log_msg(fleet)
                     Log.log_msg(fleet.detailed_fleet_status)
@@ -347,169 +384,175 @@ class CombatCore(CoreBase):
     def _handle_combat(self, sortie_map):
 
         # Sortie start
-        kca_u.kca.r['top'].hover()
-        result = api.api.update_from_api({KCSAPIEnum.SORTIE_START})
+        kca_u.kca.r["top"].hover()
+        result = api.api.update_from_api(
+            {KCSAPIEnum.SORTIE_START, KCSAPIEnum.MAP_INFO_JSON}, process_all=False
+        )
         lbas.lbas.assign_lbas(self.map_data)
 
         conducting_sortie = True
         while conducting_sortie == True:
-
             # Go to next acrion needed node
             node_type = self._cycle_between_nodes(sortie_map)
-        
-            if     node_type == self.NODE_TYPE_COMBAT \
-                or node_type == self.NODE_TYPE_COMBAT_FINISH \
-                or node_type == self.NODE_TYPE_FORMATION_SKIP :
 
+            if (
+                node_type == self.NODE_TYPE_COMBAT
+                or node_type == self.NODE_TYPE_COMBAT_FINISH
+                or node_type == self.NODE_TYPE_FORMATION_SKIP
+            ):
                 Log.log_msg(f"Combat at node {self.current_node}.")
 
                 if node_type == self.NODE_TYPE_COMBAT:
-
                     self._resolve_smoke_prompt()
 
                     self._resolve_formation_prompt()
-                    #api.api.update_from_api(self.COMBAT_APIS, need_all=False)
+                    # api.api.update_from_api(self.COMBAT_APIS, need_all=False)
 
                 self.combat_nodes_run.append(self.current_node)
 
                 if self.current_node.boss_node or self.boss_api:
-                    #Todo: only trigger when screen doesn't change at all
+                    # Todo: only trigger when screen doesn't change at all
                     kca_u.kca.sleep(8)
-                    Log.log_msg("Dismissing boss dialogue.")
-                    kca_u.kca.r['center'].click()
+                    if not kca_u.kca.exists("lower_right_corner", "global|next.png"):
+                        Log.log_msg("Dismissing boss dialogue.")
+                        kca_u.kca.r["center"].click()
 
-                while not kca_u.kca.exists(
-                        'lower_right_corner', 'global|next.png'):
-                    
-                    if kca_u.kca.exists('kc', 'global|combat_nb_fight.png'):
+                while not kca_u.kca.exists("lower_right_corner", "global|next.png"):
+                    if kca_u.kca.exists("kc", "global|combat_nb_fight.png"):
                         Log.log_debug_1("Night battle prompt.")
 
                         self._resolve_night_battle_prompt()
-                        #if self._resolve_night_battle_prompt():
-                            #api.api.update_from_api(self.COMBAT_APIS, need_all=False)
+                        # if self._resolve_night_battle_prompt():
+                        # api.api.update_from_api(self.COMBAT_APIS, need_all=False)
 
-                        kca_u.kca.r['lbas'].hover()
+                        kca_u.kca.r["lbas"].hover()
 
                 # api update
                 node_type = self._cycle_between_nodes(sortie_map)
-                
+
                 Log.log_debug_1("Battle animations complete.")
-                
+
                 sts.stats.combat.nodes_fought += 1
                 for fleet in flt.fleets.combat_fleets:
-                    kca_u.kca.wait('lower_right_corner', 'global|next.png')
-                    kca_u.kca.r['center'].click()
-                    kca_u.kca.r['lbas'].hover()
-                    kca_u.kca.wait('kc', 'combat|mvp_marker.png')
-                    fleet.visual_health_check(
-                        kca_u.kca.r['check_damage_combat'])
+                    kca_u.kca.wait("lower_right_corner", "global|next.png")
+                    kca_u.kca.r["center"].click()
+                    kca_u.kca.r["lbas"].hover()
+                    kca_u.kca.wait("kc", "combat|mvp_marker.png")
+                    fleet.visual_health_check(kca_u.kca.r["check_damage_combat"])
                     Log.log_msg(fleet)
                     Log.log_msg(fleet.detailed_fleet_status)
                 while not (
-                        kca_u.kca.exists('left', 'nav|home_menu_sortie.png')
-                        or kca_u.kca.exists(
-                            'lower_right', 'combat|combat_flagship_dmg.png')
-                        or kca_u.kca.exists(
-                            'lower', 'combat|fcf_retreat_ship.png')
-                        or kca_u.kca.exists(
-                            'kc', 'combat|combat_retreat.png')):
-                    kca_u.kca.r['combat_click'].click()
+                    kca_u.kca.exists("left", "nav|home_menu_sortie.png")
+                    or kca_u.kca.exists("lower_right", "combat|combat_flagship_dmg.png")
+                    or kca_u.kca.exists("lower", "combat|fcf_retreat_ship.png")
+                    or kca_u.kca.exists("kc", "combat|combat_retreat.png")
+                ):
+                    kca_u.kca.r["combat_click"].click()
 
-                if kca_u.kca.exists('lower', 'combat|fcf_retreat_ship.png'):
+                if kca_u.kca.exists("lower", "combat|fcf_retreat_ship.png"):
                     Log.log_error("FCF prompt is not supported yet. T^T")
                     # self._resolve_fcf_prompt()
-                elif kca_u.kca.exists('kc', 'combat|combat_retreat.png'):
+                elif kca_u.kca.exists("kc", "combat|combat_retreat.png"):
                     Log.log_debug_1("Continue sortie prompt.")
                     if self._resolve_continue_sortie_prompt():
                         Log.log_debug_1("Continue button pressed")
-                        #api.api.update_from_api({KCSAPIEnum.SORTIE_SHIPDECK})
+                        # api.api.update_from_api({KCSAPIEnum.SORTIE_SHIPDECK})
                     else:
-                        kca_u.kca.wait('left', 'nav|home_menu_sortie.png')
+                        kca_u.kca.wait("left", "nav|home_menu_sortie.png")
                         conducting_sortie = False
-                elif kca_u.kca.exists(
-                        'lower_right', 'combat|combat_flagship_dmg.png'):
+                elif kca_u.kca.exists("lower_right", "combat|combat_flagship_dmg.png"):
                     Log.log_debug_1("Flagship heavily damaged.")
                     conducting_sortie = False
-                elif kca_u.kca.exists('left', 'nav|home_menu_sortie.png'):
+                elif kca_u.kca.exists("left", "nav|home_menu_sortie.png"):
                     Log.log_debug_1("Back to port.")
                     conducting_sortie = False
 
             elif node_type == self.NODE_TYPE_SELECT:
-                Log.log_msg(f"Node selection.")
+                Log.log_msg(f"Node type select {self.current_node.name}.")
                 next_node = cfg.config.combat.node_selects.get(
-                    self.current_node.name, None)
+                    self.current_node.name, None
+                )
                 if not next_node:
                     raise ValueError("Node select not defined.")
                 else:
                     Log.log_msg(f"Selecting node {next_node}")
                     self.map_data.nodes[next_node].select()
             elif node_type == self.NODE_TYPE_NOTHING:
-                pass
+                Log.log_debug_1(f"Node type nothing {self.current_node.name}.")
             elif node_type == self.NODE_TYPE_END:
+                Log.log_debug_1(f"Node type end {self.current_node.name}.")
                 conducting_sortie = False
-                continue
+            self.gimmick_judge(node_type=node_type)
 
         self._click_until_port()
         Log.log_msg(f"Sortie handling complete.")
 
-        return 
- 
+        return
+
     def _click_until_port(self):
-        
+
         while True:
-            api_result = {"mock": "data"} 
+            api_result = {"mock": "data"}
             while api_result != {}:
                 api_result = api.api.update_from_api(
-                    {KCSAPIEnum.PORT} |self.COMBAT_APIS | self.RESULT_APIS | self.SHIPDECK_API | self.EQUIP_API, process_all=True, timeout=3)
-                
+                    {KCSAPIEnum.PORT}
+                    | self.COMBAT_APIS
+                    | self.RESULT_APIS
+                    | self.SHIPDECK_API
+                    | self.EQUIP_API,
+                    process_all=True,
+                )
+
                 if KCSAPIEnum.PORT.name not in api_result:
-                    kca_u.kca.r['combat_click'].click()
-            
-            if kca_u.kca.exists('left', 'nav|home_menu_sortie.png'):
+                    kca_u.kca.r["combat_click"].click()
+
+            if kca_u.kca.exists("left", "nav|home_menu_sortie.png"):
                 break
-            
+
     def _cycle_between_nodes(self, sortie_map):
         Log.log_debug_1("Between nodes.")
 
         while True:
-            
-            api_result = {"mock": "data"} 
+            api_result = {"mock": "data"}
             while api_result != {}:
                 api_result = api.api.update_from_api(
-                    self.COMBAT_APIS | self.RESULT_APIS | self.SHIPDECK_API | self.EQUIP_API, process_all=False, timeout=5)
-                
-            if kca_u.kca.exists('kc', 'combat|compass.png'):
+                    self.COMBAT_APIS
+                    | self.RESULT_APIS
+                    | self.SHIPDECK_API
+                    | self.EQUIP_API
+                    | self.MAP_API,
+                    process_all=False,
+                    timeout=5,
+                )
+
+            if kca_u.kca.exists("kc", "combat|compass.png"):
                 Log.log_msg("Spinning compass.")
-                kca_u.kca.click_existing(
-                    'kc', 'combat|compass.png', cached=True)
-                kca_u.kca.r['top'].hover()
-            elif (  kca_u.kca.exists(
-                        'formation_line_ahead',
-                        'fleet|formation_line_ahead.png')
-                 or kca_u.kca.exists(
-                        'formation_combined_fleet_1',
-                        'fleet|formation_combined_fleet_1.png')):
+                kca_u.kca.click_existing("kc", "combat|compass.png", cached=True)
+                kca_u.kca.r["top"].hover()
+            elif kca_u.kca.exists(
+                "formation_line_ahead", "fleet|formation_line_ahead.png"
+            ) or kca_u.kca.exists(
+                "formation_combined_fleet_1", "fleet|formation_combined_fleet_1.png"
+            ):
                 return self.NODE_TYPE_COMBAT
-            elif kca_u.kca.exists('lower_right_corner', 'global|next.png'):
+            elif kca_u.kca.exists("lower_right_corner", "global|next.png"):
                 return self.NODE_TYPE_COMBAT_FINISH
             elif self.current_node.selection_node:
                 return self.NODE_TYPE_SELECT
-            elif kca_u.kca.exists('lower_right_corner', 'global|next_alt.png'):
+            elif kca_u.kca.exists("lower_right_corner", "global|next_alt.png"):
                 # resource node end
                 return self.NODE_TYPE_END
-            elif kca_u.kca.exists('kc', 'global|combat_nb_fight.png'):
+            elif kca_u.kca.exists("kc", "global|combat_nb_fight.png"):
                 return self.NODE_TYPE_FORMATION_SKIP
-            elif kca_u.kca.exists('left', 'nav|home_menu_sortie.png'):
+            elif kca_u.kca.exists("left", "nav|home_menu_sortie.png"):
                 # back at home already
                 return self.NODE_TYPE_END
 
-
     def _resolve_smoke_prompt(self):
-        
+
         if self.current_node.name in cfg.config.combat.node_smoke:
             Log.log_msg("Smoke activated in config")
-            if kca_u.kca.click_existing(
-                'lower', 'fleet|smoke_disable.png'):
+            if kca_u.kca.click_existing("lower", "fleet|smoke_disable.png"):
                 Log.log_debug_1("Smoke activated")
             else:
                 Log.log_debug_1("Smoke button not found")
@@ -520,56 +563,59 @@ class CombatCore(CoreBase):
         formation = (
             FormationEnum.COMBINED_FLEET_4
             if flt.fleets.combined_fleet
-            else FormationEnum.VANGUARD)
-            
+            else FormationEnum.VANGUARD
+        )
+
         # if vanguard is not availible(not during a event)
-        if not (kca_u.kca.exists(
-                        'formation_vanguard',
-                        'fleet|formation_vanguard.png')
+        if not (
+            kca_u.kca.exists("formation_vanguard", "fleet|formation_vanguard.png")
             or kca_u.kca.exists(
-                        'formation_combined_fleet_4',
-                        'fleet|formation_combined_fleet_4.png')):
+                "formation_combined_fleet_4", "fleet|formation_combined_fleet_4.png"
+            )
+        ):
             formation = (
                 FormationEnum.COMBINED_FLEET_4
                 if flt.fleets.combined_fleet
-                else FormationEnum.LINE_AHEAD)
+                else FormationEnum.LINE_AHEAD
+            )
 
         if self.current_node.name in cfg.config.combat.node_formations:
             Log.log_debug_1("Formation specified in config")
-            formation = cfg.config.combat.node_formations[
-                self.current_node.name]
-        elif (
-                len(self.combat_nodes_run) + 1
-                in cfg.config.combat.node_formations):
+            formation = cfg.config.combat.node_formations[self.current_node.name]
+        elif len(self.combat_nodes_run) + 1 in cfg.config.combat.node_formations:
             # formation resolution occurs before the combat_nodes_run list is
             # updated, so account for the 1-offset
             Log.log_debug_1("Formation specified combat # in config")
             formation = cfg.config.combat.node_formations[
-                len(self.combat_nodes_run) + 1]
+                len(self.combat_nodes_run) + 1
+            ]
         elif self.current_node.sub_node:
             Log.log_debug_1("Node is sub node")
             formation = (
                 FormationEnum.COMBINED_FLEET_1
                 if flt.fleets.combined_fleet
-                else FormationEnum.LINE_ABREAST)
+                else FormationEnum.LINE_ABREAST
+            )
         elif self.current_node.air_node:
             Log.log_debug_1("Node is air node")
             formation = (
                 FormationEnum.COMBINED_FLEET_3
                 if flt.fleets.combined_fleet
-                else FormationEnum.DIAMOND)
+                else FormationEnum.DIAMOND
+            )
         elif self.current_node.boss_node:
             Log.log_debug_1("Node is boss node")
             formation = (
                 FormationEnum.COMBINED_FLEET_4
                 if flt.fleets.combined_fleet
-                else FormationEnum.LINE_AHEAD)
+                else FormationEnum.LINE_AHEAD
+            )
 
         Log.log_msg(f"Selecting formation {formation.display_name}.")
         kca_u.kca.click_existing(
-            f'formation_{formation.value}',
-            f'fleet|formation_{formation.value}.png')
-        kca_u.kca.r['lbas'].hover()
+            f"formation_{formation.value}", f"fleet|formation_{formation.value}.png"
+        )
+        kca_u.kca.r["lbas"].hover()
         return formation
 
     def _resolve_night_battle_prompt(self):
@@ -578,33 +624,29 @@ class CombatCore(CoreBase):
 
         if self.current_node.name in cfg.config.combat.node_night_battles:
             Log.log_debug_1("NB specified in config")
-            night_battle = cfg.config.combat.node_night_battles[
-                self.current_node.name]
-        elif (
-                len(self.combat_nodes_run)
-                in cfg.config.combat.node_night_battles):
+            night_battle = cfg.config.combat.node_night_battles[self.current_node.name]
+        elif len(self.combat_nodes_run) in cfg.config.combat.node_night_battles:
             Log.log_debug_1("NB specified combat # in config")
             night_battle = cfg.config.combat.node_night_battles[
-                len(self.combat_nodes_run)]
+                len(self.combat_nodes_run)
+            ]
         elif self.current_node.boss_node:
             Log.log_debug_1("Node is boss node")
             night_battle = True
 
         if night_battle:
             Log.log_msg("Entering night battle.")
-            kca_u.kca.click_existing(
-                'kc', 'global|combat_nb_fight.png', cached=True)
+            kca_u.kca.click_existing("kc", "global|combat_nb_fight.png", cached=True)
         else:
             Log.log_msg("Declining night battle.")
-            kca_u.kca.click_existing(
-                'kc', 'global|combat_nb_retreat.png', cached=True)
-        kca_u.kca.r['lbas'].hover()
+            kca_u.kca.click_existing("kc", "global|combat_nb_retreat.png", cached=True)
+        kca_u.kca.r["lbas"].hover()
 
         return night_battle
 
     def _resolve_continue_sortie_prompt(self):
         Log.log_debug_1("Resolve continue sortie prompt.")
-        #api.api.update_from_api(self.COMBAT_APIS, process_all=True)
+        # api.api.update_from_api(self.COMBAT_APIS, process_all=True)
         continue_sortie = True
         retreat_limit = cfg.config.combat.retreat_limit
         if self.current_node.name in cfg.config.combat.push_nodes:
@@ -614,33 +656,29 @@ class CombatCore(CoreBase):
                 if fleet.weakest_state >= retreat_limit:
                     Log.log_warn(
                         f"Fleet {fleet.fleet_id} has ships with "
-                        f"{retreat_limit.display_name} damage or above.")
+                        f"{retreat_limit.display_name} damage or above."
+                    )
                     continue_sortie = False
-                elif fleet.visual_health['heavy'] > 0:
+                elif fleet.visual_health["heavy"] > 0:
                     Log.log_warn(
                         f"Fleet {fleet.fleet_id} has a critically damaged ship "
-                        "not calculated from the API.")
+                        "not calculated from the API."
+                    )
                     continue_sortie = False
-            if (
-                    self.current_node.name
-                    in cfg.config.combat.retreat_points):
+            if self.current_node.name in cfg.config.combat.retreat_points:
                 Log.log_debug_1("Retreat specified in config.")
                 continue_sortie = False
-            if (
-                    len(self.combat_nodes_run)
-                    in cfg.config.combat.retreat_points):
+            if len(self.combat_nodes_run) in cfg.config.combat.retreat_points:
                 Log.log_debug_1("Retreat specified combat # in config.")
                 continue_sortie = False
 
         if continue_sortie:
             Log.log_msg("Continuing sortie.")
-            kca_u.kca.click_existing(
-                'kc', 'combat|combat_continue.png', cached=True)
+            kca_u.kca.click_existing("kc", "combat|combat_continue.png", cached=True)
         else:
             Log.log_msg("Retreating from sortie.")
-            kca_u.kca.click_existing(
-                'kc', 'combat|combat_retreat.png', cached=True)
-        kca_u.kca.r['lbas'].hover()
+            kca_u.kca.click_existing("kc", "combat|combat_retreat.png", cached=True)
+        kca_u.kca.r["lbas"].hover()
 
         return continue_sortie
 
@@ -673,8 +711,9 @@ class CombatCore(CoreBase):
             last_combat_fleet_ships = flt.fleets.combat_fleets[-1].ships
             for ship_idx, ship in enumerate(last_combat_fleet_ships):
                 if (
-                        ship.ship_type is ShipTypeEnum.DD
-                        and ship.damage <= DamageStateEnum.SCRATCH):
+                    ship.ship_type is ShipTypeEnum.DD
+                    and ship.damage <= DamageStateEnum.SCRATCH
+                ):
                     Log.log_debug_1(f"Found {ship.name} as escort ship.")
                     escort_ship = ship
                     escort_ship_idx = ship_idx
@@ -683,10 +722,11 @@ class CombatCore(CoreBase):
                 raise ValueError("Valid FCF retreat escort ship not found.")
 
             Log.log_msg(
-                f"Retreating {damaged_ship.name} with {escort_ship.name} "
-                "using FCF.")
+                f"Retreating {damaged_ship.name} with {escort_ship.name} using FCF."
+            )
             kca_u.kca.click_existing(
-                'lower', 'combat|fcf_retreat_ship.png', cached=True)
+                "lower", "combat|fcf_retreat_ship.png", cached=True
+            )
 
             flt.fleets.combat_ships[damaged_ship_idx].hp = -1
             last_combat_fleet_ships[escort_ship_idx].hp = -1
@@ -695,23 +735,25 @@ class CombatCore(CoreBase):
         else:
             Log.log_msg("Not retreating ships using FCF.")
             kca_u.kca.click_existing(
-                'lower', 'combat|fcf_continue_fleet.png', cached=True)
-        kca_u.kca.r['lbas'].hover()
+                "lower", "combat|fcf_continue_fleet.png", cached=True
+            )
+        kca_u.kca.r["lbas"].hover()
 
         return use_fcf
 
     def predict_battle(self, data):
         Log.log_debug_1("Predicting battle from data.")
-        if 'api_flavor_info' in data:
+        if "api_flavor_info" in data:
             Log.log_debug_1("Boss node detected via API.")
             self.boss_api = True
             # if 'api_midnight_flag' in data:
             #     print(f"nightbattle: {data['api_midnight_flag']}")
 
         new_hps = (
-            list(data['api_f_nowhps'] + data['api_f_nowhps_combined'])
+            list(data["api_f_nowhps"] + data["api_f_nowhps_combined"])
             if flt.fleets.combined_fleet
-            else list(data['api_f_nowhps']))
+            else list(data["api_f_nowhps"])
+        )
         new_hps = self._calculate_hps(new_hps, data)
         Log.log_debug_1(f"Calculated HPs: {new_hps}")
         fleet_1_size = len(flt.fleets.combat_fleets[0].ships)
@@ -723,25 +765,28 @@ class CombatCore(CoreBase):
 
     def process_battle_result(self, data):
         Log.log_debug_1("Processing battle results.")
-        if 'api_first_clear' in data:
-            cleared = data['api_first_clear'] == 1
+        if "api_first_clear" in data:
+            cleared = data["api_first_clear"] == 1
             if cleared:
                 Log.log_debug_1("Map has been cleared.")
                 self.map_cleared = True
-        if 'api_get_ship' in data:
-            dropped_ship_id = data['api_get_ship']['api_ship_id']
-            # Add temp empty local static data ship to ship pool, 
+        if "api_get_ship" in data:
+            dropped_ship_id = data["api_get_ship"]["api_ship_id"]
+            # Add temp empty local static data ship to ship pool,
             # data will be updated when back to port
             ship = shp.ships.create_ship(
-                static_data = shp.ships.get_ship_static_data(None, api_id=dropped_ship_id))
+                static_data=shp.ships.get_ship_static_data(None, api_id=dropped_ship_id)
+            )
             self.rescued_ships.append(ship)
             Log.log_success(f"Rescued {ship.name} (#{ship.sortno}).")
             sts.stats.combat.ships_rescued += 1
-            
-        if 'api_win_rank' in data:
-            self.last_battle[self.RANKENUM] = SortieRankEnum[data['api_win_rank']]
+
+        if "api_win_rank" in data:
+            self.last_battle[self.RANKENUM] = SortieRankEnum[data["api_win_rank"]]
             self.last_battle[self.MAP_NODE] = self.current_node
-            Log.log_msg(f"Battle rank in node {self.current_node}: {self.last_battle[self.RANKENUM].in_str}")
+            Log.log_msg(
+                f"Battle rank in node {self.current_node}: {self.last_battle[self.RANKENUM].in_str}"
+            )
 
     def _calculate_hps(self, new_hps, data):
         for phase in self.API_COMBAT_PHASES_TYPE1:
@@ -751,15 +796,15 @@ class CombatCore(CoreBase):
             if phase in data and data[phase] is not None:
                 new_hps = self._calculate_hps_from_type2(new_hps, data[phase])
         for phase in self.API_COMBAT_PHASES_TYPE3:
-            if phase in data and data[phase]['api_stage3'] is not None:
+            if phase in data and data[phase]["api_stage3"] is not None:
                 new_hps = self._calculate_hps_from_type3(new_hps, data[phase])
         return new_hps
 
     def _calculate_hps_from_type1(self, hps, api_data):
         hps = list(hps)
-        e_actions = api_data['api_at_eflag']
-        dmgs = api_data['api_damage']
-        targets = api_data['api_df_list']
+        e_actions = api_data["api_at_eflag"]
+        dmgs = api_data["api_damage"]
+        targets = api_data["api_df_list"]
         for idx, e_action in enumerate(e_actions):
             if e_action == 0:
                 continue
@@ -769,15 +814,19 @@ class CombatCore(CoreBase):
 
     def _calculate_hps_from_type2(self, hps, api_data):
         hps = list(hps)
-        dmgs = api_data['api_fdam']
+        dmgs = api_data["api_fdam"]
         return list(map(sub, hps, dmgs))
 
     def _calculate_hps_from_type3(self, hps, api_data):
         hps = list(hps)
-        dmgs = (list(api_data['api_stage3']['api_fdam'] +
-                     api_data['api_stage3_combined']['api_fdam'])
+        dmgs = (
+            list(
+                api_data["api_stage3"]["api_fdam"]
+                + api_data["api_stage3_combined"]["api_fdam"]
+            )
             if flt.fleets.combined_fleet
-            else list(api_data['api_stage3']['api_fdam']))
+            else list(api_data["api_stage3"]["api_fdam"])
+        )
         return list(map(sub, hps, dmgs))
 
     def goto_next_node(self, edge):
@@ -788,45 +837,50 @@ class CombatCore(CoreBase):
 
     def _get_next_node_from_edge(self, edge):
         return self.map_data.edges[edge][1]
-    
+
     def duplicate_front_to_back_sortie_queue(self):
         if self.sortie_queue:
             self.sortie_queue.append(self.sortie_queue[0])
-            Log.log_debug_1(f"Duplicated front to back in sortie queue: {self.sortie_queue}")
+            Log.log_debug_1(
+                f"Duplicated front to back in sortie queue: {self.sortie_queue}"
+            )
 
-    def insert_sortie_queue(self, sortie_map: MapEnum, allow_duplicate = False):
+    def insert_sortie_queue(self, sortie_map: MapEnum, allow_duplicate=False):
         """
-            method for other modules to push a sortie_map to the start of sortie_queue in combat module
-            Args:
-                sortie_map (str): A sortie_map, ex: "1-1"
-                allow_duplicate (bool): when false, will prioritize the existing map in the queue than inserting a duplicate to the front, when true, will insert a duplicate to the front even if the same map already exists in the queue
+        method for other modules to push a sortie_map to the start of sortie_queue in combat module
+        Args:
+            sortie_map (str): A sortie_map, ex: "1-1"
+            allow_duplicate (bool): when false, will prioritize the existing map in the queue than inserting a duplicate to the front, when true, will insert a duplicate to the front even if the same map already exists in the queue
         """
         if not allow_duplicate and sortie_map in self.sortie_queue:
-            Log.log_debug_1(f"Sortie map {sortie_map.value} already in queue, not inserting duplicate.")
-            #put the existing map to the front
+            Log.log_debug_1(
+                f"Sortie map {sortie_map.value} already in queue, not inserting duplicate."
+            )
+            # put the existing map to the front
             self.sortie_queue.remove(sortie_map)
         self.sortie_queue.insert(0, sortie_map)
-        Log.log_debug_1(f"Inserted {sortie_map.value} to sortie queue {self.sortie_queue}")
+        Log.log_debug_1(
+            f"Inserted {sortie_map.value} to sortie queue {self.sortie_queue}"
+        )
 
-    def set_sortie_queue(self, sortie_queue = []):
+    def set_sortie_queue(self, sortie_queue=[]):
         """
-            method for other modules to set the sortie_queue in combat module
-            Args:
-                sortie_queue (str list): A list of sortie_map, ex: ["1-1", "2-3"]
+        method for other modules to set the sortie_queue in combat module
+        Args:
+            sortie_queue (str list): A list of sortie_map, ex: ["1-1", "2-3"]
         """
         self.sortie_queue = sortie_queue.copy()
         Log.log_debug_1(f"Set sortie queue {self.sortie_queue}")
 
-
     def get_sortie_queue(self) -> list[MapEnum]:
         """
-            method for other modules to read the sortie_queue in combat module
+        method for other modules to read the sortie_queue in combat module
         """
         return self.sortie_queue
-    
+
     def pop_sortie_queue(self):
         """
-            method to pop the head of sortie_queue
+        method to pop the head of sortie_queue
         """
         if len(self.sortie_queue) > 0:
             self.sortie_queue.pop(0)
@@ -835,54 +889,136 @@ class CombatCore(CoreBase):
             Log.log_error(f"Cannot pop an empty sortie queue.")
 
         return self.sortie_queue
-    
-    def solve_gimmick(self):
 
+    def gimmick_init(self):
+        """
+        method to initialize the gimmick system
+        """
+        self.gimmick_list_init()
+        self.gimmick_reset()
+
+    def gimmick_list_init(self):
+        """
+        method to initialize the gimmick list
+        """
         try:
             data = JsonData.load_json(GIMMICK)
         except FileNotFoundError:
             data = JsonData.load_json(GIMMICK_TEMPLATE)
+        self.gimmick_list = data
 
-        try:
-            data[self.sortie_queue[0]]["gimmick_level"] += 1
-            JsonData.dump_json(data, GIMMICK)
-            
-        except KeyError:
-            Log.log_debug_1(f"Invalid gimmick update for map {self.sortie_queue[0]} requested.")
+    def gimmick_reset(self):
+        """
+        method to reset the gimmick list each month
+        """
+
+        template = JsonData.load_json(GIMMICK_TEMPLATE)
+
+        for map in self.gimmick_list:
+            if not KCTime.is_same_month(
+                self.gimmick_list[map][self.GIMMICK_TIMESTAMP], time.time()
+            ):
+                self.gimmick_list[map][self.GIMMICK_CLEAR_REMAINING] = template[map][
+                    self.GIMMICK_CLEAR_REMAINING
+                ]
+                self.gimmick_list[map][self.GIMMICK_TIMESTAMP] = time.time()
+                Log.log_success(f"Gimmick reset for {map}.")
+
     def check_gimmick(self, map_enum: MapEnum):
         """
-            method to check what gimmick to go next for the current sortie map
-            return None if no gimmick is available
+        method to check what gimmick available for the current sortie map
+        return None if no gimmick is available
+
+        input:
+            map_enum (MapEnum): The current sortie map
         """
-        try:
-            data = JsonData.load_json(GIMMICK)
-        except FileNotFoundError:
-            data = JsonData.load_json(GIMMICK_TEMPLATE)
-        map = map_enum.value
 
-        """Reset gimmick each month"""
-        try:
-            if not KCTime.is_same_month(data[map]["timestamp"], time.time()):
-                Log.log_debug_1("Gimmick renew")
-                data[map]["timestamp"] = time.time()
-                data[map]["gimmick_level"] = 0
-                JsonData.dump_json(data, GIMMICK)
-        except KeyError:
-            Log.log_debug_1("No gimmick data found, skipping...")
-            pass
-        
-        """gimmick_level rules for each map(7-5 only for now)"""
-        if map_enum == MapEnum.W7_5_M and (self.sortie_map_stage ) > 1:
-            gimmick_level = data[map]["gimmick_level"]
-            
-            if gimmick_level == 0:
-                return map_enum
-            
-            Log.log_success(f'Gimmick already solved for map {map_enum.value}.')
-            pass
-        else:
-            Log.log_error(f'No gimmick for map {map_enum.value}.')
+        self.gimmick_attampt = None
+        map = map_enum.without_quest_and_node_enum
 
+        for gimmick_map_str in self.gimmick_list:
+            gimmick_map_enum = MapEnum(gimmick_map_str).without_quest_and_node_enum
+            if gimmick_map_enum == map:
+                if (
+                    self.sortie_map_stage
+                    >= self.gimmick_list[gimmick_map_str][
+                        self.GIMMICK_MAP_STAGE_REQUIRE
+                    ]
+                ):
+                    if (
+                        self.gimmick_list[gimmick_map_str][self.GIMMICK_CLEAR_REMAINING]
+                        > 0
+                    ):
+                        self.gimmick_attampt = MapEnum(gimmick_map_str)
+                        Log.log_msg(f"Attempt for {self.gimmick_attampt} gimmick.")
+                        return MapEnum(gimmick_map_str)
+                    else:
+                        Log.log_success(
+                            f"Gimmick already solved for map {map_enum.value}."
+                        )
+                        return None
+                else:
+                    Log.log_warn(f"Gimmick for map {map_enum.value} not available yet.")
+                    return None
+
+        Log.log_error(f"No gimmick for map {map_enum.value}.")
         return None
+
+    def gimmick_judge(self, node_type: int):
+
+        if self.gimmick_attampt == None:
+            return
+
+        current_map = self.map_data.enum
+
+        # check if current map has gimmick
+        if (
+            current_map.without_quest_and_node_enum
+            == self.gimmick_attampt.without_quest_and_node_enum
+        ):
+            if (
+                node_type == self.NODE_TYPE_COMBAT
+                or node_type == self.NODE_TYPE_COMBAT_FINISH
+            ):
+                if self.last_battle[self.MAP_NODE].name == self.gimmick_attampt.variant:
+                    Log.log_msg(f"Battled in gimmick node {self.gimmick_attampt}")
+
+                    if self.last_battle[self.RANKENUM].is_at_least(
+                        SortieRankEnum[
+                            self.gimmick_list[self.gimmick_attampt.display_name][
+                                self.GIMMICK_MIN_RANK
+                            ]
+                        ]
+                    ):
+                        Log.log_success(f"Gimmick solved for map {current_map.value}.")
+                        self.gimmick_list[self.gimmick_attampt.display_name][
+                            self.GIMMICK_CLEAR_REMAINING
+                        ] -= 1
+                        JsonData.dump_json(self.gimmick_list, GIMMICK)
+
+            elif node_type == self.NODE_TYPE_END:
+                if self.current_node.name == self.gimmick_attampt.variant:
+                    Log.log_msg(f"Reached gimmick node {self.gimmick_attampt}")
+                    self.gimmick_list[self.gimmick_attampt.display_name][
+                        self.GIMMICK_CLEAR_REMAINING
+                    ] -= 1
+                    JsonData.dump_json(self.gimmick_list, GIMMICK)
+
+    def gimmick_startup_judge(self, file_name):
+
+        for display_name in self.gimmick_list:
+            Log.log_debug_1(
+                f"Checking gimmick for map {display_name}, checking file {self.gimmick_list[display_name][self.GIMMICK_NODE_JSON]}, filename is {file_name}"
+            )
+
+            if (
+                self.gimmick_list[display_name][self.GIMMICK_NODE_JSON] == file_name
+                and self.gimmick_list[display_name][self.GIMMICK_CLEAR_REMAINING] > 0
+            ):
+                self.gimmick_list[display_name][self.GIMMICK_CLEAR_REMAINING] = 0
+                JsonData.dump_json(self.gimmick_list, GIMMICK)
+
+                Log.log_success(f"Gimmick solved for map {display_name} detected.")
+
 
 combat = CombatCore()

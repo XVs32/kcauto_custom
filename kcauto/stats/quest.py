@@ -56,7 +56,8 @@ class QuestStats(StatsBase):
                     return_string += "/".join(interval_str_list) + " / "
                 return_string += (
                     "Quest reset at "
-                    f"{KCTime.datetime_to_str(qst.quest.quest_reset_time)} ")
+                    f"{KCTime.datetime_to_str(qst.quest.quest_reset_time)} "
+                )
             else:
                 return_string = "Quest module is disabled."
             return_string += (
@@ -67,6 +68,7 @@ class QuestStats(StatsBase):
                 f"{self.quests_deactivated} Quests deactivated "
                 f"({self.quests_deactivated_ph:.2f}/hr) / "
                 f"{self.quests_turned_in} Quests turned in "
-                f"({self.quests_turned_in_ph:.2f}/hr)")
+                f"({self.quests_turned_in_ph:.2f}/hr)"
+            )
 
         return return_string
