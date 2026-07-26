@@ -13,7 +13,6 @@ from util.pyvisauto import Region, ImageMatch
 from constants import (
     GAME_W,
     GAME_H,
-    VISUAL_URL,
     API_URL,
     EXACT,
     DEFAULT,
@@ -26,7 +25,7 @@ class CoordinateSystem(object):
     BROWSER_REF_SIZE = 100
     KC_REF_OFFSET = (-144, 0)
 
-    visual_hook = None
+    api_hook = None
     last_ui = None
 
     viewport_x = None
@@ -141,7 +140,7 @@ class CoordinateSystem(object):
 
         import base64
 
-        screenshot_raw = self.visual_hook.Page.captureScreenshot()
+        screenshot_raw = self.api_hook.Page.captureScreenshot()
 
         if screenshot_raw is None or not screenshot_raw:
             raise ValueError("Failed to capture screenshot from Chrome")

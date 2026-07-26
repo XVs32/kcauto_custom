@@ -953,6 +953,7 @@ class Kca(object):
         chrome = PyChromeDevTools.ChromeInterface(host="localhost", port=port)
         if target == "api":
             self.api_hook = PyChromeDevTools.ChromeInterface(host=host, port=port)
+            coordinate_system.coor.api_hook = self.api_hook
         elif target == "poi":
             self.poi_hook = PyChromeDevTools.ChromeInterface(host=host, port=port)
         else:
