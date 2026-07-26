@@ -1,5 +1,4 @@
 
-from enum import Enum
 import cv2
 import numpy as np
 import time
@@ -8,10 +7,8 @@ from datetime import datetime
 import os
 
 import args.args_core as arg
-import config.config_core as cfg
-from kca_enums.interaction_modes import InteractionModeEnum
 from util.logger import Log
-from util.pyvisauto import Region, FindFailed, ImageMatch
+from util.pyvisauto import Region, ImageMatch
 
 from constants import (
     GAME_W,
