@@ -157,13 +157,11 @@ class CombatCore(CoreBase):
 
                 MULTI_STAGE_MAP_ID = [72, 73, 75, 56]
                 if api_id in MULTI_STAGE_MAP_ID:
-                    self.available_maps[map_enum.world_and_map] = {
-                        "gauge_num": (
-                            map_data["api_gauge_num"]
-                            if "api_required_defeat_count" in map_data
-                            else 0
-                        ),
-                    }
+                    self.available_maps[map_enum.world_and_map]["gauge_num"] = (
+                        map_data["api_gauge_num"]
+                        if "api_required_defeat_count" in map_data
+                        else 0
+                    )
 
             else:
                 if event_map_id_start is None:
@@ -400,7 +398,7 @@ class CombatCore(CoreBase):
                 or node_type == self.NODE_TYPE_COMBAT_FINISH
                 or node_type == self.NODE_TYPE_FORMATION_SKIP
             ):
-                Log.log_msg(f"Combat at node {self.current_node}.")
+                Log.log_debug_1(f"Node type combat {self.current_node.name}.")
 
                 if node_type == self.NODE_TYPE_COMBAT:
                     self._resolve_smoke_prompt()
