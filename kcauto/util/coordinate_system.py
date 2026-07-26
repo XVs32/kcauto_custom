@@ -323,6 +323,8 @@ class CoordinateSystem(object):
 
     def convert(self, src, mode):
         dst = Region()
+        dst.w = src.w
+        dst.h = src.h
         if mode == self.WHOLE_TO_VIEWPORT:
             dst.x = src.x - self.viewport_x
             dst.y = src.y - self.viewport_y
