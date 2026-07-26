@@ -100,7 +100,7 @@ class Kcauto(object):
                 exp.expedition.goto()
                 exp.expedition.get_expedition_ranking()
 
-                self.run_quest_logic(CONTEXT_AUTO_EXPEDITION)
+                self.run_quest_logic(context=CONTEXT_AUTO_EXPEDITION, force=True)
 
                 exp.expedition.prerequisite_handling()
                 exp.expedition.on_going_exp_handling()
