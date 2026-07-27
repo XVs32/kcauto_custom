@@ -10,8 +10,8 @@ class ConfigPvP(ConfigBase):
 
     def __init__(self, config):
         super().__init__(config)
-        self.enabled = config['pvp.enabled']
-        self.fleet_preset = config['pvp.fleet_preset']
+        self.enabled = config["pvp.enabled"]
+        self.fleet_preset = config["pvp.fleet_preset"]
 
     @property
     def enabled(self):
@@ -20,13 +20,12 @@ class ConfigPvP(ConfigBase):
     @enabled.setter
     def enabled(self, value):
         if type(value) is not bool:
-            raise ValueError(
-                "Specified value for pvp enabled is not a boolean.")
+            raise ValueError("Specified value for pvp enabled is not a boolean.")
         if (
-                self._config['pvp.enabled']
-                and self._config['combat.enabled']
-                and CombinedFleetModeEnum.contains_value(
-                    self._config['combat.fleet_mode'])):
+            self._config["pvp.enabled"]
+            and self._config["combat.enabled"]
+            and CombinedFleetModeEnum.contains_value(self._config["combat.fleet_mode"])
+        ):
             raise ValueError("Cannot enable PvP when combat fleet is combined")
         self._enabled = value
 

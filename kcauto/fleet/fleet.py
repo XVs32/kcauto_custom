@@ -37,14 +37,13 @@ class Fleet(object):
 
     def select(self):
         Log.log_debug_1(f"Selecting fleet {self.fleet_id}.")
-        kca_u.kca.click_existing(
-            'top_submenu', f'fleet|fleet_{self.fleet_id}.png')
+        kca_u.kca.click_existing("top_submenu", f"fleet|fleet_{self.fleet_id}.png")
         while not kca_u.kca.exists(
-                'top_submenu', f'fleet|fleet_{self.fleet_id}_active.png',
-                FLEET_ID_ICON):
+            "top_submenu", f"fleet|fleet_{self.fleet_id}_active.png", FLEET_ID_ICON
+        ):
             kca_u.kca.click_existing(
-                'top_submenu', f'fleet|fleet_{self.fleet_id}.png',
-                FLEET_ID_ICON)
+                "top_submenu", f"fleet|fleet_{self.fleet_id}.png", FLEET_ID_ICON
+            )
 
     @property
     def fleet_type(self):
@@ -53,7 +52,7 @@ class Fleet(object):
     @fleet_type.setter
     def fleet_type(self, value):
         Log.log_debug_1(f"value {value}.")
-        
+
         if self.fleet_id == 1 and value != FleetEnum.COMBAT:
             raise ValueError("Fleet 1 can only be a combat fleet.")
         if value not in [e for e in FleetEnum]:
@@ -86,8 +85,8 @@ class Fleet(object):
         print_log = True if value != self._enabled else False
         if value is True and print_log:
             Log.log_msg(f"Fleet {self.fleet_id} has arrived at base!")
-            
-            ship : Ship
+
+            ship: Ship
             for ship in self.ships:
                 ship.needs_resupply = True
         elif value is False and print_log:
@@ -96,22 +95,22 @@ class Fleet(object):
 
     @property
     def ship_ids(self) -> list[int]:
-        
+
         ret = []
-        
+
         for ship in self.ships:
             ret.append(ship.production_id)
-        
+
         return ret
-    
+
     @property
     def equipment_ids(self) -> list[int]:
-        
+
         ret = []
-        
+
         for ship in self.ships:
             ret += ship.equipment_ids
-        
+
         return ret
 
     @property
@@ -128,7 +127,8 @@ class Fleet(object):
             self._return_time = KCTime.convert_epoch(value)
             Log.log_msg(
                 f"Fleet {self.fleet_id} returns at "
-                f"{KCTime.datetime_to_str(self._return_time)}.")
+                f"{KCTime.datetime_to_str(self._return_time)}."
+            )
         else:
             raise TypeError("Wrong type for return_time")
 
@@ -159,7 +159,7 @@ class Fleet(object):
     @property
     def under_repair(self):
         import repair.repair_core as rep
-        
+
         for ship in self.ships:
             if ship.production_id in rep.repair.ships_under_repair:
                 return True
@@ -200,46 +200,47 @@ class Fleet(object):
         return (
             f"Fleet {self.fleet_id} / "
             f"{self.weakest_state.display_name} fleet damage / "
-            f"{self.highest_fatigue.display_name} ")
+            f"{self.highest_fatigue.display_name} "
+        )
 
     @property
     def expedition_fleet_status(self):
-        return_time_string = ((
-                " / Returning at "
-                f"{KCTime.datetime_to_str(self.return_time)}")
+        return_time_string = (
+            (f" / Returning at {KCTime.datetime_to_str(self.return_time)}")
             if self.return_time
-            else "")
+            else ""
+        )
 
         return (
             f"Fleet {self.fleet_id} / "
             f"{'At base' if self.at_base else 'On expedition'}"
-            f"{return_time_string }")
-        
+            f"{return_time_string}"
+        )
+
     @property
     def detailed_fleet_status(self):
         ship_strings = []
         for ship in self.ships:
-            ship_strings.append(
-                f"{ship.name} ({ship.damage.display_name} damage)")
+            ship_strings.append(f"{ship.name} ({ship.damage.display_name} damage)")
         return " : ".join(ship_strings)
 
     @property
     def size(self):
         return len(self.ships)
-            
+
     @property
     def sum_level(self):
         level_sum = 0
         for ship in self.ships:
             level_sum += ship.level
         return level_sum
-            
+
     @property
     def flag_level(self):
         if self.size == 0:
             return 0
         return self.ships[0].level
-    
+
     def has_stype(self, stype_list, member_id_list):
         """
         Check if the fleet contains ships of a specific ship type.
@@ -247,7 +248,7 @@ class Fleet(object):
         Args:
             stype (list[ShipTypeEnum]): list of ship types to check for
             member_id_list (list[int]): list of ship position in this fleet, id start from 0
-            
+
         Returns:
             count (int): number of ships in the fleet that match the ship type
         """
@@ -255,11 +256,11 @@ class Fleet(object):
         for i, ship in enumerate(self.ships):
             if i not in member_id_list:
                 continue
-            
+
             if ship.ship_type in stype_list:
                 count += 1
         return count
-    
+
     def has_ctype(self, ctype_list, member_id_list):
         """
         Check if the fleet contains ships of a specific ship class.
@@ -267,7 +268,7 @@ class Fleet(object):
         Args:
             ctype (list[ShipClassEnum]): list of ship classes to check for
             member_id_list (list[int]): list of ship position in this fleet, id start from 0
-            
+
         Returns:
             count (int): number of ships in the fleet that match the ship class
         """
@@ -275,11 +276,11 @@ class Fleet(object):
         for i, ship in enumerate(self.ships):
             if i not in member_id_list:
                 continue
-            
+
             if ship.ship_class in ctype_list:
                 count += 1
         return count
-    
+
     def has_id(self, id_list, member_id_list):
         """
         Check if the fleet contains ships of a specific ship id.
@@ -287,7 +288,7 @@ class Fleet(object):
         Args:
             id_list (list[int]): list of ship ids to check for
             member_id_list (list[int]): list of ship position in this fleet, id start from 0
-            
+
         Returns:
             count (int): number of ships in the fleet that match the ship id
         """
@@ -295,23 +296,23 @@ class Fleet(object):
         for i, ship in enumerate(self.ships):
             if i not in member_id_list:
                 continue
-            
+
             if ship.api_id in id_list:
                 count += 1
         return count
-    
+
     def add_ship(self, ship):
         if not isinstance(ship, Ship):
             raise TypeError("ship must be an instance of Ship class.")
         self.ships.append(ship)
         return
-            
+
     def get_ship_by_production_id(self, production_id):
         for ship in self.ships:
             if ship.production_id == production_id:
                 return ship
         return None
-            
+
     def update_ship_hps(self, hps):
         for idx, ship in enumerate(self.ships):
             ship.hp = hps[idx]
@@ -320,22 +321,21 @@ class Fleet(object):
         Log.log_debug_1(f"Running visual health check of fleet {self.fleet_id}.")
 
         find_heavy = kca_u.kca.find_all(
-            region, 'fleet|ship_state_dmg_heavy.png', VISUAL_DAMAGE)
+            region, "fleet|ship_state_dmg_heavy.png", VISUAL_DAMAGE
+        )
         heavy = len(find_heavy)
 
         find_moderate = kca_u.kca.find_all(
-            region, 'fleet|ship_state_dmg_moderate.png', VISUAL_DAMAGE, True)
+            region, "fleet|ship_state_dmg_moderate.png", VISUAL_DAMAGE, True
+        )
         moderate = len(find_moderate)
 
         find_minor = kca_u.kca.find_all(
-            region, 'fleet|ship_state_dmg_minor.png', VISUAL_DAMAGE, True)
+            region, "fleet|ship_state_dmg_minor.png", VISUAL_DAMAGE, True
+        )
         minor = len(find_minor)
 
-        self.visual_health = {
-            'heavy': heavy,
-            'moderate': moderate,
-            'minor': minor
-        }
+        self.visual_health = {"heavy": heavy, "moderate": moderate, "minor": minor}
         Log.log_debug_1(f"Visual health check results: {self.visual_health}")
         return self.visual_health
 

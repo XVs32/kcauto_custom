@@ -30,6 +30,7 @@ class ExpeditionStats(StatsBase):
                 f"{self.expeditions_sent} Expeditions sent "
                 f"({self.expeditions_sent_ph:.2f}/hr) / "
                 f"{self.expeditions_received} Expeditions received "
-                f"({self.expeditions_received_ph:.2f}/hr)")
+                f"({self.expeditions_received_ph:.2f}/hr)"
+            )
 
         return return_string

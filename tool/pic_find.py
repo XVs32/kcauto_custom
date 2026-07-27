@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 
+
 def find_subimage(image, subimage):
     # Load the images in grayscale
     image_gray = cv2.imread(image, cv2.IMREAD_GRAYSCALE)
@@ -19,9 +20,10 @@ def find_subimage(image, subimage):
     else:
         return False
 
+
 # Example usage
-image = 'a.png'
-subimage = 'b.png'
+image = "a.png"
+subimage = "b.png"
 if find_subimage(image, subimage):
     print(f"{subimage} is a sub-image of {image}")
 else:

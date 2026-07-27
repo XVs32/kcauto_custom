@@ -57,7 +57,8 @@ class Stats(object):
         Log.log_success(
             "kcauto has been running for "
             f"{KCTime.timedelta_to_str(datetime.now() - self.start_time)}"
-            f" (loop {self.loop_count}).")
+            f" (loop {self.loop_count})."
+        )
         if cfg.config.combat.enabled:
             Log.log_success(self.combat)
         if cfg.config.pvp.enabled:
@@ -86,15 +87,16 @@ class Stats(object):
 
         if cfg.config.scheduler.enabled:
             import scheduler.scheduler_core as sch
+
             Log.log_success("Active Scheduler rules:")
             for sleep_tuple in sch.scheduler.stop_timers:
                 Log.log_success(
-                    f"- {sleep_tuple[1]} at "
-                    f"{KCTime.datetime_to_str(sleep_tuple[0])}")
+                    f"- {sleep_tuple[1]} at {KCTime.datetime_to_str(sleep_tuple[0])}"
+                )
             for wake_tuple in sch.scheduler.wake_timers:
                 Log.log_success(
-                    f"- {wake_tuple[1]} until "
-                    f"{KCTime.datetime_to_str(wake_tuple[0])}")
+                    f"- {wake_tuple[1]} until {KCTime.datetime_to_str(wake_tuple[0])}"
+                )
             for run_tuple in sch.scheduler.run_thresholds:
                 Log.log_success(f"- {run_tuple[1]}")
             for rule_tuple in sch.scheduler.misc_rules:

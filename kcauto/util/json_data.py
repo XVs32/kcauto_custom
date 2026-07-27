@@ -2,9 +2,10 @@ import json
 import os
 from abc import ABC
 
+
 class JsonData(ABC):
-    """kcauto json helper module.
-    """
+    """kcauto json helper module."""
+
     @classmethod
     def create_path(cls, path):
         """Helper method for generating OS-friendly path from kcauto-style
@@ -16,7 +17,7 @@ class JsonData(ABC):
         Returns:
             str: OS-friendly path
         """
-        return os.path.join(*path.split('|'))
+        return os.path.join(*path.split("|"))
 
     @classmethod
     def dump_json(cls, data, path, pretty=False):
@@ -32,7 +33,7 @@ class JsonData(ABC):
         json_path = cls.create_path(path)
         temp_path = json_path + ".tmp"
         os.makedirs(os.path.dirname(json_path), exist_ok=True)
-        with open(temp_path, 'w', encoding='utf-8') as json_file:
+        with open(temp_path, "w", encoding="utf-8") as json_file:
             if not pretty:
                 json.dump(data, json_file, ensure_ascii=False)
             else:
@@ -50,7 +51,7 @@ class JsonData(ABC):
             object: deserialized object.
         """
         json_path = cls.create_path(path)
-        with open(json_path, encoding='utf-8') as json_file:
+        with open(json_path, encoding="utf-8") as json_file:
             data = json.load(json_file)
         return data
 
