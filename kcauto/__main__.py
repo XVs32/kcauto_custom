@@ -6,7 +6,7 @@ import sys
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     """Main entry point for kcauto script. Decides whether or not to launch in
     CLI, GUI, or debug mode.
     """
@@ -15,19 +15,21 @@ if __name__ == '__main__':
 
     if args.debug:
         if not args.debug_asset:
-            raise ValueError(
-                "--debug-asset must be specified when using --debug.")
+            raise ValueError("--debug-asset must be specified when using --debug.")
         from util.debug import debug
+
         debug.find_all(args.debug_asset, args.debug_similarity)
-    #elif args.cli:
+    # elif args.cli:
     else:
         from startup.kcauto_wrapper import kcauto_main
+
         cfg = args.cfg_path if args.cfg_path else args.cfg
         Log.log_success(
             f"Initializing kcauto v{__version__} in command-line mode with "
-            f"the '{cfg}' config file.")
+            f"the '{cfg}' config file."
+        )
         kcauto_main()
-    #else:
+    # else:
     #    from kcauto_gui import gui_main
     #    Log.log_success(f"Initializing kcauto v{__version__} GUI.")
     #    gui_main()

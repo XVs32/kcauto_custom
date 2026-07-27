@@ -9,6 +9,7 @@ Optional flags:
     -o, --out       Override output path
     --no-backup     Don't keep a timestamped backup of the existing file
 """
+
 import argparse
 import json
 import os
@@ -20,19 +21,39 @@ from datetime import datetime
 
 DEFAULT_RAW_URL = "https://raw.githubusercontent.com/KC3Kai/kc3-translations/master/data/en/quests.json"
 
+
 def download(url):
     req = Request(url, headers={"User-Agent": "kcauto-update-script/1.0"})
     with urlopen(req) as resp:
         status = getattr(resp, "status", None)
         if status is not None and status != 200:
-            raise HTTPError(url, status, getattr(resp, "reason", ""), resp.headers, None)
+            raise HTTPError(
+                url, status, getattr(resp, "reason", ""), resp.headers, None
+            )
         return resp.read()
 
+
 def main():
-    parser = argparse.ArgumentParser(description="Download latest KC3 quests.json and overwrite local copy.")
-    parser.add_argument("--url", "-u", default=DEFAULT_RAW_URL, help="Raw URL to download (default: KC3Kai raw quests.json)")
-    parser.add_argument("--out", "-o", default=None, help="Output path (default: data/quests/kc3_quests_en.json relative to repo root)")
-    parser.add_argument("--no-backup", action="store_true", help="Don't keep a timestamped backup of the existing file")
+    parser = argparse.ArgumentParser(
+        description="Download latest KC3 quests.json and overwrite local copy."
+    )
+    parser.add_argument(
+        "--url",
+        "-u",
+        default=DEFAULT_RAW_URL,
+        help="Raw URL to download (default: KC3Kai raw quests.json)",
+    )
+    parser.add_argument(
+        "--out",
+        "-o",
+        default=None,
+        help="Output path (default: data/quests/kc3_quests_en.json relative to repo root)",
+    )
+    parser.add_argument(
+        "--no-backup",
+        action="store_true",
+        help="Don't keep a timestamped backup of the existing file",
+    )
     args = parser.parse_args()
 
     script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -70,6 +91,7 @@ def main():
         sys.exit(4)
 
     print(f"Updated {out_path} from {args.url}")
+
 
 if __name__ == "__main__":
     main()

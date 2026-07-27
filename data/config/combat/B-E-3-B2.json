@@ -1,0 +1,9 @@
+{
+  "combat.fleet_mode": "strike",
+  "combat.node_selects": [
+    "B>B1"
+  ],
+  "combat.node_night_battles": [
+    "B2:True"
+  ]
+}

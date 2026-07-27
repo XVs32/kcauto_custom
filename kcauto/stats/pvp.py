@@ -20,17 +20,17 @@ class PvPStats(StatsBase):
         if cfg.config.pvp.enabled:
             if pvp.pvp.enabled:
                 return_string = (
-                    "Next PvP at "
-                    f"{KCTime.datetime_to_str(pvp.pvp.next_pvp_time)}")
+                    f"Next PvP at {KCTime.datetime_to_str(pvp.pvp.next_pvp_time)}"
+                )
             else:
                 time_disabled = pvp.pvp.time_disabled
                 if time_disabled:
                     return_string = (
                         f"PvP module disabled as of "
-                        f"{KCTime.datetime_to_str(time_disabled)}")
+                        f"{KCTime.datetime_to_str(time_disabled)}"
+                    )
 
-            return_string += (
-                f" / {self.pvp_done} PvPs done ({self.pvp_done_ph:.2f}/hr)")
+            return_string += f" / {self.pvp_done} PvPs done ({self.pvp_done_ph:.2f}/hr)"
         else:
             return_string = "PvP module is disabled."
 

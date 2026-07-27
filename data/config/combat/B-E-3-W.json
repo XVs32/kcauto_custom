@@ -1,0 +1,12 @@
+{
+  "combat.fleet_mode": "ctf",
+  "combat.node_selects": [
+    "H>M"
+  ],
+  "combat.node_night_battles": [
+    "W:True"
+  ],
+  "combat.retreat_points": [
+    "W"
+  ]
+}

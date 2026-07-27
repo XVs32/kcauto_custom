@@ -14,6 +14,4 @@ class ShipSwitcherStats(StatsBase):
         return self.ships_switched / self.hours_run
 
     def __str__(self):
-        return (
-            f"{self.ships_switched} ships switched "
-            f"({self.ships_switched_ph:.2f}/hr)")
+        return f"{self.ships_switched} ships switched ({self.ships_switched_ph:.2f}/hr)"

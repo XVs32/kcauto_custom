@@ -1,0 +1,9 @@
+{
+  "combat.node_selects": [
+    "I>O",
+    "O>P"
+  ],
+  "combat.retreat_points": [
+    "P"
+  ]
+}
