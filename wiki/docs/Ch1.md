@@ -21,7 +21,7 @@ close all of them before re-starting with `remote-debugging` enabled.
 * **For Linux(Ubuntu) users**:  
 Wayland in Ubuntu does not work well with kcauto(and a lot of other stuffs, lol)  
 You would want to run your Ubuntu with the good old X-windows  
-![image](https://github.com/user-attachments/assets/696ed225-09da-4254-9a1c-956c4c1f87f9)
+![image](https://github.com/user-attachments/assets/696ed225-09da-4254-9a1c-956c4c1f87f9)    
 
 ---
 
