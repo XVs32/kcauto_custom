@@ -34,7 +34,7 @@ plugins:
           default: false
           build: true
 nav:
-    - "Home": home.md
+    - "Home": index.md
 
     - "Ch1: Setup guide": Ch1.md
     - "Ch2: Beginner user guide": Ch2.md
