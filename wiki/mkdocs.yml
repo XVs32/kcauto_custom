@@ -1,0 +1,54 @@
+
+site_name: kcauto_custom Wiki
+
+theme:
+    name: material
+    palette:
+        scheme: slate      # 強制全站使用 Slate 深色主題
+        primary: indigo    # 主色調 (可自由調整，如 blue grey, deep orange)
+        accent: indigo     # 強調色
+
+markdown_extensions:
+
+  - pymdownx.tilde:
+      subscript: false
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+
+plugins:
+  - search
+  - i18n:
+      default_language: en
+      languages:
+        - locale: en
+          name: English
+          default: true     # <-- 補上這一行
+          build: true
+        - locale: zh
+          name: 繁體中文
+          default: false    # 非預設語言明確設為 false (或不寫)
+          build: true
+        - locale: ja
+          name: 日本語
+          default: false
+          build: true
+nav:
+    - "Home": home.md
+
+    - "Ch1: Setup guide": Ch1.md
+    - "Ch2: Beginner user guide": Ch2.md
+    - "Ch3: Gamer User Guides":
+        - "Ch3.1: Sortie": Ch3.1.md
+        - "Ch3.2: Expedition": Ch3.2.md
+        - "Ch3.3: PvP": Ch3.3.md
+        - "Ch3.4: Factory": Ch3.4.md
+    - "Ch4: Expert User Guide":
+        - "Ch4.1: Sortie": Ch4.1.md
+        - "Ch4.2: Factory": Ch4.2.md
+    - "Ch5: Configuration File": Ch5.md
+    - "Ch99: Appendix":
+        - "Ch99.1: Your own event map support": Ch99.1.md
+        - "Ch99.2: Your own (time limit) quest": Ch99.2.md
+        - "Ch99.3: Noro6 equipment update script": Ch99.3.md
+
