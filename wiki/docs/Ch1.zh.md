@@ -1,4 +1,4 @@
-## 通用前置作業 (Common)
+## 前置作業 (Common)
 _You need to do this no matter what_
 
 * 在 `debug`（除錯）模式下運行 POI（Brave 也停止支援 Manifest V2，只能88 KC3 了）
