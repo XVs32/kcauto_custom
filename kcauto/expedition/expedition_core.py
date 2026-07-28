@@ -162,7 +162,6 @@ class ExpeditionCore(CoreBase):
                 # Active mode
                 pooling_interval = OVERNIGHT_TIME_INTERVAL
 
-            DESIRE_BUCKET = 2000
             self.exp_rank = []
 
             for exp in self.exp_data:
