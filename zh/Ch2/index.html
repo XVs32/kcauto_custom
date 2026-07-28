@@ -1,0 +1,1288 @@
+
+<!doctype html>
+<html lang="zh" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="../Ch1/">
+      
+      
+        <link rel="next" href="../Ch3.1/">
+      
+      
+        
+          <link rel="alternate" href="../../Ch2/" hreflang="en">
+        
+          <link rel="alternate" href="./" hreflang="zh">
+        
+          <link rel="alternate" href="../../ja/Ch2/" hreflang="ja">
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Ch2: Beginner user guide - kcauto_custom Wiki</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#expedition" class="md-skip">
+          跳转至
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="页眉">
+    <a href="../.." title="kcauto_custom Wiki" class="md-header__button md-logo" aria-label="kcauto_custom Wiki" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            kcauto_custom Wiki
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Ch2: Beginner user guide
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+    
+    
+    
+      <div class="md-header__option">
+  <div class="md-select">
+    
+    <button class="md-header__button md-icon" aria-label="选择当前语言">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m12.87 15.07-2.54-2.51.03-.03A17.5 17.5 0 0 0 14.07 6H17V4h-7V2H8v2H1v2h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2zm-2.62 7 1.62-4.33L19.12 17z"/></svg>
+    </button>
+    <div class="md-select__inner">
+      <ul class="md-select__list">
+        
+          <li class="md-select__item">
+            <a href="../../Ch2/" hreflang="en" class="md-select__link">
+              English
+            </a>
+          </li>
+        
+          <li class="md-select__item">
+            <a href="./" hreflang="zh" class="md-select__link">
+              繁體中文
+            </a>
+          </li>
+        
+          <li class="md-select__item">
+            <a href="../../ja/Ch2/" hreflang="ja" class="md-select__link">
+              日本語
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</div>
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="搜索" placeholder="搜索" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="查找">
+        
+        <button type="reset" class="md-search__icon md-icon" title="清空当前内容" aria-label="清空当前内容" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            正在初始化搜索引擎
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="导航栏" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="kcauto_custom Wiki" class="md-nav__button md-logo" aria-label="kcauto_custom Wiki" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    kcauto_custom Wiki
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../home/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Ch1/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Ch1: Setup guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Ch2: Beginner user guide
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Ch2: Beginner user guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#expedition" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Expedition
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#combat" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Combat
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Combat">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#manual-sortie-mode" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Manual sortie mode
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#akashi-repair" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Akashi repair
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pvp" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PVP
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#scheduler" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scheduler
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Scheduler">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#end-time" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        End time
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sortie-count" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sortie count
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#quest-panel" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Quest panel
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#start-kcauto_custom" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Start kcauto_custom
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Start kcauto_custom">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#on-your-first-run-you-would-need-to-start-kcauto-in-splash-screen" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        On your first run, you would need to start kcauto in splash screen
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Ch3: Gamer User Guides
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Ch3: Gamer User Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Ch3.1/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Ch3.1: Sortie
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Ch3.2/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Ch3.2: Expedition
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Ch3.3/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Ch3.3: PvP
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Ch3.4/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Ch3.4: Factory
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Ch4: Expert User Guide
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Ch4: Expert User Guide
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Ch4.1/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Ch4.1: Sortie
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Ch4.2/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Ch4.2: Factory
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Ch5/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Ch5: Configuration File
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Ch99: Appendix
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Ch99: Appendix
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Ch99.1/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Ch99.1: Your own event map support
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Ch99.2/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Ch99.2: Your own (time limit) quest
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Ch99.3/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Ch99.3: Noro6 equipment update script
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#expedition" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Expedition
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#combat" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Combat
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Combat">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#manual-sortie-mode" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Manual sortie mode
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#akashi-repair" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Akashi repair
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pvp" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PVP
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#scheduler" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scheduler
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Scheduler">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#end-time" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        End time
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sortie-count" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sortie count
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#quest-panel" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Quest panel
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#start-kcauto_custom" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Start kcauto_custom
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Start kcauto_custom">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#on-your-first-run-you-would-need-to-start-kcauto-in-splash-screen" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        On your first run, you would need to start kcauto in splash screen
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+  <h1>Ch2: Beginner user guide</h1>
+
+<p><em>Journey of a thousand miles begins with single step.</em></p>
+<hr />
+<p><img alt="Panel" src="https://github.com/XVs32/kcauto_custom/assets/16824564/0d582a36-60fb-4e18-b660-4b4c84a5cb18" /></p>
+<ul>
+<li>Move around<ul>
+<li>Arrow key</li>
+</ul>
+</li>
+<li>Confirm/Select<ul>
+<li>Enter key</li>
+</ul>
+</li>
+<li>Exit<ul>
+<li>Esc key</li>
+</ul>
+</li>
+<li>Pause on fly<ul>
+<li>Spacebar</li>
+</ul>
+</li>
+</ul>
+<hr />
+<h3 id="expedition">Expedition</h3>
+<p><img alt="image" src="https://github.com/XVs32/kcauto_custom/assets/16824564/2846046b-4800-4e67-8a3b-eb8bea06a706" /></p>
+<p>The expedition sets are locate in <code>.\data\expedition\expedition_preset.json</code><br />
+You can change the expedition Id as needed.</p>
+<pre><code>{
+               #2(長距離練習航海)        #3(警備任務)     #6(防空射撃演習)
+  &quot;active&quot;:         [[2],                 [3],              [6]],
+  &quot;passive&quot;:      [[5],[21],[38]],
+  &quot;overnight&quot;:    [[11],[24],[38]],
+  &quot;user&quot;:  [[],[],[21]]
+}
+</code></pre>
+<p>Auto assign is not available in beginner guide, please select <code>disable</code> here.<br />
+<img alt="image" src="https://github.com/XVs32/kcauto_custom/assets/16824564/d2e35af7-314a-4226-9a1b-ede83bd1926f" /></p>
+<hr />
+<h3 id="combat">Combat</h3>
+<p><img alt="image" src="https://user-images.githubusercontent.com/16824564/236396966-32b58de4-0aaa-481e-a2fc-f31213592a8d.png" /></p>
+<h4 id="manual-sortie-mode">Manual sortie mode</h4>
+<p>First, select your map with arrow key.<br />
+<img alt="image" src="https://user-images.githubusercontent.com/16824564/236397921-9c79af0b-1edb-44b3-a0ee-8609d54b790a.png" /><br />
+Then select your kancolle in-game fleet preset(select <code>disable</code> to use the current fleet).<br />
+<img alt="image" src="https://user-images.githubusercontent.com/16824564/236398074-ffff1651-e646-4331-979f-ca4c4d9873bf.png" />  </p>
+<h4 id="akashi-repair">Akashi repair</h4>
+<p>After selecting <code>disable(akashi mode)</code> in sortie menu,<br />
+you could choose to turn on akashi repair.<br />
+(you need an akashi kai to use this)<br />
+<img alt="image" src="https://user-images.githubusercontent.com/16824564/236397397-689805f8-bfb5-4034-b5b1-14f11d9ce40c.png" /></p>
+<hr />
+<h3 id="pvp">PVP</h3>
+<p>Disalbe pvp or select the kancolle in-game fleet preset for pvp<br />
+<img alt="image" src="https://user-images.githubusercontent.com/16824564/236402275-ee8a1fc6-812c-4208-bbfa-f0f6629a035b.png" /></p>
+<hr />
+<h3 id="scheduler">Scheduler</h3>
+<p><img alt="image" src="https://user-images.githubusercontent.com/16824564/236401065-96636c78-fcc9-476f-89bb-690e27a17657.png" /></p>
+<h4 id="end-time">End time</h4>
+<p>The time to shutdown kcauto_custom(select the time with arrow key)<br />
+(you should never run kcauto_custom 7/24)</p>
+<p><img alt="image" src="https://user-images.githubusercontent.com/16824564/236399553-8897a4ec-7d5c-4977-a039-752925a18fe7.png" /></p>
+<h4 id="sortie-count">Sortie count</h4>
+<p>After the specified number of sorties, kcauto_custom will stop sortie.<br />
+(select the sortie count with arrow key)<br />
+<img alt="image" src="https://user-images.githubusercontent.com/16824564/236400038-03892b63-9cc9-4442-a490-2ce8ca0396c1.png" /></p>
+<hr />
+<h3 id="quest-panel">Quest panel</h3>
+<p><img width="445" height="340" alt="image" src="https://github.com/user-attachments/assets/2fe76be4-ce87-40e1-a4a5-612383a8a72b" /></p>
+<p>Press <code>?</code> (shift + /) key in home page,<br />
+you can select what quest kcauto_custom will attempt to finish,<br />
+press <code>?</code> again to leave quest panel</p>
+<hr />
+<h3 id="start-kcauto_custom">Start kcauto_custom</h3>
+<h4 id="on-your-first-run-you-would-need-to-start-kcauto-in-splash-screen">On your first run, you would need to start kcauto in splash screen</h4>
+<p><img alt="???" src="../../assets/569605507.png" /></p>
+<p>Select log panel, and reload your config.<br />
+<img alt="image" src="https://user-images.githubusercontent.com/16824564/236402505-1eade161-ca58-4ab4-80da-7f9d7ff4bbc1.png" /><br />
+<img alt="image" src="https://user-images.githubusercontent.com/16824564/236402785-c0cd0858-cbad-41be-8c83-500a2e99003c.png" /></p>
+<p>You might get hit by the following error on the first run:</p>
+<pre><code class="language-java">[SUCCESS][2026-02-23 17:35:36] Initializing kcauto.
+[DEBUG][2026-02-23 17:35:36] Loading data from 'configs/config_cui.json'.
+[DEBUG][2026-02-23 17:35:36] Loading data from 'data/config/config_cui_template.json'.
+[DEBUG][2026-02-23 17:35:36] Combat config init called
+[DEBUG][2026-02-23 17:35:36] SET _sortie_map_read_only: {MapEnum(value)}
+[DEBUG][2026-02-23 17:35:36] _repair_bucket_threshold set 500
+[SUCCESS][2026-02-23 17:35:36] Config successfully loaded.
+[DEBUG][2026-02-23 17:35:36] Loading data from 'data/temp/reinforce_general_category.json'.
+[ERROR][2026-02-23 17:35:36] Reinforce equipment data not found, please start kcauto from splash screen
+[ERROR][2026-02-23 17:35:36] [Errno 2] No such file or directory: 'data/temp/reinforce_general_category.json'
+[DEBUG][2026-02-23 17:35:36] Loading data from 'data/temp/equipment_list.json'.
+[ERROR][2026-02-23 17:35:36] Equipment data not found, please start kcauto from splash screen
+[ERROR][2026-02-23 17:35:36] [Errno 2] No such file or directory: 'data/temp/equipment_list.json'
+</code></pre>
+<p>This is because kcauto_custom has never get the data it needs from kancolle.<br />
+As long as your <code>data/temp</code> folder is fill with the following files after the first run,<br />
+you are fine and can simply run kcauto_custom for second time.</p>
+<p><img width="870" height="256" alt="image" src="https://github.com/user-attachments/assets/0be41038-5a54-4f44-a7e8-60657589a91c" /></p>
+<p><em>All the temp files kcauto_custom acquire from kancolle</em></p>
+<p><del><strong><em>For Windows user:</em></strong></del><br />
+<del>There are reports show that kcauto_custom does not work well with <code>chrome_driver</code> mode on Windows.</del> <br />
+<del>If you are having issue on mouse control,</del><br />
+<del>it is recommended to switch to <code>direct_control</code> mode.</del>  </p>
+<p><del><strong>How to:</strong></del><br />
+<del>1. Run kcauto_custom once</del><br />
+<del>2. Close kcauto_custom</del><br />
+<del>3. Open <code>configs/config_cui.json</code></del><br />
+<del>4. Edit <code>"general.interaction_mode": "chrome_driver",</code> =&gt; <code>"general.interaction_mode": "direct_control",</code></del><br />
+<del>5. Save and close</del>  </p>
+<p>Windows mouse issue should be fixed in latest version.(2026/07/28)</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>
