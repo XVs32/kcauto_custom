@@ -60,7 +60,6 @@ class CombatCore(CoreBase):
     SHIPDECK_API = {KCSAPIEnum.SORTIE_SHIPDECK}
     EQUIP_API = {KCSAPIEnum.SORTIE_END}
     MAP_API = {KCSAPIEnum.MAP_INFO_JSON}
-    MAP_API = {KCSAPIEnum.MAP_INFO_JSON}
     API_COMBAT_PHASES_TYPE1 = (
         "api_hougeki",
         "api_hougeki1",
