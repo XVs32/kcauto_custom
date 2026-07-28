@@ -480,6 +480,7 @@ class CombatCore(CoreBase):
             elif node_type == self.NODE_TYPE_END:
                 Log.log_debug_1(f"Node type end {self.current_node.name}.")
                 conducting_sortie = False
+
             self.gimmick_judge(node_type=node_type)
 
         self._click_until_port()
@@ -520,6 +521,7 @@ class CombatCore(CoreBase):
                     | self.EQUIP_API
                     | self.MAP_API,
                     process_all=False,
+                    needed_all=False,
                     timeout=5,
                 )
 

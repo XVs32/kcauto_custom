@@ -518,9 +518,7 @@ class FleetSwitcherCore(object):
                 "lower_right", "shipswitcher|shiplist_shipswitch_button.png"
             )
             kca_u.kca.wait("lower", "shipswitcher|equipment_panel.png")
-            api_result = api.api.update_from_api(
-                {KCSAPIEnum.FREE_EQUIPMENT}, process_all=True, timeout=30
-            )
+            api_result = api.api.update_from_api({KCSAPIEnum.FREE_EQUIPMENT}, process_all=True)
 
         if ship.slot_num == 1:
             Log.log_debug_1(f"1 slot ship")
@@ -543,8 +541,8 @@ class FleetSwitcherCore(object):
 
         kca_u.kca.wait("lower", "shipswitcher|equipment_panel.png")
 
-        if ship.slot_ex != None and ship.slot_ex != Equipment():
-            Log.log_debug_1(f"reinforce slot ship")
+        if ship.slot_ex != None and ship.slot_ex.is_empty_equipment == False:
+            Log.log_debug_1(f"reinforce slot ship, slot_ex = {ship.slot_ex.name}")
             kca_u.kca.click("reinforce_slot_unload_equipment")
 
         kca_u.kca.wait("lower", "shipswitcher|equipment_panel.png")
@@ -681,9 +679,7 @@ class FleetSwitcherCore(object):
                     "lower_right", "shipswitcher|shiplist_shipswitch_button.png"
                 )
                 kca_u.kca.wait("lower", "shipswitcher|equipment_panel.png")
-                api.api.update_from_api(
-                    {KCSAPIEnum.FREE_EQUIPMENT}, process_all=True, timeout=30
-                )
+                api.api.update_from_api({KCSAPIEnum.FREE_EQUIPMENT}, process_all=True)
 
             if (
                 fleet.ships[i].slot_ex != None
@@ -733,9 +729,7 @@ class FleetSwitcherCore(object):
                     "lower_right", "shipswitcher|shiplist_shipswitch_button.png"
                 )
                 kca_u.kca.wait("lower", "shipswitcher|equipment_panel.png")
-                api.api.update_from_api(
-                    {KCSAPIEnum.FREE_EQUIPMENT}, process_all=True, timeout=30
-                )
+                api.api.update_from_api({KCSAPIEnum.FREE_EQUIPMENT}, process_all=True)
 
         return True
 

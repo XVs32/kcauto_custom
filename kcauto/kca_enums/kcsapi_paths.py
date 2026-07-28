@@ -2,6 +2,7 @@ from kca_enums.enum_base import EnumBase
 
 
 class KCSAPIEnum(EnumBase):
+    UNKNOWN = "unknown"
     NONE = None
     ANY = "kcsapi"
     GET_DATA = "kcsapi/api_start2/getData"
@@ -59,4 +60,12 @@ class KCSAPIEnum(EnumBase):
     FREE_EQUIPMENT = "kcsapi/api_get_member/ship3"
     # static resources
     MAP_INFO_JSON = "kcs2/resources/map"
-    GAUGE = "kcs2/resources/gauge"
+
+    @classmethod
+    def get_by_value(cls, value):
+        if value.startswith(cls.MAP_INFO_JSON.value):
+            return cls.MAP_INFO_JSON
+
+        if cls.contains_value(value):
+            return cls(value)
+        return cls.get_default()
