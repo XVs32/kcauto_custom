@@ -25,10 +25,10 @@ _You need to do this no matter what_
 ---
 
 ## 啟動說明 (Start Up)
-請從 **初學者 (Beginner)**、**玩家 (Gamer)** 或 **開發者 (Developer)** 中選擇一種模式進行：
+請從 **初學者 (Beginner)**、**玩家 (Gamer)** 或 **開發者 (Developer)** 中選擇一種模式：
 
 ### 初學者 (Beginner)  
-*雖然功能受限，但安裝與設定流程最簡單。*
+*功能受限，但安裝與後續設定流程最簡單。*
 
 * Windows
     * 連點兩下執行 `kcauto_cui.exe` 
@@ -38,22 +38,22 @@ _You need to do this no matter what_
 以上！
 
 ### 玩家 (Gamer)  
-*需要搭配制空權模擬器 (Noro6) 設置，但可使用全部完整功能。*
+*需要搭配制空權模擬器 (Noro6) 設置，但可使用完整功能。*
 
 * Windows
     * 建議在 PowerShell 中執行 `.\kcauto_cui.exe` 以獲得最佳使用體驗
     * 或執行 `.\kcauto_custom.exe --cfg <你的設定檔名稱>` 來指定自訂設定檔  
-      （注意：此處副檔名無需輸入 `.json`）
+      （注意：此處無需輸入副檔名 `.json`）
 * Linux
     * 執行 `./kcauto_cui`
     * 或執行 `./kcauto.bin --cfg <你的設定檔名稱>` 來指定自訂設定檔  
-      （注意：此處副檔名無需輸入 `.json`）
+      （注意：此處無需輸入副檔名 `.json`）
 
 ### 專家 (Expert)
 *從設定檔直接調整各種細部設定。非新手向。*
 
 請時刻保持備份的好習慣。  
-如果不確定自己在做什麼，後果自負，LOL。
+如果你不知道自己在做什麼，回頭是岸。
 
 詳細說明請參閱第 4 章。
 
@@ -71,8 +71,8 @@ _You need to do this no matter what_
 * Windows
     * 執行 `python .\kcauto\kcauto_cui.py`
     * 或執行 `python kcauto --cfg <你的設定檔名稱>` 來指定自訂設定檔  
-      （注意：此處副檔名無需輸入 `.json`）
+      （注意：此處無需輸入副檔名 `.json`）
 * Linux
     * 執行 `python3 ./kcauto/kcauto_cui.py`
     * 或執行 `python3 kcauto --cfg <你的設定檔名稱>` 來指定自訂設定檔  
-      （注意：此處副檔名無需輸入 `.json`）
+      （注意：此處無需輸入副檔名 `.json`）
