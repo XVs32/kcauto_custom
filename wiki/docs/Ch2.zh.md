@@ -1,25 +1,25 @@
-_Journey of a thousand miles begins with single step._
+_千里之行，始於足下。_
 
 ---
 
 ![Panel](https://github.com/XVs32/kcauto_custom/assets/16824564/0d582a36-60fb-4e18-b660-4b4c84a5cb18)
 
 
-* Move around
-    * Arrow key
-* Confirm/Select
-    * Enter key
-* Exit
-    * Esc key
-* Pause on fly
-    * Spacebar
+* 移動選項
+    * 方向鍵
+* 確認 / 選擇
+    * Enter 鍵
+* 退出
+    * Esc 鍵
+* 暫停
+    * 空白鍵 (Spacebar)
 
 ---
-### Expedition
+### 遠征 (Expedition)
 ![image](https://github.com/XVs32/kcauto_custom/assets/16824564/2846046b-4800-4e67-8a3b-eb8bea06a706)
 
-The expedition sets are locate in `.\data\expedition\expedition_preset.json`  
-You can change the expedition Id as needed.
+遠征組合位於 `.\data\expedition\expedition_preset.json`  
+請根據需求自行修改遠征 ID。
 ```
 {
                #2(長距離練習航海)        #3(警備任務)     #6(防空射撃演習)
@@ -30,74 +30,73 @@ You can change the expedition Id as needed.
 }
 ```
 
-Auto assign is not available in beginner guide, please select `disable` here.  
+初學者指南中不提供自動分配功能，請選擇 `disable`。  
 ![image](https://github.com/XVs32/kcauto_custom/assets/16824564/d2e35af7-314a-4226-9a1b-ede83bd1926f)
 
 ---
-### Combat
+### 出擊 (Combat)
 
 ![image](https://user-images.githubusercontent.com/16824564/236396966-32b58de4-0aaa-481e-a2fc-f31213592a8d.png)
 
-#### Manual sortie mode
-First, select your map with arrow key.  
+#### 手動出擊模式 (Manual sortie mode)
+首先，透過方向鍵選擇出擊地圖。  
 ![image](https://user-images.githubusercontent.com/16824564/236397921-9c79af0b-1edb-44b3-a0ee-8609d54b790a.png)  
-Then select your kancolle in-game fleet preset(select `disable` to use the current fleet).  
+選擇你在艦隊Collection 遊戲內的編成記錄（選擇 `disable` 則代表直接使用當前艦隊）。  
 ![image](https://user-images.githubusercontent.com/16824564/236398074-ffff1651-e646-4331-979f-ca4c4d9873bf.png)  
 
-#### Akashi repair
-After selecting `disable(akashi mode)` in sortie menu,  
-you could choose to turn on akashi repair.  
-(you need an akashi kai to use this)  
+#### 明石維修 (Akashi repair)
+在出擊選單中選擇 `disable(akashi mode)` 後，  
+可以選擇開啟明石維修功能。  
+（此功能需要明石改才能使用）  
 ![image](https://user-images.githubusercontent.com/16824564/236397397-689805f8-bfb5-4034-b5b1-14f11d9ce40c.png)
 
 ---
 
-### PVP
-Disalbe pvp or select the kancolle in-game fleet preset for pvp  
+### 演習 (PVP)
+關閉演習功能，或是選擇遊戲內用於演習的編成記錄  
 ![image](https://user-images.githubusercontent.com/16824564/236402275-ee8a1fc6-812c-4208-bbfa-f0f6629a035b.png)
 
 ---
 
-### Scheduler
+### 排程器 (Scheduler)
 
 ![image](https://user-images.githubusercontent.com/16824564/236401065-96636c78-fcc9-476f-89bb-690e27a17657.png)
 
-#### End time
-The time to shutdown kcauto_custom(select the time with arrow key)  
-(you should never run kcauto_custom 7/24)
+#### 結束時間 (End time)
+關閉 kcauto_custom 的時間（用方向鍵選擇時間）  
+（請絕對不要 24 小時全天候運作 bot，後果自負，LOL）
 
 ![image](https://user-images.githubusercontent.com/16824564/236399553-8897a4ec-7d5c-4977-a039-752925a18fe7.png)
 
-#### Sortie count
-After the specified number of sorties, kcauto_custom will stop sortie.  
-(select the sortie count with arrow key)  
+#### 出擊次數 (Sortie count)
+達到指定的出擊次數後，kcauto_custom 就會停止出擊。  
+（用方向鍵選擇出擊次數）  
 ![image](https://user-images.githubusercontent.com/16824564/236400038-03892b63-9cc9-4442-a490-2ce8ca0396c1.png)
 
 ---
 
-### Quest panel
+### 任務面板 (Quest panel)
 
 <img width="445" height="340" alt="image" src="https://github.com/user-attachments/assets/2fe76be4-ce87-40e1-a4a5-612383a8a72b" />
 
-Press `?` (shift + /) key in home page,  
-you can select what quest kcauto_custom will attempt to finish,  
-press `?` again to leave quest panel
+在主頁面按下 `?` (shift + /) 鍵，  
+可以選擇 kcauto_custom 要嘗試完成哪些任務，  
+再次按下 `?` 即可離開任務面板。
 
 ---
 
-### Start kcauto_custom
+### 啟動 kcauto_custom
 
-#### On your first run, you would need to start kcauto in splash screen
+#### 第一次執行時，請從啟動畫面開始運行 kcauto
 
 ![???](assets/569605507.png)
 
-Select log panel, and reload your config.  
+選擇 Log 面板，並重新載入你的設定檔。  
 ![image](https://user-images.githubusercontent.com/16824564/236402505-1eade161-ca58-4ab4-80da-7f9d7ff4bbc1.png)  
 ![image](https://user-images.githubusercontent.com/16824564/236402785-c0cd0858-cbad-41be-8c83-500a2e99003c.png)
 
 
-
-You might get hit by the following error on the first run:
+你在首次運行時可能會撞到以下錯誤：
 ```java
 [SUCCESS][2026-02-23 17:35:36] Initializing kcauto.
 [DEBUG][2026-02-23 17:35:36] Loading data from 'configs/config_cui.json'.
@@ -114,25 +113,24 @@ You might get hit by the following error on the first run:
 [ERROR][2026-02-23 17:35:36] [Errno 2] No such file or directory: 'data/temp/equipment_list.json'
 ```
 
-This is because kcauto_custom has never get the data it needs from kancolle.  
-As long as your `data/temp` folder is fill with the following files after the first run,  
-you are fine and can simply run kcauto_custom for second time.
+這是因為 kcauto_custom 還沒從艦隊Collection 那裡取得所需的資料。  
+只要在第一次運行後，你的 `data/temp` 資料夾裡有生成以下檔案，  
+就可以直接重啟 kcauto_custom。
 
 <img width="870" height="256" alt="image" src="https://github.com/user-attachments/assets/0be41038-5a54-4f44-a7e8-60657589a91c" />
 
-*All the temp files kcauto_custom acquire from kancolle*
+*kcauto_custom 從艦隊Collection 取得的所有暫存檔*
 
-~~***For Windows user:***~~  
-~~There are reports show that kcauto_custom does not work well with `chrome_driver` mode on Windows.~~   
-~~If you are having issue on mouse control,~~  
-~~it is recommended to switch to `direct_control` mode.~~  
+~~***Windows 使用者請注意：***~~  
+~~有回報指出 kcauto_custom 在 Windows 上使用 `chrome_driver` 模式時運作得不太順暢。~~   
+~~如果你遇到滑鼠控制方面的問題，~~  
+~~建議切換至 `direct_control` 模式。~~  
 
-~~**How to:**~~  
-~~1. Run kcauto_custom once~~  
-~~2. Close kcauto_custom~~  
-~~3. Open `configs/config_cui.json`~~  
-~~4. Edit `"general.interaction_mode": "chrome_driver",` => `"general.interaction_mode": "direct_control",`~~  
-~~5. Save and close~~  
+~~**設定方法：**~~  
+~~1. 運行 kcauto_custom 一次~~  
+~~2. 關閉 kcauto_custom~~  
+~~3. 開啟 `configs/config_cui.json`~~  
+~~4. 修改 `"general.interaction_mode": "chrome_driver",` => `"general.interaction_mode": "direct_control",`~~  
+~~5. 存檔並關閉~~  
 
-Windows mouse issue should be fixed in latest version.(2026/07/28)
-
+Windows 的滑鼠問題應已在最新版本中修復 (2026/07/28)。
