@@ -1,4 +1,5 @@
 from constants import API_URL
+import inspect
 import sys
 from sys import platform
 import os
@@ -31,9 +32,25 @@ from constants import EMPTY_EQUIPMENT_API, TEMP_EQUIPMENT_API
 class ApiWrapper(object):
     API_URL = "path"
     BODY = "response"
+    _update_from_api_call_id = 0
 
     def __init__(self):
         Log.log_debug_1("API Wrapper module initialized.")
+
+    def _format_api_set_for_log(self, apis):
+        return "[" + ", ".join(sorted(api.name for api in apis)) + "]"
+
+    def _get_update_from_api_caller_for_log(self):
+        stack = inspect.stack()
+        try:
+            for frame_info in stack[2:]:
+                if frame_info.function == "update_from_api":
+                    continue
+                filename = os.path.relpath(frame_info.filename, os.getcwd())
+                return f"{filename}:{frame_info.lineno}:{frame_info.function}"
+        finally:
+            del stack
+        return "unknown"
 
     def update_from_api(
         self,
@@ -50,13 +67,22 @@ class ApiWrapper(object):
         if KCSAPIEnum.NONE in target_apis:
             return {}
 
+        ApiWrapper._update_from_api_call_id += 1
+        call_id = ApiWrapper._update_from_api_call_id
+        caller = self._get_update_from_api_caller_for_log()
         target_apis = set(target_apis)
         received_apis = set()
 
-        Log.log_debug_1("Begin waiting for API payload(s).")
+        Log.log_debug_1(
+            f"API_WAIT[{call_id}] begin caller={caller} "
+            f"targets={self._format_api_set_for_log(target_apis)} "
+            f"process_all={process_all} needed_all={needed_all} timeout={timeout}"
+        )
         kcapi_requests = {}
         results = {}
         end_time = datetime.now() + timedelta(seconds=timeout)
+        msg = None
+        pop_count = 0
 
         while True:
             # Block waiting for a message. Use the remaining overall timeout
@@ -65,45 +91,75 @@ class ApiWrapper(object):
             remaining = (end_time - datetime.now()).total_seconds()
             if remaining <= 0:
                 if needed_all:
-                    Log.log_warn(f"API timeout.")
+                    Log.log_warn(f"API_WAIT[{call_id}] timeout caller={caller}.")
                     for missing_api in target_apis:
                         if missing_api not in received_apis:
-                            Log.log_warn(f"Missing API: {missing_api}")
+                            Log.log_warn(
+                                f"API_WAIT[{call_id}] Missing API: {missing_api}"
+                            )
+                else:
+                    Log.log_debug_1(
+                        f"API_WAIT[{call_id}] timeout suppressed "
+                        f"caller={caller} received="
+                        f"{self._format_api_set_for_log(received_apis)}"
+                    )
                 break
 
             if len(received_apis) >= len(target_apis):
                 if process_all == False:
-                    Log.log_debug_1("All target APIs received, breaking wait.")
+                    Log.log_debug_1(
+                        f"API_WAIT[{call_id}] all target APIs received; "
+                        "breaking wait because process_all=False."
+                    )
                     break
                 elif process_all == True and msg == None:
                     Log.log_debug_1(
-                        "All target APIs received, queue emptied, breaking wait."
+                        f"API_WAIT[{call_id}] all target APIs received and "
+                        "queue emptied; breaking wait."
                     )
                     break
 
+            should_block = len(received_apis) < len(target_apis)
+            Log.log_debug_1(
+                f"API_WAIT[{call_id}] pop start block={should_block} "
+                f"remaining={remaining:.2f}s received="
+                f"{self._format_api_set_for_log(received_apis)}"
+            )
             msg = api_listener.api_listener.pop_msg(
-                block=len(received_apis) < len(target_apis), timeout=remaining
+                block=should_block, timeout=remaining
             )
             if msg == None:
+                Log.log_debug_1(f"API_WAIT[{call_id}] pop empty.")
                 continue
 
+            pop_count += 1
             request_url = msg[self.API_URL]
             request_url = request_url.lstrip("/")
             api_type = KCSAPIEnum.get_by_value(request_url)
+            Log.log_debug_1(
+                f"API_WAIT[{call_id}] pop#{pop_count} path={request_url} "
+                f"api_type={api_type} stage={msg.get('stage')} "
+                f"timestamp={msg.get('timestamp')}"
+            )
 
             is_match = False
 
             if api_type == KCSAPIEnum.MAP_INFO_JSON:
                 if api_type in target_apis:
-                    Log.log_debug_1(f"GOT MAP_INFO_JSON API: {request_url}")
                     if request_url.endswith(".json"):
                         is_match = True
             elif api_type in target_apis:
-                Log.log_debug_1(f"GOT API: {request_url}")
                 is_match = True
 
+            Log.log_debug_1(
+                f"API_WAIT[{call_id}] pop#{pop_count} match={is_match} "
+                f"targeted={api_type in target_apis}"
+            )
+
             if is_match:
-                Log.log_debug_1(f"Processing API: {api_type}")
+                Log.log_debug_1(
+                    f"API_WAIT[{call_id}] pop#{pop_count} processing {api_type}"
+                )
                 res = self._load_api_data(api_type, msg[self.BODY])
 
                 if api_type.name in results:
@@ -112,9 +168,24 @@ class ApiWrapper(object):
                     results[api_type.name] = [res]
 
                 received_apis.add(api_type)
+                Log.log_debug_1(
+                    f"API_WAIT[{call_id}] pop#{pop_count} processed {api_type}; "
+                    f"received={self._format_api_set_for_log(received_apis)} "
+                    f"result_keys={sorted(results.keys())}"
+                )
+            else:
+                Log.log_debug_1(
+                    f"API_WAIT[{call_id}] pop#{pop_count} discarded unmatched API "
+                    f"{api_type} path={request_url}"
+                )
 
         self._check_for_chrome_crash()
 
+        Log.log_debug_1(
+            f"API_WAIT[{call_id}] end caller={caller} pop_count={pop_count} "
+            f"received={self._format_api_set_for_log(received_apis)} "
+            f"result_keys={sorted(results.keys())}"
+        )
         return results
 
     def _check_for_chrome_crash(self):
