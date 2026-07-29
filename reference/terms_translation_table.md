@@ -38,6 +38,7 @@
 | 解體 | 解体 (かいたい) | Scrap / Dismantle |
 | 廢棄 | 廃棄 (はいき) | Scrap Equipment |
 | 任務 | 任務 (にんむ) | Quest / Mission |
+| 擴充外掛 | プラグイン | Plugin / Extension |
 
 ---
 
@@ -56,6 +57,7 @@
 | 大破進擊 | 大破進撃 (たいはしんげき) | Taiha Sortie (Advance on Heavy Damage) |
 | 夜戰 | 夜戦 (やせん) | Night Battle |
 | 戰鬥結果 / 戰果 | 勝利判定 (しょうりはんてい) | Battle Result |
+| 制空權模擬器 | 制空権シミュレータ | Noro6 (Air Superiority Simulator) |
 
 ---
 
@@ -88,3 +90,11 @@
 | 像素辨識 / 圖像識別 | 画像認識 | Image Recognition / Pixel Detection |
 | 模擬點擊 / 點擊延遲 | クリック遅延 | Click Delay / Humanization |
 | 隨機等待 | ランダム待機 | Random Delay / Waiting Time |
+| 前置作業 | 共通事前準備 | Common |
+| 啟動說明 | 起動手順 | Start Up |
+| 初學者 | 初心者 | Beginner |
+| 玩家 | ゲーマー | Gamer |
+| 專家 | エキスパート | Expert |
+| 開發人員 / 開發者 | 開発者 | Developer |
+| 除錯模式 | デバッグモード | Debug Mode |
+| 虛擬環境 | 仮想環境 | Virtual Environment (.venv) |
