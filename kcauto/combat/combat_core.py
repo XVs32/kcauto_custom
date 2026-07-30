@@ -491,19 +491,17 @@ class CombatCore(CoreBase):
     def _click_until_port(self):
 
         while True:
-            api_result = {"mock": "data"}
-            while api_result != {}:
-                api_result = api.api.update_from_api(
-                    {KCSAPIEnum.PORT}
-                    | self.COMBAT_APIS
-                    | self.RESULT_APIS
-                    | self.SHIPDECK_API
-                    | self.EQUIP_API,
-                    process_all=True,
-                )
+            api_result = api.api.update_from_api(
+                {KCSAPIEnum.PORT}
+                | self.COMBAT_APIS
+                | self.RESULT_APIS
+                | self.SHIPDECK_API
+                | self.EQUIP_API,
+                process_all=True,
+            )
 
-                if KCSAPIEnum.PORT.name not in api_result:
-                    kca_u.kca.r["combat_click"].click()
+            if KCSAPIEnum.PORT.name not in api_result:
+                kca_u.kca.r["combat_click"].click()
 
             if kca_u.kca.exists("left", "nav|home_menu_sortie.png"):
                 break
@@ -512,18 +510,16 @@ class CombatCore(CoreBase):
         Log.log_debug_1("Between nodes.")
 
         while True:
-            api_result = {"mock": "data"}
-            while api_result != {}:
-                api_result = api.api.update_from_api(
-                    self.COMBAT_APIS
-                    | self.RESULT_APIS
-                    | self.SHIPDECK_API
-                    | self.EQUIP_API
-                    | self.MAP_API,
-                    process_all=False,
-                    needed_all=False,
-                    timeout=5,
-                )
+            api.api.update_from_api(
+                self.COMBAT_APIS
+                | self.RESULT_APIS
+                | self.SHIPDECK_API
+                | self.EQUIP_API
+                | self.MAP_API,
+                process_all=False,
+                needed_all=False,
+                timeout=5,
+            )
 
             if kca_u.kca.exists("kc", "combat|compass.png"):
                 Log.log_msg("Spinning compass.")
