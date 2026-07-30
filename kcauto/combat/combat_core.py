@@ -498,6 +498,7 @@ class CombatCore(CoreBase):
                 | self.SHIPDECK_API
                 | self.EQUIP_API,
                 process_all=True,
+                timeout=5,
             )
 
             if KCSAPIEnum.PORT.name not in api_result:
