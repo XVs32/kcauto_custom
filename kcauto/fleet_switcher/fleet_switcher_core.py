@@ -324,6 +324,41 @@ class FleetSwitcherCore(object):
                 target_ship.equipments[slot] = replacement
             selected_equipment_ids.add(replacement.production_id)
 
+    def _is_ship_equipment_model_matched(self, active_ship: Ship, target_ship: Ship):
+        if [equipment.model_id for equipment in active_ship.equipments] != [
+            equipment.model_id for equipment in target_ship.equipments
+        ]:
+            return False
+
+        active_slot_ex_model_id = (
+            active_ship.slot_ex.model_id
+            if active_ship.slot_ex is not None
+            and not active_ship.slot_ex.is_empty_equipment
+            else None
+        )
+        target_slot_ex_model_id = (
+            target_ship.slot_ex.model_id
+            if target_ship.slot_ex is not None
+            and not target_ship.slot_ex.is_empty_equipment
+            else None
+        )
+        return active_slot_ex_model_id == target_slot_ex_model_id
+
+    def _is_custom_fleet_with_equipment_loaded(self, fleet_id, target_fleet: Fleet):
+        active_fleet = flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][fleet_id]
+
+        if active_fleet.ship_ids != target_fleet.ship_ids:
+            return False
+
+        for i in range(target_fleet.size):
+            active_ship = active_fleet.ships[i]
+            target_ship = target_fleet.ships[i]
+
+            if not self._is_ship_equipment_model_matched(active_ship, target_ship):
+                return False
+
+        return True
+
     def switch_fleet(self, context):
         self.goto()
         preset_id = self._get_next_preset_id(context)
@@ -585,6 +620,10 @@ class FleetSwitcherCore(object):
 
         self._normalize_target_equipment(fleet_id, costom_fleet)
 
+        if self._is_custom_fleet_with_equipment_loaded(fleet_id, costom_fleet):
+            Log.log_msg(f"Fleet {fleet_id} ships and equipment are already loaded")
+            return True
+
         self._unload_fleet_required_equipment(costom_fleet)
 
         Log.log_success("Equipment unloaded.")
@@ -657,14 +696,7 @@ class FleetSwitcherCore(object):
             if ship.production_id in target_fleet.ship_ids:
                 target_ship = target_fleet.get_ship_by_production_id(ship.production_id)
 
-                if ship.equipment_ids != target_ship.equipment_ids or (
-                    ship.slot_ex != None
-                    and (
-                        target_ship.slot_ex == None
-                        or ship.slot_ex.production_id
-                        != target_ship.slot_ex.production_id
-                    )
-                ):
+                if not self._is_ship_equipment_model_matched(ship, target_ship):
                     needed_load = True
 
                     if ship.slot_ex != None and target_ship.slot_ex == None:
@@ -859,11 +891,9 @@ class FleetSwitcherCore(object):
 
         needed_load = False
         for i in range(fleet.size):
-            if (
-                fleet.ships[i].equipment_ids
-                != flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][fleet_id]
-                .ships[i]
-                .equipment_ids
+            if not self._is_ship_equipment_model_matched(
+                flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][fleet_id].ships[i],
+                fleet.ships[i],
             ):
                 needed_load = True
                 break
@@ -876,11 +906,9 @@ class FleetSwitcherCore(object):
             equ.equipment.goto_fleet(fleet_id)
 
         for i in range(fleet.size):
-            if (
-                fleet.ships[i].equipment_ids
-                == flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][fleet_id]
-                .ships[i]
-                .equipment_ids
+            if self._is_ship_equipment_model_matched(
+                flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][fleet_id].ships[i],
+                fleet.ships[i],
             ):
                 Log.log_msg(f"equipment for {fleet.ships[i].name_jp} is already loaded")
                 continue
