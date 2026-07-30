@@ -501,11 +501,13 @@ class CombatCore(CoreBase):
                 timeout=5,
             )
 
-            if KCSAPIEnum.PORT.name not in api_result:
-                kca_u.kca.r["combat_click"].click()
+            if KCSAPIEnum.PORT.name in api_result:
+                break
 
             if kca_u.kca.exists("left", "nav|home_menu_sortie.png"):
                 break
+
+            kca_u.kca.r["combat_click"].click()
 
     def _cycle_between_nodes(self, sortie_map):
         Log.log_debug_1("Between nodes.")
