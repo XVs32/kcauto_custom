@@ -7,6 +7,7 @@ import api.api_core as api
 import config.config_core as cfg
 import combat.combat_core as com
 import pvp.pvp_core as pvp
+import repair.repair_core as rep
 import expedition.expedition_core as exp
 import fleet.fleet_core as flt
 import nav.nav as nav
@@ -34,6 +35,7 @@ class FleetSwitcherCore(object):
     exp_fleet_ship_id = {}
     exp_ship_pool = {}
     exp_fleet_ship_type = {}
+    equipment_replacements = {}
 
     def __init__(self):
         self._set_next_combat_preset()
@@ -67,6 +69,260 @@ class FleetSwitcherCore(object):
 
     def goto(self):
         ssw.ship_switcher.goto()
+
+    def _find_equipment_row(
+        self,
+        equipment_list: list[Equipment],
+        target: Equipment,
+        preferred_replacement_id=None,
+    ):
+        for row_id, equipment in enumerate(equipment_list):
+            if equipment.production_id == target.production_id:
+                return row_id, equipment, False
+
+        if preferred_replacement_id is not None:
+            for row_id, equipment in enumerate(equipment_list):
+                if (
+                    equipment.production_id == preferred_replacement_id
+                    and equipment.model_id == target.model_id
+                ):
+                    return row_id, equipment, True
+
+        replacement_candidates = [
+            (row_id, equipment)
+            for row_id, equipment in enumerate(equipment_list)
+            if equipment.model_id == target.model_id
+        ]
+        replacement_candidates.sort(
+            key=lambda item: (abs(item[1].stars - target.stars), item[1].production_id)
+        )
+
+        if replacement_candidates:
+            row_id, equipment = replacement_candidates[0]
+            return row_id, equipment, True
+
+        return -1, target, False
+
+    def _get_equipment_replacement_key(self, ship: Ship, slot, equipment: Equipment):
+        return (ship.production_id, slot, equipment.production_id)
+
+    def _remember_equipment_replacement(
+        self, ship: Ship, slot, target: Equipment, replacement: Equipment
+    ):
+        key = self._get_equipment_replacement_key(ship, slot, target)
+        self.equipment_replacements[key] = (target, replacement)
+
+    def _get_equipment_replacement_hint(self, ship: Ship, slot, target: Equipment):
+        key = self._get_equipment_replacement_key(ship, slot, target)
+        replacement = self.equipment_replacements.get(key)
+        return replacement[1] if replacement is not None else None
+
+    def _restore_original_target_equipment(self, fleet: Fleet):
+        for ship in fleet.ships:
+            for slot, equipment in enumerate(ship.equipments):
+                for key, (target, replacement) in self.equipment_replacements.items():
+                    if (
+                        key[0] == ship.production_id
+                        and key[1] == slot
+                        and equipment.production_id == replacement.production_id
+                    ):
+                        ship.equipments[slot] = target
+                        break
+
+            if ship.slot_ex is not None and not ship.slot_ex.is_empty_equipment:
+                for key, (target, replacement) in self.equipment_replacements.items():
+                    if (
+                        key[0] == ship.production_id
+                        and key[1] == "slot_ex"
+                        and ship.slot_ex.production_id == replacement.production_id
+                    ):
+                        ship.slot_ex = target
+                        break
+
+    def _get_ship_active_fleet(self, ship: Ship):
+        active_fleets = flt.fleets.fleets.get(flt.fleets.ACTIVE_FLEET_KEY, {})
+        for active_fleet in active_fleets.values():
+            if ship.production_id in active_fleet.ship_ids:
+                return active_fleet
+        return None
+
+    def _is_ship_equipment_replaceable(self, ship: Ship):
+        if ship.production_id in rep.repair.ships_under_repair:
+            return False
+
+        active_fleet = self._get_ship_active_fleet(ship)
+        return active_fleet is None or active_fleet.at_base
+
+    def _is_active_fleet_data_loaded(self):
+        active_fleets = flt.fleets.fleets.get(flt.fleets.ACTIVE_FLEET_KEY, {})
+        fleet_1 = active_fleets.get(1)
+        return bool(shp.ships.ship_pool and fleet_1 is not None and fleet_1.ships)
+
+    def _get_replaceable_equipment_ships(self, target_fleet_id):
+        if not self._is_active_fleet_data_loaded():
+            Log.log_warn(
+                "Active fleet data is not loaded; limiting equipment replacement "
+                "candidates to target ships and free equipment."
+            )
+            return []
+
+        protected_fleet_ids = {target_fleet_id}
+        combat_fleet_ids = flt.fleets.combat_fleets_id
+        if combat_fleet_ids is not None:
+            protected_fleet_ids.update(combat_fleet_ids)
+
+        candidate_ships = []
+        candidate_ship_ids = set()
+
+        for ship in flt.fleets.ships_not_in_fleets:
+            if not self._is_ship_equipment_replaceable(ship):
+                continue
+            candidate_ships.append(ship)
+            candidate_ship_ids.add(ship.production_id)
+
+        active_fleets = flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY]
+        for fleet_id, active_fleet in active_fleets.items():
+            if fleet_id in protected_fleet_ids or not active_fleet.at_base:
+                continue
+
+            for ship in active_fleet.ships:
+                if (
+                    ship.production_id in candidate_ship_ids
+                    or not self._is_ship_equipment_replaceable(ship)
+                ):
+                    continue
+                candidate_ships.append(ship)
+                candidate_ship_ids.add(ship.production_id)
+
+        return candidate_ships
+
+    def _get_equipment_replacement_candidates(
+        self,
+        active_ship: Ship,
+        slot,
+        target_equipment: Equipment,
+        replaceable_ships,
+    ):
+        candidates_by_id = {}
+
+        def add_candidate(priority, equipment):
+            if equipment is None or equipment.model_id <= 0:
+                return
+
+            existing = candidates_by_id.get(equipment.production_id)
+            if existing is None or priority < existing[0]:
+                candidates_by_id[equipment.production_id] = (priority, equipment)
+
+        if active_ship is not None and self._is_ship_equipment_replaceable(active_ship):
+            for active_slot, equipment in enumerate(active_ship.equipments):
+                add_candidate(0 if active_slot == slot else 1, equipment)
+
+            add_candidate(0 if slot == "slot_ex" else 1, active_ship.slot_ex)
+
+        for equipment in equ.equipment.equipment_pool.get(equ.equipment.FREE, []):
+            add_candidate(2, equipment)
+
+        for ship in replaceable_ships:
+            for equipment in ship.equipments:
+                add_candidate(3, equipment)
+            add_candidate(3, ship.slot_ex)
+
+        candidates = list(candidates_by_id.values())
+        candidates.sort(
+            key=lambda item: (
+                item[0],
+                abs(item[1].stars - target_equipment.stars),
+                item[1].production_id,
+            )
+        )
+        return candidates
+
+    def _normalize_target_equipment(self, fleet_id, fleet: Fleet):
+        self.equipment_replacements = {}
+
+        replaceable_ships = self._get_replaceable_equipment_ships(fleet_id)
+        target_slots = []
+        candidate_map = {}
+
+        for target_ship in fleet.ships:
+            active_ship = shp.ships.get_ship_from_production_id(
+                target_ship.production_id
+            )
+
+            for slot, target_equipment in enumerate(target_ship.equipments):
+                if target_equipment.model_id <= 0:
+                    continue
+                key = (target_ship.production_id, slot)
+                candidates = self._get_equipment_replacement_candidates(
+                    active_ship, slot, target_equipment, replaceable_ships
+                )
+                target_slots.append((target_ship, slot, target_equipment, candidates))
+                candidate_map[key] = {
+                    equipment.production_id for _, equipment in candidates
+                }
+
+            if target_ship.slot_ex is not None and target_ship.slot_ex.model_id > 0:
+                target_equipment = target_ship.slot_ex
+                key = (target_ship.production_id, "slot_ex")
+                candidates = self._get_equipment_replacement_candidates(
+                    active_ship, "slot_ex", target_equipment, replaceable_ships
+                )
+                target_slots.append(
+                    (target_ship, "slot_ex", target_equipment, candidates)
+                )
+                candidate_map[key] = {
+                    equipment.production_id for _, equipment in candidates
+                }
+
+        reserved_exact_ids = {
+            target_equipment.production_id
+            for target_ship, slot, target_equipment, _ in target_slots
+            if target_equipment.production_id
+            in candidate_map[(target_ship.production_id, slot)]
+        }
+        selected_equipment_ids = set()
+
+        for target_ship, slot, target_equipment, candidates in target_slots:
+            exact_match = next(
+                (
+                    equipment
+                    for _, equipment in candidates
+                    if equipment.production_id == target_equipment.production_id
+                    and equipment.production_id not in selected_equipment_ids
+                ),
+                None,
+            )
+            if exact_match is not None:
+                selected_equipment_ids.add(exact_match.production_id)
+                continue
+
+            replacement = next(
+                (
+                    equipment
+                    for _, equipment in candidates
+                    if equipment.model_id == target_equipment.model_id
+                    and equipment.production_id not in selected_equipment_ids
+                    and equipment.production_id not in reserved_exact_ids
+                ),
+                None,
+            )
+            if replacement is None:
+                continue
+
+            slot_name = "reinforcement equipment" if slot == "slot_ex" else "equipment"
+            Log.log_debug_1(
+                f"Preselected {slot_name} {replacement.name} "
+                f"with production id:{replacement.production_id} as a replacement "
+                f"candidate for production id:{target_equipment.production_id}."
+            )
+            self._remember_equipment_replacement(
+                target_ship, slot, target_equipment, replacement
+            )
+            if slot == "slot_ex":
+                target_ship.slot_ex = replacement
+            else:
+                target_ship.equipments[slot] = replacement
+            selected_equipment_ids.add(replacement.production_id)
 
     def switch_fleet(self, context):
         self.goto()
@@ -327,9 +583,13 @@ class FleetSwitcherCore(object):
         custom_fleet(Fleet): Fleet obj contain ships to use
         """
 
+        self._normalize_target_equipment(fleet_id, costom_fleet)
+
         self._unload_fleet_required_equipment(costom_fleet)
 
         Log.log_success("Equipment unloaded.")
+
+        self._restore_original_target_equipment(costom_fleet)
 
         nav.navigate.to("home")
 
@@ -653,26 +913,36 @@ class FleetSwitcherCore(object):
 
                     kca_u.kca.wait("upper_right", "shipswitcher|equipment_sort_all.png")
 
-                row_id = next(
-                    (
-                        j
-                        for j, equipment in enumerate(
-                            equ.equipment.equipment_pool[equ.equipment.FREE]
-                        )
-                        if equipment.production_id == fleet.ships[i].equipment_ids[slot]
+                target_equipment = fleet.ships[i].equipments[slot]
+                replacement_hint = self._get_equipment_replacement_hint(
+                    fleet.ships[i], slot, target_equipment
+                )
+                row_id, selected_equipment, is_replacement = self._find_equipment_row(
+                    equ.equipment.equipment_pool[equ.equipment.FREE],
+                    target_equipment,
+                    preferred_replacement_id=(
+                        replacement_hint.production_id
+                        if replacement_hint is not None
+                        else None
                     ),
-                    -1,
                 )
 
                 if row_id == -1:
                     Log.log_error(
-                        f"Cannot find equipment {fleet.ships[i].equipments[slot].name} \
-                        with production id:{fleet.ships[i].equipments[slot].production_id}, did you scrapped it?"
+                        f"Cannot find equipment {target_equipment.name} \
+                        with production id:{target_equipment.production_id}, did you scrapped it?"
                     )
                     exit(1)
 
+                if is_replacement:
+                    Log.log_warn(
+                        f"Cannot find equipment {target_equipment.name} \
+                        with production id:{target_equipment.production_id} in free equipment list; using \
+                        production id:{selected_equipment.production_id} with {selected_equipment.stars}★ instead."
+                    )
+
                 Log.log_msg(
-                    f"Selecting {fleet.ships[i].equipments[slot].name} {fleet.ships[i].equipments[slot].stars} ★"
+                    f"Selecting {selected_equipment.name} {selected_equipment.stars} ★"
                 )
                 ssw.ship_switcher.select_replacement_row(
                     row_idx=row_id, mode=ssw.ship_switcher.EQUIPMENT_MODE
@@ -701,25 +971,36 @@ class FleetSwitcherCore(object):
                         f"{k}: {equipment.name} {equipment.stars} (Production id: {equipment.production_id}, Model id: {equipment.model_id}), category id: {equipment.category}"
                     )
 
-                row_id = next(
-                    (
-                        j
-                        for j, equipment in enumerate(reinforce_equipment_list)
-                        if equipment.production_id
-                        == fleet.ships[i].slot_ex.production_id
+                target_equipment = fleet.ships[i].slot_ex
+                replacement_hint = self._get_equipment_replacement_hint(
+                    fleet.ships[i], "slot_ex", target_equipment
+                )
+                row_id, selected_equipment, is_replacement = self._find_equipment_row(
+                    reinforce_equipment_list,
+                    target_equipment,
+                    preferred_replacement_id=(
+                        replacement_hint.production_id
+                        if replacement_hint is not None
+                        else None
                     ),
-                    -1,
                 )
 
                 if row_id == -1:
                     Log.log_error(
-                        f"Cannot find equipment {fleet.ships[i].slot_ex.name} \
-                        with production id:{fleet.ships[i].slot_ex.production_id}, did you scrapped it?"
+                        f"Cannot find equipment {target_equipment.name} \
+                        with production id:{target_equipment.production_id}, did you scrapped it?"
                     )
                     exit(1)
 
+                if is_replacement:
+                    Log.log_warn(
+                        f"Cannot find equipment {target_equipment.name} \
+                        with production id:{target_equipment.production_id} in reinforcement equipment list; using \
+                        production id:{selected_equipment.production_id} with {selected_equipment.stars}★ instead."
+                    )
+
                 Log.log_msg(
-                    f"Selecting {fleet.ships[i].slot_ex.name} {fleet.ships[i].slot_ex.stars} ★ on page {row_id // 10 + 1} position {(row_id % 10) + 1}"
+                    f"Selecting {selected_equipment.name} {selected_equipment.stars} ★ on page {row_id // 10 + 1} position {(row_id % 10) + 1}"
                 )
                 ssw.ship_switcher.select_replacement_row(
                     row_idx=row_id,
