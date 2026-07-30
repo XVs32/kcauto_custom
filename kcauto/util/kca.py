@@ -22,7 +22,6 @@ from constants import (
     GAME_W,
     GAME_H,
     API_URL,
-    POI_URL_POSTFIX,
     EXACT,
     DEFAULT,
     SLEEP_MODIFIER,
@@ -97,20 +96,15 @@ class Kca(object):
 
         api_tab = None
         api_tab_id = None
-        poi_tab = None
-        poi_tab_id = None
         for n, tab in enumerate(self.api_hook.tabs):
             if API_URL in tab["url"]:
                 api_tab = n
                 api_tab_id = tab["id"]
-            if tab["url"].endswith(POI_URL_POSTFIX):
-                poi_tab = n
-                poi_tab_id = tab["id"]
 
-        self.poi_hook.connect_targetID(poi_tab_id)
-        Log.log_debug_1(f"Connected to poi tab ({poi_tab}:{poi_tab_id})")
+        if not self._connect_poi_tab():
+            Log.log_warn("POI quest stats disabled.")
 
-        if api_tab_id is None or api_tab_id is None:
+        if api_tab_id is None:
             Log.log_error(
                 "No Kantai Collection tab found in Chrome. Shutting down kcauto."
             )
@@ -123,6 +117,88 @@ class Kca(object):
         Log.log_success("Connected to Chrome")
 
         coordinate_system.coor.find_game_window_offset()
+
+    def _has_poi_quest_store(self, hook):
+        js_code = """
+        (() => {
+            try {
+                if (typeof window.getStore !== "function") {
+                    return false;
+                }
+        
+                const store = window.getStore();
+        
+                return Boolean(
+                    store &&
+                    store.info &&
+                    store.info.quests
+                );
+            } catch (e) {
+                return false;
+            }
+        })()
+        """
+
+        try:
+            response = hook.Runtime.evaluate(
+                expression=js_code,
+                returnByValue=True,
+            )
+
+            if isinstance(response, (list, tuple)) and response:
+                response = response[0]
+
+            return bool(
+                response.get("result", {}).get("result", {}).get("value", False)
+            )
+        except Exception as e:
+            Log.log_debug_1(f"Failed to validate POI target: {e}")
+            return False
+
+    def _connect_poi_tab(self):
+        port = cfg.config.general.chrome_dev_port
+        probe = PyChromeDevTools.ChromeInterface(
+            host="localhost",
+            port=port,
+            auto_connect=False,
+        )
+
+        try:
+            probe.get_tabs()
+        except Exception as e:
+            Log.log_warn(f"Failed to refresh Chrome targets for POI lookup: {e}")
+            return False
+
+        for n, tab in enumerate(probe.tabs):
+            candidate_hook = PyChromeDevTools.ChromeInterface(
+                host="localhost",
+                port=port,
+                auto_connect=False,
+            )
+            candidate_hook.tabs = probe.tabs
+
+            try:
+                candidate_hook.connect_targetID(tab["id"])
+            except Exception as e:
+                Log.log_debug_1(
+                    f"Failed to connect to POI target candidate "
+                    f"({n}:{tab.get('id')}): {e}"
+                )
+                continue
+
+            if not self._has_poi_quest_store(candidate_hook):
+                continue
+
+            self.poi_hook = candidate_hook
+            Log.log_debug_1(f"Connected to validated POI target ({n}:{tab['id']})")
+            return True
+
+        self.poi_hook = None
+        Log.log_warn(
+            "No target with a readable POI quest store was found. "
+            "Open POI or check the Chrome remote debugging profile."
+        )
+        return False
 
     def hook_health_check(self):
         """Method that runs through the different events reported to the api
@@ -1144,6 +1220,9 @@ class Kca(object):
         import json
 
         Log.log_debug_1("get poi quests stats...")
+
+        if self.poi_hook is None and not self._connect_poi_tab():
+            return {"error": "POI quest store target not found"}
 
         js_code = """
         (() => {
