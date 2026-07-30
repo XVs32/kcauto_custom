@@ -90,7 +90,6 @@ class Kca(object):
         """
         Log.log_msg("Hooking into Chrome.")
         self.cdt_init(target="api")
-        self.cdt_init(target="poi")
         api_listener.api_listener.set_port(cfg.config.general.poi_api_port)
         api_listener.api_listener.start()
 
@@ -1046,12 +1045,9 @@ class Kca(object):
         """
 
         port = cfg.config.general.chrome_dev_port
-        chrome = PyChromeDevTools.ChromeInterface(host="localhost", port=port)
         if target == "api":
             self.api_hook = PyChromeDevTools.ChromeInterface(host=host, port=port)
             coordinate_system.coor.api_hook = self.api_hook
-        elif target == "poi":
-            self.poi_hook = PyChromeDevTools.ChromeInterface(host=host, port=port)
         else:
             raise ValueError("Hook target must be either api or poi.")
 
