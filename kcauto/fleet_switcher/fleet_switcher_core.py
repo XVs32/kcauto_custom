@@ -103,17 +103,17 @@ class FleetSwitcherCore(object):
 
         return -1, target, False
 
-    def _get_equipment_replacement_key(self, ship: Ship, slot, equipment: Equipment):
-        return (ship.production_id, slot, equipment.production_id)
+    def _get_equipment_replacement_key(self, ship: Ship, slot):
+        return (ship.production_id, slot)
 
     def _remember_equipment_replacement(
         self, ship: Ship, slot, target: Equipment, replacement: Equipment
     ):
-        key = self._get_equipment_replacement_key(ship, slot, target)
+        key = self._get_equipment_replacement_key(ship, slot)
         self.equipment_replacements[key] = (target, replacement)
 
-    def _get_equipment_replacement_hint(self, ship: Ship, slot, target: Equipment):
-        key = self._get_equipment_replacement_key(ship, slot, target)
+    def _get_equipment_replacement_hint(self, ship: Ship, slot):
+        key = self._get_equipment_replacement_key(ship, slot)
         replacement = self.equipment_replacements.get(key)
         return replacement[1] if replacement is not None else None
 
@@ -954,7 +954,7 @@ class FleetSwitcherCore(object):
 
                 target_equipment = fleet.ships[i].equipments[slot]
                 replacement_hint = self._get_equipment_replacement_hint(
-                    fleet.ships[i], slot, target_equipment
+                    fleet.ships[i], slot
                 )
                 row_id, selected_equipment, is_replacement = self._find_equipment_row(
                     equ.equipment.equipment_pool[equ.equipment.FREE],
@@ -1012,7 +1012,7 @@ class FleetSwitcherCore(object):
 
                 target_equipment = fleet.ships[i].slot_ex
                 replacement_hint = self._get_equipment_replacement_hint(
-                    fleet.ships[i], "slot_ex", target_equipment
+                    fleet.ships[i], "slot_ex"
                 )
                 row_id, selected_equipment, is_replacement = self._find_equipment_row(
                     reinforce_equipment_list,
