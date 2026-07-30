@@ -158,7 +158,9 @@ class FleetSwitcherCore(object):
         fleet_1 = active_fleets.get(1)
         return bool(shp.ships.ship_pool and fleet_1 is not None and fleet_1.ships)
 
-    def _get_replaceable_equipment_ships(self, target_fleet_id):
+    def _get_replaceable_equipment_ships(
+        self, target_fleet_id, protected_fleet_ids=None
+    ):
         if not self._is_active_fleet_data_loaded():
             Log.log_warn(
                 "Active fleet data is not loaded; limiting equipment replacement "
@@ -166,10 +168,8 @@ class FleetSwitcherCore(object):
             )
             return []
 
-        protected_fleet_ids = {target_fleet_id}
-        combat_fleet_ids = flt.fleets.combat_fleets_id
-        if combat_fleet_ids is not None:
-            protected_fleet_ids.update(combat_fleet_ids)
+        protected_fleet_ids = set(protected_fleet_ids or ())
+        protected_fleet_ids.add(target_fleet_id)
 
         candidate_ships = []
         candidate_ship_ids = set()
@@ -237,10 +237,14 @@ class FleetSwitcherCore(object):
         )
         return candidates
 
-    def _normalize_target_equipment(self, fleet_id, fleet: Fleet):
+    def _normalize_target_equipment(
+        self, fleet_id, fleet: Fleet, protected_fleet_ids=None
+    ):
         self.equipment_replacements = {}
 
-        replaceable_ships = self._get_replaceable_equipment_ships(fleet_id)
+        replaceable_ships = self._get_replaceable_equipment_ships(
+            fleet_id, protected_fleet_ids
+        )
         target_slots = []
         candidate_map = {}
 
@@ -375,14 +379,19 @@ class FleetSwitcherCore(object):
                 # Combat is a property, sort does not saved inside it
                 rev_fleet_id = flt.fleets.combat_fleets_id.copy()
                 rev_fleet_id.sort(reverse=True)
+                protected_fleet_ids = set()
                 for combat_fleet_id in rev_fleet_id:
                     if combat_fleet_id == 3:
                         fleet_list[3] = fleet_list[1]
 
                     if not self.switch_to_costom_fleet_with_equipment(
-                        combat_fleet_id, fleet_list[combat_fleet_id]
+                        combat_fleet_id,
+                        fleet_list[combat_fleet_id],
+                        protected_fleet_ids,
                     ):
                         return False
+
+                    protected_fleet_ids.add(combat_fleet_id)
 
                 nav.navigate.to("refresh_home")
 
@@ -610,7 +619,9 @@ class FleetSwitcherCore(object):
         Log.log_success("Fleet load complete.")
         return True
 
-    def switch_to_costom_fleet_with_equipment(self, fleet_id, costom_fleet: Fleet):
+    def switch_to_costom_fleet_with_equipment(
+        self, fleet_id, costom_fleet: Fleet, protected_fleet_ids=None
+    ):
         """
         method to switch the ship in {fleet_id} to ships defined in {ship_list}
 
@@ -618,7 +629,7 @@ class FleetSwitcherCore(object):
         custom_fleet(Fleet): Fleet obj contain ships to use
         """
 
-        self._normalize_target_equipment(fleet_id, costom_fleet)
+        self._normalize_target_equipment(fleet_id, costom_fleet, protected_fleet_ids)
 
         if self._is_custom_fleet_with_equipment_loaded(fleet_id, costom_fleet):
             Log.log_msg(f"Fleet {fleet_id} ships and equipment are already loaded")
