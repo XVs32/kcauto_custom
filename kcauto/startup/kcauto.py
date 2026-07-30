@@ -20,6 +20,8 @@ import util.kca as kca_u
 from fleet.noro6 import Noro6
 from kca_enums.expeditions import ExpeditionEnum
 from kca_enums.sorite_rank import SortieRankEnum
+from kca_enums.quest_state import QuestStateEnum
+from kca_enums.quest_progress_flag import QuestProgressFlagEnum
 from util.logger import Log
 from kca_enums.maps import MapEnum
 from quest.quest import Quest
@@ -179,10 +181,8 @@ class Kcauto(object):
         ]
 
         for cfg in quest_configs:
-            if (
-                qst.quest.is_tracking_quest(Quest(name=cfg["id"]))
-                and not cfg["is_full"]()
-            ):
+            quest = Quest(name=cfg["id"])
+            if qst.quest.is_tracking_quest(quest) and not cfg["is_full"]():
                 anything_is_done = True
 
                 if cfg["type"] == "develop":
@@ -200,7 +200,57 @@ class Kcauto(object):
                         fty.factory.set_timer()
                         return
 
-                    success = fty.factory.build_logic(cfg["count"])
+                    current_quest = next(
+                        (
+                            q
+                            for q in qst.quest.current_quest_list
+                            if q.quest_id == quest.quest_id
+                        ),
+                        None,
+                    )
+                    if (
+                        current_quest is not None
+                        and current_quest.state == QuestStateEnum.DONE
+                    ):
+                        Log.log_msg(
+                            f"Factory quest {cfg['id']} is already done; "
+                            "skipping build."
+                        )
+                        nav.navigate.to("home")
+                        if cfg["id"] == "Fd4":
+                            fty.factory.set_timer()
+                        continue
+
+                    remaining_count = kca_u.kca.get_poi_factory_quest_count(quest)
+                    if remaining_count is None:
+                        remaining_count = self._infer_factory_build_count_from_quest(
+                            cfg, current_quest
+                        )
+                        if remaining_count is None:
+                            remaining_count = cfg["count"]
+                            Log.log_warn(
+                                f"Cannot get factory quest count for {cfg['id']} "
+                                "from POI or quest progress; using default count "
+                                f"{remaining_count}."
+                            )
+                        else:
+                            Log.log_warn(
+                                f"Cannot get factory quest count for {cfg['id']} from POI; "
+                                f"using quest API fallback count {remaining_count}."
+                            )
+                    else:
+                        Log.log_msg(
+                            f"Factory quest {cfg['id']} remaining build count from POI: "
+                            f"{remaining_count}."
+                        )
+
+                    if remaining_count <= 0:
+                        nav.navigate.to("home")
+                        if cfg["id"] == "Fd4":
+                            fty.factory.set_timer()
+                        continue
+
+                    success = fty.factory.build_logic(remaining_count)
 
                     if cfg["id"] == "Fd4":
                         nav.navigate.to("home")
@@ -213,6 +263,38 @@ class Kcauto(object):
         if anything_is_done == False:
             """Daily factory process done, disable from now"""
             fty.factory.enabled = False
+
+    def _infer_factory_build_count_from_quest(self, cfg, current_quest):
+        if current_quest is None:
+            Log.log_debug_1(
+                f"Factory quest {cfg['id']} is missing from current quest list."
+            )
+            return None
+
+        Log.log_debug_1(
+            f"Factory quest {cfg['id']} fallback state: "
+            f"state={current_quest.state.name}, "
+            f"progress_flag={current_quest.progress_flag.name}."
+        )
+
+        if current_quest.state == QuestStateEnum.DONE:
+            return 0
+
+        if current_quest.state != QuestStateEnum.IN_PROGRESS:
+            return None
+
+        if cfg["id"] == "Fd2":
+            return 1
+
+        # Fd4 reports HALFWAY after either one or two builds, so the flag cannot distinguish whether one or two builds remain.
+        # Fd4 has no NEAR_DONE state, so build only once when HALFWAY is reported and recheck afterward.
+        if cfg["id"] == "Fd4":
+            return {
+                QuestProgressFlagEnum.NONE: 3,
+                QuestProgressFlagEnum.HALFWAY: 1,
+            }.get(current_quest.progress_flag)
+
+        return None
 
     def run_pvp_logic(self):
         if not pvp.pvp.enabled:

@@ -1166,6 +1166,70 @@ class Kca(object):
         except Exception as e:
             Log.log_warn(f"Failed to dump POI quest stats for debugging: {e}")
 
+    def get_poi_factory_quest_count(self, target_quest: Quest) -> int | None:
+        """Get the remaining factory actions needed for the specified quest from POI."""
+
+        poi_quest_stats = self.get_poi_quest_stats()
+
+        if not poi_quest_stats:
+            Log.log_warn(
+                f"poi API data unavailable; cannot get factory quest count for {target_quest.name}."
+            )
+            return None
+        if poi_quest_stats.get("error"):
+            Log.log_warn(
+                f"poi quest stats error; cannot get factory quest count for "
+                f"{target_quest.name}: {poi_quest_stats.get('error')}"
+            )
+            self._dump_poi_quest_stats_for_debug(poi_quest_stats, target_quest)
+            return None
+
+        quest_id = str(target_quest.quest_id)
+        records = poi_quest_stats.get("records", {})
+
+        if quest_id not in records:
+            Log.log_debug_1(
+                f"Quest {quest_id} ({target_quest.name}) is not currently tracked "
+                "in POI records."
+            )
+            self._dump_poi_quest_stats_for_debug(poi_quest_stats, target_quest)
+            return None
+
+        quest_record = records[quest_id]
+
+        remaining_count, requirement_count = self._sum_poi_remaining_build_count(
+            quest_record
+        )
+        if requirement_count <= 0:
+            Log.log_debug_1(
+                f"Quest {quest_id} ({target_quest.name}) has no readable "
+                "factory requirements in POI record."
+            )
+            self._dump_poi_quest_stats_for_debug(poi_quest_stats, target_quest)
+            return None
+
+        return remaining_count
+
+    def _sum_poi_remaining_build_count(self, obj):
+        if not isinstance(obj, dict):
+            return 0, 0
+
+        if "required" in obj and "count" in obj:
+            required = obj.get("required", 0) or 0
+            count = obj.get("count", 0) or 0
+            return max(0, required - count), 1
+
+        remaining_count = 0
+        requirement_count = 0
+        for key, val in obj.items():
+            if key in ("id", "api_no", "no", "quest_id"):
+                continue
+            remaining, requirements = self._sum_poi_remaining_build_count(val)
+            remaining_count += remaining
+            requirement_count += requirements
+
+        return remaining_count, requirement_count
+
     def string_to_mapenum(self, raw_num: str) -> MapEnum:
         """Converts raw poi map identifier strings (like '15', '16', '722', '732', '5-4')
         to the corresponding standardized MapEnum.
