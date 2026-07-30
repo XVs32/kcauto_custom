@@ -111,15 +111,18 @@ class FactoryCore(object):
         return True
 
     def any_build_slot_available(self):
-        """return false if both slots are occupied"""
-        if kca_u.kca.exists(
-            "build_slot_1_stat_region", "factory|build_progressing.png"
-        ) and kca_u.kca.exists(
-            "build_slot_2_stat_region", "factory|build_progressing.png"
-        ):
-            return False
-        else:
-            return True
+        """return false if all slots are occupied"""
+        build_slot_stat_region = [
+            "build_slot_1_stat_region",
+            "build_slot_2_stat_region",
+            "build_slot_3_stat_region",
+            "build_slot_4_stat_region",
+        ]
+
+        return not all(
+            kca_u.kca.exists(region, "factory|build_progressing.png")
+            for region in build_slot_stat_region
+        )
 
     def build(self, oil, ammo, steel, bauxite, count):
         """Place the build order"""
@@ -136,11 +139,18 @@ class FactoryCore(object):
             build_slot_stat = {
                 1: "build_slot_1_stat_region",
                 2: "build_slot_2_stat_region",
+                3: "build_slot_3_stat_region",
+                4: "build_slot_4_stat_region",
             }
-            build_slot = {1: "build_slot_1_region", 2: "build_slot_2_region"}
+            build_slot = {
+                1: "build_slot_1_region",
+                2: "build_slot_2_region",
+                3: "build_slot_3_region",
+                4: "build_slot_4_region",
+            }
 
             """receive if a build is done"""
-            for i in range(1, 3):
+            for i in range(1, 5):
                 if kca_u.kca.exists(build_slot_stat[i], "factory|build_finish.png"):
                     kca_u.kca.r[build_slot[i]].click()
 
@@ -170,7 +180,7 @@ class FactoryCore(object):
                     kca_u.kca.wait("upper_left", "factory|factory_init.png", 20)
 
             """place the order on a empty slot"""
-            for j in range(1, 3):
+            for j in range(1, 5):
                 if kca_u.kca.exists(build_slot_stat[j], "factory|build_idle.png"):
                     """click build slot"""
                     retry = 0
