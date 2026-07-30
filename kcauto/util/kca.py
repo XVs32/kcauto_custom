@@ -1000,14 +1000,22 @@ class Kca(object):
                 f"poi API data unavailable; cannot get quest count for {target_quest.name}."
             )
             return None
+        if poi_quest_stats.get("error"):
+            Log.log_warn(
+                f"poi quest stats error; cannot get quest count for "
+                f"{target_quest.name}: {poi_quest_stats.get('error')}"
+            )
+            self._dump_poi_quest_stats_for_debug(poi_quest_stats, target_quest)
+            return None
 
         quest_id = str(target_quest.quest_id)
         records = poi_quest_stats.get("records", {})
 
         if quest_id not in records:
-            Log.log_debug(
+            Log.log_debug_1(
                 f"Quest {quest_id} ({target_quest.name}) is not currently tracked."
             )
+            self._dump_poi_quest_stats_for_debug(poi_quest_stats, target_quest)
             return None
 
         quest_record = records[quest_id]
@@ -1052,7 +1060,7 @@ class Kca(object):
                     if mapped_enum:
                         action[mapped_enum] = remaining
                 except Exception as e:
-                    Log.log_debug(f"Failed to map condition '{raw_condition}': {e}")
+                    Log.log_debug_1(f"Failed to map condition '{raw_condition}': {e}")
                     continue
 
             else:
@@ -1067,6 +1075,24 @@ class Kca(object):
                         continue
 
         return action if action else None
+
+    def _dump_poi_quest_stats_for_debug(self, poi_quest_stats, target_quest: Quest):
+        if not (arg.args.parsed_args is not None and arg.args.parsed_args.debug_output):
+            return
+
+        timestamp = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
+        dump_path = (
+            f"debug|poi_quest_records_{target_quest.name}_{target_quest.quest_id}_"
+            f"{timestamp}.json"
+        )
+        try:
+            JsonData.dump_json(poi_quest_stats, dump_path, pretty=True)
+            Log.log_debug_1(
+                "Dumped POI quest stats for quest count debugging to "
+                f"{JsonData.create_path(dump_path)}."
+            )
+        except Exception as e:
+            Log.log_warn(f"Failed to dump POI quest stats for debugging: {e}")
 
     def string_to_mapenum(self, raw_num: str) -> MapEnum:
         """Converts raw poi map identifier strings (like '15', '16', '722', '732', '5-4')
@@ -1121,14 +1147,45 @@ class Kca(object):
 
         js_code = """
         (() => {
+            const diagnostics = () => {
+                const keys = Object.getOwnPropertyNames(window);
+                const suspicious = keys.filter((key) => {
+                    const lower = key.toLowerCase();
+                    return (
+                        lower.includes("store") ||
+                        lower.includes("poi") ||
+                        lower.includes("redux") ||
+                        lower.includes("vue") ||
+                        lower.includes("app")
+                    );
+                }).slice(0, 200);
+        
+                return {
+                    url: window.location && window.location.href,
+                    title: document && document.title,
+                    suspiciousWindowKeys: suspicious,
+                    hasGetStore: typeof window.getStore,
+                    hasPoi: typeof window.poi,
+                    hasReduxDevtools: typeof window.__REDUX_DEVTOOLS_EXTENSION__
+                };
+            };
+        
             try {
                 const store = window.getStore();
+        
                 if (store && store.info && store.info.quests) {
                     return JSON.stringify(store.info.quests);
                 }
-                return "{}";
+        
+                return JSON.stringify({
+                    error: "POI quest store not found",
+                    diagnostics: diagnostics()
+                });
             } catch (e) {
-                return JSON.stringify({error: e.message});
+                return JSON.stringify({
+                    error: e.message,
+                    diagnostics: diagnostics()
+                });
             }
         })()
         """
