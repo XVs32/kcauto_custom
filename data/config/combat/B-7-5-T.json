@@ -1,4 +1,5 @@
 {
+  "combat.clear_stop": true,
   "combat.node_selects": [
     "F>J",
     "O>P"

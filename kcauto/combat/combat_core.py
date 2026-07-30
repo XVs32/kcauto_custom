@@ -147,6 +147,7 @@ class CombatCore(CoreBase):
         event_map_id_start = None
         for map_data in data:
             api_id = map_data["api_id"]
+            Log.log_warn(f"Map ID: {api_id} data: {map_data}")
             if api_id < 400:
                 map_enum = MapEnum(f"B-{str(api_id)[0]}-{str(api_id)[1]}")
 
@@ -291,6 +292,16 @@ class CombatCore(CoreBase):
                 self.enabled = False
 
             return False
+
+        Log.log_warn(f"clear_stop = {cfg.config.combat.clear_stop}")
+        Log.log_warn(f"sortie_map = {sortie_map.world_and_map}")
+
+        Log.log_warn(f"available_maps = {self.available_maps}")
+
+        Log.log_warn(
+            f"cleared = {self.available_maps[sortie_map.world_and_map]['cleared']}"
+        )
+
         if cfg.config.combat.clear_stop and self._sortie_map_is_cleared:
             Log.log_msg(f"Map {sortie_map.world_and_map} has been cleared.")
             self.enabled = False
