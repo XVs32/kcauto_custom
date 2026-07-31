@@ -7,6 +7,7 @@ from kca_enums.kcsapi_paths import KCSAPIEnum
 from kca_enums.lbas_fatigue import LBASFatigueEnum
 from kca_enums.lbas_groups import LBASGroupEnum
 from kca_enums.lbas_state import LBASStateEnum
+from util.pyvisauto import FindFailed
 
 
 class LBASCore(object):
@@ -178,7 +179,8 @@ class LBASCore(object):
         #     timeout=10)
         api_result = {}
         while KCSAPIEnum.LBAS_RESUPPLY_ACTION.name not in api_result:
-            kca_u.kca.click_existing("upper_right", "combat|lbas_resupply.png")
+            if not kca_u.kca.click_existing("upper_right", "combat|lbas_resupply.png"):
+                raise FindFailed("LBAS resupply button not found.")
             api_result = api.api.update_from_api(
                 {KCSAPIEnum.LBAS_RESUPPLY_ACTION}, process_all=False
             )
