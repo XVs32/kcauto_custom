@@ -715,7 +715,10 @@ class FleetSwitcherCore(object):
                             f"Ship {ship.name} has a reinforce slot, but Noro6 config says she doesn't, you might want to update your config."
                         )
 
-                    if ship.has_equipment() == True:
+                    if (
+                        ship.has_equipment() == True
+                        and self._is_ship_equipment_replaceable(ship)
+                    ):
                         unload_ships.append(ship)
                         any_unload = True
             else:  # target_config does not care this ship, but we still have to strip it if it holds any equipment we care
@@ -723,6 +726,12 @@ class FleetSwitcherCore(object):
                     ship.slot_ex != None
                     and ship.slot_ex.production_id in target_fleet.equipment_ids
                 ):
+                    if not self._is_ship_equipment_replaceable(ship):
+                        Log.log_warn(
+                            f"Ship {ship.name} holds equipment needed by target fleet, "
+                            "but she is not available for equipment unload."
+                        )
+                        continue
                     unload_ships.append(ship)
                     any_unload = True
 
