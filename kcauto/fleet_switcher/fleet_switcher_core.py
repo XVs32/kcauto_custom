@@ -239,6 +239,62 @@ class FleetSwitcherCore(object):
 
         return conflicts
 
+    def _get_protected_ship_ids(self, protected_fleet_ids=None):
+        protected_ship_ids = set()
+        active_fleets = flt.fleets.fleets.get(flt.fleets.ACTIVE_FLEET_KEY, {})
+        for fleet_id in protected_fleet_ids or ():
+            protected_fleet = active_fleets.get(fleet_id)
+            if protected_fleet is not None:
+                protected_ship_ids.update(protected_fleet.ship_ids)
+        return protected_ship_ids
+
+    def _get_safe_free_equipment_refresh_ship(
+        self, target_fleet: Fleet, protected_fleet_ids=None, target_ship_ids=None
+    ):
+        excluded_ship_ids = set(target_ship_ids or ())
+        excluded_ship_ids.update(target_fleet.ship_ids)
+        excluded_ship_ids.update(self._get_protected_ship_ids(protected_fleet_ids))
+
+        candidates = [
+            ship
+            for ship in flt.fleets.fleets[flt.fleets.IDLE_FLEET_KEY]
+            if ship.production_id not in excluded_ship_ids
+            and ship.ship_type != ShipTypeEnum.AR
+            and ship.production_id not in rep.repair.ships_under_repair
+        ]
+
+        if not candidates:
+            Log.log_warn(
+                "No safe idle ship found to refresh free equipment list; "
+                "continuing without pre-normalize refresh."
+            )
+            return None
+
+        return candidates[randrange(len(candidates))]
+
+    def _refresh_free_equipment_if_empty(
+        self, target_fleet: Fleet, protected_fleet_ids=None, target_ship_ids=None
+    ):
+        if equ.equipment.equipment_pool.get(equ.equipment.FREE, []):
+            return True
+
+        refresh_ship = self._get_safe_free_equipment_refresh_ship(
+            target_fleet, protected_fleet_ids, target_ship_ids
+        )
+        if refresh_ship is None:
+            return False
+
+        Log.log_msg(
+            f"Free equipment list is empty, use {refresh_ship.name} to update it"
+        )
+        equ.equipment.goto()
+        self.unload_ship(
+            refresh_ship,
+            idle_ship_list=self._idel_ships_sorted_by_equipment,
+            load_random=True,
+        )
+        return True
+
     def _is_active_fleet_data_loaded(self):
         active_fleets = flt.fleets.fleets.get(flt.fleets.ACTIVE_FLEET_KEY, {})
         fleet_1 = active_fleets.get(1)
@@ -482,6 +538,11 @@ class FleetSwitcherCore(object):
                 rev_fleet_id = flt.fleets.combat_fleets_id.copy()
                 rev_fleet_id.sort(reverse=True)
                 protected_fleet_ids = set()
+                target_ship_ids = set()
+                for combat_fleet_id in rev_fleet_id:
+                    target_fleet_id = 1 if combat_fleet_id == 3 else combat_fleet_id
+                    target_ship_ids.update(fleet_list[target_fleet_id].ship_ids)
+
                 for combat_fleet_id in rev_fleet_id:
                     if combat_fleet_id == 3:
                         fleet_list[3] = fleet_list[1]
@@ -490,6 +551,7 @@ class FleetSwitcherCore(object):
                         combat_fleet_id,
                         fleet_list[combat_fleet_id],
                         protected_fleet_ids,
+                        target_ship_ids,
                     ):
                         return False
 
@@ -722,7 +784,11 @@ class FleetSwitcherCore(object):
         return True
 
     def switch_to_costom_fleet_with_equipment(
-        self, fleet_id, costom_fleet: Fleet, protected_fleet_ids=None
+        self,
+        fleet_id,
+        costom_fleet: Fleet,
+        protected_fleet_ids=None,
+        target_ship_ids=None,
     ):
         """
         method to switch the ship in {fleet_id} to ships defined in {ship_list}
@@ -731,13 +797,19 @@ class FleetSwitcherCore(object):
         custom_fleet(Fleet): Fleet obj contain ships to use
         """
 
+        self._refresh_free_equipment_if_empty(
+            costom_fleet, protected_fleet_ids, target_ship_ids
+        )
+
         self._normalize_target_equipment(fleet_id, costom_fleet, protected_fleet_ids)
 
         if self._is_custom_fleet_with_equipment_loaded(fleet_id, costom_fleet):
             Log.log_msg(f"Fleet {fleet_id} ships and equipment are already loaded")
             return True
 
-        self._unload_fleet_required_equipment(costom_fleet)
+        self._unload_fleet_required_equipment(
+            costom_fleet, protected_fleet_ids, target_ship_ids
+        )
 
         Log.log_success("Equipment unloaded.")
 
@@ -793,7 +865,9 @@ class FleetSwitcherCore(object):
 
         return temp_list
 
-    def _unload_fleet_required_equipment(self, target_fleet: Fleet):
+    def _unload_fleet_required_equipment(
+        self, target_fleet: Fleet, protected_fleet_ids=None, target_ship_ids=None
+    ):
         """
         method to unload the equipments used by this fleet
         """
@@ -847,18 +921,14 @@ class FleetSwitcherCore(object):
                     any_unload = True
 
         if any_unload == False and needed_load == True:
-            # let a random idle ship load and unload a whatever equipment
-            unload_ships = [
-                flt.fleets.fleets[flt.fleets.IDLE_FLEET_KEY][
-                    randrange(len(flt.fleets.fleets[flt.fleets.IDLE_FLEET_KEY]))
-                ]
-            ]
-            while unload_ships[0].ship_type == ShipTypeEnum.AR:
-                unload_ships = [
-                    flt.fleets.fleets[flt.fleets.IDLE_FLEET_KEY][
-                        randrange(len(flt.fleets.fleets[flt.fleets.IDLE_FLEET_KEY]))
-                    ]
-                ]
+            # let a safe idle ship load and unload a whatever equipment
+            refresh_ship = self._get_safe_free_equipment_refresh_ship(
+                target_fleet, protected_fleet_ids, target_ship_ids
+            )
+            if refresh_ship is None:
+                return False
+
+            unload_ships = [refresh_ship]
 
             Log.log_msg(
                 f"No equipment to unload, use {unload_ships[0].name} to update equipment list"
