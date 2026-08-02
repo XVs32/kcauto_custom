@@ -1,5 +1,4 @@
 from util.pyvisauto import Region
-from sys import exit
 from random import choice
 from random import randrange
 
@@ -248,6 +247,12 @@ class FleetSwitcherCore(object):
                 protected_ship_ids.update(protected_fleet.ship_ids)
         return protected_ship_ids
 
+    def _get_manual_expedition_protected_fleet_ids(self):
+        if cfg.config.expedition.is_auto_mode:
+            return set()
+
+        return {fleet.fleet_id for fleet in flt.fleets.expedition_fleets}
+
     def _get_safe_free_equipment_refresh_ship(
         self, target_fleet: Fleet, protected_fleet_ids=None, target_ship_ids=None
     ):
@@ -282,18 +287,17 @@ class FleetSwitcherCore(object):
             target_fleet, protected_fleet_ids, target_ship_ids
         )
         if refresh_ship is None:
-            return False
+            return True
 
         Log.log_msg(
             f"Free equipment list is empty, use {refresh_ship.name} to update it"
         )
         equ.equipment.goto()
-        self.unload_ship(
+        return self.unload_ship(
             refresh_ship,
             idle_ship_list=self._idel_ships_sorted_by_equipment,
             load_random=True,
         )
-        return True
 
     def _is_active_fleet_data_loaded(self):
         active_fleets = flt.fleets.fleets.get(flt.fleets.ACTIVE_FLEET_KEY, {})
@@ -537,7 +541,7 @@ class FleetSwitcherCore(object):
                 # Combat is a property, sort does not saved inside it
                 rev_fleet_id = flt.fleets.combat_fleets_id.copy()
                 rev_fleet_id.sort(reverse=True)
-                protected_fleet_ids = set()
+                protected_fleet_ids = self._get_manual_expedition_protected_fleet_ids()
                 target_ship_ids = set()
                 for combat_fleet_id in rev_fleet_id:
                     target_fleet_id = 1 if combat_fleet_id == 3 else combat_fleet_id
@@ -607,7 +611,10 @@ class FleetSwitcherCore(object):
                     pvp.pvp.next_pvp_quest.name + "-pvp"
                 )
 
-                if not self.switch_to_costom_fleet_with_equipment(1, fleet_list[1]):
+                protected_fleet_ids = self._get_manual_expedition_protected_fleet_ids()
+                if not self.switch_to_costom_fleet_with_equipment(
+                    1, fleet_list[1], protected_fleet_ids
+                ):
                     return False
 
             elif context == "expedition":
@@ -671,7 +678,7 @@ class FleetSwitcherCore(object):
                     f"Fleet Preset {preset_id} is not specified in-game. Please "
                     f"check your config."
                 )
-                exit(1)
+                return False
 
             """open preset menu"""
             kca_u.kca.click_existing(
@@ -696,7 +703,7 @@ class FleetSwitcherCore(object):
                     f"Could not switch in fleet preset {preset_id}. Please check "
                     f"your config and fleet presets."
                 )
-                exit(1)
+                return False
             Log.log_msg(f"Fleet Preset {preset_id} loaded.")
 
             if context == "combat":
@@ -797,9 +804,10 @@ class FleetSwitcherCore(object):
         custom_fleet(Fleet): Fleet obj contain ships to use
         """
 
-        self._refresh_free_equipment_if_empty(
+        if not self._refresh_free_equipment_if_empty(
             costom_fleet, protected_fleet_ids, target_ship_ids
-        )
+        ):
+            return False
 
         self._normalize_target_equipment(fleet_id, costom_fleet, protected_fleet_ids)
 
@@ -807,9 +815,10 @@ class FleetSwitcherCore(object):
             Log.log_msg(f"Fleet {fleet_id} ships and equipment are already loaded")
             return True
 
-        self._unload_fleet_required_equipment(
+        if not self._unload_fleet_required_equipment(
             costom_fleet, protected_fleet_ids, target_ship_ids
-        )
+        ):
+            return False
 
         Log.log_success("Equipment unloaded.")
 
@@ -821,7 +830,8 @@ class FleetSwitcherCore(object):
 
         self.switch_to_costom_fleet(fleet_id, costom_fleet)
 
-        self._load_equipment(fleet_id, costom_fleet)
+        if not self._load_equipment(fleet_id, costom_fleet):
+            return False
         Log.log_success("Equipment loaded.")
 
         return True
@@ -877,6 +887,7 @@ class FleetSwitcherCore(object):
         nav.navigate.to("refresh_home")
 
         unload_ships: list[Ship] = []
+        protected_ship_ids = self._get_protected_ship_ids(protected_fleet_ids)
         needed_load = False
         for production_id in shp.ships.ship_pool:
             ship = shp.ships.ship_pool[production_id]
@@ -894,6 +905,7 @@ class FleetSwitcherCore(object):
                     if (
                         ship.has_equipment() == True
                         and self._is_ship_equipment_replaceable(ship)
+                        and ship.production_id not in protected_ship_ids
                     ):
                         Log.log_debug_1(
                             f"Need to unload {ship.name} because target ship "
@@ -905,6 +917,12 @@ class FleetSwitcherCore(object):
                 conflicts = self._get_target_equipment_conflicts(ship, target_fleet)
                 if conflicts:
                     conflict_text = self._format_equipments_for_log(conflicts)
+                    if ship.production_id in protected_ship_ids:
+                        Log.log_warn(
+                            f"Skip unloading {ship.name} because she holds target "
+                            f"equipment ({conflict_text}), but her fleet is protected."
+                        )
+                        continue
                     if not self._is_ship_equipment_replaceable(ship):
                         reason = self._get_ship_equipment_unavailable_reason(ship)
                         Log.log_warn(
@@ -936,7 +954,7 @@ class FleetSwitcherCore(object):
 
         elif any_unload == False and needed_load == False:
             Log.log_msg(f"No equipment to unload or load")
-            return False
+            return True
 
         equ.equipment.goto()
 
@@ -944,13 +962,14 @@ class FleetSwitcherCore(object):
         for ship in unload_ships:
             Log.log_msg(f"Need to unload equipment for {ship.api_id}/{ship.name}")
 
-            self.unload_ship(
+            if not self.unload_ship(
                 ship,
                 idle_ship_list=idle_ship_list,
                 load_random=(any_unload == False and needed_load == True),
-            )
+            ):
+                return False
 
-        return any_unload
+        return True
 
     def unload_ship(
         self, ship: Ship, idle_ship_list: list[Ship] = None, load_random=False
@@ -1031,8 +1050,10 @@ class FleetSwitcherCore(object):
             Log.log_debug_1(f"5 slot ship")
             kca_u.kca.click("5_slot_unload_equipment")
         else:
-            Log.log_warn(f"Unexpected slot number {ship.slot_num}, exiting...")
-            exit(1)
+            Log.log_error(
+                f"Unexpected slot number {ship.slot_num}; equipment unload failed."
+            )
+            return False
 
         kca_u.kca.wait("lower", "shipswitcher|equipment_panel.png")
 
@@ -1046,24 +1067,8 @@ class FleetSwitcherCore(object):
             {KCSAPIEnum.FREE_EQUIPMENT}, process_all=True
         )
         if api_result == {}:
-            Log.log_error(f"Something went wrong, skipping this round...")
-            exit(1)
-
-            retry = 10
-            while not kca_u.kca.exists("left", "nav|side_menu_home.png"):
-                kca_u.kca.click_existing(
-                    "bottom_right",
-                    "shipswitcher|equipment_cancel_reinforce.png",
-                    cached=True,
-                )
-
-                if retry > 0:
-                    retry -= 1
-                    kca_u.sleep(1)
-                else:
-                    Log.log_error(f"kcauto cannot figure out where it is, exiting...")
-                    exit()
-            # skiping unload for this ship  <= usually it is already unloaded, but api didn't update due to network delay
+            Log.log_error("Failed to update free equipment list after unload.")
+            return False
 
         return True
 
@@ -1078,9 +1083,9 @@ class FleetSwitcherCore(object):
             != fleet.ship_ids
         ):
             Log.log_error(
-                f"Fleet {fleet_id} ship IDs do not match; ship load may have failed, exiting..."
+                f"Fleet {fleet_id} ship IDs do not match; ship load may have failed."
             )
-            exit(1)
+            return False
         elif (
             flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][fleet_id].under_repair
             == True
@@ -1088,7 +1093,7 @@ class FleetSwitcherCore(object):
             Log.log_error(
                 f"Fleet {fleet_id} is under repair; equipment load process halted."
             )
-            return
+            return False
 
         needed_load = False
         for i in range(fleet.size):
@@ -1101,7 +1106,7 @@ class FleetSwitcherCore(object):
 
         if needed_load == False:
             Log.log_msg(f"equipment for fleet {fleet_id} is already loaded")
-            return False
+            return True
         else:
             equ.equipment.goto()
             equ.equipment.goto_fleet(fleet_id)
@@ -1159,9 +1164,9 @@ class FleetSwitcherCore(object):
                 if row_id == -1:
                     Log.log_error(
                         f"Cannot find equipment {target_equipment.name} \
-                        with production id:{target_equipment.production_id}, did you scrapped it?"
+                        with production id:{target_equipment.production_id} in free equipment list."
                     )
-                    exit(1)
+                    return False
 
                 if is_replacement:
                     Log.log_warn(
@@ -1217,9 +1222,9 @@ class FleetSwitcherCore(object):
                 if row_id == -1:
                     Log.log_error(
                         f"Cannot find equipment {target_equipment.name} \
-                        with production id:{target_equipment.production_id}, did you scrapped it?"
+                        with production id:{target_equipment.production_id} in reinforcement equipment list."
                     )
-                    exit(1)
+                    return False
 
                 if is_replacement:
                     Log.log_warn(
