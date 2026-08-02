@@ -1,0 +1,6 @@
+{
+  "combat.fleet_mode": "strike",
+    "combat.node_selects": [
+    "C>C2"
+  ]
+}
