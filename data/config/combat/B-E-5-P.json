@@ -1,0 +1,9 @@
+{
+  "combat.fleet_mode": "stf",
+  "combat.node_selects": [
+    "O>P"
+  ],
+  "combat.node_night_battles": [
+    "P:True"
+  ]
+}

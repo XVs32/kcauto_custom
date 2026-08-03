@@ -1,0 +1,23 @@
+{
+  "combat.fleet_mode": "strike",
+  "combat.node_selects": [
+    "C>D"
+  ],
+  "combat.lbas_groups": [
+    1,
+    2,
+    3
+  ],
+  "combat.lbas_group_1_nodes": [
+    "G",
+    "G"
+  ],
+  "combat.lbas_group_2_nodes": [
+    "G",
+    "G"
+  ],
+  "combat.lbas_group_3_nodes": [
+    "G",
+    "G"
+  ]
+}
