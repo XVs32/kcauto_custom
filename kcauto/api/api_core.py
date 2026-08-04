@@ -71,8 +71,8 @@ class ApiWrapper(object):
         if KCSAPIEnum.NONE in target_apis:
             return {}
 
-        ApiWrapper._update_from_api_call_id += 1
-        call_id = ApiWrapper._update_from_api_call_id
+        self._update_from_api_call_id += 1
+        call_id = self._update_from_api_call_id
         caller = self._get_update_from_api_caller_for_log()
         target_apis = set(target_apis)
         received_apis = set()
