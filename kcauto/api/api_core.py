@@ -8,6 +8,7 @@ import os
 from datetime import datetime, timedelta
 
 import api.api_listener as api_listener
+import args.args_core as arg
 import combat.combat_core as com
 import combat.lbas_core as lbas
 import expedition.expedition_core as exp
@@ -41,6 +42,9 @@ class ApiWrapper(object):
         return "[" + ", ".join(sorted(api.name for api in apis)) + "]"
 
     def _get_update_from_api_caller_for_log(self):
+        if not arg.args.parsed_args.debug_output:
+            return None
+
         stack = inspect.stack()
         target_code = ApiWrapper.update_from_api.__code__
 
@@ -77,11 +81,13 @@ class ApiWrapper(object):
         target_apis = set(target_apis)
         received_apis = set()
 
-        Log.log_debug_1(
-            f"API_WAIT[{call_id}] begin caller={caller} "
-            f"targets={self._format_api_set_for_log(target_apis)} "
-            f"process_all={process_all} needed_all={needed_all} timeout={timeout}"
-        )
+        if arg.args.parsed_args.debug_output:
+            Log.log_debug_1(
+                f"API_WAIT[{call_id}] begin caller={caller} "
+                f"targets={self._format_api_set_for_log(target_apis)} "
+                f"process_all={process_all} needed_all={needed_all} timeout={timeout}"
+            )
+
         kcapi_requests = {}
         results = {}
         end_time = datetime.now() + timedelta(seconds=timeout)
@@ -95,18 +101,21 @@ class ApiWrapper(object):
             remaining = (end_time - datetime.now()).total_seconds()
             if remaining <= 0:
                 if needed_all:
-                    Log.log_warn(f"API_WAIT[{call_id}] timeout caller={caller}.")
+                    if arg.args.parsed_args.debug_output:
+                        Log.log_warn(f"API_WAIT[{call_id}] timeout caller={caller}.")
+                        
                     for missing_api in target_apis:
                         if missing_api not in received_apis:
                             Log.log_warn(
                                 f"API_WAIT[{call_id}] Missing API: {missing_api}"
                             )
                 else:
-                    Log.log_debug_1(
-                        f"API_WAIT[{call_id}] timeout suppressed "
-                        f"caller={caller} received="
-                        f"{self._format_api_set_for_log(received_apis)}"
-                    )
+                    if arg.args.parsed_args.debug_output:
+                        Log.log_debug_1(
+                            f"API_WAIT[{call_id}] timeout suppressed "
+                            f"caller={caller} received="
+                            f"{self._format_api_set_for_log(received_apis)}"
+                        )
                 break
 
             if len(received_apis) >= len(target_apis):
@@ -185,11 +194,12 @@ class ApiWrapper(object):
 
         self._check_for_chrome_crash()
 
-        Log.log_debug_1(
-            f"API_WAIT[{call_id}] end caller={caller} pop_count={pop_count} "
-            f"received={self._format_api_set_for_log(received_apis)} "
-            f"result_keys={sorted(results.keys())}"
-        )
+        if arg.args.parsed_args.debug_output:
+            Log.log_debug_1(
+                f"API_WAIT[{call_id}] end caller={caller} pop_count={pop_count} "
+                f"received={self._format_api_set_for_log(received_apis)} "
+                f"result_keys={sorted(results.keys())}"
+            )
         return results
 
     def _check_for_chrome_crash(self):
