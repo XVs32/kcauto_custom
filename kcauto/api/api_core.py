@@ -42,12 +42,16 @@ class ApiWrapper(object):
 
     def _get_update_from_api_caller_for_log(self):
         stack = inspect.stack()
+        target_code = ApiWrapper.update_from_api.__code__
+
         try:
-            for frame_info in stack[2:]:
-                if frame_info.function == "update_from_api":
-                    continue
-                filename = os.path.relpath(frame_info.filename, os.getcwd())
-                return f"{filename}:{frame_info.lineno}:{frame_info.function}"
+            for i, frame_info in reversed(list(enumerate(stack))):
+                if frame_info.frame.f_code is target_code:
+                    if i + 1 < len(stack):
+                        caller = stack[i + 1]
+                        filename = os.path.relpath(caller.filename, os.getcwd())
+                        return f"{filename}:{caller.lineno}:{caller.function}"
+                    break
         finally:
             del stack
         return "unknown"
