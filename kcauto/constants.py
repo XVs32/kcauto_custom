@@ -33,6 +33,10 @@ DEFAULT_CHROME_DEV_PORT = 9222
 DEFAULT_POI_API_PORT = 9223
 DEFAULT_POI_CONTROL_PORT = 38591
 API_URL = "https://play.games.dmm.com/game/kancolle"
+API_URLS = (
+    API_URL,
+    "https://ooi.moe/poi",
+)
 POI_URL_POSTFIX = "resources/app.asar/index.html"
 
 # similarity presets

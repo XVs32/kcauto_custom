@@ -14,4 +14,6 @@ loopback-only and supplies logical 1200x720 game captures, mouse input,
 refresh, and POI quest data. POI mode does not require Chrome's remote
 debugging port and continues to capture the game while its window is covered.
 
-`direct_control` and `chrome_driver` keep their existing behavior.
+`direct_control` and `chrome_driver` keep their existing behavior. The
+`chrome_driver` mode continues to support both the DMM game target and POI's
+`https://ooi.moe/poi` target through port 9222.

@@ -22,7 +22,7 @@ import stats.stats_core as sts
 from constants import (
     GAME_W,
     GAME_H,
-    API_URL,
+    API_URLS,
     POI_URL_POSTFIX,
     EXACT,
     DEFAULT,
@@ -105,29 +105,40 @@ class Kca(object):
 
         api_tab = None
         api_tab_id = None
+        api_tab_url = None
         poi_tab = None
         poi_tab_id = None
+
         for n, tab in enumerate(self.api_hook.tabs):
-            if API_URL in tab["url"]:
-                api_tab = n
-                api_tab_id = tab["id"]
             if tab["url"].endswith(POI_URL_POSTFIX):
                 poi_tab = n
                 poi_tab_id = tab["id"]
 
+        # Prefer the direct DMM target when it is available, then fall back to
+        # POI 11's OOI webview target.
+        for target_url in API_URLS:
+            for n, tab in enumerate(self.api_hook.tabs):
+                if target_url in tab["url"]:
+                    api_tab = n
+                    api_tab_id = tab["id"]
+                    api_tab_url = tab["url"]
+                    break
+            if api_tab_id is not None:
+                break
+
+        if api_tab_id is None or poi_tab_id is None:
+            Log.log_error(
+                "No Kantai Collection or POI tab found in Chrome. Shutting down kcauto."
+            )
+            raise Exception("No running Kantai Collection or POI tab found in Chrome.")
+
         self.poi_hook.connect_targetID(poi_tab_id)
         Log.log_debug_1(f"Connected to poi tab ({poi_tab}:{poi_tab_id})")
-
-        if api_tab_id is None or api_tab_id is None:
-            Log.log_error(
-                "No Kantai Collection tab found in Chrome. Shutting down kcauto."
-            )
-            raise Exception("No running Kantai Collection tab found in Chrome.")
 
         self.api_hook.connect_targetID(api_tab_id)
         self.api_hook.Page.enable()
         self.api_hook.Network.enable()
-        Log.log_debug_1(f"Connected to API tab ({api_tab}:{api_tab_id})")
+        Log.log_debug_1(f"Connected to API tab ({api_tab}:{api_tab_id}, {api_tab_url})")
         Log.log_success("Connected to Chrome")
 
         coordinate_system.coor.find_game_window_offset()
@@ -1096,11 +1107,12 @@ class Kca(object):
         """
 
         port = cfg.config.general.chrome_dev_port
+        chrome = PyChromeDevTools.ChromeInterface(host="localhost", port=port)
         if target == "api":
-            self.api_hook = PyChromeDevTools.ChromeInterface(host=host, port=port)
+            self.api_hook = PyChromeDevTools.ChromeInterface(host=host, port=port, suppress_origin=True)
             coordinate_system.coor.api_hook = self.api_hook
         elif target == "poi":
-            self.poi_hook = PyChromeDevTools.ChromeInterface(host=host, port=port)
+            self.poi_hook = PyChromeDevTools.ChromeInterface(host=host, port=port, suppress_origin=True)
         else:
             raise ValueError("Hook target must be either api or poi.")
 
