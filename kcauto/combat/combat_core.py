@@ -493,9 +493,6 @@ class CombatCore(CoreBase):
         while True:
             api_result = api.api.update_from_api(
                 {KCSAPIEnum.PORT}
-                | self.COMBAT_APIS
-                | self.RESULT_APIS
-                | self.SHIPDECK_API
                 | self.EQUIP_API,
                 process_all=True,
                 timeout=5,
