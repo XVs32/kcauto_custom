@@ -491,22 +491,20 @@ class CombatCore(CoreBase):
     def _click_until_port(self):
 
         while True:
-            api_result = {"mock": "data"}
-            while api_result != {}:
-                api_result = api.api.update_from_api(
-                    {KCSAPIEnum.PORT}
-                    | self.COMBAT_APIS
-                    | self.RESULT_APIS
-                    | self.SHIPDECK_API
-                    | self.EQUIP_API,
-                    process_all=True,
-                )
+            api_result = api.api.update_from_api(
+                {KCSAPIEnum.PORT}
+                | self.EQUIP_API,
+                process_all=True,
+                timeout=5,
+            )
 
-                if KCSAPIEnum.PORT.name not in api_result:
-                    kca_u.kca.r["combat_click"].click()
+            if KCSAPIEnum.PORT.name in api_result:
+                break
 
             if kca_u.kca.exists("left", "nav|home_menu_sortie.png"):
                 break
+
+            kca_u.kca.r["combat_click"].click()
 
     def _cycle_between_nodes(self, sortie_map):
         Log.log_debug_1("Between nodes.")
