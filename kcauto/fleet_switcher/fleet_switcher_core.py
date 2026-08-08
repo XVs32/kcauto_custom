@@ -518,7 +518,9 @@ class FleetSwitcherCore(object):
                 "lower_right", "shipswitcher|shiplist_shipswitch_button.png"
             )
             kca_u.kca.wait("lower", "shipswitcher|equipment_panel.png")
-            api_result = api.api.update_from_api({KCSAPIEnum.FREE_EQUIPMENT}, process_all=True)
+            api_result = api.api.update_from_api(
+                {KCSAPIEnum.FREE_EQUIPMENT}, process_all=True
+            )
 
         if ship.slot_num == 1:
             Log.log_debug_1(f"1 slot ship")
