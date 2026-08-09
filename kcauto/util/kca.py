@@ -1290,28 +1290,20 @@ class Kca(object):
         js_code = """
         (() => {
             const diagnostics = () => {
-                const keys = Object.getOwnPropertyNames(window);
-                const suspicious = keys.filter((key) => {
-                    const lower = key.toLowerCase();
-                    return (
-                        lower.includes("store") ||
-                        lower.includes("poi") ||
-                        lower.includes("redux") ||
-                        lower.includes("vue") ||
-                        lower.includes("app")
-                    );
-                }).slice(0, 200);
-        
+                const interestingWindowKeys = [
+                    "getStore",
+                    "POI_VERSION"
+                ].filter((key) => key in window);
+
                 return {
-                    url: window.location && window.location.href,
-                    title: document && document.title,
-                    suspiciousWindowKeys: suspicious,
+                    url: window.location?.href,
+                    title: document?.title,
+                    interestingWindowKeys,
                     hasGetStore: typeof window.getStore,
-                    hasPoi: typeof window.poi,
-                    hasReduxDevtools: typeof window.__REDUX_DEVTOOLS_EXTENSION__
+                    hasPoi: typeof window.poi
                 };
             };
-        
+
             try {
                 const store = window.getStore();
         
