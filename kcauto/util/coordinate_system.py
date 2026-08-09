@@ -422,6 +422,12 @@ class CoordinateSystem(object):
         self._create_or_shift_region(
             "build_slot_4_stat_region", x + 595, y + 555, 150, 60
         )
+        self._create_or_shift_region(
+            "build_slot_3_add_dock_region", x + 845, y + 490, 265, 50
+        )
+        self._create_or_shift_region(
+            "build_slot_4_add_dock_region", x + 845, y + 610, 265, 50
+        )
         self._create_or_shift_region("build_slot_1_region", x + 900, y + 260, 60, 15)
         self._create_or_shift_region("build_slot_2_region", x + 900, y + 380, 60, 15)
         self._create_or_shift_region("build_slot_3_region", x + 900, y + 500, 60, 15)

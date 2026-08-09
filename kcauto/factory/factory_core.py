@@ -112,17 +112,31 @@ class FactoryCore(object):
 
     def any_build_slot_available(self):
         """return false if all slots are occupied"""
-        build_slot_stat_region = [
-            "build_slot_1_stat_region",
-            "build_slot_2_stat_region",
-            "build_slot_3_stat_region",
-            "build_slot_4_stat_region",
-        ]
+        build_slot_stat_region = {
+            1: "build_slot_1_stat_region",
+            2: "build_slot_2_stat_region",
+            3: "build_slot_3_stat_region",
+            4: "build_slot_4_stat_region",
+        }
+        build_slot_add_dock_region = {
+            3: "build_slot_3_add_dock_region",
+            4: "build_slot_4_add_dock_region",
+        }
 
-        return not all(
-            kca_u.kca.exists(region, "factory|build_progressing.png")
-            for region in build_slot_stat_region
-        )
+        for i in range(1, 5):
+            if kca_u.kca.exists(
+                build_slot_stat_region[i], "factory|build_progressing.png"
+            ):
+                Log.log_debug_1(f"slot {i} in progressing")
+                continue
+            if i in build_slot_add_dock_region and kca_u.kca.exists(
+                build_slot_add_dock_region[i], "factory|add_dock.png"
+            ):
+                Log.log_debug_1(f"slot {i} locked")
+                continue
+            return True
+
+        return False
 
     def build(self, oil, ammo, steel, bauxite, count):
         """Place the build order"""
