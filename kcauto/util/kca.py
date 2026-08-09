@@ -1049,7 +1049,7 @@ class Kca(object):
             self.api_hook = PyChromeDevTools.ChromeInterface(host=host, port=port)
             coordinate_system.coor.api_hook = self.api_hook
         else:
-            raise ValueError("Hook target must be either api or poi.")
+            raise ValueError(f"Unsupported hook target: {target}. Expected 'api'.")
 
         return
 
