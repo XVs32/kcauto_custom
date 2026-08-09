@@ -1197,38 +1197,41 @@ class Kca(object):
 
         quest_record = records[quest_id]
 
-        remaining_count, requirement_count = self._sum_poi_remaining_build_count(
-            quest_record
-        )
-        if requirement_count <= 0:
+        try:
+            return self._get_poi_factory_quest_remaining_count(quest_id, quest_record)
+        except ValueError as e:
             Log.log_debug_1(
                 f"Quest {quest_id} ({target_quest.name}) has no readable "
-                "factory requirements in POI record."
+                f"factory requirements in POI record: {e}"
             )
             self._dump_poi_quest_stats_for_debug(poi_quest_stats, target_quest)
             return None
 
-        return remaining_count
+    def _get_poi_factory_quest_remaining_count(self, quest_id, quest_record):
+        factory_action_key = {
+            "605": "create_item",
+            "606": "create_ship",
+            "607": "create_item",
+            "608": "create_ship",
+        }.get(str(quest_id))
 
-    def _sum_poi_remaining_build_count(self, obj):
-        if not isinstance(obj, dict):
-            return 0, 0
+        if factory_action_key is None:
+            raise ValueError(f"unsupported factory quest id {quest_id}")
+        if not isinstance(quest_record, dict):
+            raise ValueError("quest record is not a dict")
 
-        if "required" in obj and "count" in obj:
-            required = obj.get("required", 0) or 0
-            count = obj.get("count", 0) or 0
-            return max(0, required - count), 1
+        requirement = quest_record.get(factory_action_key)
+        if not isinstance(requirement, dict):
+            raise ValueError(f"missing {factory_action_key} requirement")
 
-        remaining_count = 0
-        requirement_count = 0
-        for key, val in obj.items():
-            if key in ("id", "api_no", "no", "quest_id"):
-                continue
-            remaining, requirements = self._sum_poi_remaining_build_count(val)
-            remaining_count += remaining
-            requirement_count += requirements
+        if "required" not in requirement or "count" not in requirement:
+            raise ValueError(
+                f"{factory_action_key} requirement is missing count/required"
+            )
 
-        return remaining_count, requirement_count
+        required = requirement.get("required", 0) or 0
+        count = requirement.get("count", 0) or 0
+        return max(0, required - count)
 
     def string_to_mapenum(self, raw_num: str) -> MapEnum:
         """Converts raw poi map identifier strings (like '15', '16', '722', '732', '5-4')
