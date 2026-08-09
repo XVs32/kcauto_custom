@@ -1033,15 +1033,13 @@ class Kca(object):
             type="mouseMoved", x=dst.x + offset_x, y=dst.y + offset_y
         )
 
-    def cdt_init(self, host="localhost", target="visual"):
+    def cdt_init(self, host="localhost", target="api"):
         """method to hook this python program to chrome browser, cdt stands for ChromeDevTools
 
         Args:
             host (str, optional): Chrome dev protocol server address. Defaults
                 to "localhost".
-            port (int, optional): Chrome dev protocol server port. Defaults to
-                9222.
-            api (bool): api hook or not(default True)
+            target (str, optional): Hook target. Defaults to "api".
         """
 
         port = cfg.config.general.chrome_dev_port
@@ -1208,6 +1206,7 @@ class Kca(object):
             return None
 
     def _get_poi_factory_quest_remaining_count(self, quest_id, quest_record):
+        """Read remaining Fd1-Fd4 factory actions from a POI quest record."""
         factory_action_key = {
             "605": "create_item",
             "606": "create_ship",
