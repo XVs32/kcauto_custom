@@ -103,7 +103,7 @@ class ApiWrapper(object):
                 if needed_all:
                     if arg.args.parsed_args.debug_output:
                         Log.log_warn(f"API_WAIT[{call_id}] timeout caller={caller}.")
-                        
+
                     for missing_api in target_apis:
                         if missing_api not in received_apis:
                             Log.log_warn(
