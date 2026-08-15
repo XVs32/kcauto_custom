@@ -528,14 +528,13 @@ class FleetSwitcherCore(object):
                 None,
             )
             if replacement is None:
-                Log.log_warn(
+                Log.log_error(
                     f"No replacement preselected for "
                     f"{target_ship.name_jp} {self._format_slot_for_log(slot)} "
-                    f"targeting {self._format_equipment_for_log(target_equipment)}; "
-                    f"keeping original target from "
-                    f"{self._get_equipment_holder_for_log(target_equipment)}."
+                    f"targeting {self._format_equipment_for_log(target_equipment)} "
+                    f"from {self._get_equipment_holder_for_log(target_equipment)}."
                 )
-                continue
+                return False
 
             slot_name = "reinforcement equipment" if slot == "slot_ex" else "equipment"
             slot_label = self._format_slot_for_log(slot)
@@ -554,6 +553,8 @@ class FleetSwitcherCore(object):
             else:
                 target_ship.equipments[slot] = replacement
             selected_equipment_ids.add(replacement.production_id)
+
+        return True
 
     def _is_ship_equipment_model_matched(self, active_ship: Ship, target_ship: Ship):
         def equipment_model_ids(ship: Ship):
@@ -876,7 +877,11 @@ class FleetSwitcherCore(object):
             costom_fleet, protected_fleet_ids, target_ship_ids
         )
 
-        self._normalize_target_equipment(fleet_id, costom_fleet, protected_fleet_ids)
+        if not self._normalize_target_equipment(
+            fleet_id, costom_fleet, protected_fleet_ids
+        ):
+            self._restore_original_target_equipment(costom_fleet)
+            return False
 
         if self._is_custom_fleet_with_equipment_loaded(fleet_id, costom_fleet):
             Log.log_msg(f"Fleet {fleet_id} ships and equipment are already loaded")
