@@ -301,7 +301,7 @@ class FleetSwitcherCore(object):
         return bool(shp.ships.ship_pool and fleet_1 is not None and fleet_1.ships)
 
     def _get_replaceable_equipment_ships(
-        self, target_fleet_id, protected_fleet_ids=None
+        self, target_fleet_id, protected_fleet_ids=None, target_ship_ids=None
     ):
         if not self._is_active_fleet_data_loaded():
             Log.log_warn(
@@ -312,11 +312,14 @@ class FleetSwitcherCore(object):
 
         protected_fleet_ids = set(protected_fleet_ids or ())
         protected_fleet_ids.add(target_fleet_id)
+        target_ship_ids = set(target_ship_ids or ())
 
         candidate_ships = []
         candidate_ship_ids = set()
 
         for ship in flt.fleets.ships_not_in_fleets:
+            if ship.production_id in target_ship_ids:
+                continue
             if not self._is_ship_equipment_replaceable(ship):
                 continue
             candidate_ships.append(ship)
@@ -330,9 +333,64 @@ class FleetSwitcherCore(object):
             for ship in active_fleet.ships:
                 if (
                     ship.production_id in candidate_ship_ids
+                    or ship.production_id in target_ship_ids
                     or not self._is_ship_equipment_replaceable(ship)
                 ):
                     continue
+                candidate_ships.append(ship)
+                candidate_ship_ids.add(ship.production_id)
+
+        return candidate_ships
+
+    def _get_releasable_target_fleet_equipment_ships(
+        self, target_fleet_id, target_fleet: Fleet
+    ):
+        if not self._is_active_fleet_data_loaded():
+            return []
+
+        active_fleet = flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY].get(
+            target_fleet_id
+        )
+        if active_fleet is None or not active_fleet.at_base:
+            return []
+
+        candidate_ships = []
+        candidate_ship_ids = set()
+        for active_ship in active_fleet.ships:
+            if active_ship.production_id not in target_fleet.ship_ids:
+                if self._is_ship_equipment_replaceable(active_ship):
+                    candidate_ships.append(active_ship)
+                    candidate_ship_ids.add(active_ship.production_id)
+                continue
+
+            target_ship = target_fleet.get_ship_by_production_id(
+                active_ship.production_id
+            )
+            if target_ship is None:
+                continue
+
+            if self._is_ship_equipment_model_matched(active_ship, target_ship):
+                continue
+
+            if self._is_ship_equipment_replaceable(active_ship):
+                candidate_ships.append(active_ship)
+                candidate_ship_ids.add(active_ship.production_id)
+
+        for ship in flt.fleets.ships_not_in_fleets:
+            if (
+                ship.production_id not in target_fleet.ship_ids
+                or ship.production_id in candidate_ship_ids
+            ):
+                continue
+
+            target_ship = target_fleet.get_ship_by_production_id(ship.production_id)
+            if target_ship is None:
+                continue
+
+            if self._is_ship_equipment_model_matched(ship, target_ship):
+                continue
+
+            if self._is_ship_equipment_replaceable(ship):
                 candidate_ships.append(ship)
                 candidate_ship_ids.add(ship.production_id)
 
@@ -385,7 +443,10 @@ class FleetSwitcherCore(object):
         self.equipment_replacements = {}
 
         replaceable_ships = self._get_replaceable_equipment_ships(
-            fleet_id, protected_fleet_ids
+            fleet_id, protected_fleet_ids, fleet.ship_ids
+        )
+        replaceable_ships.extend(
+            self._get_releasable_target_fleet_equipment_ships(fleet_id, fleet)
         )
         target_slots = []
         candidate_map = {}
@@ -394,6 +455,14 @@ class FleetSwitcherCore(object):
             active_ship = shp.ships.get_ship_from_production_id(
                 target_ship.production_id
             )
+            if active_ship is not None and self._is_ship_equipment_model_matched(
+                active_ship, target_ship
+            ):
+                Log.log_debug_1(
+                    f"Skip normalizing equipment for {target_ship.name_jp} because "
+                    "her equipment models already match."
+                )
+                continue
 
             for slot, target_equipment in enumerate(target_ship.equipments):
                 if target_equipment.model_id <= 0:
@@ -487,9 +556,15 @@ class FleetSwitcherCore(object):
             selected_equipment_ids.add(replacement.production_id)
 
     def _is_ship_equipment_model_matched(self, active_ship: Ship, target_ship: Ship):
-        if [equipment.model_id for equipment in active_ship.equipments] != [
-            equipment.model_id for equipment in target_ship.equipments
-        ]:
+        def equipment_model_ids(ship: Ship):
+            model_ids = [equipment.model_id for equipment in ship.equipments]
+            slot_count = max(ship.slot_num, len(model_ids))
+            model_ids.extend(
+                [Equipment.EMPTY_EQUIPMENT] * (slot_count - len(model_ids))
+            )
+            return model_ids
+
+        if equipment_model_ids(active_ship) != equipment_model_ids(target_ship):
             return False
 
         active_slot_ex_model_id = (
