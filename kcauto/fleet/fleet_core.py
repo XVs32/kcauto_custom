@@ -393,6 +393,8 @@ class FleetCore(object):
                         if (
                             this_equipment != None
                             and this_equipment.is_empty_equipment == False
+                            and this_equipment.production_id
+                            != Equipment().production_id
                             and is_exact_match == False
                         ):
                             if is_first_not_exact_match:
@@ -438,6 +440,8 @@ class FleetCore(object):
                         if (
                             this_equipment != None
                             and this_equipment.is_empty_equipment == False
+                            and this_equipment.production_id
+                            != Equipment().production_id
                             and is_exact_match == False
                         ):
                             if is_first_not_exact_match:

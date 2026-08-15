@@ -77,7 +77,11 @@ class FleetSwitcherCore(object):
         preferred_replacement_id=None,
     ):
         for row_id, equipment in enumerate(equipment_list):
-            if equipment.production_id == target.production_id:
+            if (
+                equipment.production_id == target.production_id
+                and equipment.model_id == target.model_id
+                and not self._is_unresolved_noro6_equipment(target)
+            ):
                 return row_id, equipment, False
 
         if preferred_replacement_id is not None:
@@ -87,19 +91,6 @@ class FleetSwitcherCore(object):
                     and equipment.model_id == target.model_id
                 ):
                     return row_id, equipment, True
-
-        replacement_candidates = [
-            (row_id, equipment)
-            for row_id, equipment in enumerate(equipment_list)
-            if equipment.model_id == target.model_id
-        ]
-        replacement_candidates.sort(
-            key=lambda item: (abs(item[1].stars - target.stars), item[1].production_id)
-        )
-
-        if replacement_candidates:
-            row_id, equipment = replacement_candidates[0]
-            return row_id, equipment, True
 
         return -1, target, False
 
@@ -164,7 +155,16 @@ class FleetSwitcherCore(object):
         return None
 
     def _format_equipment_for_log(self, equipment: Equipment):
+        if self._is_unresolved_noro6_equipment(equipment):
+            return f"{equipment.name} unresolved"
         return f"{equipment.name} {equipment.production_id}"
+
+    def _is_unresolved_noro6_equipment(self, equipment: Equipment):
+        return (
+            equipment is not None
+            and equipment.model_id > 0
+            and equipment.production_id == Equipment().production_id
+        )
 
     def _format_equipments_for_log(self, equipments: list[Equipment]):
         return ", ".join(
@@ -531,6 +531,15 @@ class FleetSwitcherCore(object):
                 None,
             )
             if replacement is None:
+                if self._is_unresolved_noro6_equipment(target_equipment):
+                    Log.log_error(
+                        f"Noro6 target equipment {target_equipment.name} for "
+                        f"{target_ship.name_jp} {self._format_slot_for_log(slot)} "
+                        "was unresolved during startup and no available "
+                        "same-model equipment could be found now."
+                    )
+                    return False
+
                 Log.log_error(
                     f"No replacement preselected for "
                     f"{target_ship.name_jp} {self._format_slot_for_log(slot)} "

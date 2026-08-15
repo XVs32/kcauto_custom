@@ -139,8 +139,12 @@ class EquipmentCore(object):
         )
 
         if equipment_list == []:
-            Log.log_error("can't find any match equipment")
-            return None, False
+            target_equipment = Equipment(
+                model_id=noro6_equipment["i"],
+                production_id=Equipment().production_id,
+                stars=noro6_equipment["r"],
+            )
+            return target_equipment, False
 
         for equipment in equipment_list:
             # @todo handle "api_alv"/"l" (plane exp level)
