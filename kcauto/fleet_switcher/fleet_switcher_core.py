@@ -239,6 +239,10 @@ class FleetSwitcherCore(object):
                 self._set_next_combat_preset()
         return True
 
+    def _is_custom_fleet_loaded(self, fleet_id, target_fleet: Fleet):
+        active_fleet = flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][fleet_id]
+        return active_fleet.ship_ids == target_fleet.ship_ids
+
     def switch_to_costom_fleet(self, fleet_id, costom_fleet: Fleet):
         """
         method to switch the ship in {fleet_id} to ships defined in {ship_list}
@@ -251,6 +255,14 @@ class FleetSwitcherCore(object):
 
         while True:
             flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][fleet_id].select()
+            if self._is_custom_fleet_loaded(fleet_id, costom_fleet):
+                Log.log_msg(f"Fleet {fleet_id} ships are already loaded")
+                return True
+
+            if not self._unload_all_ships_before_custom_switch(fleet_id):
+                return False
+
+            kca_u.kca.sleep(5)
 
             empty_slot_count = 0
 
@@ -318,6 +330,37 @@ class FleetSwitcherCore(object):
 
         Log.log_success("Fleet load complete.")
         return True
+
+    def _unload_all_ships_before_custom_switch(self, fleet_id):
+        active_fleet = flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][fleet_id]
+        if active_fleet.size == 1:
+            return True
+
+        Log.log_msg(
+            f"Fleet {fleet_id} has {active_fleet.size} ships; unloading all ships before fleet switch."
+        )
+        if not kca_u.kca.click_existing(
+            "upper", "shipswitcher|fleetcomp_unload_all_ships.png"
+        ):
+            Log.log_error(
+                f"Failed to find unload-all button for fleet {fleet_id} before fleet switch."
+            )
+            return False
+
+        api_result = api.api.update_from_api(
+            {KCSAPIEnum.HENSEI_CHANGE}, process_all=False
+        )
+        hensei_changes = api_result.get(KCSAPIEnum.HENSEI_CHANGE.name, [])
+        for hensei_change in hensei_changes:
+            if "api_change_count" in hensei_change:
+                active_fleet.ships = active_fleet.ships[:1]
+                Log.log_msg(f"Fleet {fleet_id} unload-all complete.")
+                return True
+
+        Log.log_error(
+            f"Unexpected unload-all response for fleet {fleet_id}: {hensei_changes}"
+        )
+        return False
 
     def switch_to_costom_fleet_with_equipment(self, fleet_id, costom_fleet: Fleet):
         """
