@@ -331,6 +331,13 @@ class FleetCore(object):
             Log.log_warn(
                 "Expedition mode is manual. Please make sure the expedition fleet does not occupy Noro6's ships and equipment."
             )
+
+            for fleet in self.expedition_fleets:
+                for ship in fleet.ships:
+                    for equipment in ship.equipments:
+                        equ.equipment._remove_from_pool(
+                            equipment, pool=equ.equipment.ID
+                        )
         else:
             if cfg.config.combat.is_auto_mode == False:
                 Log.log_warn(
