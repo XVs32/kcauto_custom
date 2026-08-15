@@ -214,6 +214,9 @@ class Noro6(object):
 
         self.item = self.ship["is"][item_id - 1]
 
+        if self.item["i"] == 0:
+            self.item["i"] = -1
+
         if "r" not in self.item:
             self.item["r"] = 0
         if "l" not in self.item:
