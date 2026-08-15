@@ -229,10 +229,7 @@ class Kcauto(object):
                     CONTEXT_AUTO_PVP, fast_check=False, back_to_home=False, force=True
                 )
 
-            if self._run_fleetswitch_logic("pvp") != 0:
-                pvp.pvp.enabled = False
-                Log.log_error("Failed to configure PvP fleet. Disabling PvP module.")
-                return False
+            self._run_fleetswitch_logic("pvp")
             self.run_repair_logic()
 
             self.run_quest_logic(CONTEXT_PVP, back_to_home=True)
@@ -405,10 +402,6 @@ class Kcauto(object):
         port_api_update = False
         if self._run_fleetswitch_logic("combat") == 0:
             port_api_update = True
-        else:
-            com.combat.enabled = False
-            Log.log_error("Failed to configure sortie fleet. Disabling combat module.")
-            return False
 
         kca_u.kca.pause_if_configured("Combat fleetswitch dryrun enabled.")
 
