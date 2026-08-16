@@ -248,6 +248,9 @@ class FleetSwitcherCore(object):
                 protected_ship_ids.update(protected_fleet.ship_ids)
         return protected_ship_ids
 
+    def _get_expedition_protected_fleet_ids(self):
+        return {fleet.fleet_id for fleet in flt.fleets.expedition_fleets}
+
     def _get_safe_free_equipment_refresh_ship(
         self, target_fleet: Fleet, protected_fleet_ids=None, target_ship_ids=None
     ):
@@ -613,7 +616,7 @@ class FleetSwitcherCore(object):
                 # Combat is a property, sort does not saved inside it
                 rev_fleet_id = flt.fleets.combat_fleets_id.copy()
                 rev_fleet_id.sort(reverse=True)
-                protected_fleet_ids = set()
+                protected_fleet_ids = self._get_expedition_protected_fleet_ids()
                 target_ship_ids = set()
                 for combat_fleet_id in rev_fleet_id:
                     target_fleet_id = 1 if combat_fleet_id == 3 else combat_fleet_id
@@ -683,12 +686,16 @@ class FleetSwitcherCore(object):
                     pvp.pvp.next_pvp_quest.name + "-pvp"
                 )
 
-                if not self.switch_to_costom_fleet_with_equipment(1, fleet_list[1]):
+                protected_fleet_ids = self._get_expedition_protected_fleet_ids()
+                if not self.switch_to_costom_fleet_with_equipment(
+                    1, fleet_list[1], protected_fleet_ids
+                ):
                     return False
 
             elif context == "expedition":
                 Log.log_msg(f"Switching to Exp Preset.")
 
+                protected_fleet_ids = set()
                 fleet_id = flt.fleets.get_next_exp_fleet_id()
                 while (
                     fleet_id != None and exp.expedition.exp_for_fleet[fleet_id] != None
@@ -698,8 +705,11 @@ class FleetSwitcherCore(object):
                         exp.expedition.exp_for_fleet[fleet_id]
                     )[DEFAULT_FLEET_ID]
 
-                    if not self.switch_to_costom_fleet_with_equipment(fleet_id, temp):
+                    if not self.switch_to_costom_fleet_with_equipment(
+                        fleet_id, temp, protected_fleet_ids
+                    ):
                         return False
+                    protected_fleet_ids.add(fleet_id)
                     fleet_id = flt.fleets.get_next_exp_fleet_id(fleet_id)
 
             elif context == "factory_develop":
@@ -957,6 +967,7 @@ class FleetSwitcherCore(object):
         nav.navigate.to("refresh_home")
 
         unload_ships: list[Ship] = []
+        protected_ship_ids = self._get_protected_ship_ids(protected_fleet_ids)
         needed_load = False
         for production_id in shp.ships.ship_pool:
             ship = shp.ships.ship_pool[production_id]
@@ -974,6 +985,7 @@ class FleetSwitcherCore(object):
                     if (
                         ship.has_equipment() == True
                         and self._is_ship_equipment_replaceable(ship)
+                        and ship.production_id not in protected_ship_ids
                     ):
                         Log.log_debug_1(
                             f"Need to unload {ship.name} because target ship "
@@ -985,6 +997,12 @@ class FleetSwitcherCore(object):
                 conflicts = self._get_target_equipment_conflicts(ship, target_fleet)
                 if conflicts:
                     conflict_text = self._format_equipments_for_log(conflicts)
+                    if ship.production_id in protected_ship_ids:
+                        Log.log_warn(
+                            f"Skip unloading {ship.name} because she holds target "
+                            f"equipment ({conflict_text}), but her fleet is protected."
+                        )
+                        continue
                     if not self._is_ship_equipment_replaceable(ship):
                         reason = self._get_ship_equipment_unavailable_reason(ship)
                         Log.log_warn(
