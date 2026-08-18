@@ -394,7 +394,7 @@ class FleetCore(object):
                             this_equipment != None
                             and this_equipment.is_empty_equipment == False
                             and this_equipment.production_id
-                            != Equipment().production_id
+                            != Equipment.UNKNOWN_PRODUCTION_ID
                             and is_exact_match == False
                         ):
                             if is_first_not_exact_match:
@@ -411,7 +411,7 @@ class FleetCore(object):
                             panic_flag = True
                             break
                         elif (
-                            this_equipment.model_id == -1
+                            this_equipment.is_empty_equipment
                             and fleet_type == FleetEnum.COMBAT
                         ):
                             Log.log_warn(
@@ -441,7 +441,7 @@ class FleetCore(object):
                             this_equipment != None
                             and this_equipment.is_empty_equipment == False
                             and this_equipment.production_id
-                            != Equipment().production_id
+                            != Equipment.UNKNOWN_PRODUCTION_ID
                             and is_exact_match == False
                         ):
                             if is_first_not_exact_match:
@@ -461,7 +461,7 @@ class FleetCore(object):
                             )
                     elif reinforce_equipment["i"] == 0:
                         ship.slot_ex = None
-                    elif reinforce_equipment["i"] == -1:
+                    elif reinforce_equipment["i"] == Equipment.EMPTY_EQUIPMENT:
                         ship.slot_ex = Equipment()
                     else:
                         Log.log_error(

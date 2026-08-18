@@ -163,7 +163,7 @@ class FleetSwitcherCore(object):
         return (
             equipment is not None
             and equipment.model_id > 0
-            and equipment.production_id == Equipment().production_id
+            and equipment.production_id == Equipment.UNKNOWN_PRODUCTION_ID
         )
 
     def _format_equipments_for_log(self, equipments: list[Equipment]):
@@ -1291,7 +1291,7 @@ class FleetSwitcherCore(object):
 
             if (
                 fleet.ships[i].slot_ex != None
-                and fleet.ships[i].slot_ex.model_id != Equipment().model_id
+                and fleet.ships[i].slot_ex.model_id != Equipment.EMPTY_EQUIPMENT
             ):
                 kca_u.kca.click("reinforce_slot_equipment")
 
