@@ -18,7 +18,6 @@ import util.kca as kca_u
 from constants import AUTO_PRESET, OTHER_FLEET_ID
 from fleet.fleet import Fleet
 from ships.ship import Ship
-from kca_enums.fleet import FleetEnum
 from kca_enums.fleet_modes import FleetModeEnum
 from kca_enums.kcsapi_paths import KCSAPIEnum
 from kca_enums.ship_types import ShipTypeEnum
@@ -82,7 +81,7 @@ class FleetSwitcherCore(object):
                 and equipment.model_id == target.model_id
                 and not self._is_unresolved_noro6_equipment(target)
             ):
-                return row_id, equipment, False
+                return row_id, equipment
 
         if preferred_replacement_id is not None:
             for row_id, equipment in enumerate(equipment_list):
@@ -90,9 +89,9 @@ class FleetSwitcherCore(object):
                     equipment.production_id == preferred_replacement_id
                     and equipment.model_id == target.model_id
                 ):
-                    return row_id, equipment, True
+                    return row_id, equipment
 
-        return -1, target, False
+        return -1, target
 
     def _get_equipment_replacement_key(self, ship: Ship, slot):
         return (ship.production_id, slot)
@@ -144,83 +143,12 @@ class FleetSwitcherCore(object):
         active_fleet = self._get_ship_active_fleet(ship)
         return active_fleet is None or active_fleet.at_base
 
-    def _get_ship_equipment_unavailable_reason(self, ship: Ship):
-        if ship.production_id in rep.repair.ships_under_repair:
-            return "she is under repair"
-
-        active_fleet = self._get_ship_active_fleet(ship)
-        if active_fleet is not None and not active_fleet.at_base:
-            return f"fleet {active_fleet.fleet_id} is away"
-
-        return None
-
-    def _format_equipment_for_log(self, equipment: Equipment):
-        if self._is_unresolved_noro6_equipment(equipment):
-            return f"{equipment.name} unresolved"
-        return f"{equipment.name} {equipment.production_id}"
-
     def _is_unresolved_noro6_equipment(self, equipment: Equipment):
         return (
             equipment is not None
             and equipment.model_id > 0
             and equipment.production_id == Equipment.UNKNOWN_PRODUCTION_ID
         )
-
-    def _format_equipments_for_log(self, equipments: list[Equipment]):
-        return ", ".join(
-            self._format_equipment_for_log(equipment) for equipment in equipments
-        )
-
-    def _format_slot_for_log(self, slot):
-        return "slot_ex" if slot == "slot_ex" else f"slot {slot + 1}"
-
-    def _is_equipment_in_free_pool(self, equipment: Equipment):
-        return any(
-            free_equipment.production_id == equipment.production_id
-            for free_equipment in equ.equipment.equipment_pool.get(
-                equ.equipment.FREE, []
-            )
-        )
-
-    def _get_equipment_holder_for_log(self, equipment: Equipment):
-        if self._is_equipment_in_free_pool(equipment):
-            return "free equipment list"
-
-        for fleet_id, active_fleet in flt.fleets.fleets.get(
-            flt.fleets.ACTIVE_FLEET_KEY, {}
-        ).items():
-            for ship in active_fleet.ships:
-                for slot, equipped in enumerate(ship.equipments):
-                    if equipped.production_id == equipment.production_id:
-                        state = "at base" if active_fleet.at_base else "away"
-                        return (
-                            f"{ship.name} {self._format_slot_for_log(slot)} "
-                            f"in fleet {fleet_id} ({state})"
-                        )
-
-                if (
-                    ship.slot_ex is not None
-                    and not ship.slot_ex.is_empty_equipment
-                    and ship.slot_ex.production_id == equipment.production_id
-                ):
-                    state = "at base" if active_fleet.at_base else "away"
-                    return f"{ship.name} slot_ex in fleet {fleet_id} ({state})"
-
-        for ship in flt.fleets.ships_not_in_fleets:
-            for slot, equipped in enumerate(ship.equipments):
-                if equipped.production_id == equipment.production_id:
-                    return (
-                        f"{ship.name} {self._format_slot_for_log(slot)} outside fleets"
-                    )
-
-            if (
-                ship.slot_ex is not None
-                and not ship.slot_ex.is_empty_equipment
-                and ship.slot_ex.production_id == equipment.production_id
-            ):
-                return f"{ship.name} slot_ex outside fleets"
-
-        return "unknown"
 
     def _get_target_equipment_conflicts(self, ship: Ship, target_fleet: Fleet):
         target_equipment_ids = set(target_fleet.equipment_ids)
@@ -461,10 +389,6 @@ class FleetSwitcherCore(object):
             if active_ship is not None and self._is_ship_equipment_model_matched(
                 active_ship, target_ship
             ):
-                Log.log_debug_1(
-                    f"Skip normalizing equipment for {target_ship.name_jp} because "
-                    "her equipment models already match."
-                )
                 continue
 
             for slot, target_equipment in enumerate(target_ship.equipments):
@@ -511,12 +435,6 @@ class FleetSwitcherCore(object):
                 None,
             )
             if exact_match is not None:
-                Log.log_debug_1(
-                    f"Using exact target equipment "
-                    f"{self._format_equipment_for_log(exact_match)} for "
-                    f"{target_ship.name_jp} {self._format_slot_for_log(slot)} "
-                    f"from {self._get_equipment_holder_for_log(exact_match)}."
-                )
                 selected_equipment_ids.add(exact_match.production_id)
                 continue
 
@@ -530,32 +448,25 @@ class FleetSwitcherCore(object):
                 ),
                 None,
             )
+            slot_name = "slot_ex" if slot == "slot_ex" else f"slot {slot + 1}"
+            target_id = (
+                f"model {target_equipment.model_id}"
+                if self._is_unresolved_noro6_equipment(target_equipment)
+                else str(target_equipment.production_id)
+            )
             if replacement is None:
-                if self._is_unresolved_noro6_equipment(target_equipment):
-                    Log.log_error(
-                        f"Noro6 target equipment {target_equipment.name} for "
-                        f"{target_ship.name_jp} {self._format_slot_for_log(slot)} "
-                        "was unresolved during startup and no available "
-                        "same-model equipment could be found now."
-                    )
-                    return False
-
                 Log.log_error(
-                    f"No replacement preselected for "
-                    f"{target_ship.name_jp} {self._format_slot_for_log(slot)} "
-                    f"targeting {self._format_equipment_for_log(target_equipment)} "
-                    f"from {self._get_equipment_holder_for_log(target_equipment)}."
+                    f"Cannot find replacement for "
+                    f"{target_equipment.name} {target_equipment.stars}★ ({target_id}) "
+                    f"on {target_ship.name_jp} {slot_name}."
                 )
                 return False
 
-            slot_name = "reinforcement equipment" if slot == "slot_ex" else "equipment"
-            slot_label = self._format_slot_for_log(slot)
             Log.log_warn(
-                f"Preselected {slot_name} {replacement.name} "
-                f"with production id:{replacement.production_id} for "
-                f"{target_ship.name_jp} {slot_label} as a replacement candidate "
-                f"for {target_equipment.name} with production id:"
-                f"{target_equipment.production_id}."
+                f"Using {replacement.name} {replacement.stars}★ "
+                f"({replacement.production_id}) instead of "
+                f"{target_equipment.name} {target_equipment.stars}★ "
+                f"({target_id}) for {target_ship.name_jp} {slot_name}."
             )
             self._remember_equipment_replacement(
                 target_ship, slot, target_equipment, replacement
@@ -996,34 +907,17 @@ class FleetSwitcherCore(object):
                         and self._is_ship_equipment_replaceable(ship)
                         and ship.production_id not in protected_ship_ids
                     ):
-                        Log.log_debug_1(
-                            f"Need to unload {ship.name} because target ship "
-                            f"{target_ship.name_jp}'s equipment model does not match."
-                        )
                         unload_ships.append(ship)
                         any_unload = True
             else:  # target_config does not care this ship, but we still have to strip it if it holds any equipment we care
                 conflicts = self._get_target_equipment_conflicts(ship, target_fleet)
                 if conflicts:
-                    conflict_text = self._format_equipments_for_log(conflicts)
-                    if ship.production_id in protected_ship_ids:
-                        Log.log_warn(
-                            f"Skip unloading {ship.name} because she holds target "
-                            f"equipment ({conflict_text}), but her fleet is protected."
-                        )
+                    if (
+                        ship.production_id in protected_ship_ids
+                        or not self._is_ship_equipment_replaceable(ship)
+                    ):
                         continue
-                    if not self._is_ship_equipment_replaceable(ship):
-                        reason = self._get_ship_equipment_unavailable_reason(ship)
-                        Log.log_warn(
-                            f"Skip unloading {ship.name} because she holds target "
-                            f"equipment ({conflict_text}), but "
-                            f"{reason or 'she is not available for equipment unload'}."
-                        )
-                        continue
-                    Log.log_debug_1(
-                        f"Need to unload {ship.name} because she holds target "
-                        f"equipment: {conflict_text}."
-                    )
+
                     unload_ships.append(ship)
                     any_unload = True
 
@@ -1037,24 +931,40 @@ class FleetSwitcherCore(object):
 
             unload_ships = [refresh_ship]
 
-            Log.log_msg(
-                f"No equipment to unload, use {unload_ships[0].name} to update equipment list"
-            )
-
         elif any_unload == False and needed_load == False:
             Log.log_msg(f"No equipment to unload or load")
             return False
+
+        load_random = any_unload == False and needed_load == True
 
         equ.equipment.goto()
 
         idle_ship_list = self._idel_ships_sorted_by_equipment
         for ship in unload_ships:
-            Log.log_msg(f"Need to unload equipment for {ship.api_id}/{ship.name}")
+            conflicts = self._get_target_equipment_conflicts(ship, target_fleet)
+
+            if load_random:
+                Log.log_msg(
+                    f"Use {ship.production_id}/{ship.name} to update equipment list"
+                )
+            elif conflicts:
+                conflict_text = ", ".join(
+                    f"{equipment.name} ({equipment.production_id})"
+                    for equipment in conflicts
+                )
+                Log.log_msg(
+                    f"Need to unload equipment for "
+                    f"{ship.production_id}/{ship.name}: {conflict_text}"
+                )
+            else:
+                Log.log_msg(
+                    f"Need to unload equipment for {ship.production_id}/{ship.name}"
+                )
 
             self.unload_ship(
                 ship,
                 idle_ship_list=idle_ship_list,
-                load_random=(any_unload == False and needed_load == True),
+                load_random=load_random,
             )
 
         return any_unload
@@ -1253,7 +1163,7 @@ class FleetSwitcherCore(object):
                 replacement_hint = self._get_equipment_replacement_hint(
                     fleet.ships[i], slot
                 )
-                row_id, selected_equipment, is_replacement = self._find_equipment_row(
+                row_id, selected_equipment = self._find_equipment_row(
                     equ.equipment.equipment_pool[equ.equipment.FREE],
                     target_equipment,
                     preferred_replacement_id=(
@@ -1269,13 +1179,6 @@ class FleetSwitcherCore(object):
                         with production id:{target_equipment.production_id}, did you scrapped it?"
                     )
                     exit(1)
-
-                if is_replacement:
-                    Log.log_warn(
-                        f"Cannot find equipment {target_equipment.name} \
-                        with production id:{target_equipment.production_id} in free equipment list; using \
-                        production id:{selected_equipment.production_id} with {selected_equipment.stars}★ instead."
-                    )
 
                 Log.log_msg(
                     f"Selecting {selected_equipment.name} {selected_equipment.stars} ★"
@@ -1311,7 +1214,7 @@ class FleetSwitcherCore(object):
                 replacement_hint = self._get_equipment_replacement_hint(
                     fleet.ships[i], "slot_ex"
                 )
-                row_id, selected_equipment, is_replacement = self._find_equipment_row(
+                row_id, selected_equipment = self._find_equipment_row(
                     reinforce_equipment_list,
                     target_equipment,
                     preferred_replacement_id=(
@@ -1327,13 +1230,6 @@ class FleetSwitcherCore(object):
                         with production id:{target_equipment.production_id}, did you scrapped it?"
                     )
                     exit(1)
-
-                if is_replacement:
-                    Log.log_warn(
-                        f"Cannot find equipment {target_equipment.name} \
-                        with production id:{target_equipment.production_id} in reinforcement equipment list; using \
-                        production id:{selected_equipment.production_id} with {selected_equipment.stars}★ instead."
-                    )
 
                 Log.log_msg(
                     f"Selecting {selected_equipment.name} {selected_equipment.stars} ★ on page {row_id // 10 + 1} position {(row_id % 10) + 1}"
