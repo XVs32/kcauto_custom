@@ -273,25 +273,14 @@ class FleetSwitcherCore(object):
 
     def _get_equipment_allocation_priority(
         self,
-        target_ship: Ship,
-        slot,
         target_equipment: Equipment,
         equipment: Equipment,
         equipment_sources,
     ):
-        source_ship, source_slot = equipment_sources.get(
+        source_ship, _ = equipment_sources.get(
             equipment.production_id, (None, None)
         )
-
-        if (
-            source_ship is not None
-            and source_ship.production_id == target_ship.production_id
-        ):
-            source_priority = 0 if source_slot == slot else 1
-        elif source_ship is None:
-            source_priority = 2
-        else:
-            source_priority = 3
+        source_priority = 0 if source_ship is None else 1
 
         return (
             source_priority,
@@ -331,7 +320,36 @@ class FleetSwitcherCore(object):
                 assignments[key] = exact_equipment
                 assigned_equipment_ids.add(exact_equipment.production_id)
 
-        # Remaining slots can use any unassigned instance of the same model.
+        # Preserve already-loaded same-model equipment for flexible targets before
+        # choosing new replacements. Exact production ID reservations above still
+        # take precedence over keeping equipment in place.
+        for target_ship, slot, target_equipment in target_slots:
+            key = self._get_equipment_assignment_key(target_ship, slot)
+            if key in assignments:
+                continue
+
+            active_ship = shp.ships.ship_pool.get(target_ship.production_id)
+            if active_ship is None:
+                continue
+
+            if slot == "slot_ex":
+                current_equipment = active_ship.slot_ex
+            elif slot < len(active_ship.equipments):
+                current_equipment = active_ship.equipments[slot]
+            else:
+                current_equipment = None
+
+            if (
+                current_equipment is not None
+                and current_equipment.model_id == target_equipment.model_id
+                and current_equipment.production_id in equipment_by_id
+                and current_equipment.production_id not in assigned_equipment_ids
+            ):
+                assignments[key] = current_equipment
+                assigned_equipment_ids.add(current_equipment.production_id)
+
+        # Remaining slots prefer free equipment before equipment mounted on another
+        # movable ship, then use stars and production ID as stable tie-breakers.
         for target_ship, slot, target_equipment in target_slots:
             key = self._get_equipment_assignment_key(target_ship, slot)
             if key in assignments:
@@ -360,8 +378,6 @@ class FleetSwitcherCore(object):
             selected_equipment = min(
                 candidates,
                 key=lambda equipment: self._get_equipment_allocation_priority(
-                    target_ship,
-                    slot,
                     target_equipment,
                     equipment,
                     equipment_sources,
