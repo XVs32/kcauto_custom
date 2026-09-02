@@ -333,7 +333,7 @@ class FleetSwitcherCore(object):
 
     def _unload_all_ships_before_custom_switch(self, fleet_id):
         active_fleet = flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][fleet_id]
-        if active_fleet.size == 1:
+        if active_fleet.size <= 1:
             return True
 
         Log.log_msg(
