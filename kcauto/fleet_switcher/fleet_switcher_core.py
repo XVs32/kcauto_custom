@@ -35,6 +35,7 @@ class FleetSwitcherCore(object):
     exp_ship_pool = {}
     exp_fleet_ship_type = {}
     equipment_assignments = {}
+    equipment_plan_targets = []
 
     def __init__(self):
         self._set_next_combat_preset()
@@ -509,7 +510,29 @@ class FleetSwitcherCore(object):
 
         return True
 
+    def verify_equipment_plan(self):
+        active_fleets = flt.fleets.fleets.get(flt.fleets.ACTIVE_FLEET_KEY, {})
+
+        for fleet_id, target_fleet in self.equipment_plan_targets:
+            if fleet_id not in active_fleets:
+                Log.log_error(
+                    f"Fleet {fleet_id} is unavailable while verifying equipment plan."
+                )
+                return False
+
+            if not self._is_custom_fleet_with_equipment_loaded(
+                fleet_id, target_fleet
+            ):
+                Log.log_error(
+                    f"Fleet {fleet_id} ships or equipment do not match the planned "
+                    "fleet after refresh."
+                )
+                return False
+
+        return True
+
     def switch_fleet(self, context):
+        self.equipment_plan_targets = []
         self.goto()
         preset_id = self._get_next_preset_id(context)
 
@@ -541,6 +564,8 @@ class FleetSwitcherCore(object):
                     target_ship_ids,
                 ):
                     return False
+
+                self.equipment_plan_targets = combat_targets
 
                 for combat_fleet_id, target_fleet in combat_targets:
                     if not self.switch_to_costom_fleet_with_equipment(
@@ -609,6 +634,7 @@ class FleetSwitcherCore(object):
                     1, fleet_list[1], protected_fleet_ids
                 ):
                     return False
+                self.equipment_plan_targets = [(1, fleet_list[1])]
 
             elif context == "expedition":
                 Log.log_msg(f"Switching to Exp Preset.")
@@ -635,6 +661,8 @@ class FleetSwitcherCore(object):
                     target_ship_ids,
                 ):
                     return False
+
+                self.equipment_plan_targets = expedition_targets
 
                 for fleet_id, target_fleet in expedition_targets:
                     if not self.switch_to_costom_fleet_with_equipment(
