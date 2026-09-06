@@ -201,17 +201,11 @@ class Kcauto(object):
                         return
 
                     current_quest = next(
-                        (
-                            q
-                            for q in qst.quest.current_quest_list
-                            if q.quest_id == quest.quest_id
-                        ),
-                        None,
+                        q
+                        for q in qst.quest.current_quest_list
+                        if q.quest_id == quest.quest_id
                     )
-                    if (
-                        current_quest is not None
-                        and current_quest.state == QuestStateEnum.DONE
-                    ):
+                    if current_quest.state == QuestStateEnum.DONE:
                         Log.log_msg(
                             f"Factory quest {cfg['id']} is already done; "
                             "skipping build."
@@ -265,12 +259,6 @@ class Kcauto(object):
             fty.factory.enabled = False
 
     def _infer_factory_build_count_from_quest(self, cfg, current_quest):
-        if current_quest is None:
-            Log.log_debug_1(
-                f"Factory quest {cfg['id']} is missing from current quest list."
-            )
-            return None
-
         Log.log_debug_1(
             f"Factory quest {cfg['id']} fallback state: "
             f"state={current_quest.state.name}, "
