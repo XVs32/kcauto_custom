@@ -975,7 +975,7 @@ class Kca(object):
         elif target == "poi":
             self.poi_hook = PyChromeDevTools.ChromeInterface(host=host, port=port)
         else:
-            raise ValueError(f"Unsupported hook target: {target}. Expected 'api'.")
+            raise ValueError("Hook target must be either api or poi.")
 
         return
 
