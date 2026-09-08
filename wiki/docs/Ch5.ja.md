@@ -212,11 +212,11 @@ Controls sortie and combat behavior.
 - **Example**: `["A", "B"]`
 
 #### `combat.lbas_groups`
-- **Type**: array of strings
-- **Valid Values**: `"1"`, `"2"`, `"3"`
+- **Type**: array of integers 
+- **Valid Values**: `1`, `2`, `3`
 - **Default**: `[]`
 - **Description**: List of LBAS groups to activate.
-- **Example**: `["1", "2"]`
+- **Example**: `[1, 2]`
 
 #### `combat.lbas_group_1_nodes`
 - **Type**: array of strings
