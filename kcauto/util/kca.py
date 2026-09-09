@@ -5,6 +5,7 @@ import re
 import glob
 from pyquery import PyQuery
 import PyChromeDevTools
+from PIL import Image
 from datetime import datetime, timedelta
 from util.pyvisauto import Region, FindFailed, ImageMatch
 from random import randint, uniform
@@ -21,7 +22,7 @@ import stats.stats_core as sts
 from constants import (
     GAME_W,
     GAME_H,
-    API_URL,
+    API_URLS,
     POI_URL_POSTFIX,
     EXACT,
     DEFAULT,
@@ -37,6 +38,7 @@ import util.coordinate_system as coordinate_system
 import util.click_tracker as clt
 from util.exceptions import ChromeCrashException
 from util.logger import Log
+from util.poi_client import PoiClient, PoiClientError
 
 import asyncio
 from pyppeteer import connect
@@ -48,6 +50,7 @@ class Kca(object):
     ASSETS_FOLDER = "assets"
     api_hook = None
     poi_hook = None
+    poi_client = None
 
     html = None
 
@@ -89,6 +92,11 @@ class Kca(object):
         Raises:
             Exception: could not find Kancolle tabs in Chrome.
         """
+        if cfg.config.general.interaction_mode is InteractionModeEnum.POI:
+            return self.hook_poi()
+
+        Region.default_bounds = None
+        ImageMatch.override_capture_method = None
         Log.log_msg("Hooking into Chrome.")
         self.cdt_init(target="api")
         self.cdt_init(target="poi")
@@ -97,32 +105,71 @@ class Kca(object):
 
         api_tab = None
         api_tab_id = None
+        api_tab_url = None
         poi_tab = None
         poi_tab_id = None
+
         for n, tab in enumerate(self.api_hook.tabs):
-            if API_URL in tab["url"]:
-                api_tab = n
-                api_tab_id = tab["id"]
             if tab["url"].endswith(POI_URL_POSTFIX):
                 poi_tab = n
                 poi_tab_id = tab["id"]
 
+        # Prefer the direct DMM target when it is available, then fall back to
+        # POI 11's OOI webview target.
+        for target_url in API_URLS:
+            for n, tab in enumerate(self.api_hook.tabs):
+                if target_url in tab["url"]:
+                    api_tab = n
+                    api_tab_id = tab["id"]
+                    api_tab_url = tab["url"]
+                    break
+            if api_tab_id is not None:
+                break
+
+        if api_tab_id is None or poi_tab_id is None:
+            Log.log_error(
+                "No Kantai Collection or POI tab found in Chrome. Shutting down kcauto."
+            )
+            raise Exception("No running Kantai Collection or POI tab found in Chrome.")
+
         self.poi_hook.connect_targetID(poi_tab_id)
         Log.log_debug_1(f"Connected to poi tab ({poi_tab}:{poi_tab_id})")
-
-        if api_tab_id is None or api_tab_id is None:
-            Log.log_error(
-                "No Kantai Collection tab found in Chrome. Shutting down kcauto."
-            )
-            raise Exception("No running Kantai Collection tab found in Chrome.")
 
         self.api_hook.connect_targetID(api_tab_id)
         self.api_hook.Page.enable()
         self.api_hook.Network.enable()
-        Log.log_debug_1(f"Connected to API tab ({api_tab}:{api_tab_id})")
+        Log.log_debug_1(f"Connected to API tab ({api_tab}:{api_tab_id}, {api_tab_url})")
         Log.log_success("Connected to Chrome")
 
         coordinate_system.coor.find_game_window_offset()
+
+    def hook_poi(self):
+        """Connect to POI's loopback interaction service without CDP."""
+        Log.log_msg("Connecting to the POI interaction service.")
+        api_listener.api_listener.set_port(cfg.config.general.poi_api_port)
+        api_listener.api_listener.start()
+
+        if self.poi_client is not None:
+            self.poi_client.close()
+        self.poi_client = PoiClient(port=cfg.config.general.poi_control_port)
+        self.poi_client.connect()
+
+        self.api_hook = None
+        self.poi_hook = None
+        coordinate_system.coor.api_hook = None
+        coordinate_system.coor.viewport_x = 0
+        coordinate_system.coor.viewport_y = 0
+        coordinate_system.coor.game_x = 0
+        coordinate_system.coor.game_y = 0
+        coordinate_system.coor._update_regions()
+
+        Region.default_bounds = (0, 0, GAME_W, GAME_H)
+        ImageMatch.override_capture_method = self._poi_capture_method
+        ImageMatch.override_click_method = self._override_click_method
+        ImageMatch.override_hover_method = self._override_hover_method
+        ImageMatch.override_scroll_method = self._override_scroll_method
+        Log.log_success("Connected to POI")
+        return True
 
     def hook_health_check(self):
         """Method that runs through the different events reported to the api
@@ -132,6 +179,15 @@ class Kca(object):
         Raises:
             ChromeCrashException: Chrome tab crash was detected.
         """
+        if cfg.config.general.interaction_mode is InteractionModeEnum.POI:
+            try:
+                if self.poi_client is None or not self.poi_client.health_check():
+                    raise PoiClientError("POI health check failed")
+            except (OSError, PoiClientError):
+                Log.log_warn("POI interaction connection is stale. Reconnecting.")
+                self.hook_poi()
+            return
+
         api_events = self.api_hook.pop_messages()
         for event in api_events:
             if event["method"] == "Inspector.detached":
@@ -217,7 +273,7 @@ class Kca(object):
             ImageMatch.click_callback = clt.click_tracker.track_click
 
         # define click and hover method overrides as needed
-        if cfg.config.general.interaction_mode is InteractionModeEnum.CHROME_DRIVER:
+        if cfg.config.general.interaction_mode in (InteractionModeEnum.CHROME_DRIVER, InteractionModeEnum.POI):
             ImageMatch.override_click_method = self._override_click_method
             ImageMatch.override_hover_method = self._override_hover_method
             ImageMatch.override_scroll_method = self._override_scroll_method
@@ -234,7 +290,11 @@ class Kca(object):
             coordinate_system.coor.game_y = new_game_y
             coordinate_system.coor._update_regions()
 
-        coordinate_system.coor.find_game_window_offset()
+        if cfg.config.general.interaction_mode is InteractionModeEnum.POI:
+            coordinate_system.coor.viewport_x = 0
+            coordinate_system.coor.viewport_y = 0
+        else:
+            coordinate_system.coor.find_game_window_offset()
 
         return True
 
@@ -408,6 +468,8 @@ class Kca(object):
             r.hover()
         elif cfg.config.general.interaction_mode is InteractionModeEnum.CHROME_DRIVER:
             self._chrome_driver_hover_method(r)
+        elif cfg.config.general.interaction_mode is InteractionModeEnum.POI:
+            r.hover()
 
         self.sleep()
 
@@ -451,6 +513,8 @@ class Kca(object):
             r.click(pad=pad)
         elif cfg.config.general.interaction_mode is InteractionModeEnum.CHROME_DRIVER:
             self._chrome_driver_click_method(r, pad)
+        elif cfg.config.general.interaction_mode is InteractionModeEnum.POI:
+            r.click(pad=pad)
 
         self.sleep()
 
@@ -503,6 +567,8 @@ class Kca(object):
             r.scroll(pad=pad, direction=direction, amount=amount)
         elif cfg.config.general.interaction_mode is InteractionModeEnum.CHROME_DRIVER:
             self._chrome_driver_scroll_method(r, pad, direction, amount)
+        elif cfg.config.general.interaction_mode is InteractionModeEnum.POI:
+            r.scroll(pad=pad, direction=direction, amount=amount)
 
         self.sleep()
 
@@ -577,6 +643,8 @@ class Kca(object):
 
         elif cfg.config.general.interaction_mode is InteractionModeEnum.CHROME_DRIVER:
             self._chrome_driver_drag_method(r_a, pad, r_b, pad)
+        elif cfg.config.general.interaction_mode is InteractionModeEnum.POI:
+            self._poi_drag_method(r_a, pad, r_b, pad)
 
         self.sleep()
 
@@ -754,7 +822,10 @@ class Kca(object):
             x (int): x-coordinate of click generated by pyvisauto
             y (int): y-coordinate of click generated by pyvisauto
         """
-        self._chrome_driver_hover_method(r)
+        if cfg.config.general.interaction_mode is InteractionModeEnum.POI:
+            self._poi_hover_method(r, x, y)
+        else:
+            self._chrome_driver_hover_method(r)
 
     def _override_click_method(self, r, x, y, pad):
         """Click method override used when using Chrome Driver interaction
@@ -766,7 +837,10 @@ class Kca(object):
             y (int): y-coordinate of click generated by pyvisauto
             pad (tuple): padding parameter used to modify click coordinate
         """
-        self._chrome_driver_click_method(r, pad)
+        if cfg.config.general.interaction_mode is InteractionModeEnum.POI:
+            self._poi_click_method(r, x, y)
+        else:
+            self._chrome_driver_click_method(r, pad)
 
     def _override_scroll_method(self, r, x, y, pad, direction, amount):
         """Scroll method override used when using Chrome Driver interaction
@@ -780,7 +854,70 @@ class Kca(object):
             direction (ScrollDirectionEnum): Scroll direction.
             amount (int): Number of scroll steps to perform.
         """
-        self._chrome_driver_scroll_method(r, pad, direction, amount)
+        if cfg.config.general.interaction_mode is InteractionModeEnum.POI:
+            self._poi_scroll_method(r, x, y, direction, amount)
+        else:
+            self._chrome_driver_scroll_method(r, pad, direction, amount)
+
+    def _poi_capture_method(self, region):
+        """Capture and crop a logical game region through the POI plugin."""
+        if self.poi_client is None:
+            raise PoiClientError("POI interaction service is not connected")
+
+        image = self.poi_client.capture()
+        if image.size != (GAME_W, GAME_H):
+            image = image.resize((GAME_W, GAME_H), Image.Resampling.LANCZOS)
+
+        game_x = self.game_x or 0
+        game_y = self.game_y or 0
+        left = int(region.x - game_x)
+        top = int(region.y - game_y)
+        right = left + int(region.w)
+        bottom = top + int(region.h)
+        return image.crop((left, top, right, bottom))
+
+    def _poi_click_method(self, r, x, y):
+        """Dispatch a logical game click through the POI plugin."""
+        self.poi_client.click(x - (self.game_x or 0), y - (self.game_y or 0))
+        r._captured = None
+
+    def _poi_hover_method(self, r, x, y):
+        """Dispatch a logical game hover through the POI plugin."""
+        self.poi_client.hover(x - (self.game_x or 0), y - (self.game_y or 0))
+
+    def _poi_scroll_method(self, r, x, y, direction, amount=1):
+        """Dispatch logical game wheel input through the POI plugin."""
+        if amount < 1:
+            raise ValueError(f"Unsupported scroll amount: {amount}")
+
+        if direction is ScrollDirectionEnum.UP:
+            delta_y = -120
+        elif direction is ScrollDirectionEnum.DOWN:
+            delta_y = 120
+        else:
+            raise ValueError(f"Unsupported scroll direction: {direction}")
+
+        logical_x = x - (self.game_x or 0)
+        logical_y = y - (self.game_y or 0)
+        for _ in range(amount):
+            self.poi_client.scroll(logical_x, logical_y, delta_y)
+            self.sleep()
+        r._captured = None
+
+    def _poi_drag_method(self, r_a, pad_a, r_b, pad_b):
+        """Dispatch a logical game drag through the POI plugin."""
+        start_x = randint(r_a.x + pad_a[0], r_a.x + r_a.w + pad_a[2])
+        start_y = randint(r_a.y + pad_a[1], r_a.y + r_a.h + pad_a[3])
+        end_x = randint(r_b.x + pad_b[0], r_b.x + r_b.w + pad_b[2])
+        end_y = randint(r_b.y + pad_b[1], r_b.y + r_b.h + pad_b[3])
+        self.poi_client.drag(
+            start_x - (self.game_x or 0),
+            start_y - (self.game_y or 0),
+            end_x - (self.game_x or 0),
+            end_y - (self.game_y or 0),
+        )
+        r_a._captured = None
+        r_b._captured = None
 
     def _chrome_driver_click_method(self, r, pad):
         """Click method used in Chrome Driver interaction mode.
@@ -972,10 +1109,10 @@ class Kca(object):
         port = cfg.config.general.chrome_dev_port
         chrome = PyChromeDevTools.ChromeInterface(host="localhost", port=port)
         if target == "api":
-            self.api_hook = PyChromeDevTools.ChromeInterface(host=host, port=port)
+            self.api_hook = PyChromeDevTools.ChromeInterface(host=host, port=port, suppress_origin=True)
             coordinate_system.coor.api_hook = self.api_hook
         elif target == "poi":
-            self.poi_hook = PyChromeDevTools.ChromeInterface(host=host, port=port)
+            self.poi_hook = PyChromeDevTools.ChromeInterface(host=host, port=port, suppress_origin=True)
         else:
             raise ValueError("Hook target must be either api or poi.")
 
@@ -1119,6 +1256,13 @@ class Kca(object):
 
         Log.log_debug_1("get poi quests stats...")
 
+        if cfg.config.general.interaction_mode is InteractionModeEnum.POI:
+            try:
+                return self.poi_client.get_quest_stats()
+            except PoiClientError as e:
+                Log.log_error(f"Failed to get poi quests stats: {str(e)}")
+                return {}
+
         js_code = """
         (() => {
             try {
@@ -1185,6 +1329,12 @@ class Kca(object):
                 Log.log_msg(dialog)
             Log.log_warn("Press Enter to continue")
             input()
+
+    def close(self):
+        """Release POI client and webhook resources during shutdown."""
+        if self.poi_client is not None:
+            self.poi_client.close()
+        api_listener.api_listener.stop()
 
 
 kca = Kca()
