@@ -1,5 +1,5 @@
 {
-  "combat.fleet_mode": "stf",
+  "combat.fleet_mode": "ctf",
   "combat.node_selects": [
     "P>Q"
   ],
