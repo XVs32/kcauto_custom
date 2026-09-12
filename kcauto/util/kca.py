@@ -1005,7 +1005,7 @@ class Kca(object):
         records = poi_quest_stats.get("records", {})
 
         if quest_id not in records:
-            Log.log_debug(
+            Log.log_debug_1(
                 f"Quest {quest_id} ({target_quest.name}) is not currently tracked."
             )
             return None
@@ -1041,7 +1041,8 @@ class Kca(object):
                     action[map_enum] = remaining
                 else:
                     continue
-
+"""
+@todo enable "@" handling again after poi fix quest info
             elif (
                 "@" in key
             ):  # for sortie with format like "battle_boss_win_rank_s@12", "@54", "@722", "@5-4"
@@ -1054,7 +1055,7 @@ class Kca(object):
                 except Exception as e:
                     Log.log_debug(f"Failed to map condition '{raw_condition}': {e}")
                     continue
-
+"""
             else:
                 desc = val.get("description", "")  # fallback for sortie without @
                 if "-" in desc:
@@ -1137,6 +1138,8 @@ class Kca(object):
             response = self.poi_hook.Runtime.evaluate(
                 expression=js_code, returnByValue=True
             )
+
+            Log.log_debug_2(f'response: {response}')
 
             if isinstance(response, (list, tuple)) and len(response) > 0:
                 resp_dict = response[0]
