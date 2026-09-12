@@ -1041,21 +1041,6 @@ class Kca(object):
                     action[map_enum] = remaining
                 else:
                     continue
-"""
-@todo enable "@" handling again after poi fix quest info
-            elif (
-                "@" in key
-            ):  # for sortie with format like "battle_boss_win_rank_s@12", "@54", "@722", "@5-4"
-                raw_condition = key.split("@")[-1]  # get "12", "54", "722", "5-4"
-
-                try:
-                    mapped_enum = self.string_to_mapenum(raw_condition)
-                    if mapped_enum:
-                        action[mapped_enum] = remaining
-                except Exception as e:
-                    Log.log_debug(f"Failed to map condition '{raw_condition}': {e}")
-                    continue
-"""
             else:
                 desc = val.get("description", "")  # fallback for sortie without @
                 if "-" in desc:
