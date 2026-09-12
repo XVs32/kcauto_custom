@@ -148,40 +148,38 @@ class Kcauto(object):
         anything_is_done = False
 
         for i in qst.quest.next_check_intervals:
-            if qst.quest.need_check_intervals[i].is_factory_construction_quest():
-                if shp.ships.is_ship_pool_full():
-                    break
-
-                anything_is_done = True
+            if qst.quest.need_check_intervals[i].category.is_factory():
+                # be careful action_count is not int, but dict[int, int]
                 action_count = kca_u.kca.get_quest_count(target_quest=qst.quest.need_check_intervals[i])
 
-                fty.factory.goto()
-                if not fty.factory.any_build_slot_available():
-                    fty.factory.set_timer()
-                    break
-
-                self._run_fleetswitch_logic("factory_build")
-                fty.factory.goto()
-
-                success = fty.factory.build_logic(action_count)
-
-                if success == False:
-                    fty.factory.set_timer()
-
-                break
-
-            elif qst.quest.need_check_intervals[i].is_factory_develop_quest():
-
-                action_count = kca_u.kca.get_quest_count(target_quest=qst.quest.need_check_intervals[i])
-
-                self._run_fleetswitch_logic("factory_develop")
-                fty.factory.goto()
-
-                success = fty.factory.develop_logic(action_count)
-
-                if success == True:
+                if action_count.keys()[0] == fty.factory.CONSTRUCTION:
+                    if shp.ships.is_ship_pool_full():
+                        break
                     anything_is_done = True
+                    fty.factory.goto()
+                    if not fty.factory.any_build_slot_available():
+                        fty.factory.set_timer()
+                        break
 
+                    self._run_fleetswitch_logic("factory_build")
+                    fty.factory.goto()
+
+                    success = fty.factory.build_logic(action_count[fty.factory.CONSTRUCTION])
+
+                    if success == False:
+                        fty.factory.set_timer()
+
+                elif action_count.keys()[0] == fty.factory.DEVELOPMENT:
+                    # @TODO: check for equipment capacity, broken due to kancolle api returning wrong info
+
+                    self._run_fleetswitch_logic("factory_develop")
+                    fty.factory.goto()
+
+                    success = fty.factory.develop_logic(action_count[fty.factory.DEVELOPMENT])
+
+                    if success == True:
+                        anything_is_done = True
+                        
                 break
 
         nav.navigate.to("home")
