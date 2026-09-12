@@ -16,7 +16,7 @@ import config.config_core as cfg
 import factory.factory_core as fty
 import ships.ships_core as shp
 import stats.stats_core as sts
-import util.json_data as JsonData
+from util.json_data import JsonData
 from constants import (
     GAME_W,
     GAME_H,
