@@ -41,6 +41,7 @@ tool/.mapCoorUpdater
 env/
 venv/
 ENV/
+debug/
 env.bak/
 venv.bak/
 crash_screenshots/
