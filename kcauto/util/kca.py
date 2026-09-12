@@ -16,6 +16,7 @@ import config.config_core as cfg
 import factory.factory_core as fty
 import ships.ships_core as shp
 import stats.stats_core as sts
+import util.json_data as JsonData
 from constants import (
     GAME_W,
     GAME_H,
@@ -1008,7 +1009,6 @@ class Kca(object):
         records = poi_quest_stats.get("records", {})
 
         if quest_id not in records:
-            Log.log_debug_1(
             Log.log_debug_1(
                 f"Quest {quest_id} ({target_quest.name}) is not currently tracked."
             )
