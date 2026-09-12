@@ -140,5 +140,15 @@ class Quest(object):
         else:
             return None
 
+    def is_factroy_development_quest(self):
+        if self.name == "Fd1" or self.name == "Fd3":
+            return True
+        return False
+
+    def is_factroy_construction_quest(self):
+        if self.name == "Fd2" or self.name == "Fd4":
+            return True
+        return False
+
     def __repr__(self):
         return f"{self.name} (#{self.quest_id})"

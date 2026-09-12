@@ -1,9 +1,7 @@
 import cv2
 import numpy as np
 import os
-import re
 import glob
-from pyquery import PyQuery
 import PyChromeDevTools
 from datetime import datetime, timedelta
 from util.pyvisauto import Region, FindFailed, ImageMatch
@@ -15,8 +13,8 @@ import api.api_core as api
 import api.api_listener as api_listener
 import args.args_core as arg
 import config.config_core as cfg
+import factory.factory_core as fty
 import ships.ships_core as shp
-from util.json_data import JsonData
 import stats.stats_core as sts
 from constants import (
     GAME_W,
@@ -1028,7 +1026,7 @@ class Kca(object):
             if remaining <= 0:
                 continue
 
-            if target_quest.name.startswith("D"):
+            if target_quest.category.is_expedition():
                 import expedition.expedition_core as exp
 
                 exp_name = val.get("description", None)
@@ -1039,6 +1037,13 @@ class Kca(object):
                 map_enum = exp.expedition.get_exp_enum_from_name(exp_name)
                 if map_enum:
                     action[map_enum] = remaining
+                else:
+                    continue
+            if target_quest.category.is_factory():
+                if target_quest.is_factroy_development_quest():
+                    action[fty.factory.DEVELOPMENT] = remaining
+                elif target_quest.is_factroy_construction_quest():
+                    action[fty.factory.CONSTRUCTION] = remaining
                 else:
                     continue
             else:

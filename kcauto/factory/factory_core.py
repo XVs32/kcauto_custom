@@ -6,6 +6,10 @@ from util.logger import Log
 
 
 class FactoryCore(object):
+
+    DEVELOPMENT = 1
+    CONSTRUCTION = 2
+
     enabled = False
     disable_timer = 0
     order_oil_region = {
