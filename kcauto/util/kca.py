@@ -956,15 +956,13 @@ class Kca(object):
             type="mouseMoved", x=dst.x + offset_x, y=dst.y + offset_y
         )
 
-    def cdt_init(self, host="localhost", target="visual"):
+    def cdt_init(self, host="localhost", target="api"):
         """method to hook this python program to chrome browser, cdt stands for ChromeDevTools
 
         Args:
             host (str, optional): Chrome dev protocol server address. Defaults
                 to "localhost".
-            port (int, optional): Chrome dev protocol server port. Defaults to
-                9222.
-            api (bool): api hook or not(default True)
+            target (str, optional): Hook target. Defaults to "api".
         """
 
         port = cfg.config.general.chrome_dev_port
@@ -998,14 +996,23 @@ class Kca(object):
                 f"poi API data unavailable; cannot get quest count for {target_quest.name}."
             )
             return None
+        if poi_quest_stats.get("error"):
+            Log.log_warn(
+                f"poi quest stats error; cannot get quest count for "
+                f"{target_quest.name}: {poi_quest_stats.get('error')}"
+            )
+            self._dump_poi_quest_stats_for_debug(poi_quest_stats, target_quest)
+            return None
 
         quest_id = str(target_quest.quest_id)
         records = poi_quest_stats.get("records", {})
 
         if quest_id not in records:
             Log.log_debug_1(
+            Log.log_debug_1(
                 f"Quest {quest_id} ({target_quest.name}) is not currently tracked."
             )
+            self._dump_poi_quest_stats_for_debug(poi_quest_stats, target_quest)
             return None
 
         quest_record = records[quest_id]
@@ -1058,6 +1065,92 @@ class Kca(object):
                         continue
 
         return action if action else None
+
+    def _dump_poi_quest_stats_for_debug(self, poi_quest_stats, target_quest: Quest):
+        if not (arg.args.parsed_args is not None and arg.args.parsed_args.debug_output):
+            return
+
+        timestamp = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
+        dump_path = (
+            f"debug|poi_quest_records_{target_quest.name}_{target_quest.quest_id}_"
+            f"{timestamp}.json"
+        )
+        try:
+            JsonData.dump_json(poi_quest_stats, dump_path, pretty=True)
+            Log.log_debug_1(
+                "Dumped POI quest stats for quest count debugging to "
+                f"{JsonData.create_path(dump_path)}."
+            )
+        except Exception as e:
+            Log.log_warn(f"Failed to dump POI quest stats for debugging: {e}")
+
+    def get_poi_factory_quest_count(self, target_quest: Quest) -> int | None:
+        """Get the remaining factory actions needed for the specified quest from POI."""
+
+        poi_quest_stats = self.get_poi_quest_stats()
+
+        if not poi_quest_stats:
+            Log.log_warn(
+                f"poi API data unavailable; cannot get factory quest count for {target_quest.name}."
+            )
+            return None
+        if poi_quest_stats.get("error"):
+            Log.log_warn(
+                f"poi quest stats error; cannot get factory quest count for "
+                f"{target_quest.name}: {poi_quest_stats.get('error')}"
+            )
+            self._dump_poi_quest_stats_for_debug(poi_quest_stats, target_quest)
+            return None
+
+        quest_id = str(target_quest.quest_id)
+        records = poi_quest_stats.get("records", {})
+
+        if quest_id not in records:
+            Log.log_debug_1(
+                f"Quest {quest_id} ({target_quest.name}) is not currently tracked "
+                "in POI records."
+            )
+            self._dump_poi_quest_stats_for_debug(poi_quest_stats, target_quest)
+            return None
+
+        quest_record = records[quest_id]
+
+        try:
+            return self._get_poi_factory_quest_remaining_count(quest_id, quest_record)
+        except ValueError as e:
+            Log.log_debug_1(
+                f"Quest {quest_id} ({target_quest.name}) has no readable "
+                f"factory requirements in POI record: {e}"
+            )
+            self._dump_poi_quest_stats_for_debug(poi_quest_stats, target_quest)
+            return None
+
+    def _get_poi_factory_quest_remaining_count(self, quest_id, quest_record):
+        """Read remaining Fd1-Fd4 factory actions from a POI quest record."""
+        factory_action_key = {
+            "605": "create_item",
+            "606": "create_ship",
+            "607": "create_item",
+            "608": "create_ship",
+        }.get(str(quest_id))
+
+        if factory_action_key is None:
+            raise ValueError(f"unsupported factory quest id {quest_id}")
+        if not isinstance(quest_record, dict):
+            raise ValueError("quest record is not a dict")
+
+        requirement = quest_record.get(factory_action_key)
+        if not isinstance(requirement, dict):
+            raise ValueError(f"missing {factory_action_key} requirement")
+
+        if "required" not in requirement or "count" not in requirement:
+            raise ValueError(
+                f"{factory_action_key} requirement is missing count/required"
+            )
+
+        required = requirement.get("required", 0) or 0
+        count = requirement.get("count", 0) or 0
+        return max(0, required - count)
 
     def string_to_mapenum(self, raw_num: str) -> MapEnum:
         """Converts raw poi map identifier strings (like '15', '16', '722', '732', '5-4')
@@ -1112,14 +1205,37 @@ class Kca(object):
 
         js_code = """
         (() => {
+            const diagnostics = () => {
+                const interestingWindowKeys = [
+                    "getStore",
+                    "POI_VERSION"
+                ].filter((key) => key in window);
+
+                return {
+                    url: window.location?.href,
+                    title: document?.title,
+                    interestingWindowKeys,
+                    hasGetStore: typeof window.getStore,
+                    hasPoi: typeof window.poi
+                };
+            };
+
             try {
                 const store = window.getStore();
+        
                 if (store && store.info && store.info.quests) {
                     return JSON.stringify(store.info.quests);
                 }
-                return "{}";
+        
+                return JSON.stringify({
+                    error: "POI quest store not found",
+                    diagnostics: diagnostics()
+                });
             } catch (e) {
-                return JSON.stringify({error: e.message});
+                return JSON.stringify({
+                    error: e.message,
+                    diagnostics: diagnostics()
+                });
             }
         })()
         """
