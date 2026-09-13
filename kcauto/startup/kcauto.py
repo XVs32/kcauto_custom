@@ -151,8 +151,9 @@ class Kcauto(object):
             if qst.quest.next_check_intervals[i].category.is_factory():
                 # be careful action_count is not int, but dict[int, int]
                 action_count = kca_u.kca.get_quest_count(target_quest=qst.quest.next_check_intervals[i])
+                quest_type = next(iter(action_count))
 
-                if action_count.keys()[0] == fty.factory.CONSTRUCTION:
+                if quest_type == fty.factory.CONSTRUCTION:
                     if shp.ships.is_ship_pool_full():
                         break
                     anything_is_done = True
@@ -169,7 +170,7 @@ class Kcauto(object):
                     if success == False:
                         fty.factory.set_timer()
 
-                elif action_count.keys()[0] == fty.factory.DEVELOPMENT:
+                elif quest_type == fty.factory.DEVELOPMENT:
                     # @TODO: check for equipment capacity, broken due to kancolle api returning wrong info
 
                     self._run_fleetswitch_logic("factory_develop")
