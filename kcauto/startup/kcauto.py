@@ -20,6 +20,8 @@ import util.kca as kca_u
 from fleet.noro6 import Noro6
 from kca_enums.expeditions import ExpeditionEnum
 from kca_enums.sorite_rank import SortieRankEnum
+from kca_enums.quest_state import QuestStateEnum
+from kca_enums.quest_progress_flag import QuestProgressFlagEnum
 from util.logger import Log
 from kca_enums.maps import MapEnum
 from quest.quest import Quest
@@ -145,75 +147,46 @@ class Kcauto(object):
 
         anything_is_done = False
 
-        """@todo: check equipment pool fix 
-        """
-        quest_configs = [
-            {
-                "id": "Fd1",
-                "type": "develop",
-                "count": 1,
-                "is_full": lambda: (
-                    False
-                ),  # @todo check equipment pool full, disabled due to api returning wrong data, did affect KC3 too
-            },
-            {
-                "id": "Fd3",
-                "type": "develop",
-                "count": 3,
-                "is_full": lambda: (
-                    False
-                ),  # @todo check equipment pool full, disabled due to api returning wrong data, did affect KC3 too
-            },
-            {
-                "id": "Fd2",
-                "type": "build",
-                "count": 1,
-                "is_full": shp.ships.is_ship_pool_full,
-            },
-            {
-                "id": "Fd4",
-                "type": "build",
-                "count": 3,
-                "is_full": shp.ships.is_ship_pool_full,
-            },
-        ]
+        for i in qst.quest.next_check_intervals:
+            if qst.quest.next_check_intervals[i].category.is_factory():
+                # be careful action_count is not int, but dict[int, int]
+                action_count = kca_u.kca.get_quest_count(target_quest=qst.quest.next_check_intervals[i])
 
-        for cfg in quest_configs:
-            if (
-                qst.quest.is_tracking_quest(Quest(name=cfg["id"]))
-                and not cfg["is_full"]()
-            ):
-                anything_is_done = True
-
-                if cfg["type"] == "develop":
-                    self._run_fleetswitch_logic("factory_develop")
-
+                if action_count.keys()[0] == fty.factory.CONSTRUCTION:
+                    if shp.ships.is_ship_pool_full():
+                        break
+                    anything_is_done = True
                     fty.factory.goto()
-                    if fty.factory.develop_logic(cfg["count"]) == True:
-                        nav.navigate.to("home")
-                else:
-                    self._run_fleetswitch_logic("factory_build")
-
-                    fty.factory.goto()
-
                     if not fty.factory.any_build_slot_available():
                         fty.factory.set_timer()
-                        return
+                        break
 
-                    success = fty.factory.build_logic(cfg["count"])
+                    self._run_fleetswitch_logic("factory_build")
+                    fty.factory.goto()
 
-                    if cfg["id"] == "Fd4":
-                        nav.navigate.to("home")
-                        fty.factory.set_timer()
-                    elif success:
-                        nav.navigate.to("home")
-                    else:
+                    success = fty.factory.build_logic(action_count[fty.factory.CONSTRUCTION])
+
+                    if success == False:
                         fty.factory.set_timer()
 
+                elif action_count.keys()[0] == fty.factory.DEVELOPMENT:
+                    # @TODO: check for equipment capacity, broken due to kancolle api returning wrong info
+
+                    self._run_fleetswitch_logic("factory_develop")
+                    fty.factory.goto()
+
+                    success = fty.factory.develop_logic(action_count[fty.factory.DEVELOPMENT])
+
+                    if success == True:
+                        anything_is_done = True
+
+                break
+
+        nav.navigate.to("home")
         if anything_is_done == False:
             """Daily factory process done, disable from now"""
             fty.factory.enabled = False
-
+                
     def run_pvp_logic(self):
         if not pvp.pvp.enabled:
             return False
@@ -573,6 +546,8 @@ class Kcauto(object):
             sts.stats.quest.times_checked += 1
             self.handle_back_to_home(back_to_home)
             sts.stats.set_print_loop_end_stats()
+            return True
+        return False
 
     def handle_back_to_home(self, back_to_home):
         if back_to_home:
