@@ -39,6 +39,7 @@ class Kcauto(object):
 
     def __init__(self):
         atexit.register(kca_u.kca.save_screenshots)
+        atexit.register(kca_u.kca.close)
         kca_u.kca.hook_chrome()
 
     def start_kancolle(self):

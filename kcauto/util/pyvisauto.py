@@ -38,6 +38,9 @@ class ImageMatch(ABC):
     # assign the method for overriding the scroll methods to this class
     # variable. Should accept the parameters (region, x, y, pad, direction, amount)
     override_scroll_method = None
+    # assign the method for overriding screenshot capture to this class
+    # variable. Should accept the region and return a PIL.Image.
+    override_capture_method = None
     # assign the callback method for click to this class variable. Should
     # accept the parameters (region, x, y)
     click_callback = None
@@ -55,6 +58,9 @@ class ImageMatch(ABC):
         Returns:
             PIL.Image: object representing captured region.
         """
+        if ImageMatch.override_capture_method:
+            return ImageMatch.override_capture_method(self)
+
         with mss.mss() as sct:
             # Ensure all coordinates are integers and not None
             # MSS uses {'top': y, 'left': x, 'width': w, 'height': h}
@@ -342,6 +348,8 @@ class Region(ImageMatch):
     search within it or to use other ImageMatch public methods.
     """
 
+    default_bounds = None
+
     def __init__(self, x=None, y=None, w=None, h=None):
         """Initialize a Region instance. Leave all parameters blank to create
         a region for the entire screen. Fill in all parameters otherwise.
@@ -359,7 +367,9 @@ class Region(ImageMatch):
                 specified.
         """
         self.MOUSE_MOVE_SPEED = Region.MOUSE_MOVE_SPEED
-        if x is None and y is None and w is None and h is None:
+        if x is None and y is None and w is None and h is None and Region.default_bounds is not None:
+            self.x, self.y, self.w, self.h = Region.default_bounds
+        elif x is None and y is None and w is None and h is None:
             with mss.mss() as sct:
                 screen = sct.monitors[0]
             self.x = screen["left"]
