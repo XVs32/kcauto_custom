@@ -3,6 +3,9 @@
   "combat.node_selects": [
     "M>P"
   ],
+  "combat.node_formations": [
+    "Q2:vanguard"
+  ],
   "combat.lbas_groups": [
     1
   ],

@@ -1,0 +1,20 @@
+{
+  "combat.fleet_mode": "stf",
+  "combat.node_selects": [
+    "P>P1",
+    "T>T1"
+  ],
+  "combat.lbas_groups": [
+    1,
+    2,
+    3
+  ],
+  "combat.lbas_group_1_nodes": [
+    "X",
+    "X"
+  ],
+  "combat.lbas_group_2_nodes": [
+    "X",
+    "X"
+  ]
+}

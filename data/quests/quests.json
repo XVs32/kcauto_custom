@@ -8,7 +8,7 @@
       0
     ],
     "recommended_map": [
-      "B-1-1"
+      "B-5-3-P"
     ]
   },
   "Bd2": {
@@ -20,7 +20,7 @@
       0
     ],
     "recommended_map": [
-      "B-1-1"
+      "B-5-3-P"
     ]
   },
   "Bd3": {
@@ -32,7 +32,7 @@
       0
     ],
     "recommended_map": [
-      "B-1-1"
+      "B-5-3-P"
     ]
   },
   "Bd4": {
@@ -138,7 +138,7 @@
       0
     ],
     "recommended_map": [
-      "B-1-1"
+      "B-5-3-P"
     ]
   },
   "Bw2": {
@@ -654,7 +654,7 @@
       }
     ],
     "recommended_map": [
-      "Bq3-1-6"
+      "Bq3-1-6-N"
     ],
     "fleet_composition": {
       "requirements": [
@@ -3100,6 +3100,14 @@
         }
       ]
     }
+  },
+  "2609C1": {
+    "id": 384,
+    "type": "weekly"
+  },
+  "2609C2": {
+    "id": 385,
+    "type": "weekly"
   },
   "2605B4": {
     "id": 955,

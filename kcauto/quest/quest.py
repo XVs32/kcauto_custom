@@ -4,6 +4,7 @@ from util.json_data import JsonData
 from kca_enums.maps import MapEnum
 from kca_enums.quest_type import QuestTypeEnum
 from kca_enums.quest_state import QuestStateEnum
+from kca_enums.quest_progress_flag import QuestProgressFlagEnum
 from kca_enums.sorite_rank import SortieRankEnum
 from util.logger import Log
 
@@ -13,6 +14,7 @@ class Quest(object):
     quest_id: int | None = None
 
     category: "QuestCategoryEnum | None" = None
+    progress_flag: QuestProgressFlagEnum = QuestProgressFlagEnum.NONE
     next_intervals = None
 
     completed_count = {}
@@ -33,6 +35,9 @@ class Quest(object):
             self.category = QuestCategoryEnum(api_data.get("api_category", None))
             self.quest_type = QuestTypeEnum(api_data.get("api_type", ""))
             self.state = QuestStateEnum(api_data.get("api_state", 0))
+            self.progress_flag = QuestProgressFlagEnum(
+                api_data.get("api_progress_flag", 0)
+            )
             self.title = api_data.get("api_title", "")
             self.select_rewards = api_data.get("api_select_rewards", None)
 
@@ -44,6 +49,7 @@ class Quest(object):
             self.name = self._get_name(quest_id)
 
         if api_data is None:
+            self.progress_flag = QuestProgressFlagEnum.NONE
             self.category = self._get_category_from_static_data()
             self.quest_type = self._get_type_from_static_data()
 
@@ -139,6 +145,16 @@ class Quest(object):
                 return QuestTypeEnum.OTHER
         else:
             return None
+
+    def is_factroy_development_quest(self):
+        if self.name == "Fd1" or self.name == "Fd3":
+            return True
+        return False
+
+    def is_factroy_construction_quest(self):
+        if self.name == "Fd2" or self.name == "Fd4":
+            return True
+        return False
 
     def __repr__(self):
         return f"{self.name} (#{self.quest_id})"

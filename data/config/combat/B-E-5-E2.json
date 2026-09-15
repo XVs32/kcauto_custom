@@ -1,17 +1,22 @@
 {
   "combat.fleet_mode": "strike",
-  "combat.node_selects": [
-    "B>C"
-  ],
   "combat.lbas_groups": [
     1,
-    2
+    2,
+    3
   ],
   "combat.lbas_group_1_nodes": [
-    "C2",
-    "C2"
+    "E2",
+    "E2"
+  ],
+  "combat.lbas_group_2_nodes": [
+    "E1",
+    "E1"
+  ],
+  "combat.node_selects": [
+    "C>D"
   ],
   "combat.node_night_battles": [
-    "C2:True"
+    "E2:True"
   ]
 }

@@ -11,7 +11,6 @@ from util.recovery import Recovery
 import ships.equipment_core as equ
 
 
-
 def kcauto_main():
     """Primary method that contains kcauto and various recovery logic."""
     active_loop = True

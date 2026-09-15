@@ -1,0 +1,8 @@
+{
+  "combat.fleet_mode": "tcf",
+  "combat.lbas_groups": [
+    1,
+    2,
+    3
+  ]
+}

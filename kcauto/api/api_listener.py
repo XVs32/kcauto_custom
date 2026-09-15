@@ -63,14 +63,18 @@ class PoiWebhookServer:
                             formatted_msg = {}
 
                             if is_map_resource:
-                                relative_path = raw_path.split(".com/")[-1] if ".com/" in raw_path else raw_path
-                                
+                                relative_path = (
+                                    raw_path.split(".com/")[-1]
+                                    if ".com/" in raw_path
+                                    else raw_path
+                                )
+
                                 formatted_msg = {
-                                    "path": relative_path,         
-                                    "response": {"url": raw_path},  
+                                    "path": relative_path,
+                                    "response": {"url": raw_path},
                                     "request": None,
                                     "stage": stage,
-                                    "timestamp": data.get("timestamp")
+                                    "timestamp": data.get("timestamp"),
                                 }
                             else:
                                 formatted_msg = {
@@ -78,11 +82,13 @@ class PoiWebhookServer:
                                     "response": data.get("response"),
                                     "request": data.get("request"),
                                     "stage": stage,
-                                    "timestamp": data.get("timestamp")
+                                    "timestamp": data.get("timestamp"),
                                 }
 
-                            if outer_self.filter_func(formatted_msg["path"], formatted_msg):
-                                outer_self.api_queue.put(formatted_msg) 
+                            if outer_self.filter_func(
+                                formatted_msg["path"], formatted_msg
+                            ):
+                                outer_self.api_queue.put(formatted_msg)
                                 status = "ACCEPTED & QUEUED"
                             else:
                                 status = "FILTERED OUT BY CUSTOM FILTER"

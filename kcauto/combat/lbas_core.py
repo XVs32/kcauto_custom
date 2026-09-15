@@ -7,6 +7,7 @@ from kca_enums.kcsapi_paths import KCSAPIEnum
 from kca_enums.lbas_fatigue import LBASFatigueEnum
 from kca_enums.lbas_groups import LBASGroupEnum
 from kca_enums.lbas_state import LBASStateEnum
+from util.pyvisauto import FindFailed
 
 
 class LBASCore(object):
@@ -59,6 +60,23 @@ class LBASCore(object):
                     }
                 )
             group_instance.planes = planes
+            plane_status = ", ".join(
+                [
+                    (
+                        f"{plane['count']}/{plane['count_max']}"
+                        f" fatigue={plane['fatigue'].name}"
+                    )
+                    for plane in planes
+                ]
+            )
+            Log.log_debug_1(
+                f"LBAS plane update world={sortie_world} "
+                f"area={group['api_area_id']} group={group_id} "
+                f"state={group_instance.state.name} "
+                f"api_enabled={group_instance.api_enabled} "
+                f"config_enabled={group_instance.config_enabled} "
+                f"planes=[{plane_status}]"
+            )
 
     def manage_lbas(self):
         if not self.enabled:
@@ -161,8 +179,11 @@ class LBASCore(object):
         #     timeout=10)
         api_result = {}
         while KCSAPIEnum.LBAS_RESUPPLY_ACTION.name not in api_result:
-            kca_u.kca.click_existing("upper_right", "combat|lbas_resupply.png")
-            api_result = api.api.update_from_api({KCSAPIEnum.LBAS_RESUPPLY_ACTION}, process_all=False)
+            if not kca_u.kca.click_existing("upper_right", "combat|lbas_resupply.png"):
+                raise FindFailed("LBAS resupply button not found.")
+            api_result = api.api.update_from_api(
+                {KCSAPIEnum.LBAS_RESUPPLY_ACTION}, process_all=False
+            )
             kca_u.kca.sleep()
 
         kca_u.kca.wait_vanish("lower_right", "combat|lbas_resupply_in_progress.png")
