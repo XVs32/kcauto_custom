@@ -1,9 +1,7 @@
 import cv2
 import numpy as np
 import os
-import re
 import glob
-from pyquery import PyQuery
 import PyChromeDevTools
 from datetime import datetime, timedelta
 from util.pyvisauto import Region, FindFailed, ImageMatch
@@ -15,9 +13,10 @@ import api.api_core as api
 import api.api_listener as api_listener
 import args.args_core as arg
 import config.config_core as cfg
+import factory.factory_core as fty
 import ships.ships_core as shp
-from util.json_data import JsonData
 import stats.stats_core as sts
+from util.json_data import JsonData
 from constants import (
     GAME_W,
     GAME_H,
@@ -958,15 +957,13 @@ class Kca(object):
             type="mouseMoved", x=dst.x + offset_x, y=dst.y + offset_y
         )
 
-    def cdt_init(self, host="localhost", target="visual"):
+    def cdt_init(self, host="localhost", target="api"):
         """method to hook this python program to chrome browser, cdt stands for ChromeDevTools
 
         Args:
             host (str, optional): Chrome dev protocol server address. Defaults
                 to "localhost".
-            port (int, optional): Chrome dev protocol server port. Defaults to
-                9222.
-            api (bool): api hook or not(default True)
+            target (str, optional): Hook target. Defaults to "api".
         """
 
         port = cfg.config.general.chrome_dev_port
@@ -1000,14 +997,22 @@ class Kca(object):
                 f"poi API data unavailable; cannot get quest count for {target_quest.name}."
             )
             return None
+        if poi_quest_stats.get("error"):
+            Log.log_warn(
+                f"poi quest stats error; cannot get quest count for "
+                f"{target_quest.name}: {poi_quest_stats.get('error')}"
+            )
+            self._dump_poi_quest_stats_for_debug(poi_quest_stats, target_quest)
+            return None
 
         quest_id = str(target_quest.quest_id)
         records = poi_quest_stats.get("records", {})
 
         if quest_id not in records:
-            Log.log_debug(
+            Log.log_debug_1(
                 f"Quest {quest_id} ({target_quest.name}) is not currently tracked."
             )
+            self._dump_poi_quest_stats_for_debug(poi_quest_stats, target_quest)
             return None
 
         quest_record = records[quest_id]
@@ -1028,7 +1033,7 @@ class Kca(object):
             if remaining <= 0:
                 continue
 
-            if target_quest.name.startswith("D"):
+            if target_quest.category.is_expedition():
                 import expedition.expedition_core as exp
 
                 exp_name = val.get("description", None)
@@ -1041,20 +1046,13 @@ class Kca(object):
                     action[map_enum] = remaining
                 else:
                     continue
-
-            elif (
-                "@" in key
-            ):  # for sortie with format like "battle_boss_win_rank_s@12", "@54", "@722", "@5-4"
-                raw_condition = key.split("@")[-1]  # get "12", "54", "722", "5-4"
-
-                try:
-                    mapped_enum = self.string_to_mapenum(raw_condition)
-                    if mapped_enum:
-                        action[mapped_enum] = remaining
-                except Exception as e:
-                    Log.log_debug(f"Failed to map condition '{raw_condition}': {e}")
+            if target_quest.category.is_factory():
+                if target_quest.is_factroy_development_quest():
+                    action[fty.factory.DEVELOPMENT] = remaining
+                elif target_quest.is_factroy_construction_quest():
+                    action[fty.factory.CONSTRUCTION] = remaining
+                else:
                     continue
-
             else:
                 desc = val.get("description", "")  # fallback for sortie without @
                 if "-" in desc:
@@ -1067,6 +1065,24 @@ class Kca(object):
                         continue
 
         return action if action else None
+
+    def _dump_poi_quest_stats_for_debug(self, poi_quest_stats, target_quest: Quest):
+        if not (arg.args.parsed_args is not None and arg.args.parsed_args.debug_output):
+            return
+
+        timestamp = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
+        dump_path = (
+            f"debug|poi_quest_records_{target_quest.name}_{target_quest.quest_id}_"
+            f"{timestamp}.json"
+        )
+        try:
+            JsonData.dump_json(poi_quest_stats, dump_path, pretty=True)
+            Log.log_debug_1(
+                "Dumped POI quest stats for quest count debugging to "
+                f"{JsonData.create_path(dump_path)}."
+            )
+        except Exception as e:
+            Log.log_warn(f"Failed to dump POI quest stats for debugging: {e}")
 
     def string_to_mapenum(self, raw_num: str) -> MapEnum:
         """Converts raw poi map identifier strings (like '15', '16', '722', '732', '5-4')
@@ -1121,14 +1137,37 @@ class Kca(object):
 
         js_code = """
         (() => {
+            const diagnostics = () => {
+                const interestingWindowKeys = [
+                    "getStore",
+                    "POI_VERSION"
+                ].filter((key) => key in window);
+
+                return {
+                    url: window.location?.href,
+                    title: document?.title,
+                    interestingWindowKeys,
+                    hasGetStore: typeof window.getStore,
+                    hasPoi: typeof window.poi
+                };
+            };
+
             try {
                 const store = window.getStore();
+        
                 if (store && store.info && store.info.quests) {
                     return JSON.stringify(store.info.quests);
                 }
-                return "{}";
+        
+                return JSON.stringify({
+                    error: "POI quest store not found",
+                    diagnostics: diagnostics()
+                });
             } catch (e) {
-                return JSON.stringify({error: e.message});
+                return JSON.stringify({
+                    error: e.message,
+                    diagnostics: diagnostics()
+                });
             }
         })()
         """
@@ -1137,6 +1176,8 @@ class Kca(object):
             response = self.poi_hook.Runtime.evaluate(
                 expression=js_code, returnByValue=True
             )
+
+            Log.log_debug_2(f'response: {response}')
 
             if isinstance(response, (list, tuple)) and len(response) > 0:
                 resp_dict = response[0]

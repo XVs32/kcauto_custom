@@ -1,5 +1,13 @@
 {
   "combat.node_selects": [
     "A1>A2"
+  ],
+  "combat.lbas_groups": [
+    1,
+    2
+  ],
+  "combat.lbas_group_1_nodes": [
+    "A2",
+    "A3"
   ]
 }
