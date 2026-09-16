@@ -103,14 +103,15 @@ class FleetSwitcherCore(object):
         active_fleet = self._get_ship_active_fleet(ship)
         return active_fleet is None or active_fleet.at_base
 
-    def _get_target_equipment_conflicts(self, ship: Ship, target_fleet: Fleet):
-        target_ship_ids = set(target_fleet.ship_ids)
+    def _get_planned_equipment_held_by_ship(
+        self, ship: Ship, target_fleet: Fleet
+    ):
         target_equipment_ids = {
             equipment.production_id
             for slot_ref, equipment in self.equipment_plan.items()
-            if slot_ref.ship_id in target_ship_ids
+            if slot_ref.ship_id in target_fleet.ship_ids
         }
-        conflicts = [
+        held_equipment = [
             equipment
             for equipment in ship.equipments
             if equipment.production_id in target_equipment_ids
@@ -121,9 +122,9 @@ class FleetSwitcherCore(object):
             and not ship.slot_ex.is_empty_equipment
             and ship.slot_ex.production_id in target_equipment_ids
         ):
-            conflicts.append(ship.slot_ex)
+            held_equipment.append(ship.slot_ex)
 
-        return conflicts
+        return held_equipment
 
     def _get_protected_ship_ids(self, protected_fleet_ids=None):
         protected_ship_ids = set()
@@ -969,7 +970,7 @@ class FleetSwitcherCore(object):
                         unload_ships.append(ship)
                         any_unload = True
             else:  # target_config does not care this ship, but we still have to strip it if it holds any equipment we care
-                conflicts = self._get_target_equipment_conflicts(ship, target_fleet)
+                conflicts = self._get_planned_equipment_held_by_ship(ship, target_fleet)
                 if conflicts:
                     if (
                         ship.production_id in protected_ship_ids
@@ -1000,7 +1001,7 @@ class FleetSwitcherCore(object):
 
         idle_ship_list = self._idel_ships_sorted_by_equipment
         for ship in unload_ships:
-            conflicts = self._get_target_equipment_conflicts(ship, target_fleet)
+            conflicts = self._get_planned_equipment_held_by_ship(ship, target_fleet)
 
             if load_random:
                 Log.log_msg(
