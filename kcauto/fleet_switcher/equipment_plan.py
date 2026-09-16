@@ -127,8 +127,8 @@ class EquipmentPlan:
 
     def equipment_for(
         self, ship: Ship, slot: EquipmentSlot
-    ) -> Equipment | None:
-        return self._assignments.get(EquipmentSlotRef(ship.production_id, slot))
+    ) -> Equipment:
+        return self._assignments[EquipmentSlotRef(ship.production_id, slot)]
 
     def is_equipment_assigned(self, production_id: int) -> bool:
         return production_id in self._assigned_equipment_ids

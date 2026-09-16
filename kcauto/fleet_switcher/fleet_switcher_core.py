@@ -454,8 +454,7 @@ class FleetSwitcherCore(object):
                 target_ship, EquipmentSlot.from_index(slot)
             )
             if (
-                planned_equipment is None
-                or active_equipment is None
+                active_equipment is None
                 or active_equipment.production_id != planned_equipment.production_id
             ):
                 return False
@@ -480,8 +479,7 @@ class FleetSwitcherCore(object):
             target_ship, EquipmentSlot.REINFORCEMENT
         )
         return (
-            planned_slot_ex is not None
-            and active_slot_ex is not None
+            active_slot_ex is not None
             and active_slot_ex.production_id == planned_slot_ex.production_id
         )
 
@@ -1188,13 +1186,6 @@ class FleetSwitcherCore(object):
                 planned_equipment = self.equipment_plan.equipment_for(
                     fleet.ships[i], EquipmentSlot.from_index(slot)
                 )
-                if planned_equipment is None:
-                    Log.log_error(
-                        f"No planned equipment assignment for "
-                        f"{fleet.ships[i].name_jp} slot {slot + 1}."
-                    )
-                    exit(1)
-
                 row_idx, selected_equipment = self._find_equipment_row(
                     equ.equipment.equipment_pool[equ.equipment.FREE],
                     planned_equipment,
@@ -1241,13 +1232,6 @@ class FleetSwitcherCore(object):
                 planned_equipment = self.equipment_plan.equipment_for(
                     fleet.ships[i], EquipmentSlot.REINFORCEMENT
                 )
-                if planned_equipment is None:
-                    Log.log_error(
-                        f"No planned reinforcement equipment assignment for "
-                        f"{fleet.ships[i].name_jp}."
-                    )
-                    exit(1)
-
                 row_idx, selected_equipment = self._find_equipment_row(
                     reinforce_equipment_list,
                     planned_equipment,
