@@ -133,7 +133,7 @@ class FleetSwitcherCore(object):
             protected_ship_ids.update(active_fleets[fleet_id].ship_ids)
         return protected_ship_ids
 
-    def _get_safe_free_equipment_refresh_ship(
+    def _find_safe_free_equipment_refresh_ship(
         self, target_fleet: Fleet, protected_fleet_ids=None, target_ship_ids=None
     ):
         excluded_ship_ids = set(target_ship_ids or ())
@@ -149,10 +149,6 @@ class FleetSwitcherCore(object):
         ]
 
         if not candidates:
-            Log.log_warn(
-                "No safe idle ship found to refresh free equipment list; "
-                "continuing without pre-normalize refresh."
-            )
             return None
 
         return candidates[randrange(len(candidates))]
@@ -163,10 +159,13 @@ class FleetSwitcherCore(object):
         if equ.equipment.equipment_pool.get(equ.equipment.FREE, []):
             return True
 
-        refresh_ship = self._get_safe_free_equipment_refresh_ship(
+        refresh_ship = self._find_safe_free_equipment_refresh_ship(
             target_fleet, protected_fleet_ids, target_ship_ids
         )
         if refresh_ship is None:
+            Log.log_error(
+                "No safe idle ship is available to initialize free equipment data."
+            )
             return False
 
         Log.log_msg(
@@ -987,10 +986,13 @@ class FleetSwitcherCore(object):
 
         if any_unload == False and needed_load == True:
             # let a safe idle ship load and unload a whatever equipment
-            refresh_ship = self._get_safe_free_equipment_refresh_ship(
+            refresh_ship = self._find_safe_free_equipment_refresh_ship(
                 target_fleet, protected_fleet_ids, target_ship_ids
             )
             if refresh_ship is None:
+                Log.log_error(
+                    "No safe idle ship is available to refresh free equipment data."
+                )
                 return False
 
             unload_ships = [refresh_ship]
