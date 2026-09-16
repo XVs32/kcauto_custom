@@ -559,7 +559,6 @@ class FleetSwitcherCore(object):
                         target_fleet,
                         protected_fleet_ids,
                         target_ship_ids,
-                        equipment_plan_ready=True,
                     ):
                         return False
 
@@ -618,11 +617,18 @@ class FleetSwitcherCore(object):
                 protected_fleet_ids = {
                     fleet.fleet_id for fleet in flt.fleets.expedition_fleets
                 }
-                if not self.switch_to_costom_fleet_with_equipment(
-                    1, fleet_list[1], protected_fleet_ids
+                pvp_targets = [(1, fleet_list[1])]
+                target_ship_ids = set(fleet_list[1].ship_ids)
+
+                if not self._prepare_context_equipment_plan(
+                    pvp_targets, protected_fleet_ids, target_ship_ids
                 ):
                     return False
-                self.equipment_plan.set_targets([(1, fleet_list[1])])
+
+                if not self.switch_to_costom_fleet_with_equipment(
+                    1, fleet_list[1], protected_fleet_ids, target_ship_ids
+                ):
+                    return False
 
             elif context == "expedition":
                 Log.log_msg(f"Switching to Exp Preset.")
@@ -654,7 +660,6 @@ class FleetSwitcherCore(object):
                         target_fleet,
                         protected_fleet_ids,
                         target_ship_ids,
-                        equipment_plan_ready=True,
                     ):
                         return False
                     protected_fleet_ids.add(fleet_id)
@@ -822,7 +827,6 @@ class FleetSwitcherCore(object):
         costom_fleet: Fleet,
         protected_fleet_ids=None,
         target_ship_ids=None,
-        equipment_plan_ready=False,
     ):
         """
         method to switch the ship in {fleet_id} to ships defined in {ship_list}
@@ -830,11 +834,6 @@ class FleetSwitcherCore(object):
         fleet_id(int): fleet to switch, index starts from 1
         custom_fleet(Fleet): Fleet obj contain ships to use
         """
-
-        if not equipment_plan_ready and not self._prepare_equipment_plan(
-            [costom_fleet], protected_fleet_ids, target_ship_ids
-        ):
-            return False
 
         if self._is_custom_fleet_with_equipment_loaded(fleet_id, costom_fleet):
             Log.log_msg(f"Fleet {fleet_id} ships and equipment are already loaded")
