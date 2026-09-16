@@ -840,7 +840,7 @@ class FleetSwitcherCore(object):
             return True
 
         self._unload_fleet_required_equipment(
-            costom_fleet, protected_fleet_ids, target_ship_ids
+            costom_fleet, protected_fleet_ids
         )
 
         Log.log_success("Equipment unloaded.")
@@ -896,13 +896,11 @@ class FleetSwitcherCore(object):
         return temp_list
 
     def _unload_fleet_required_equipment(
-        self, target_fleet: Fleet, protected_fleet_ids=None, target_ship_ids=None
+        self, target_fleet: Fleet, protected_fleet_ids=None
     ):
         """
         method to unload the equipments used by this fleet
         """
-
-        any_unload = False
 
         nav.navigate.to("refresh_home")
 
@@ -923,12 +921,11 @@ class FleetSwitcherCore(object):
                         )
 
                     if (
-                        ship.has_equipment() == True
+                        ship.has_equipment()
                         and self._is_ship_equipment_movable(ship)
                         and ship.production_id not in protected_ship_ids
                     ):
                         unload_ships.append(ship)
-                        any_unload = True
             else:  # target_config does not care this ship, but we still have to strip it if it holds any equipment we care
                 conflicts = self._get_planned_equipment_held_by_ship(ship, target_fleet)
                 if conflicts:
@@ -939,26 +936,13 @@ class FleetSwitcherCore(object):
                         continue
 
                     unload_ships.append(ship)
-                    any_unload = True
 
-        if any_unload == False and needed_load == True:
-            # let a safe idle ship load and unload a whatever equipment
-            refresh_ship = self._find_safe_free_equipment_refresh_ship(
-                target_fleet, protected_fleet_ids, target_ship_ids
-            )
-            if refresh_ship is None:
-                Log.log_error(
-                    "No safe idle ship is available to refresh free equipment data."
-                )
-                return False
-
-            unload_ships = [refresh_ship]
-
-        elif any_unload == False and needed_load == False:
-            Log.log_msg(f"No equipment to unload or load")
+        if not unload_ships:
+            if not needed_load:
+                Log.log_msg("No equipment to unload or load")
+            else:
+                Log.log_msg("No equipment needs to be unloaded")
             return False
-
-        load_random = any_unload == False and needed_load == True
 
         equ.equipment.goto()
 
@@ -966,11 +950,7 @@ class FleetSwitcherCore(object):
         for ship in unload_ships:
             conflicts = self._get_planned_equipment_held_by_ship(ship, target_fleet)
 
-            if load_random:
-                Log.log_msg(
-                    f"Use {ship.production_id}/{ship.name} to update equipment list"
-                )
-            elif conflicts:
+            if conflicts:
                 conflict_text = ", ".join(
                     f"{equipment.name} ({equipment.production_id})"
                     for equipment in conflicts
@@ -987,10 +967,9 @@ class FleetSwitcherCore(object):
             self.unload_ship(
                 ship,
                 idle_ship_list=idle_ship_list,
-                load_random=load_random,
             )
 
-        return any_unload
+        return True
 
     def unload_ship(
         self, ship: Ship, idle_ship_list: list[Ship] = None, load_random=False
