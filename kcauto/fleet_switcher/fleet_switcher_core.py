@@ -454,6 +454,19 @@ class FleetSwitcherCore(object):
 
         return self._plan_equipment_assignments(target_fleets, protected_fleet_ids)
 
+    def _prepare_context_equipment_plan(
+        self,
+        targets: list[tuple[int, Fleet]],
+        protected_fleet_ids,
+        target_ship_ids,
+    ):
+        self.equipment_plan.set_targets(targets)
+        return self._prepare_equipment_plan(
+            [target_fleet for _, target_fleet in targets],
+            protected_fleet_ids,
+            target_ship_ids,
+        )
+
     def _is_ship_equipment_assignment_matched(
         self, active_ship: Ship, target_ship: Ship
     ):
@@ -579,14 +592,10 @@ class FleetSwitcherCore(object):
                     combat_targets.append((combat_fleet_id, target_fleet))
                     target_ship_ids.update(target_fleet.ship_ids)
 
-                if not self._prepare_equipment_plan(
-                    [target_fleet for _, target_fleet in combat_targets],
-                    protected_fleet_ids,
-                    target_ship_ids,
+                if not self._prepare_context_equipment_plan(
+                    combat_targets, protected_fleet_ids, target_ship_ids
                 ):
                     return False
-
-                self.equipment_plan.set_targets(combat_targets)
 
                 for combat_fleet_id, target_fleet in combat_targets:
                     if not self.switch_to_costom_fleet_with_equipment(
@@ -676,14 +685,10 @@ class FleetSwitcherCore(object):
                     target_ship_ids.update(target_fleet.ship_ids)
                     fleet_id = flt.fleets.get_next_exp_fleet_id(fleet_id)
 
-                if expedition_targets and not self._prepare_equipment_plan(
-                    [target_fleet for _, target_fleet in expedition_targets],
-                    protected_fleet_ids,
-                    target_ship_ids,
+                if expedition_targets and not self._prepare_context_equipment_plan(
+                    expedition_targets, protected_fleet_ids, target_ship_ids
                 ):
                     return False
-
-                self.equipment_plan.set_targets(expedition_targets)
 
                 for fleet_id, target_fleet in expedition_targets:
                     if not self.switch_to_costom_fleet_with_equipment(
