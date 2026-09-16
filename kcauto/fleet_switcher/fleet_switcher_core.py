@@ -308,17 +308,15 @@ class FleetSwitcherCore(object):
             exact_movable = movable_equipment_by_id.get(
                 requirement.preferred_production_id
             )
-            if exact_movable is not None:
-                exact_equipment = exact_movable.equipment
-                if (
-                    exact_equipment.model_id == requirement.model_id
-                    and not self.equipment_plan.is_equipment_assigned(
-                        exact_equipment.production_id
-                    )
-                ):
-                    self.equipment_plan.assign(
-                        requirement.ship, requirement.slot, exact_equipment
-                    )
+            if (
+                exact_movable is not None
+                and not self.equipment_plan.is_equipment_assigned(
+                    exact_movable.equipment.production_id
+                )
+            ):
+                self.equipment_plan.assign(
+                    requirement.ship, requirement.slot, exact_movable.equipment
+                )
 
         # Remaining slots prefer the closest star level first. Equal-star
         # candidates keep the current target slot in place, then prefer free

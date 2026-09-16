@@ -110,6 +110,15 @@ class EquipmentPlan:
         self, ship: Ship, slot: EquipmentSlot, equipment: Equipment
     ) -> None:
         ref = EquipmentSlotRef(ship.production_id, slot)
+        if ref in self._assignments:
+            raise ValueError(f"Equipment slot {ref} is already assigned")
+        if equipment.production_id in self._assigned_equipment_ids:
+            raise ValueError(
+                f"Equipment {equipment.production_id} is already assigned"
+            )
+        if equipment.production_id == Equipment.UNKNOWN_PRODUCTION_ID:
+            raise ValueError("Equipment plan requires a physical production ID")
+
         self._assignments[ref] = equipment
         self._assigned_equipment_ids.add(equipment.production_id)
 
