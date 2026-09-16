@@ -316,6 +316,12 @@ class FleetSwitcherCore(object):
                 and not self.equipment_plan.is_equipment_assigned(
                     movable_equipment.equipment.production_id
                 )
+                and (
+                    requirement.slot is not EquipmentSlot.REINFORCEMENT
+                    or equ.equipment.is_reinforcement_equipment_available(
+                        requirement.ship, movable_equipment.equipment
+                    )
+                )
             ]
             slot_name = requirement.slot.display_name
             if not candidates:

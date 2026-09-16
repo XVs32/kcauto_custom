@@ -140,21 +140,21 @@ class EquipmentCore(object):
         )
 
     def get_reinforce_equipment_list(self, ship: Ship):
+        return [
+            equipment
+            for equipment in self.equipment_pool[self.FREE]
+            if self.is_reinforcement_equipment_available(ship, equipment)
+        ]
 
-        available_equipments = self.get_ship_available_equipment_list(ship)
+    def is_reinforcement_equipment_available(
+        self, ship: Ship, equipment: Equipment
+    ) -> bool:
+        """Return whether a physical equipment can be used in ship's slot_ex."""
 
-        for i in range(len(available_equipments) - 1, 0 - 1, -1):
-            equipment = available_equipments[i]
+        if not self.is_available_equipments(ship, [equipment]):
+            return False
 
-            if self._is_special_reinforce_equipment(ship, equipment):
-                continue
-
-            Log.log_debug_1(
-                f"Equipment {equipment.name} ({equipment.production_id}) {equipment.category} is not a special reinforce equipment for ship {ship.name}, skipping"
-            )
-            available_equipments.pop(i)
-
-        return available_equipments
+        return self._is_special_reinforce_equipment(ship, equipment)
 
     def _is_special_reinforce_equipment(self, ship: Ship, equipment: Equipment):
         """method to check if the equipment is a special reinforce equipment for the ship,
