@@ -82,10 +82,7 @@ class FleetSwitcherCore(object):
         self, equipment_list: list[Equipment], planned_equipment: Equipment
     ):
         for row_idx, equipment in enumerate(equipment_list):
-            if (
-                equipment.production_id == planned_equipment.production_id
-                and equipment.model_id == planned_equipment.model_id
-            ):
+            if equipment.production_id == planned_equipment.production_id:
                 return row_idx, equipment
 
         return -1, planned_equipment
@@ -109,8 +106,9 @@ class FleetSwitcherCore(object):
     ):
         target_equipment_ids = {
             equipment.production_id
-            for slot_ref, equipment in self.equipment_plan.items()
-            if slot_ref.ship_id in target_fleet.ship_ids
+            for equipment in self.equipment_plan.equipment_for_ship_ids(
+                target_fleet.ship_ids
+            )
         }
         held_equipment = [
             equipment
@@ -127,18 +125,21 @@ class FleetSwitcherCore(object):
 
         return held_equipment
 
-    def _get_protected_ship_ids(self, protected_fleet_ids=None):
+    def _get_protected_ship_ids(self, protected_fleet_ids: set[int]):
         protected_ship_ids = set()
         active_fleets = self._active_fleets
-        for fleet_id in protected_fleet_ids or ():
+        for fleet_id in protected_fleet_ids:
             protected_ship_ids.update(active_fleets[fleet_id].ship_ids)
         return protected_ship_ids
 
     def _find_safe_free_equipment_refresh_ship(
-        self, target_fleet: Fleet, protected_fleet_ids=None, target_ship_ids=None
+        self, target_fleets: list[Fleet], protected_fleet_ids: set[int]
     ):
-        excluded_ship_ids = set(target_ship_ids or ())
-        excluded_ship_ids.update(target_fleet.ship_ids)
+        excluded_ship_ids = {
+            ship.production_id
+            for target_fleet in target_fleets
+            for ship in target_fleet.ships
+        }
         excluded_ship_ids.update(self._get_protected_ship_ids(protected_fleet_ids))
 
         candidates = [
@@ -155,13 +156,13 @@ class FleetSwitcherCore(object):
         return candidates[randrange(len(candidates))]
 
     def _ensure_free_equipment_data_loaded(
-        self, target_fleet: Fleet, protected_fleet_ids=None, target_ship_ids=None
+        self, target_fleets: list[Fleet], protected_fleet_ids: set[int]
     ):
         if equ.equipment.free_equipment_initialized:
             return True
 
         refresh_ship = self._find_safe_free_equipment_refresh_ship(
-            target_fleet, protected_fleet_ids, target_ship_ids
+            target_fleets, protected_fleet_ids
         )
         if refresh_ship is None:
             Log.log_error(
@@ -180,8 +181,9 @@ class FleetSwitcherCore(object):
         )
         return equ.equipment.free_equipment_initialized
 
-    def _get_movable_equipment_pool(self, protected_fleet_ids=None):
-        protected_fleet_ids = set(protected_fleet_ids or ())
+    def _get_movable_equipment_pool(
+        self, protected_fleet_ids: set[int]
+    ):
         movable_equipment = {}
 
         def add_equipment(
@@ -286,7 +288,7 @@ class FleetSwitcherCore(object):
         )
 
     def _plan_equipment_assignments(
-        self, target_fleets: list[Fleet], protected_fleet_ids=None
+        self, target_fleets: list[Fleet], protected_fleet_ids: set[int]
     ):
         self.equipment_plan.clear_assignments()
 
@@ -387,24 +389,14 @@ class FleetSwitcherCore(object):
         return True
 
     def _prepare_equipment_plan(
-        self,
-        target_fleets: list[Fleet],
-        protected_fleet_ids=None,
-        target_ship_ids=None,
+        self, target_fleets: list[Fleet], protected_fleet_ids: set[int]
     ):
         self.equipment_plan.clear_assignments()
         if not target_fleets:
             return True
 
-        if target_ship_ids is None:
-            target_ship_ids = {
-                ship.production_id
-                for target_fleet in target_fleets
-                for ship in target_fleet.ships
-            }
-
         if not self._ensure_free_equipment_data_loaded(
-            target_fleets[0], protected_fleet_ids, target_ship_ids
+            target_fleets, protected_fleet_ids
         ):
             return False
 
@@ -413,14 +405,12 @@ class FleetSwitcherCore(object):
     def _prepare_context_equipment_plan(
         self,
         targets: list[tuple[int, Fleet]],
-        protected_fleet_ids,
-        target_ship_ids,
+        protected_fleet_ids: set[int],
     ):
         self.equipment_plan.set_targets(targets)
         return self._prepare_equipment_plan(
             [target_fleet for _, target_fleet in targets],
             protected_fleet_ids,
-            target_ship_ids,
         )
 
     def _is_ship_equipment_assignment_matched(
@@ -499,15 +489,7 @@ class FleetSwitcherCore(object):
         return True
 
     def verify_equipment_plan(self):
-        active_fleets = self._active_fleets
-
         for fleet_id, target_fleet in self.equipment_plan.targets:
-            if fleet_id not in active_fleets:
-                Log.log_error(
-                    f"Fleet {fleet_id} is unavailable while verifying equipment plan."
-                )
-                return False
-
             if not self._is_custom_fleet_with_equipment_loaded(
                 fleet_id, target_fleet
             ):
@@ -539,17 +521,15 @@ class FleetSwitcherCore(object):
                 protected_fleet_ids = {
                     fleet.fleet_id for fleet in flt.fleets.expedition_fleets
                 }
-                target_ship_ids = set()
                 combat_targets = []
 
                 for combat_fleet_id in rev_fleet_id:
                     target_fleet_id = 1 if combat_fleet_id == 3 else combat_fleet_id
                     target_fleet = fleet_list[target_fleet_id]
                     combat_targets.append((combat_fleet_id, target_fleet))
-                    target_ship_ids.update(target_fleet.ship_ids)
 
                 if not self._prepare_context_equipment_plan(
-                    combat_targets, protected_fleet_ids, target_ship_ids
+                    combat_targets, protected_fleet_ids
                 ):
                     return False
 
@@ -558,7 +538,6 @@ class FleetSwitcherCore(object):
                         combat_fleet_id,
                         target_fleet,
                         protected_fleet_ids,
-                        target_ship_ids,
                     ):
                         return False
 
@@ -618,15 +597,13 @@ class FleetSwitcherCore(object):
                     fleet.fleet_id for fleet in flt.fleets.expedition_fleets
                 }
                 pvp_targets = [(1, fleet_list[1])]
-                target_ship_ids = set(fleet_list[1].ship_ids)
-
                 if not self._prepare_context_equipment_plan(
-                    pvp_targets, protected_fleet_ids, target_ship_ids
+                    pvp_targets, protected_fleet_ids
                 ):
                     return False
 
                 if not self.switch_to_costom_fleet_with_equipment(
-                    1, fleet_list[1], protected_fleet_ids, target_ship_ids
+                    1, fleet_list[1], protected_fleet_ids
                 ):
                     return False
 
@@ -635,7 +612,6 @@ class FleetSwitcherCore(object):
 
                 protected_fleet_ids = set()
                 expedition_targets = []
-                target_ship_ids = set()
                 fleet_id = flt.fleets.get_next_exp_fleet_id()
 
                 while (
@@ -646,11 +622,10 @@ class FleetSwitcherCore(object):
                         exp.expedition.exp_for_fleet[fleet_id]
                     )[DEFAULT_FLEET_ID]
                     expedition_targets.append((fleet_id, target_fleet))
-                    target_ship_ids.update(target_fleet.ship_ids)
                     fleet_id = flt.fleets.get_next_exp_fleet_id(fleet_id)
 
                 if expedition_targets and not self._prepare_context_equipment_plan(
-                    expedition_targets, protected_fleet_ids, target_ship_ids
+                    expedition_targets, protected_fleet_ids
                 ):
                     return False
 
@@ -659,7 +634,6 @@ class FleetSwitcherCore(object):
                         fleet_id,
                         target_fleet,
                         protected_fleet_ids,
-                        target_ship_ids,
                     ):
                         return False
                     protected_fleet_ids.add(fleet_id)
@@ -825,8 +799,7 @@ class FleetSwitcherCore(object):
         self,
         fleet_id,
         costom_fleet: Fleet,
-        protected_fleet_ids=None,
-        target_ship_ids=None,
+        protected_fleet_ids: set[int],
     ):
         """
         method to switch the ship in {fleet_id} to ships defined in {ship_list}
@@ -896,7 +869,7 @@ class FleetSwitcherCore(object):
         return temp_list
 
     def _unload_fleet_required_equipment(
-        self, target_fleet: Fleet, protected_fleet_ids=None
+        self, target_fleet: Fleet, protected_fleet_ids: set[int]
     ):
         """
         method to unload the equipments used by this fleet
@@ -915,7 +888,7 @@ class FleetSwitcherCore(object):
                 if not self._is_ship_equipment_assignment_matched(ship, target_ship):
                     needed_load = True
 
-                    if ship.slot_ex != None and target_ship.slot_ex == None:
+                    if ship.slot_ex is not None and target_ship.slot_ex is None:
                         Log.log_warn(
                             f"Ship {ship.name} has a reinforce slot, but Noro6 config says she doesn't, you might want to update your config."
                         )
@@ -983,7 +956,7 @@ class FleetSwitcherCore(object):
 
         ships_to_check = idle_ship_list
 
-        if ships_to_check == None:
+        if ships_to_check is None:
             ships_to_check = self._idel_ships_sorted_by_equipment
 
         target_fleet = OTHER_FLEET_ID
@@ -1018,7 +991,7 @@ class FleetSwitcherCore(object):
 
             click_ship_in_equipment_page(ship_position)
 
-        if load_random == True:
+        if load_random:
             # unload a ship to update equipment list
             kca_u.kca.click("1_slot_equipment")
 
@@ -1055,7 +1028,7 @@ class FleetSwitcherCore(object):
 
         kca_u.kca.wait("lower", "shipswitcher|equipment_panel.png")
 
-        if ship.slot_ex != None and ship.slot_ex.is_empty_equipment == False:
+        if ship.slot_ex is not None and not ship.slot_ex.is_empty_equipment:
             Log.log_debug_1(f"reinforce slot ship, slot_ex = {ship.slot_ex.name}")
             kca_u.kca.click("reinforce_slot_unload_equipment")
 
@@ -1102,7 +1075,7 @@ class FleetSwitcherCore(object):
             exit(1)
         elif (
             self._active_fleets[fleet_id].under_repair
-            == True
+
         ):
             Log.log_error(
                 f"Fleet {fleet_id} is under repair; equipment load process halted."
@@ -1118,7 +1091,7 @@ class FleetSwitcherCore(object):
                 needed_load = True
                 break
 
-        if needed_load == False:
+        if not needed_load:
             Log.log_msg(f"equipment for fleet {fleet_id} is already loaded")
             return False
         else:
@@ -1152,7 +1125,7 @@ class FleetSwitcherCore(object):
             for slot in range(fleet.ships[i].equipment_count):
                 kca_u.kca.click(str(slot + 1) + "_slot_equipment")
 
-                if first_load == True:
+                if first_load:
                     kca_u.kca.click_existing(
                         "upper_right", "shipswitcher|equipment_sort_arrow.png"
                     )
@@ -1190,8 +1163,8 @@ class FleetSwitcherCore(object):
                 api.api.update_from_api({KCSAPIEnum.FREE_EQUIPMENT}, process_all=True)
 
             if (
-                fleet.ships[i].slot_ex != None
-                and fleet.ships[i].slot_ex.model_id != Equipment.EMPTY_EQUIPMENT
+                fleet.ships[i].slot_ex is not None
+                and not fleet.ships[i].slot_ex.is_empty_equipment
             ):
                 kca_u.kca.click("reinforce_slot_equipment")
 

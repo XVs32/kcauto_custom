@@ -73,11 +73,6 @@ class EquipmentRequirement:
             equipment_name=equipment.name,
         )
 
-    @property
-    def slot_ref(self) -> EquipmentSlotRef:
-        return EquipmentSlotRef(self.ship.production_id, self.slot)
-
-
 @dataclass(frozen=True, slots=True)
 class MovableEquipment:
     equipment: Equipment
@@ -133,5 +128,9 @@ class EquipmentPlan:
     def is_equipment_assigned(self, production_id: int) -> bool:
         return production_id in self._assigned_equipment_ids
 
-    def items(self):
-        return self._assignments.items()
+    def equipment_for_ship_ids(self, ship_ids: list[int]) -> list[Equipment]:
+        return [
+            equipment
+            for slot_ref, equipment in self._assignments.items()
+            if slot_ref.ship_id in ship_ids
+        ]
