@@ -270,11 +270,18 @@ class FleetSwitcherCore(object):
         movable_equipment: MovableEquipment,
     ):
         equipment = movable_equipment.equipment
+        same_slot_priority = int(
+            movable_equipment.source_ship is None
+            or movable_equipment.source_ship.production_id
+            != requirement.ship.production_id
+            or movable_equipment.source_slot is not requirement.slot
+        )
         source_priority = 0 if movable_equipment.is_free else 1
 
         return (
-            source_priority,
             abs(equipment.stars - requirement.stars),
+            same_slot_priority,
+            source_priority,
             equipment.production_id,
         )
 
@@ -313,42 +320,9 @@ class FleetSwitcherCore(object):
                         requirement.ship, requirement.slot, exact_equipment
                     )
 
-        # Preserve already-loaded same-model equipment for flexible targets before
-        # choosing new replacements. Exact production ID reservations above still
-        # take precedence over keeping equipment in place.
-        for requirement in requirements:
-            if self.equipment_plan.has_assignment(
-                requirement.ship, requirement.slot
-            ):
-                continue
-
-            active_ship = shp.ships.ship_pool.get(requirement.ship.production_id)
-            if active_ship is None:
-                continue
-
-            if requirement.slot.is_reinforcement:
-                current_equipment = active_ship.slot_ex
-            elif requirement.slot.normal_index < len(active_ship.equipments):
-                current_equipment = active_ship.equipments[
-                    requirement.slot.normal_index
-                ]
-            else:
-                current_equipment = None
-
-            if (
-                current_equipment is not None
-                and current_equipment.model_id == requirement.model_id
-                and current_equipment.production_id in movable_equipment_by_id
-                and not self.equipment_plan.is_equipment_assigned(
-                    current_equipment.production_id
-                )
-            ):
-                self.equipment_plan.assign(
-                    requirement.ship, requirement.slot, current_equipment
-                )
-
-        # Remaining slots prefer free equipment before equipment mounted on another
-        # movable ship, then use stars and production ID as stable tie-breakers.
+        # Remaining slots prefer the closest star level first. Equal-star
+        # candidates keep the current target slot in place, then prefer free
+        # equipment before equipment mounted on another movable ship.
         for requirement in requirements:
             if self.equipment_plan.has_assignment(
                 requirement.ship, requirement.slot
