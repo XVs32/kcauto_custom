@@ -128,34 +128,16 @@ class EquipmentCore(object):
                 break
 
     def get_equipment_from_noro6_equipment(self, noro6_equipment):
-        """
-        method to convert noro6 equipment to kcauto equipment
-        noro6_equipment (dict): noro6 equipment data
-        output (int) : equipment production id
-        output (bool) : is exact match
+        """Convert a Noro6 equipment requirement to a kcauto Equipment target.
+
+        Physical production IDs are intentionally left unresolved here and are
+        selected later by the fleet switcher's global equipment allocator.
         """
 
-        equipment_list = self._get_match_equipment(
-            self.equipment_pool[self.ID], noro6_equipment["i"]
+        return Equipment(
+            model_id=noro6_equipment["i"],
+            stars=noro6_equipment["r"],
         )
-
-        if equipment_list == []:
-            target_equipment = Equipment(
-                model_id=noro6_equipment["i"],
-                stars=noro6_equipment["r"],
-            )
-            return target_equipment, False
-
-        for equipment in equipment_list:
-            # @todo handle "api_alv"/"l" (plane exp level)
-            # if "api_alv" in temp_equipment[i] and "l" in noro6_equipment:
-            if equipment.stars == noro6_equipment["r"]:
-                return equipment, True
-
-        # sort by the absolute value of difference between api_lv and rf
-        equipment_list.sort(key=lambda x: abs(x.stars - noro6_equipment["r"]))
-
-        return equipment_list[0], False
 
     def get_reinforce_equipment_list(self, ship: Ship):
 

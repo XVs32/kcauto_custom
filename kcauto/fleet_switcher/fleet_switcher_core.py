@@ -300,29 +300,9 @@ class FleetSwitcherCore(object):
             protected_fleet_ids
         )
 
-        # Reserve every available exact production ID before using any same-model
-        # replacement. This keeps one target slot from consuming equipment that
-        # another target slot explicitly requested.
-        for requirement in requirements:
-            if requirement.preferred_production_id is None:
-                continue
-
-            exact_movable = movable_equipment_by_id.get(
-                requirement.preferred_production_id
-            )
-            if (
-                exact_movable is not None
-                and not self.equipment_plan.is_equipment_assigned(
-                    exact_movable.equipment.production_id
-                )
-            ):
-                self.equipment_plan.assign(
-                    requirement.ship, requirement.slot, exact_movable.equipment
-                )
-
-        # Remaining slots prefer the closest star level first. Equal-star
-        # candidates keep the current target slot in place, then prefer free
-        # equipment before equipment mounted on another movable ship.
+        # Prefer the closest star level first. Equal-star candidates keep the
+        # current target slot in place, then prefer free equipment before
+        # equipment mounted on another movable ship.
         for requirement in requirements:
             if self.equipment_plan.has_assignment(
                 requirement.ship, requirement.slot
@@ -338,16 +318,12 @@ class FleetSwitcherCore(object):
                 )
             ]
             slot_name = requirement.slot.display_name
-            target_id = (
-                f"model {requirement.model_id}"
-                if requirement.preferred_production_id is None
-                else str(requirement.preferred_production_id)
-            )
             if not candidates:
                 Log.log_error(
                     f"Cannot find replacement for "
                     f"{requirement.equipment_name} {requirement.stars}★ "
-                    f"({target_id}) on {requirement.ship.name_jp} {slot_name}."
+                    f"(model {requirement.model_id}) on "
+                    f"{requirement.ship.name_jp} {slot_name}."
                 )
                 return False
 
@@ -366,24 +342,16 @@ class FleetSwitcherCore(object):
                 requirement.ship, requirement.slot
             )
 
-            if (
-                requirement.preferred_production_id is not None
-                and selected_equipment.production_id
-                == requirement.preferred_production_id
-            ):
+            if selected_equipment.stars == requirement.stars:
                 continue
 
             slot_name = requirement.slot.display_name
-            target_id = (
-                f"model {requirement.model_id}"
-                if requirement.preferred_production_id is None
-                else str(requirement.preferred_production_id)
-            )
             Log.log_warn(
                 f"Using {selected_equipment.name} {selected_equipment.stars}★ "
-                f"({selected_equipment.production_id}) instead of "
+                f"({selected_equipment.production_id}) instead of requested "
                 f"{requirement.equipment_name} {requirement.stars}★ "
-                f"({target_id}) for {requirement.ship.name_jp} {slot_name}."
+                f"(model {requirement.model_id}) for "
+                f"{requirement.ship.name_jp} {slot_name}."
             )
 
         return True

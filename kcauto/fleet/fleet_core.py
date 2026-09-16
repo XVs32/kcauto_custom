@@ -322,7 +322,6 @@ class FleetCore(object):
         output: (kcauto preset)
         """
 
-        equipment_pool_read_only = equ.equipment.equipment_pool[equ.equipment.ID].copy()
         equ.equipment.equipment_pool[equ.equipment.NON_NORO6] = (
             equ.equipment.equipment_pool[equ.equipment.ID].copy()
         )
@@ -342,16 +341,10 @@ class FleetCore(object):
                     "PvP mode is manual; the expedition module might mess up the PvP fleet on the fly."
                 )
 
-        equipment_pool_bak = equ.equipment.equipment_pool[equ.equipment.ID].copy()
-
         ret = {}
         noro6 = Noro6()
 
-        panic_flag = False
-
         for preset in noro6.presets:
-            is_first_not_exact_match = True
-
             noro6.get_map(preset["name"])
 
             fleet_type = noro6.get_preset_type()
@@ -383,34 +376,13 @@ class FleetCore(object):
                     ship.equipments = []
 
                     for j in range(1, noro6.get_equipment_count() + 1):
-                        this_equipment, is_exact_match = (
+                        this_equipment = (
                             equ.equipment.get_equipment_from_noro6_equipment(
                                 noro6.get_equipment(j)
                             )
                         )
 
-                        # send warring, can't find exact same equipment
                         if (
-                            this_equipment != None
-                            and this_equipment.is_empty_equipment == False
-                            and this_equipment.production_id
-                            != Equipment.UNKNOWN_PRODUCTION_ID
-                            and is_exact_match == False
-                        ):
-                            if is_first_not_exact_match:
-                                Log.log_msg(f"In Noro6 preset {preset['name']}...")
-                                is_first_not_exact_match = False
-                            Log.log_warn(
-                                f"Can't find exact {this_equipment.name} with {noro6.get_equipment(j)['r']}★, using the closest one with {this_equipment.stars}★"
-                            )
-
-                        if this_equipment == None:
-                            Log.log_error(
-                                f"Failed finding equipment for {preset['name']}, exit..."
-                            )
-                            panic_flag = True
-                            break
-                        elif (
                             this_equipment.is_empty_equipment
                             and fleet_type == FleetEnum.COMBAT
                         ):
@@ -420,45 +392,13 @@ class FleetCore(object):
 
                         ship.equipments.append(this_equipment)
 
-                        equ.equipment._remove_from_pool(
-                            this_equipment, pool=equ.equipment.ID
-                        )
-                        equ.equipment._remove_from_pool(
-                            this_equipment, pool=equ.equipment.NON_NORO6
-                        )
-
                     reinforce_equipment = noro6.get_reinforce_equipment()
                     if reinforce_equipment["i"] > 0:
-                        this_equipment, is_exact_match = (
+                        ship.slot_ex = (
                             equ.equipment.get_equipment_from_noro6_equipment(
                                 reinforce_equipment
                             )
                         )
-                        ship.slot_ex = this_equipment
-
-                        # send warring, can't find exact same equipment
-                        if (
-                            this_equipment != None
-                            and this_equipment.is_empty_equipment == False
-                            and this_equipment.production_id
-                            != Equipment.UNKNOWN_PRODUCTION_ID
-                            and is_exact_match == False
-                        ):
-                            if is_first_not_exact_match:
-                                Log.log_msg(f"In Noro6 preset {preset['name']}...")
-                                is_first_not_exact_match = False
-                            Log.log_warn(
-                                f"Can't find exact {this_equipment.name} with {reinforce_equipment['r']}★, using the closest one with {this_equipment.stars}★"
-                            )
-
-                        # remove this equipment from equipment pool
-                        if this_equipment != None and this_equipment.model_id != None:
-                            equ.equipment._remove_from_pool(
-                                this_equipment, pool=equ.equipment.ID
-                            )
-                            equ.equipment._remove_from_pool(
-                                this_equipment, pool=equ.equipment.NON_NORO6
-                            )
                     elif reinforce_equipment["i"] == 0:
                         ship.slot_ex = None
                     elif reinforce_equipment["i"] == Equipment.EMPTY_EQUIPMENT:
@@ -472,17 +412,6 @@ class FleetCore(object):
                     temp.ships.append(ship)
 
                 ret[preset_name][fleet_id] = temp
-
-            # restore equipment pool for next noro6 preset
-            equ.equipment.equipment_pool[equ.equipment.ID] = equipment_pool_bak.copy()
-
-        if panic_flag == True:
-            Log.log_error(
-                "Something went wrong when setting up Noro6 fleet, exiting..."
-            )
-            exit()
-
-        equ.equipment.equipment_pool[equ.equipment.ID] = equipment_pool_read_only.copy()
 
         # print out the fleet data in debug log
         for key in ret:
