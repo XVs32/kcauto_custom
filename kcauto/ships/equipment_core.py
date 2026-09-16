@@ -48,6 +48,7 @@ class EquipmentCore(object):
         self.equipment_pool[self.FREE] = []
         self.equipment_pool[self.ID] = []
         self.equipment_pool[self.NON_NORO6] = []
+        self.free_equipment_initialized = False
 
         try:
             self.reinforce_general_category = JsonData.load_json(

@@ -153,10 +153,10 @@ class FleetSwitcherCore(object):
 
         return candidates[randrange(len(candidates))]
 
-    def _refresh_free_equipment_if_empty(
+    def _ensure_free_equipment_data_loaded(
         self, target_fleet: Fleet, protected_fleet_ids=None, target_ship_ids=None
     ):
-        if equ.equipment.equipment_pool.get(equ.equipment.FREE, []):
+        if equ.equipment.free_equipment_initialized:
             return True
 
         refresh_ship = self._find_safe_free_equipment_refresh_ship(
@@ -169,7 +169,7 @@ class FleetSwitcherCore(object):
             return False
 
         Log.log_msg(
-            f"Free equipment list is empty, use {refresh_ship.name} to update it"
+            f"Free equipment data is not initialized; use {refresh_ship.name} to load it"
         )
         equ.equipment.goto()
         self.unload_ship(
@@ -177,7 +177,7 @@ class FleetSwitcherCore(object):
             idle_ship_list=self._idel_ships_sorted_by_equipment,
             load_random=True,
         )
-        return True
+        return equ.equipment.free_equipment_initialized
 
     def _is_active_fleet_data_loaded(self):
         active_fleets = self._active_fleets
@@ -443,7 +443,7 @@ class FleetSwitcherCore(object):
                 for ship in target_fleet.ships
             }
 
-        if not self._refresh_free_equipment_if_empty(
+        if not self._ensure_free_equipment_data_loaded(
             target_fleets[0], protected_fleet_ids, target_ship_ids
         ):
             return False
