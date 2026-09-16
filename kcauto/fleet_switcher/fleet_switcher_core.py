@@ -17,7 +17,11 @@ import ships.equipment_core as equ
 import util.kca as kca_u
 from constants import AUTO_PRESET, OTHER_FLEET_ID
 from fleet.fleet import Fleet
-from fleet_switcher.equipment_plan import EquipmentPlan, EquipmentSlot
+from fleet_switcher.equipment_plan import (
+    EquipmentPlan,
+    EquipmentRequirement,
+    EquipmentSlot,
+)
 from ships.ship import Ship
 from kca_enums.fleet_modes import FleetModeEnum
 from kca_enums.kcsapi_paths import KCSAPIEnum
@@ -98,13 +102,6 @@ class FleetSwitcherCore(object):
 
         active_fleet = self._get_ship_active_fleet(ship)
         return active_fleet is None or active_fleet.at_base
-
-    def _is_unresolved_noro6_equipment(self, equipment: Equipment):
-        return (
-            equipment is not None
-            and equipment.model_id > 0
-            and equipment.production_id == Equipment.UNKNOWN_PRODUCTION_ID
-        )
 
     def _get_target_equipment_conflicts(self, ship: Ship, target_fleet: Fleet):
         target_ship_ids = set(target_fleet.ship_ids)
@@ -262,19 +259,27 @@ class FleetSwitcherCore(object):
                 for slot, target_equipment in enumerate(target_ship.equipments):
                     if target_equipment.model_id > 0:
                         target_slots.append(
-                            (target_ship, EquipmentSlot.from_index(slot), target_equipment)
+                            EquipmentRequirement.from_target_equipment(
+                                target_ship,
+                                EquipmentSlot.from_index(slot),
+                                target_equipment,
+                            )
                         )
 
                 if target_ship.slot_ex is not None and target_ship.slot_ex.model_id > 0:
                     target_slots.append(
-                        (target_ship, EquipmentSlot.REINFORCEMENT, target_ship.slot_ex)
+                        EquipmentRequirement.from_target_equipment(
+                            target_ship,
+                            EquipmentSlot.REINFORCEMENT,
+                            target_ship.slot_ex,
+                        )
                     )
 
         return target_slots
 
     def _get_equipment_allocation_priority(
         self,
-        target_equipment: Equipment,
+        requirement: EquipmentRequirement,
         equipment: Equipment,
         equipment_sources,
     ):
@@ -285,7 +290,7 @@ class FleetSwitcherCore(object):
 
         return (
             source_priority,
-            abs(equipment.stars - target_equipment.stars),
+            abs(equipment.stars - requirement.stars),
             equipment.production_id,
         )
 
@@ -305,108 +310,123 @@ class FleetSwitcherCore(object):
         # Reserve every available exact production ID before using any same-model
         # replacement. This keeps one target slot from consuming equipment that
         # another target slot explicitly requested.
-        for target_ship, slot, target_equipment in target_slots:
-            if self._is_unresolved_noro6_equipment(target_equipment):
+        for requirement in target_slots:
+            if requirement.preferred_production_id is None:
                 continue
 
-            exact_equipment = equipment_by_id.get(target_equipment.production_id)
+            exact_equipment = equipment_by_id.get(
+                requirement.preferred_production_id
+            )
             if (
                 exact_equipment is not None
-                and exact_equipment.model_id == target_equipment.model_id
+                and exact_equipment.model_id == requirement.model_id
                 and not self.equipment_plan.is_equipment_assigned(
                     exact_equipment.production_id
                 )
             ):
-                self.equipment_plan.assign(target_ship, slot, exact_equipment)
+                self.equipment_plan.assign(
+                    requirement.ship, requirement.slot, exact_equipment
+                )
 
         # Preserve already-loaded same-model equipment for flexible targets before
         # choosing new replacements. Exact production ID reservations above still
         # take precedence over keeping equipment in place.
-        for target_ship, slot, target_equipment in target_slots:
-            if self.equipment_plan.has_assignment(target_ship, slot):
+        for requirement in target_slots:
+            if self.equipment_plan.has_assignment(
+                requirement.ship, requirement.slot
+            ):
                 continue
 
-            active_ship = shp.ships.ship_pool.get(target_ship.production_id)
+            active_ship = shp.ships.ship_pool.get(requirement.ship.production_id)
             if active_ship is None:
                 continue
 
-            if slot.is_reinforcement:
+            if requirement.slot.is_reinforcement:
                 current_equipment = active_ship.slot_ex
-            elif slot.normal_index < len(active_ship.equipments):
-                current_equipment = active_ship.equipments[slot.normal_index]
+            elif requirement.slot.normal_index < len(active_ship.equipments):
+                current_equipment = active_ship.equipments[
+                    requirement.slot.normal_index
+                ]
             else:
                 current_equipment = None
 
             if (
                 current_equipment is not None
-                and current_equipment.model_id == target_equipment.model_id
+                and current_equipment.model_id == requirement.model_id
                 and current_equipment.production_id in equipment_by_id
                 and not self.equipment_plan.is_equipment_assigned(
                     current_equipment.production_id
                 )
             ):
-                self.equipment_plan.assign(target_ship, slot, current_equipment)
+                self.equipment_plan.assign(
+                    requirement.ship, requirement.slot, current_equipment
+                )
 
         # Remaining slots prefer free equipment before equipment mounted on another
         # movable ship, then use stars and production ID as stable tie-breakers.
-        for target_ship, slot, target_equipment in target_slots:
-            if self.equipment_plan.has_assignment(target_ship, slot):
+        for requirement in target_slots:
+            if self.equipment_plan.has_assignment(
+                requirement.ship, requirement.slot
+            ):
                 continue
 
             candidates = [
                 equipment
                 for equipment in equipment_by_id.values()
-                if equipment.model_id == target_equipment.model_id
+                if equipment.model_id == requirement.model_id
                 and not self.equipment_plan.is_equipment_assigned(
                     equipment.production_id
                 )
             ]
-            slot_name = slot.display_name
+            slot_name = requirement.slot.display_name
             target_id = (
-                f"model {target_equipment.model_id}"
-                if self._is_unresolved_noro6_equipment(target_equipment)
-                else str(target_equipment.production_id)
+                f"model {requirement.model_id}"
+                if requirement.preferred_production_id is None
+                else str(requirement.preferred_production_id)
             )
             if not candidates:
                 Log.log_error(
                     f"Cannot find replacement for "
-                    f"{target_equipment.name} {target_equipment.stars}★ ({target_id}) "
-                    f"on {target_ship.name_jp} {slot_name}."
+                    f"{requirement.equipment_name} {requirement.stars}★ "
+                    f"({target_id}) on {requirement.ship.name_jp} {slot_name}."
                 )
                 return False
 
             selected_equipment = min(
                 candidates,
                 key=lambda equipment: self._get_equipment_allocation_priority(
-                    target_equipment,
+                    requirement,
                     equipment,
                     equipment_sources,
                 ),
             )
-            self.equipment_plan.assign(target_ship, slot, selected_equipment)
+            self.equipment_plan.assign(
+                requirement.ship, requirement.slot, selected_equipment
+            )
 
-        for target_ship, slot, target_equipment in target_slots:
+        for requirement in target_slots:
             selected_equipment = self.equipment_plan.equipment_for(
-                target_ship, slot
+                requirement.ship, requirement.slot
             )
 
             if (
-                not self._is_unresolved_noro6_equipment(target_equipment)
-                and selected_equipment.production_id == target_equipment.production_id
+                requirement.preferred_production_id is not None
+                and selected_equipment.production_id
+                == requirement.preferred_production_id
             ):
                 continue
 
-            slot_name = slot.display_name
+            slot_name = requirement.slot.display_name
             target_id = (
-                f"model {target_equipment.model_id}"
-                if self._is_unresolved_noro6_equipment(target_equipment)
-                else str(target_equipment.production_id)
+                f"model {requirement.model_id}"
+                if requirement.preferred_production_id is None
+                else str(requirement.preferred_production_id)
             )
             Log.log_warn(
                 f"Using {selected_equipment.name} {selected_equipment.stars}★ "
                 f"({selected_equipment.production_id}) instead of "
-                f"{target_equipment.name} {target_equipment.stars}★ "
-                f"({target_id}) for {target_ship.name_jp} {slot_name}."
+                f"{requirement.equipment_name} {requirement.stars}★ "
+                f"({target_id}) for {requirement.ship.name_jp} {slot_name}."
             )
 
         return True

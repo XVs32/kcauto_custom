@@ -46,6 +46,38 @@ class EquipmentSlotRef:
     slot: EquipmentSlot
 
 
+@dataclass(frozen=True, slots=True)
+class EquipmentRequirement:
+    ship: Ship
+    slot: EquipmentSlot
+    model_id: int
+    stars: int
+    preferred_production_id: int | None
+    equipment_name: str
+
+    @classmethod
+    def from_target_equipment(
+        cls, ship: Ship, slot: EquipmentSlot, equipment: Equipment
+    ) -> EquipmentRequirement:
+        preferred_production_id = (
+            None
+            if equipment.production_id == Equipment.UNKNOWN_PRODUCTION_ID
+            else equipment.production_id
+        )
+        return cls(
+            ship=ship,
+            slot=slot,
+            model_id=equipment.model_id,
+            stars=equipment.stars,
+            preferred_production_id=preferred_production_id,
+            equipment_name=equipment.name,
+        )
+
+    @property
+    def slot_ref(self) -> EquipmentSlotRef:
+        return EquipmentSlotRef(self.ship.production_id, self.slot)
+
+
 @dataclass(slots=True)
 class EquipmentPlan:
     targets: list[tuple[int, Fleet]] = field(default_factory=list)
