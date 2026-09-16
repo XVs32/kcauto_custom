@@ -78,6 +78,17 @@ class EquipmentRequirement:
         return EquipmentSlotRef(self.ship.production_id, self.slot)
 
 
+@dataclass(frozen=True, slots=True)
+class MovableEquipment:
+    equipment: Equipment
+    source_ship: Ship | None
+    source_slot: EquipmentSlot | None
+
+    @property
+    def is_free(self) -> bool:
+        return self.source_ship is None
+
+
 @dataclass(slots=True)
 class EquipmentPlan:
     targets: list[tuple[int, Fleet]] = field(default_factory=list)

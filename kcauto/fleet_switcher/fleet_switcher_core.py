@@ -21,6 +21,7 @@ from fleet_switcher.equipment_plan import (
     EquipmentPlan,
     EquipmentRequirement,
     EquipmentSlot,
+    MovableEquipment,
 )
 from ships.ship import Ship
 from kca_enums.fleet_modes import FleetModeEnum
@@ -181,36 +182,39 @@ class FleetSwitcherCore(object):
 
     def _get_movable_equipment_pool(self, protected_fleet_ids=None):
         protected_fleet_ids = set(protected_fleet_ids or ())
-        equipment_by_id = {}
-        equipment_sources = {}
+        movable_equipment = {}
 
-        def add_equipment(equipment, source_ship=None, slot=None):
+        def add_equipment(
+            equipment: Equipment,
+            source_ship: Ship | None = None,
+            source_slot: EquipmentSlot | None = None,
+        ):
             if (
-                equipment is None
-                or equipment.model_id <= 0
-                or equipment.production_id <= 0
+                equipment.model_id <= 0
+                or equipment.production_id == Equipment.UNKNOWN_PRODUCTION_ID
             ):
                 return
 
-            if equipment.production_id not in equipment_by_id:
-                equipment_by_id[equipment.production_id] = equipment
-                equipment_sources[equipment.production_id] = (source_ship, slot)
+            movable_equipment.setdefault(
+                equipment.production_id,
+                MovableEquipment(equipment, source_ship, source_slot),
+            )
 
-        for equipment in equ.equipment.equipment_pool.get(equ.equipment.FREE, []):
+        for equipment in equ.equipment.equipment_pool[equ.equipment.FREE]:
             add_equipment(equipment)
 
-        candidate_ship_ids = set()
-
         def add_ship(ship: Ship):
-            if ship.production_id in candidate_ship_ids:
-                return
             if not self._is_ship_equipment_movable(ship):
                 return
 
-            candidate_ship_ids.add(ship.production_id)
             for slot, equipment in enumerate(ship.equipments):
-                add_equipment(equipment, ship, slot)
-            add_equipment(ship.slot_ex, ship, EquipmentSlot.REINFORCEMENT)
+                add_equipment(
+                    equipment, ship, EquipmentSlot.from_index(slot)
+                )
+            if ship.slot_ex is not None:
+                add_equipment(
+                    ship.slot_ex, ship, EquipmentSlot.REINFORCEMENT
+                )
 
         for ship in flt.fleets.ships_not_in_fleets:
             add_ship(ship)
@@ -222,7 +226,7 @@ class FleetSwitcherCore(object):
             for ship in active_fleet.ships:
                 add_ship(ship)
 
-        return equipment_by_id, equipment_sources
+        return movable_equipment
 
     def _collect_target_equipment_slots(self, target_fleets: list[Fleet]):
         target_slots = []
@@ -263,13 +267,10 @@ class FleetSwitcherCore(object):
     def _get_equipment_allocation_priority(
         self,
         requirement: EquipmentRequirement,
-        equipment: Equipment,
-        movable_equipment_sources,
+        movable_equipment: MovableEquipment,
     ):
-        source_ship, _ = movable_equipment_sources.get(
-            equipment.production_id, (None, None)
-        )
-        source_priority = 0 if source_ship is None else 1
+        equipment = movable_equipment.equipment
+        source_priority = 0 if movable_equipment.is_free else 1
 
         return (
             source_priority,
@@ -286,7 +287,7 @@ class FleetSwitcherCore(object):
         if target_slots is None:
             return False
 
-        movable_equipment_by_id, movable_equipment_sources = self._get_movable_equipment_pool(
+        movable_equipment_by_id = self._get_movable_equipment_pool(
             protected_fleet_ids
         )
 
@@ -297,19 +298,20 @@ class FleetSwitcherCore(object):
             if requirement.preferred_production_id is None:
                 continue
 
-            exact_equipment = equipment_by_id.get(
+            exact_movable = movable_equipment_by_id.get(
                 requirement.preferred_production_id
             )
-            if (
-                exact_equipment is not None
-                and exact_equipment.model_id == requirement.model_id
-                and not self.equipment_plan.is_equipment_assigned(
-                    exact_equipment.production_id
-                )
-            ):
-                self.equipment_plan.assign(
-                    requirement.ship, requirement.slot, exact_equipment
-                )
+            if exact_movable is not None:
+                exact_equipment = exact_movable.equipment
+                if (
+                    exact_equipment.model_id == requirement.model_id
+                    and not self.equipment_plan.is_equipment_assigned(
+                        exact_equipment.production_id
+                    )
+                ):
+                    self.equipment_plan.assign(
+                        requirement.ship, requirement.slot, exact_equipment
+                    )
 
         # Preserve already-loaded same-model equipment for flexible targets before
         # choosing new replacements. Exact production ID reservations above still
@@ -354,11 +356,11 @@ class FleetSwitcherCore(object):
                 continue
 
             candidates = [
-                equipment
-                for equipment in movable_equipment_by_id.values()
-                if equipment.model_id == requirement.model_id
+                movable_equipment
+                for movable_equipment in movable_equipment_by_id.values()
+                if movable_equipment.equipment.model_id == requirement.model_id
                 and not self.equipment_plan.is_equipment_assigned(
-                    equipment.production_id
+                    movable_equipment.equipment.production_id
                 )
             ]
             slot_name = requirement.slot.display_name
@@ -377,12 +379,10 @@ class FleetSwitcherCore(object):
 
             selected_equipment = min(
                 candidates,
-                key=lambda equipment: self._get_equipment_allocation_priority(
-                    requirement,
-                    equipment,
-                    movable_equipment_sources,
+                key=lambda movable_equipment: self._get_equipment_allocation_priority(
+                    requirement, movable_equipment
                 ),
-            )
+            ).equipment
             self.equipment_plan.assign(
                 requirement.ship, requirement.slot, selected_equipment
             )
