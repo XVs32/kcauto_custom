@@ -228,8 +228,8 @@ class FleetSwitcherCore(object):
 
         return movable_equipment
 
-    def _collect_target_equipment_slots(self, target_fleets: list[Fleet]):
-        target_slots = []
+    def _collect_equipment_requirements(self, target_fleets: list[Fleet]):
+        requirements = []
         target_ship_ids = set()
 
         for target_fleet in target_fleets:
@@ -245,7 +245,7 @@ class FleetSwitcherCore(object):
 
                 for slot, target_equipment in enumerate(target_ship.equipments):
                     if target_equipment.model_id > 0:
-                        target_slots.append(
+                        requirements.append(
                             EquipmentRequirement.from_target_equipment(
                                 target_ship,
                                 EquipmentSlot.from_index(slot),
@@ -254,7 +254,7 @@ class FleetSwitcherCore(object):
                         )
 
                 if target_ship.slot_ex is not None and target_ship.slot_ex.model_id > 0:
-                    target_slots.append(
+                    requirements.append(
                         EquipmentRequirement.from_target_equipment(
                             target_ship,
                             EquipmentSlot.REINFORCEMENT,
@@ -262,7 +262,7 @@ class FleetSwitcherCore(object):
                         )
                     )
 
-        return target_slots
+        return requirements
 
     def _get_equipment_allocation_priority(
         self,
@@ -283,8 +283,8 @@ class FleetSwitcherCore(object):
     ):
         self.equipment_plan.clear_assignments()
 
-        target_slots = self._collect_target_equipment_slots(target_fleets)
-        if target_slots is None:
+        requirements = self._collect_equipment_requirements(target_fleets)
+        if requirements is None:
             return False
 
         movable_equipment_by_id = self._get_movable_equipment_pool(
@@ -294,7 +294,7 @@ class FleetSwitcherCore(object):
         # Reserve every available exact production ID before using any same-model
         # replacement. This keeps one target slot from consuming equipment that
         # another target slot explicitly requested.
-        for requirement in target_slots:
+        for requirement in requirements:
             if requirement.preferred_production_id is None:
                 continue
 
@@ -316,7 +316,7 @@ class FleetSwitcherCore(object):
         # Preserve already-loaded same-model equipment for flexible targets before
         # choosing new replacements. Exact production ID reservations above still
         # take precedence over keeping equipment in place.
-        for requirement in target_slots:
+        for requirement in requirements:
             if self.equipment_plan.has_assignment(
                 requirement.ship, requirement.slot
             ):
@@ -349,7 +349,7 @@ class FleetSwitcherCore(object):
 
         # Remaining slots prefer free equipment before equipment mounted on another
         # movable ship, then use stars and production ID as stable tie-breakers.
-        for requirement in target_slots:
+        for requirement in requirements:
             if self.equipment_plan.has_assignment(
                 requirement.ship, requirement.slot
             ):
@@ -387,7 +387,7 @@ class FleetSwitcherCore(object):
                 requirement.ship, requirement.slot, selected_equipment
             )
 
-        for requirement in target_slots:
+        for requirement in requirements:
             selected_equipment = self.equipment_plan.equipment_for(
                 requirement.ship, requirement.slot
             )
