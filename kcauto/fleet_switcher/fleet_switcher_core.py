@@ -179,11 +179,6 @@ class FleetSwitcherCore(object):
         )
         return equ.equipment.free_equipment_initialized
 
-    def _is_active_fleet_data_loaded(self):
-        active_fleets = self._active_fleets
-        fleet_1 = active_fleets.get(1)
-        return bool(shp.ships.ship_pool and fleet_1 is not None and fleet_1.ships)
-
     def _get_movable_equipment_pool(self, protected_fleet_ids=None):
         protected_fleet_ids = set(protected_fleet_ids or ())
         equipment_by_id = {}
@@ -220,19 +215,12 @@ class FleetSwitcherCore(object):
         for ship in flt.fleets.ships_not_in_fleets:
             add_ship(ship)
 
-        if self._is_active_fleet_data_loaded():
-            active_fleets = self._active_fleets
-            for fleet_id, active_fleet in active_fleets.items():
-                if fleet_id in protected_fleet_ids or not active_fleet.at_base:
-                    continue
+        for fleet_id, active_fleet in self._active_fleets.items():
+            if fleet_id in protected_fleet_ids or not active_fleet.at_base:
+                continue
 
-                for ship in active_fleet.ships:
-                    add_ship(ship)
-        else:
-            Log.log_warn(
-                "Active fleet data is not loaded; limiting equipment allocation "
-                "to free equipment and idle ships."
-            )
+            for ship in active_fleet.ships:
+                add_ship(ship)
 
         return equipment_by_id, equipment_sources
 
