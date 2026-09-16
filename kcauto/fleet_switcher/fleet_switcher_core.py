@@ -17,6 +17,7 @@ import ships.equipment_core as equ
 import util.kca as kca_u
 from constants import AUTO_PRESET, OTHER_FLEET_ID
 from fleet.fleet import Fleet
+from fleet_switcher.equipment_plan import EquipmentPlan, EquipmentSlot
 from ships.ship import Ship
 from kca_enums.fleet_modes import FleetModeEnum
 from kca_enums.kcsapi_paths import KCSAPIEnum
@@ -34,10 +35,8 @@ class FleetSwitcherCore(object):
     exp_fleet_ship_id = {}
     exp_ship_pool = {}
     exp_fleet_ship_type = {}
-    equipment_assignments = {}
-    equipment_plan_targets = []
-
     def __init__(self):
+        self.equipment_plan = EquipmentPlan()
         self._set_next_combat_preset()
 
     def update_fleetpreset_data(self, data):
@@ -82,13 +81,6 @@ class FleetSwitcherCore(object):
 
         return -1, planned_equipment
 
-    def _get_equipment_assignment_key(self, ship: Ship, slot):
-        return (ship.production_id, slot)
-
-    def _get_planned_equipment(self, ship: Ship, slot):
-        key = self._get_equipment_assignment_key(ship, slot)
-        return self.equipment_assignments.get(key)
-
     def _get_ship_active_fleet(self, ship: Ship):
         active_fleets = flt.fleets.fleets.get(flt.fleets.ACTIVE_FLEET_KEY, {})
         for active_fleet in active_fleets.values():
@@ -114,8 +106,8 @@ class FleetSwitcherCore(object):
         target_ship_ids = set(target_fleet.ship_ids)
         target_equipment_ids = {
             equipment.production_id
-            for (ship_id, _), equipment in self.equipment_assignments.items()
-            if ship_id in target_ship_ids
+            for slot_ref, equipment in self.equipment_plan.items()
+            if slot_ref.ship_id in target_ship_ids
         }
         conflicts = [
             equipment
@@ -227,7 +219,7 @@ class FleetSwitcherCore(object):
             candidate_ship_ids.add(ship.production_id)
             for slot, equipment in enumerate(ship.equipments):
                 add_equipment(equipment, ship, slot)
-            add_equipment(ship.slot_ex, ship, "slot_ex")
+            add_equipment(ship.slot_ex, ship, EquipmentSlot.REINFORCEMENT)
 
         for ship in flt.fleets.ships_not_in_fleets:
             add_ship(ship)
@@ -265,10 +257,14 @@ class FleetSwitcherCore(object):
 
                 for slot, target_equipment in enumerate(target_ship.equipments):
                     if target_equipment.model_id > 0:
-                        target_slots.append((target_ship, slot, target_equipment))
+                        target_slots.append(
+                            (target_ship, EquipmentSlot.from_index(slot), target_equipment)
+                        )
 
                 if target_ship.slot_ex is not None and target_ship.slot_ex.model_id > 0:
-                    target_slots.append((target_ship, "slot_ex", target_ship.slot_ex))
+                    target_slots.append(
+                        (target_ship, EquipmentSlot.REINFORCEMENT, target_ship.slot_ex)
+                    )
 
         return target_slots
 
@@ -292,7 +288,7 @@ class FleetSwitcherCore(object):
     def _plan_equipment_assignments(
         self, target_fleets: list[Fleet], protected_fleet_ids=None
     ):
-        self.equipment_assignments = {}
+        self.equipment_plan.clear_assignments()
 
         target_slots = self._collect_target_equipment_slots(target_fleets)
         if target_slots is None:
@@ -301,8 +297,6 @@ class FleetSwitcherCore(object):
         equipment_by_id, equipment_sources = self._get_movable_equipment_pool(
             protected_fleet_ids
         )
-        assigned_equipment_ids = set()
-        assignments = {}
 
         # Reserve every available exact production ID before using any same-model
         # replacement. This keeps one target slot from consuming equipment that
@@ -315,28 +309,27 @@ class FleetSwitcherCore(object):
             if (
                 exact_equipment is not None
                 and exact_equipment.model_id == target_equipment.model_id
-                and exact_equipment.production_id not in assigned_equipment_ids
+                and not self.equipment_plan.is_equipment_assigned(
+                    exact_equipment.production_id
+                )
             ):
-                key = self._get_equipment_assignment_key(target_ship, slot)
-                assignments[key] = exact_equipment
-                assigned_equipment_ids.add(exact_equipment.production_id)
+                self.equipment_plan.assign(target_ship, slot, exact_equipment)
 
         # Preserve already-loaded same-model equipment for flexible targets before
         # choosing new replacements. Exact production ID reservations above still
         # take precedence over keeping equipment in place.
         for target_ship, slot, target_equipment in target_slots:
-            key = self._get_equipment_assignment_key(target_ship, slot)
-            if key in assignments:
+            if self.equipment_plan.has_assignment(target_ship, slot):
                 continue
 
             active_ship = shp.ships.ship_pool.get(target_ship.production_id)
             if active_ship is None:
                 continue
 
-            if slot == "slot_ex":
+            if slot.is_reinforcement:
                 current_equipment = active_ship.slot_ex
-            elif slot < len(active_ship.equipments):
-                current_equipment = active_ship.equipments[slot]
+            elif slot.normal_index < len(active_ship.equipments):
+                current_equipment = active_ship.equipments[slot.normal_index]
             else:
                 current_equipment = None
 
@@ -344,25 +337,27 @@ class FleetSwitcherCore(object):
                 current_equipment is not None
                 and current_equipment.model_id == target_equipment.model_id
                 and current_equipment.production_id in equipment_by_id
-                and current_equipment.production_id not in assigned_equipment_ids
+                and not self.equipment_plan.is_equipment_assigned(
+                    current_equipment.production_id
+                )
             ):
-                assignments[key] = current_equipment
-                assigned_equipment_ids.add(current_equipment.production_id)
+                self.equipment_plan.assign(target_ship, slot, current_equipment)
 
         # Remaining slots prefer free equipment before equipment mounted on another
         # movable ship, then use stars and production ID as stable tie-breakers.
         for target_ship, slot, target_equipment in target_slots:
-            key = self._get_equipment_assignment_key(target_ship, slot)
-            if key in assignments:
+            if self.equipment_plan.has_assignment(target_ship, slot):
                 continue
 
             candidates = [
                 equipment
                 for equipment in equipment_by_id.values()
                 if equipment.model_id == target_equipment.model_id
-                and equipment.production_id not in assigned_equipment_ids
+                and not self.equipment_plan.is_equipment_assigned(
+                    equipment.production_id
+                )
             ]
-            slot_name = "slot_ex" if slot == "slot_ex" else f"slot {slot + 1}"
+            slot_name = slot.display_name
             target_id = (
                 f"model {target_equipment.model_id}"
                 if self._is_unresolved_noro6_equipment(target_equipment)
@@ -384,12 +379,12 @@ class FleetSwitcherCore(object):
                     equipment_sources,
                 ),
             )
-            assignments[key] = selected_equipment
-            assigned_equipment_ids.add(selected_equipment.production_id)
+            self.equipment_plan.assign(target_ship, slot, selected_equipment)
 
         for target_ship, slot, target_equipment in target_slots:
-            key = self._get_equipment_assignment_key(target_ship, slot)
-            selected_equipment = assignments[key]
+            selected_equipment = self.equipment_plan.equipment_for(
+                target_ship, slot
+            )
 
             if (
                 not self._is_unresolved_noro6_equipment(target_equipment)
@@ -397,7 +392,7 @@ class FleetSwitcherCore(object):
             ):
                 continue
 
-            slot_name = "slot_ex" if slot == "slot_ex" else f"slot {slot + 1}"
+            slot_name = slot.display_name
             target_id = (
                 f"model {target_equipment.model_id}"
                 if self._is_unresolved_noro6_equipment(target_equipment)
@@ -410,7 +405,6 @@ class FleetSwitcherCore(object):
                 f"({target_id}) for {target_ship.name_jp} {slot_name}."
             )
 
-        self.equipment_assignments = assignments
         return True
 
     def _prepare_equipment_plan(
@@ -419,7 +413,7 @@ class FleetSwitcherCore(object):
         protected_fleet_ids=None,
         target_ship_ids=None,
     ):
-        self.equipment_assignments = {}
+        self.equipment_plan.clear_assignments()
         if not target_fleets:
             return True
 
@@ -464,7 +458,9 @@ class FleetSwitcherCore(object):
                     return False
                 continue
 
-            planned_equipment = self._get_planned_equipment(target_ship, slot)
+            planned_equipment = self.equipment_plan.equipment_for(
+                target_ship, EquipmentSlot.from_index(slot)
+            )
             if (
                 planned_equipment is None
                 or active_equipment is None
@@ -488,7 +484,9 @@ class FleetSwitcherCore(object):
         if target_slot_ex is None:
             return active_slot_ex is None
 
-        planned_slot_ex = self._get_planned_equipment(target_ship, "slot_ex")
+        planned_slot_ex = self.equipment_plan.equipment_for(
+            target_ship, EquipmentSlot.REINFORCEMENT
+        )
         return (
             planned_slot_ex is not None
             and active_slot_ex is not None
@@ -513,7 +511,7 @@ class FleetSwitcherCore(object):
     def verify_equipment_plan(self):
         active_fleets = flt.fleets.fleets.get(flt.fleets.ACTIVE_FLEET_KEY, {})
 
-        for fleet_id, target_fleet in self.equipment_plan_targets:
+        for fleet_id, target_fleet in self.equipment_plan.targets:
             if fleet_id not in active_fleets:
                 Log.log_error(
                     f"Fleet {fleet_id} is unavailable while verifying equipment plan."
@@ -532,7 +530,7 @@ class FleetSwitcherCore(object):
         return True
 
     def switch_fleet(self, context):
-        self.equipment_plan_targets = []
+        self.equipment_plan.clear()
         self.goto()
         preset_id = self._get_next_preset_id(context)
 
@@ -565,7 +563,7 @@ class FleetSwitcherCore(object):
                 ):
                     return False
 
-                self.equipment_plan_targets = combat_targets
+                self.equipment_plan.set_targets(combat_targets)
 
                 for combat_fleet_id, target_fleet in combat_targets:
                     if not self.switch_to_costom_fleet_with_equipment(
@@ -634,7 +632,7 @@ class FleetSwitcherCore(object):
                     1, fleet_list[1], protected_fleet_ids
                 ):
                     return False
-                self.equipment_plan_targets = [(1, fleet_list[1])]
+                self.equipment_plan.set_targets([(1, fleet_list[1])])
 
             elif context == "expedition":
                 Log.log_msg(f"Switching to Exp Preset.")
@@ -662,7 +660,7 @@ class FleetSwitcherCore(object):
                 ):
                     return False
 
-                self.equipment_plan_targets = expedition_targets
+                self.equipment_plan.set_targets(expedition_targets)
 
                 for fleet_id, target_fleet in expedition_targets:
                     if not self.switch_to_costom_fleet_with_equipment(
@@ -1196,8 +1194,8 @@ class FleetSwitcherCore(object):
 
                     kca_u.kca.wait("upper_right", "shipswitcher|equipment_sort_all.png")
 
-                planned_equipment = self._get_planned_equipment(
-                    fleet.ships[i], slot
+                planned_equipment = self.equipment_plan.equipment_for(
+                    fleet.ships[i], EquipmentSlot.from_index(slot)
                 )
                 if planned_equipment is None:
                     Log.log_error(
@@ -1249,8 +1247,8 @@ class FleetSwitcherCore(object):
                         f"{k}: {equipment.name} {equipment.stars} (Production id: {equipment.production_id}, Model id: {equipment.model_id}), category id: {equipment.category}"
                     )
 
-                planned_equipment = self._get_planned_equipment(
-                    fleet.ships[i], "slot_ex"
+                planned_equipment = self.equipment_plan.equipment_for(
+                    fleet.ships[i], EquipmentSlot.REINFORCEMENT
                 )
                 if planned_equipment is None:
                     Log.log_error(
