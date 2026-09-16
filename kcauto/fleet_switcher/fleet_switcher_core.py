@@ -133,9 +133,6 @@ class FleetSwitcherCore(object):
             protected_ship_ids.update(active_fleets[fleet_id].ship_ids)
         return protected_ship_ids
 
-    def _get_expedition_protected_fleet_ids(self):
-        return {fleet.fleet_id for fleet in flt.fleets.expedition_fleets}
-
     def _get_safe_free_equipment_refresh_ship(
         self, target_fleet: Fleet, protected_fleet_ids=None, target_ship_ids=None
     ):
@@ -582,7 +579,9 @@ class FleetSwitcherCore(object):
                 # Combat is a property, sort does not saved inside it
                 rev_fleet_id = flt.fleets.combat_fleets_id.copy()
                 rev_fleet_id.sort(reverse=True)
-                protected_fleet_ids = self._get_expedition_protected_fleet_ids()
+                protected_fleet_ids = {
+                    fleet.fleet_id for fleet in flt.fleets.expedition_fleets
+                }
                 target_ship_ids = set()
                 combat_targets = []
 
@@ -659,7 +658,9 @@ class FleetSwitcherCore(object):
                     pvp.pvp.next_pvp_quest.name + "-pvp"
                 )
 
-                protected_fleet_ids = self._get_expedition_protected_fleet_ids()
+                protected_fleet_ids = {
+                    fleet.fleet_id for fleet in flt.fleets.expedition_fleets
+                }
                 if not self.switch_to_costom_fleet_with_equipment(
                     1, fleet_list[1], protected_fleet_ids
                 ):
