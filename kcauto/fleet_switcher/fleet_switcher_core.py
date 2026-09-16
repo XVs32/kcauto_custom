@@ -786,9 +786,10 @@ class FleetSwitcherCore(object):
             Log.log_msg(f"Fleet {fleet_id} ships and equipment are already loaded")
             return True
 
-        self._unload_fleet_required_equipment(
+        if not self._unload_fleet_required_equipment(
             costom_fleet, protected_fleet_ids
-        )
+        ):
+            return False
 
         Log.log_success("Equipment unloaded.")
 
@@ -796,11 +797,19 @@ class FleetSwitcherCore(object):
 
         self.goto()
 
-        self.switch_to_costom_fleet(fleet_id, costom_fleet)
+        if not self.switch_to_costom_fleet(fleet_id, costom_fleet):
+            return False
 
-        self._load_equipment(fleet_id, costom_fleet)
+        if self._active_fleets[fleet_id].ship_ids != costom_fleet.ship_ids:
+            Log.log_error(
+                f"Fleet {fleet_id} ship IDs do not match after ship switching."
+            )
+            return False
+
+        if not self._load_equipment(fleet_id, costom_fleet):
+            return False
+
         Log.log_success("Equipment loaded.")
-
         return True
 
     def _scroll_preset_list(self, target_clicks):
@@ -889,7 +898,7 @@ class FleetSwitcherCore(object):
                 Log.log_msg("No equipment to unload or load")
             else:
                 Log.log_msg("No equipment needs to be unloaded")
-            return False
+            return True
 
         equ.equipment.goto()
 
@@ -911,10 +920,11 @@ class FleetSwitcherCore(object):
                     f"Need to unload equipment for {ship.production_id}/{ship.name}"
                 )
 
-            self.unload_ship(
+            if not self.unload_ship(
                 ship,
                 idle_ship_list=idle_ship_list,
-            )
+            ):
+                return False
 
         return True
 
@@ -1037,24 +1047,11 @@ class FleetSwitcherCore(object):
 
         nav.navigate.to("home")
 
-        load_ship_id = fleet.ship_ids
-
-        if (
-            self._active_fleets[fleet_id].ship_ids
-            != fleet.ship_ids
-        ):
-            Log.log_error(
-                f"Fleet {fleet_id} ship IDs do not match; ship load may have failed, exiting..."
-            )
-            exit(1)
-        elif (
-            self._active_fleets[fleet_id].under_repair
-
-        ):
+        if self._active_fleets[fleet_id].under_repair:
             Log.log_error(
                 f"Fleet {fleet_id} is under repair; equipment load process halted."
             )
-            return
+            return False
 
         needed_load = False
         for i in range(fleet.size):
@@ -1067,7 +1064,7 @@ class FleetSwitcherCore(object):
 
         if not needed_load:
             Log.log_msg(f"equipment for fleet {fleet_id} is already loaded")
-            return False
+            return True
         else:
             equ.equipment.goto()
             equ.equipment.goto_fleet(fleet_id)
@@ -1122,7 +1119,7 @@ class FleetSwitcherCore(object):
                         f"with production id:{planned_equipment.production_id}, "
                         f"did you scrapped it?"
                     )
-                    exit(1)
+                    return False
 
                 Log.log_msg(
                     f"Selecting {selected_equipment.name} {selected_equipment.stars} ★"
@@ -1168,7 +1165,7 @@ class FleetSwitcherCore(object):
                         f"with production id:{planned_equipment.production_id}, "
                         f"did you scrapped it?"
                     )
-                    exit(1)
+                    return False
 
                 Log.log_msg(
                     f"Selecting {selected_equipment.name} {selected_equipment.stars} ★ on page {row_idx // 10 + 1} position {(row_idx % 10) + 1}"
