@@ -546,7 +546,13 @@ class Kcauto(object):
         if not fsw.fleet_switcher.switch_fleet(context):
             Log.log_error(f"Failed to switch ships for {context}.")
             return -1
+
         self.handle_back_to_home(True)
+
+        if not fsw.fleet_switcher.verify_equipment_plan():
+            Log.log_error(f"Failed to verify fleet equipment for {context}.")
+            return -1
+
         return 0
 
     def run_shipswitch_logic(self, back_to_home=False):
