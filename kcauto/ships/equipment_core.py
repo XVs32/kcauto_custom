@@ -21,10 +21,6 @@ class EquipmentCore(object):
     FREE = "free"
     ID = "id"
 
-    NON_NORO6 = (
-        "NON_NORO6"  # contain all equipments which does not exist in noro6 config
-    )
-
     equipment_pool: dict[str, list[Equipment]] = {}
     reinforce_general_category = {}
     reinforce_special = {}
@@ -47,7 +43,6 @@ class EquipmentCore(object):
         self.equipment_pool[self.LOADED] = []
         self.equipment_pool[self.FREE] = []
         self.equipment_pool[self.ID] = []
-        self.equipment_pool[self.NON_NORO6] = []
         self.free_equipment_initialized = False
 
         try:

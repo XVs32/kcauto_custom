@@ -11,6 +11,12 @@ if TYPE_CHECKING:
     from ships.ship import Ship
 
 
+class EquipmentStarPreference(Enum):
+    EXACT = "exact"
+    HIGHEST = "highest"
+    ANY = "any"
+
+
 class EquipmentSlot(Enum):
     SLOT_1 = 0
     SLOT_2 = 1
@@ -51,20 +57,48 @@ class EquipmentRequirement:
     ship: Ship
     slot: EquipmentSlot
     model_id: int
-    stars: int
     equipment_name: str
+    star_preference: EquipmentStarPreference
+    stars: int | None = None
 
     @classmethod
     def from_target_equipment(
-        cls, ship: Ship, slot: EquipmentSlot, equipment: Equipment
+        cls,
+        ship: Ship,
+        slot: EquipmentSlot,
+        equipment: Equipment,
+        star_preference: EquipmentStarPreference = EquipmentStarPreference.EXACT,
     ) -> EquipmentRequirement:
         return cls(
             ship=ship,
             slot=slot,
             model_id=equipment.model_id,
-            stars=equipment.stars,
             equipment_name=equipment.name,
+            star_preference=star_preference,
+            stars=(
+                equipment.stars
+                if star_preference is EquipmentStarPreference.EXACT
+                else None
+            ),
         )
+
+    def star_priority(self, equipment: Equipment) -> int:
+        if self.star_preference is EquipmentStarPreference.HIGHEST:
+            return -equipment.stars
+        if self.star_preference is EquipmentStarPreference.ANY:
+            return 0
+        if self.stars is None:
+            raise ValueError("Exact star preference requires a target star level")
+        return abs(equipment.stars - self.stars)
+
+    @property
+    def requested_star_description(self) -> str:
+        if self.star_preference is EquipmentStarPreference.HIGHEST:
+            return "highest available star level"
+        if self.star_preference is EquipmentStarPreference.ANY:
+            return "any star level"
+        return f"{self.stars}★"
+
 
 @dataclass(frozen=True, slots=True)
 class MovableEquipment:

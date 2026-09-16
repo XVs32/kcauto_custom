@@ -15,15 +15,22 @@ import ship_switcher.ship_switcher_core as ssw
 import ships.ships_core as shp
 import ships.equipment_core as equ
 import util.kca as kca_u
-from constants import AUTO_PRESET, OTHER_FLEET_ID
+from constants import (
+    AUTO_PRESET,
+    OTHER_FLEET_ID,
+    EXPEDITION_DRUM_MODEL_ID,
+    EXPEDITION_LANDING_CRAFT_MODEL_ID,
+)
 from fleet.fleet import Fleet
 from fleet_switcher.equipment_plan import (
     EquipmentPlan,
     EquipmentRequirement,
     EquipmentSlot,
+    EquipmentStarPreference,
     MovableEquipment,
 )
 from ships.ship import Ship
+from kca_enums.fleet import FleetEnum
 from kca_enums.fleet_modes import FleetModeEnum
 from kca_enums.kcsapi_paths import KCSAPIEnum
 from kca_enums.ship_types import ShipTypeEnum
@@ -246,14 +253,30 @@ class FleetSwitcherCore(object):
                 target_ship_ids.add(target_ship.production_id)
 
                 for slot, target_equipment in enumerate(target_ship.equipments):
-                    if target_equipment.model_id > 0:
-                        requirements.append(
-                            EquipmentRequirement.from_target_equipment(
-                                target_ship,
-                                EquipmentSlot.from_index(slot),
-                                target_equipment,
-                            )
+                    if target_equipment.model_id <= 0:
+                        continue
+
+                    star_preference = EquipmentStarPreference.EXACT
+                    if target_fleet.fleet_type == FleetEnum.EXPEDITION_PRESET:
+                        if (
+                            target_equipment.model_id
+                            == EXPEDITION_LANDING_CRAFT_MODEL_ID
+                        ):
+                            star_preference = EquipmentStarPreference.HIGHEST
+                        elif (
+                            target_equipment.model_id
+                            == EXPEDITION_DRUM_MODEL_ID
+                        ):
+                            star_preference = EquipmentStarPreference.ANY
+
+                    requirements.append(
+                        EquipmentRequirement.from_target_equipment(
+                            target_ship,
+                            EquipmentSlot.from_index(slot),
+                            target_equipment,
+                            star_preference,
                         )
+                    )
 
                 if target_ship.slot_ex is not None and target_ship.slot_ex.model_id > 0:
                     requirements.append(
@@ -281,7 +304,7 @@ class FleetSwitcherCore(object):
         source_priority = 0 if movable_equipment.is_free else 1
 
         return (
-            abs(equipment.stars - requirement.stars),
+            requirement.star_priority(equipment),
             same_slot_priority,
             source_priority,
             equipment.production_id,
@@ -300,9 +323,9 @@ class FleetSwitcherCore(object):
             protected_fleet_ids
         )
 
-        # Prefer the closest star level first. Equal-star candidates keep the
-        # current target slot in place, then prefer free equipment before
-        # equipment mounted on another movable ship.
+        # Apply each requirement's star preference first. Equal-priority
+        # candidates keep the current target slot in place, then prefer free
+        # equipment before equipment mounted on another movable ship.
         for requirement in requirements:
             if self.equipment_plan.has_assignment(
                 requirement.ship, requirement.slot
@@ -327,8 +350,9 @@ class FleetSwitcherCore(object):
             if not candidates:
                 Log.log_error(
                     f"Cannot find replacement for "
-                    f"{requirement.equipment_name} {requirement.stars}★ "
-                    f"(model {requirement.model_id}) on "
+                    f"{requirement.equipment_name} "
+                    f"({requirement.requested_star_description}, "
+                    f"model {requirement.model_id}) on "
                     f"{requirement.ship.name_jp} {slot_name}."
                 )
                 return False
@@ -348,7 +372,10 @@ class FleetSwitcherCore(object):
                 requirement.ship, requirement.slot
             )
 
-            if selected_equipment.stars == requirement.stars:
+            if (
+                requirement.star_preference is not EquipmentStarPreference.EXACT
+                or selected_equipment.stars == requirement.stars
+            ):
                 continue
 
             slot_name = requirement.slot.display_name
