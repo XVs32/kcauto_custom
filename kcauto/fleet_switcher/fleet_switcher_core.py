@@ -89,18 +89,18 @@ class FleetSwitcherCore(object):
 
         return -1, planned_equipment
 
-    def _get_ship_active_fleet(self, ship: Ship):
+    def _find_active_fleet_for_ship(self, ship: Ship):
         active_fleets = self._active_fleets
         for active_fleet in active_fleets.values():
             if ship.production_id in active_fleet.ship_ids:
                 return active_fleet
         return None
 
-    def _is_ship_equipment_replaceable(self, ship: Ship):
+    def _is_ship_equipment_movable(self, ship: Ship):
         if ship.production_id in rep.repair.ships_under_repair:
             return False
 
-        active_fleet = self._get_ship_active_fleet(ship)
+        active_fleet = self._find_active_fleet_for_ship(ship)
         return active_fleet is None or active_fleet.at_base
 
     def _get_planned_equipment_held_by_ship(
@@ -209,7 +209,7 @@ class FleetSwitcherCore(object):
         def add_ship(ship: Ship):
             if ship.production_id in candidate_ship_ids:
                 return
-            if not self._is_ship_equipment_replaceable(ship):
+            if not self._is_ship_equipment_movable(ship):
                 return
 
             candidate_ship_ids.add(ship.production_id)
@@ -276,9 +276,9 @@ class FleetSwitcherCore(object):
         self,
         requirement: EquipmentRequirement,
         equipment: Equipment,
-        equipment_sources,
+        movable_equipment_sources,
     ):
-        source_ship, _ = equipment_sources.get(
+        source_ship, _ = movable_equipment_sources.get(
             equipment.production_id, (None, None)
         )
         source_priority = 0 if source_ship is None else 1
@@ -298,7 +298,7 @@ class FleetSwitcherCore(object):
         if target_slots is None:
             return False
 
-        equipment_by_id, equipment_sources = self._get_movable_equipment_pool(
+        movable_equipment_by_id, movable_equipment_sources = self._get_movable_equipment_pool(
             protected_fleet_ids
         )
 
@@ -348,7 +348,7 @@ class FleetSwitcherCore(object):
             if (
                 current_equipment is not None
                 and current_equipment.model_id == requirement.model_id
-                and current_equipment.production_id in equipment_by_id
+                and current_equipment.production_id in movable_equipment_by_id
                 and not self.equipment_plan.is_equipment_assigned(
                     current_equipment.production_id
                 )
@@ -367,7 +367,7 @@ class FleetSwitcherCore(object):
 
             candidates = [
                 equipment
-                for equipment in equipment_by_id.values()
+                for equipment in movable_equipment_by_id.values()
                 if equipment.model_id == requirement.model_id
                 and not self.equipment_plan.is_equipment_assigned(
                     equipment.production_id
@@ -392,7 +392,7 @@ class FleetSwitcherCore(object):
                 key=lambda equipment: self._get_equipment_allocation_priority(
                     requirement,
                     equipment,
-                    equipment_sources,
+                    movable_equipment_sources,
                 ),
             )
             self.equipment_plan.assign(
@@ -967,7 +967,7 @@ class FleetSwitcherCore(object):
 
                     if (
                         ship.has_equipment() == True
-                        and self._is_ship_equipment_replaceable(ship)
+                        and self._is_ship_equipment_movable(ship)
                         and ship.production_id not in protected_ship_ids
                     ):
                         unload_ships.append(ship)
@@ -977,7 +977,7 @@ class FleetSwitcherCore(object):
                 if conflicts:
                     if (
                         ship.production_id in protected_ship_ids
-                        or not self._is_ship_equipment_replaceable(ship)
+                        or not self._is_ship_equipment_movable(ship)
                     ):
                         continue
 
