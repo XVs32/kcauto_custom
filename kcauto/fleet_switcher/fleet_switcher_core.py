@@ -69,6 +69,10 @@ class FleetSwitcherCore(object):
     def goto(self):
         ssw.ship_switcher.goto()
 
+    @property
+    def _active_fleets(self):
+        return flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY]
+
     def _find_equipment_row(
         self, equipment_list: list[Equipment], planned_equipment: Equipment
     ):
@@ -82,7 +86,7 @@ class FleetSwitcherCore(object):
         return -1, planned_equipment
 
     def _get_ship_active_fleet(self, ship: Ship):
-        active_fleets = flt.fleets.fleets.get(flt.fleets.ACTIVE_FLEET_KEY, {})
+        active_fleets = self._active_fleets
         for active_fleet in active_fleets.values():
             if ship.production_id in active_fleet.ship_ids:
                 return active_fleet
@@ -126,7 +130,7 @@ class FleetSwitcherCore(object):
 
     def _get_protected_ship_ids(self, protected_fleet_ids=None):
         protected_ship_ids = set()
-        active_fleets = flt.fleets.fleets.get(flt.fleets.ACTIVE_FLEET_KEY, {})
+        active_fleets = self._active_fleets
         for fleet_id in protected_fleet_ids or ():
             protected_fleet = active_fleets.get(fleet_id)
             if protected_fleet is not None:
@@ -184,7 +188,7 @@ class FleetSwitcherCore(object):
         return True
 
     def _is_active_fleet_data_loaded(self):
-        active_fleets = flt.fleets.fleets.get(flt.fleets.ACTIVE_FLEET_KEY, {})
+        active_fleets = self._active_fleets
         fleet_1 = active_fleets.get(1)
         return bool(shp.ships.ship_pool and fleet_1 is not None and fleet_1.ships)
 
@@ -225,7 +229,7 @@ class FleetSwitcherCore(object):
             add_ship(ship)
 
         if self._is_active_fleet_data_loaded():
-            active_fleets = flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY]
+            active_fleets = self._active_fleets
             for fleet_id, active_fleet in active_fleets.items():
                 if fleet_id in protected_fleet_ids or not active_fleet.at_base:
                     continue
@@ -494,7 +498,7 @@ class FleetSwitcherCore(object):
         )
 
     def _is_custom_fleet_with_equipment_loaded(self, fleet_id, target_fleet: Fleet):
-        active_fleet = flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][fleet_id]
+        active_fleet = self._active_fleets[fleet_id]
 
         if active_fleet.ship_ids != target_fleet.ship_ids:
             return False
@@ -509,7 +513,7 @@ class FleetSwitcherCore(object):
         return True
 
     def verify_equipment_plan(self):
-        active_fleets = flt.fleets.fleets.get(flt.fleets.ACTIVE_FLEET_KEY, {})
+        active_fleets = self._active_fleets
 
         for fleet_id, target_fleet in self.equipment_plan.targets:
             if fleet_id not in active_fleets:
@@ -600,7 +604,7 @@ class FleetSwitcherCore(object):
                         )
 
                         # merge fleet #2 to fleet #1
-                        flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][2].select()
+                        self._active_fleets[2].select()
                         start_region = kca_u.kca.find(
                             "top_submenu", f"fleet|fleet_2_active.png"
                         )
@@ -761,12 +765,12 @@ class FleetSwitcherCore(object):
         retry = 0
 
         while True:
-            flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][fleet_id].select()
+            self._active_fleets[fleet_id].select()
 
             empty_slot_count = 0
 
             size = max(
-                flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][fleet_id].size,
+                self._active_fleets[fleet_id].size,
                 costom_fleet.size,
             )
 
@@ -795,10 +799,10 @@ class FleetSwitcherCore(object):
                         return False
 
                 if i <= len(
-                    flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][fleet_id].ship_ids
+                    self._active_fleets[fleet_id].ship_ids
                 ) and shp.ships.is_same_ship(
                     ship,
-                    flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][fleet_id].ships[
+                    self._active_fleets[fleet_id].ships[
                         i - 1
                     ],
                 ):
@@ -1021,10 +1025,10 @@ class FleetSwitcherCore(object):
 
         target_fleet = OTHER_FLEET_ID
 
-        for fleet_id in flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY]:
+        for fleet_id in self._active_fleets:
             if (
                 ship.production_id
-                in flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][fleet_id].ship_ids
+                in self._active_fleets[fleet_id].ship_ids
             ):
                 target_fleet = fleet_id
                 break
@@ -1045,7 +1049,7 @@ class FleetSwitcherCore(object):
             Log.log_debug_1(
                 f"Ship {ship.name} is in fleet {fleet_id}, unload from there"
             )
-            ship_position = flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][
+            ship_position = self._active_fleets[
                 fleet_id
             ].ship_ids.index(ship.production_id)
 
@@ -1126,7 +1130,7 @@ class FleetSwitcherCore(object):
         load_ship_id = fleet.ship_ids
 
         if (
-            flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][fleet_id].ship_ids
+            self._active_fleets[fleet_id].ship_ids
             != fleet.ship_ids
         ):
             Log.log_error(
@@ -1134,7 +1138,7 @@ class FleetSwitcherCore(object):
             )
             exit(1)
         elif (
-            flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][fleet_id].under_repair
+            self._active_fleets[fleet_id].under_repair
             == True
         ):
             Log.log_error(
@@ -1145,7 +1149,7 @@ class FleetSwitcherCore(object):
         needed_load = False
         for i in range(fleet.size):
             if not self._is_ship_equipment_assignment_matched(
-                flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][fleet_id].ships[i],
+                self._active_fleets[fleet_id].ships[i],
                 fleet.ships[i],
             ):
                 needed_load = True
@@ -1160,7 +1164,7 @@ class FleetSwitcherCore(object):
 
         for i in range(fleet.size):
             if self._is_ship_equipment_assignment_matched(
-                flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][fleet_id].ships[i],
+                self._active_fleets[fleet_id].ships[i],
                 fleet.ships[i],
             ):
                 Log.log_msg(f"equipment for {fleet.ships[i].name_jp} is already loaded")
