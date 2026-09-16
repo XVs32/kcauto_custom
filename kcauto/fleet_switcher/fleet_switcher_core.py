@@ -130,9 +130,7 @@ class FleetSwitcherCore(object):
         protected_ship_ids = set()
         active_fleets = self._active_fleets
         for fleet_id in protected_fleet_ids or ():
-            protected_fleet = active_fleets.get(fleet_id)
-            if protected_fleet is not None:
-                protected_ship_ids.update(protected_fleet.ship_ids)
+            protected_ship_ids.update(active_fleets[fleet_id].ship_ids)
         return protected_ship_ids
 
     def _get_expedition_protected_fleet_ids(self):
