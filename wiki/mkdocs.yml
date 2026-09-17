@@ -43,10 +43,10 @@ nav:
         - "Ch3.2: Expedition": Ch3.2.md
         - "Ch3.3: PvP": Ch3.3.md
         - "Ch3.4: Factory": Ch3.4.md
+        - "Ch3.5: Event guide": Ch3.5.md
     - "Ch4: Expert User Guide":
         - "Ch4.1: Sortie": Ch4.1.md
         - "Ch4.2: Factory": Ch4.2.md
-        - "Ch4.3: Event guide": Ch4.3.md
     - "Ch5: Configuration File": Ch5.md
     - "Ch99: Appendix":
         - "Ch99.1: Your own event map support": Ch99.1.md
