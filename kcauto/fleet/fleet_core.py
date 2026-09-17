@@ -391,15 +391,17 @@ class FleetCore(object):
                             sys.exit()
 
                         ship.equipments.append(
-                            equ.equipment.get_equipment_from_noro6_equipment(
-                                noro6_equipment
+                            Equipment(
+                                model_id=noro6_equipment["i"],
+                                stars=noro6_equipment["r"],
                             )
                         )
 
                     reinforce_equipment = noro6.get_reinforce_equipment()
                     if reinforce_equipment["i"] > 0:
-                        ship.slot_ex = equ.equipment.get_equipment_from_noro6_equipment(
-                            reinforce_equipment
+                        ship.slot_ex = Equipment(
+                            model_id=reinforce_equipment["i"],
+                            stars=reinforce_equipment["r"],
                         )
                     elif reinforce_equipment["i"] == 0:
                         ship.slot_ex = None

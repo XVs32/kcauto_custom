@@ -112,18 +112,6 @@ class EquipmentCore(object):
 
         return
 
-    def get_equipment_from_noro6_equipment(self, noro6_equipment):
-        """Convert a Noro6 equipment requirement to a kcauto Equipment target.
-
-        Physical production IDs are intentionally left unresolved here and are
-        selected later by the fleet switcher's global equipment allocator.
-        """
-
-        return Equipment(
-            model_id=noro6_equipment["i"],
-            stars=noro6_equipment["r"],
-        )
-
     def get_reinforce_equipment_list(self, ship: Ship):
         return [
             equipment
