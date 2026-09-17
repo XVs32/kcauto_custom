@@ -807,12 +807,6 @@ class FleetSwitcherCore(object):
         if not self.switch_to_costom_fleet(fleet_id, costom_fleet):
             return False
 
-        if self._active_fleets[fleet_id].ship_ids != costom_fleet.ship_ids:
-            Log.log_error(
-                f"Fleet {fleet_id} ship IDs do not match after ship switching."
-            )
-            return False
-
         if not self._load_equipment(fleet_id, costom_fleet):
             return False
 
