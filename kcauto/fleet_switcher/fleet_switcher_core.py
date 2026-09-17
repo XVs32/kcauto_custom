@@ -369,8 +369,6 @@ class FleetSwitcherCore(object):
     def _plan_equipment_assignments(
         self, target_fleets: list[Fleet], protected_fleet_ids: set[int]
     ):
-        self.equipment_plan.clear_assignments()
-
         requirements = self._collect_equipment_requirements(target_fleets)
         if requirements is None:
             return False
