@@ -374,23 +374,27 @@ class FleetCore(object):
                         sys.exit()
 
                     ship.equipments = []
+                    empty_normal_slot_seen = False
 
                     for j in range(1, noro6.get_equipment_count() + 1):
-                        this_equipment = (
+                        noro6_equipment = noro6.get_equipment(j)
+                        if noro6_equipment["i"] == Equipment.EMPTY_EQUIPMENT:
+                            empty_normal_slot_seen = True
+                            continue
+
+                        if empty_normal_slot_seen:
+                            Log.log_error(
+                                f"Noro6 preset {preset['name']}, ship {ship.name} "
+                                "has equipment after an empty normal slot; "
+                                "normal equipment slots must be contiguous."
+                            )
+                            sys.exit()
+
+                        ship.equipments.append(
                             equ.equipment.get_equipment_from_noro6_equipment(
-                                noro6.get_equipment(j)
+                                noro6_equipment
                             )
                         )
-
-                        if (
-                            this_equipment.is_empty_equipment
-                            and fleet_type == FleetEnum.COMBAT
-                        ):
-                            Log.log_warn(
-                                f"In Noro6 preset {preset['name']}, ship {ship.name} has empty equipment slot"
-                            )
-
-                        ship.equipments.append(this_equipment)
 
                     reinforce_equipment = noro6.get_reinforce_equipment()
                     if reinforce_equipment["i"] > 0:
