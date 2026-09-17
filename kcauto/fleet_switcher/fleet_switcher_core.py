@@ -47,6 +47,7 @@ class FleetSwitcherCore(object):
     exp_fleet_ship_id = {}
     exp_ship_pool = {}
     exp_fleet_ship_type = {}
+
     def __init__(self):
         self.equipment_plan = EquipmentPlan()
         self._set_next_combat_preset()
@@ -108,9 +109,7 @@ class FleetSwitcherCore(object):
         active_fleet = self._find_active_fleet_for_ship(ship)
         return active_fleet is None or active_fleet.at_base
 
-    def _get_planned_equipment_held_by_ship(
-        self, ship: Ship, target_fleet: Fleet
-    ):
+    def _get_planned_equipment_held_by_ship(self, ship: Ship, target_fleet: Fleet):
         target_equipment_ids = {
             equipment.production_id
             for equipment in self.equipment_plan.equipment_for_ship_ids(
@@ -188,9 +187,7 @@ class FleetSwitcherCore(object):
         )
         return equ.equipment.free_equipment_initialized
 
-    def _get_movable_equipment_pool(
-        self, protected_fleet_ids: set[int]
-    ):
+    def _get_movable_equipment_pool(self, protected_fleet_ids: set[int]):
         movable_equipment = {}
 
         def add_equipment(
@@ -217,13 +214,9 @@ class FleetSwitcherCore(object):
                 return
 
             for slot, equipment in enumerate(ship.equipments):
-                add_equipment(
-                    equipment, ship, EquipmentSlot.from_index(slot)
-                )
+                add_equipment(equipment, ship, EquipmentSlot.from_index(slot))
             if ship.slot_ex is not None:
-                add_equipment(
-                    ship.slot_ex, ship, EquipmentSlot.REINFORCEMENT
-                )
+                add_equipment(ship.slot_ex, ship, EquipmentSlot.REINFORCEMENT)
 
         for ship in flt.fleets.ships_not_in_fleets:
             add_ship(ship)
@@ -263,10 +256,7 @@ class FleetSwitcherCore(object):
                             == EXPEDITION_LANDING_CRAFT_MODEL_ID
                         ):
                             star_preference = EquipmentStarPreference.HIGHEST
-                        elif (
-                            target_equipment.model_id
-                            == EXPEDITION_DRUM_MODEL_ID
-                        ):
+                        elif target_equipment.model_id == EXPEDITION_DRUM_MODEL_ID:
                             star_preference = EquipmentStarPreference.ANY
 
                     requirements.append(
@@ -319,17 +309,13 @@ class FleetSwitcherCore(object):
         if requirements is None:
             return False
 
-        movable_equipment_by_id = self._get_movable_equipment_pool(
-            protected_fleet_ids
-        )
+        movable_equipment_by_id = self._get_movable_equipment_pool(protected_fleet_ids)
 
         # Apply each requirement's star preference first. Equal-priority
         # candidates keep the current target slot in place, then prefer free
         # equipment before equipment mounted on another movable ship.
         for requirement in requirements:
-            if self.equipment_plan.has_assignment(
-                requirement.ship, requirement.slot
-            ):
+            if self.equipment_plan.has_assignment(requirement.ship, requirement.slot):
                 continue
 
             candidates = [
@@ -491,9 +477,7 @@ class FleetSwitcherCore(object):
 
     def verify_equipment_plan(self):
         for fleet_id, target_fleet in self.equipment_plan.targets:
-            if not self._is_custom_fleet_with_equipment_loaded(
-                fleet_id, target_fleet
-            ):
+            if not self._is_custom_fleet_with_equipment_loaded(fleet_id, target_fleet):
                 Log.log_error(
                     f"Fleet {fleet_id} ships or equipment do not match the planned "
                     "fleet after refresh."
@@ -764,9 +748,7 @@ class FleetSwitcherCore(object):
                     self._active_fleets[fleet_id].ship_ids
                 ) and shp.ships.is_same_ship(
                     ship,
-                    self._active_fleets[fleet_id].ships[
-                        i - 1
-                    ],
+                    self._active_fleets[fleet_id].ships[i - 1],
                 ):
                     Log.log_debug_1("Ship already loaded for custom fleet.")
                     continue
@@ -813,9 +795,7 @@ class FleetSwitcherCore(object):
             Log.log_msg(f"Fleet {fleet_id} ships and equipment are already loaded")
             return True
 
-        if not self._unload_fleet_required_equipment(
-            costom_fleet, protected_fleet_ids
-        ):
+        if not self._unload_fleet_required_equipment(costom_fleet, protected_fleet_ids):
             return False
 
         Log.log_success("Equipment unloaded.")
@@ -973,10 +953,7 @@ class FleetSwitcherCore(object):
         target_fleet = OTHER_FLEET_ID
 
         for fleet_id in self._active_fleets:
-            if (
-                ship.production_id
-                in self._active_fleets[fleet_id].ship_ids
-            ):
+            if ship.production_id in self._active_fleets[fleet_id].ship_ids:
                 target_fleet = fleet_id
                 break
 
@@ -996,9 +973,9 @@ class FleetSwitcherCore(object):
             Log.log_debug_1(
                 f"Ship {ship.name} is in fleet {fleet_id}, unload from there"
             )
-            ship_position = self._active_fleets[
-                fleet_id
-            ].ship_ids.index(ship.production_id)
+            ship_position = self._active_fleets[fleet_id].ship_ids.index(
+                ship.production_id
+            )
 
             click_ship_in_equipment_page(ship_position)
 

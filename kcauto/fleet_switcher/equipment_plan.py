@@ -128,16 +128,12 @@ class EquipmentPlan:
     def set_targets(self, targets: list[tuple[int, Fleet]]) -> None:
         self.targets = list(targets)
 
-    def assign(
-        self, ship: Ship, slot: EquipmentSlot, equipment: Equipment
-    ) -> None:
+    def assign(self, ship: Ship, slot: EquipmentSlot, equipment: Equipment) -> None:
         ref = EquipmentSlotRef(ship.production_id, slot)
         if ref in self._assignments:
             raise ValueError(f"Equipment slot {ref} is already assigned")
         if equipment.production_id in self._assigned_equipment_ids:
-            raise ValueError(
-                f"Equipment {equipment.production_id} is already assigned"
-            )
+            raise ValueError(f"Equipment {equipment.production_id} is already assigned")
         if equipment.production_id == Equipment.UNKNOWN_PRODUCTION_ID:
             raise ValueError("Equipment plan requires a physical production ID")
 
@@ -147,9 +143,7 @@ class EquipmentPlan:
     def has_assignment(self, ship: Ship, slot: EquipmentSlot) -> bool:
         return EquipmentSlotRef(ship.production_id, slot) in self._assignments
 
-    def equipment_for(
-        self, ship: Ship, slot: EquipmentSlot
-    ) -> Equipment:
+    def equipment_for(self, ship: Ship, slot: EquipmentSlot) -> Equipment:
         return self._assignments[EquipmentSlotRef(ship.production_id, slot)]
 
     def is_equipment_assigned(self, production_id: int) -> bool:

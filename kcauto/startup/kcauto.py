@@ -231,9 +231,7 @@ class Kcauto(object):
 
             if self._run_fleetswitch_logic("pvp") != 0:
                 pvp.pvp.enabled = False
-                Log.log_error(
-                    "Failed to configure PvP fleet. Disabling PvP module."
-                )
+                Log.log_error("Failed to configure PvP fleet. Disabling PvP module.")
                 return False
 
             self.run_repair_logic()
@@ -407,9 +405,7 @@ class Kcauto(object):
 
         if self._run_fleetswitch_logic("combat") != 0:
             com.combat.enabled = False
-            Log.log_error(
-                "Failed to configure sortie fleet. Disabling combat module."
-            )
+            Log.log_error("Failed to configure sortie fleet. Disabling combat module.")
             return False
 
         port_api_update = True

@@ -394,10 +394,8 @@ class FleetCore(object):
 
                     reinforce_equipment = noro6.get_reinforce_equipment()
                     if reinforce_equipment["i"] > 0:
-                        ship.slot_ex = (
-                            equ.equipment.get_equipment_from_noro6_equipment(
-                                reinforce_equipment
-                            )
+                        ship.slot_ex = equ.equipment.get_equipment_from_noro6_equipment(
+                            reinforce_equipment
                         )
                     elif reinforce_equipment["i"] == 0:
                         ship.slot_ex = None
@@ -627,9 +625,9 @@ class FleetCore(object):
                         ]
 
                         if temp_ship.equipments != []:
-                            equipment_counts[
-                                EXPEDITION_LANDING_CRAFT_MODEL_ID
-                            ] -= assigned_lc_count
+                            equipment_counts[EXPEDITION_LANDING_CRAFT_MODEL_ID] -= (
+                                assigned_lc_count
+                            )
                             req_lc -= lc_count
                             if temp_ship.slot_ex != None:
                                 temp_ship.slot_ex = Equipment()
@@ -675,9 +673,9 @@ class FleetCore(object):
                         ]
 
                         if temp_ship.equipments != []:
-                            equipment_counts[
-                                EXPEDITION_DRUM_MODEL_ID
-                            ] -= assigned_dc_count
+                            equipment_counts[EXPEDITION_DRUM_MODEL_ID] -= (
+                                assigned_dc_count
+                            )
                             req_dc -= dc_count
                             req_dc_carrier -= 1
                             if temp_ship.slot_ex != None:
