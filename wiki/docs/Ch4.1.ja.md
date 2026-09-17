@@ -1,95 +1,92 @@
-_We're all nerds, on one subject or another._
+_十人十色。_
 
 ---
 
-## Before you read
-There is a User config wiki page in [Ch5 Configuration File](Ch5.md)  
-You can find the explain for each option in user config  
-Check that out if you find yourself surrounded by unknown terms
+## 読む前に (Before you read)
+設定ファイルの各オプションの解説については、[第 5 章 設定ファイル](Ch5.ja.md) を参照してください。  
 
 ---
 
-## Map specified Sortie setting (combat.override)
+## 海域指定出撃設定 (`combat.override`)
 
-In most cases, kcauto_custom sortie with the same general logic.  
+ほとんどの場合は、`kcauto_custom` は同じロジックで出撃します。
 
-* Diamond for anti-air
-* Line Abreast for anti-sub
-* Vanguard instead of Line Ahead during event
-* Get into night battle against boss for rank S result
-* etc.
+* 対空時は輪形陣
+* 対潜時は単横陣
+* イベント中は単縦陣より警戒陣優先
+* S 勝利のためにボス戦で夜戦に突入
+* など
 
-Though in some others maps, we do need to:
+しかし、一部の海域では以下のような対応が必要です：
 
-* Select node (ex. In 5-3, we select node K to node O) 
-* Setup lbas (ex. In 6-4, 6-5, 7-4 etc.)
-* Attempt using Nelson touch
-* Attempt using smoke 
-* etc.
+* ノードの選択（例：5-3 で K から O を選択）
+* 基地航空隊の設定（例：6-4、6-5、7-4 など）
+* ネルソンタッチの使用を試みる
+* 煙幕の使用を試みる
+* など
 
-Issue is those settings are not gonna work for other maps, and the map specified setting is here to help.
-
----
-
-### What if I don't need this?
-Set `combat.override` in your config to `true`.  
-Your kcauto works the same as before.
+問題はこれらの設定が他の海域では機能しないことであり、そのための「海域指定設定」です。
 
 ---
 
-There are 3 levels of Sortie settings:
+### 不要な場合はどうすればよいですか？
+設定ファイルの `combat.override` を `true` に設定してください。  
 
-1. User config(Your normal config, `configs/config_cui.json` if you're using CUI)
-2. Default `data/config/combat/default.json` (Default sortie config for general map)
-3. Map specified setting (ex.`data/config/combat/B-4-5.json`)(Sortie config made for specific map)
+---
 
-The priority here is `User config` < `Default` < `Map specified`  
-And you can define `enabled`, `fleet_presets` and `sortie_map` from User config ***ONLY***(show as STATIC in the following pic).
+出撃設定には 3 つのレベルがあります：
+
+1. ユーザー設定（通常のコンフィグ。CUI 使用時は `configs/config_cui.json`）
+2. デフォルト `data/config/combat/default.json`（一般的な海域のデフォルト出撃設定）
+3. 海域指定設定（例：`data/config/combat/B-4-5.json`）（特定の海域のために作成された出撃設定）
+
+優先順位は `ユーザー設定` < `デフォルト` < `海域指定設定` です。  
+また、`enabled`、`fleet_presets`、`sortie_map` はユーザー設定 ***のみ*** で定義可能です（以下の画像で STATIC と表示されている部分）。
+
 ![image](https://github.com/XVs32/kcauto_custom/assets/16824564/0ee2f28f-7b6a-43cf-90bd-906f016da836)
 
-Feel free to edit or add configs under `data/config/combat`.  
-As long as `combat.override` in your own config is set to `false`, 
-kcauto will read the corresponding setting automatically. 
+`data/config/combat` 下のコンフィグは自由に編集・追加してください。  
+`combat.override` が `false` に設定されている限り、`kcauto` は自動的に対応する設定を読み込みます。
 
 ---
 
-## `Sortie mode: Auto` -- quest handling
+## `Sortie mode: Auto` -- 任務の処理
 
-***Before you read: Usually you don't need to set this up yourself if you are using the CUI.  
-Do NOT edit the files here if you're not sure what you're doing***
+***読む前に：通常、CUI を使用している場合は自分で設定する必要はありません。  
+仕組みを理解していない場合は、ここのファイルの編集はお控えください。***
 
-Now we have told kcauto-custom what ship to use, but how do kcauto-custom pick a map and finish quests for me?
+任務とマップ選択の挙動に影響を与えるファイルが 3 つあります（通常は編集する必要はありません）：
 
-There are 3 files that would affect the behavior of quest & map picking (usually you don't have to edit them):
+1. 設定ファイル（CUI ユーザーは `config/config_cui.json`）
+2. `data/quest/quest.json`
+3. `data/quest/quest_priority.json`
 
-1. Your config file (`config/config_cui.json` for cui user)
-2. ```data/quest/quest.json```
-3. ```data/quest/quest_priority.json```
-
-Let's take a look into the config file first:
+まずは設定ファイルを見てみましょう：
 
 ```json
-	"quest.enabled":	true,       #Enable the quest module
+	"quest.enabled":	true,       # 任務モジュールを有効化
 	"quest.quests":	["Bd1", "Bd2", "Bd3", "Bd4", "Bd5", "Bd6", "Bd7", "Bd8", "Bw1", "Bw2", "Bw3", "Bw4", "Bw5", "Bw7", "Bw8", "Bw9", "Bw10", "Bm2", "Bm3", "Bm4", "Bm5", "Bm6", "Bm8", "Bq1", "Bq3", "Bq4", "Bq8", "Bq9", "Bq10", "Bq11", "Bq12", "C2", "C3", "C4", "C8", "C16", "C29", "D2", "D3", "D4", "D9", "D11", "D22", "D24", "E3", "E4", "F5", "F6", "F7", "F8"]
-	# The quests that kcauto-custom will attempt to finish
+	# kcauto-custom が処理を試みる任務
 ```
 
-kcauto-custom will only handle the quests mentioned in `quest.quests`.  
+`kcauto-custom` は `quest.quests` で指定された任務のみを処理します。
 
-Next one is ```data/quest/quest.json```, this file contains the details of a quest. Again, usually you wouldn't want to edit it.
+次に `data/quest/quest.json` です。このファイルには任務の詳細が含まれています。  
+これも通常は編集不要です。
 
 ```json
 
-  "Bd1": {                         #The quest name
-    "id": 201,                     #The quest ID
-    "type": "daily",               #The quest type
-    "intervals": [1, 0, 0],        #Intervals between kcauto-custom checking if the quest is finished, with the order as [sortie, pvp, expedition]
-    "recommended_map": ["1-1"]     #The map which kcauto-custom will sortie to if no info could gather from KC3
+  "Bd1": {                         # 任務名
+    "id": 201,                     # 任務 ID
+    "type": "daily",               # 任務タイプ
+    "intervals": [1, 0, 0],        # 任務が完了しているか kcauto-custom がチェックする間隔（順序：[出撃, 演習, 遠征]）
+    "recommended_map": ["1-1"]     # KC3 から情報が集められない場合に kcauto-custom が出撃するマップ
   }
 
 ```
 
-The last one is ```data/quests/sorite_quest_priority.json```, it defines what quest kcauto-costom will prioritizes when user is in `Sortie mode: Auto`
+最後は `data/quests/sorite_quest_priority.json` です。ユーザーが `Sortie mode: Auto` を使用しているときに、`kcauto-custom` がどの任務を優先するかを定義します。
+
 ```json
 {
 
@@ -99,17 +96,17 @@ The last one is ```data/quests/sorite_quest_priority.json```, it defines what qu
   ],
   "exact_ship_and_map": [
     "Bm1",
-   ．．．
+   ...
     "By15"
   ],
   "exact_ship_type_and_map": [
     "Bm3",
-．．．
+...
     "By11"
   ],
   "any_ship_with_exact_map": [
     "Bm8",
-．．．
+...
     "Bq10"
   ],
   "exact_area": [
@@ -118,12 +115,12 @@ The last one is ```data/quests/sorite_quest_priority.json```, it defines what qu
   ],
   "exact_enemy_type": [
     "Bw2",
-．．．
+...
     "Bw3"
   ],
   "any_sortie": [
     "Bd1",
-．．．
+...
     "Bw1"
   ],
   "low_priority": [
@@ -132,6 +129,4 @@ The last one is ```data/quests/sorite_quest_priority.json```, it defines what qu
 }
 ```
 
-The priority here is `daily` > `weekly` > `monthly` > `quarterly` > `yearly` > `low_priority`
-
----
+優先順位は `デイリー` > `ウィークリー` > `マンスリー` > `クォータリー` > `イヤーリー` > `低優先度` です。

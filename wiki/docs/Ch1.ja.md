@@ -8,10 +8,10 @@ _You need to do this no matter what_
     （Windows ユーザーへ：オプション付きで POI を起動する方法がわからない場合は [こちら](https://stackoverflow.com/a/56457835) を参照）  
     （現時点では `--remote-allow-origins=*` の指定が必要です(2023/05/04) [参照](https://github.com/XVs32/kcauto_custom/issues/19)）
   * `debug` モードが有効になっているかどうかの確認方法：
-    * :heavy_check_mark:`127.0.0.1:9222` にアクセスし、以下のような空白の画面が表示されれば成功です：  
-![Screenshot from 2023-05-04 22-34-30](https://user-images.githubusercontent.com/16824564/236221380-f2b52443-b2f7-4510-899f-c8582f431d12.png)  
+    * :heavy_check_mark:`127.0.0.1:9222` にアクセスし、以下の画面が表示されれば成功です：  
+![debug_port_success](./assets/debug_port_success.png)  
     * :x: 以下のような画面が表示された場合は、すべての POI プロセスを終了してやり直してください：  
-![Screenshot from 2023-05-04 22-28-56](https://user-images.githubusercontent.com/16824564/236221730-c5445cc8-b270-4cb9-b7d2-0ed4f892be56.png)  
+![debug_port_fail](./assets/debug_port_fail.png)  
 
 * プラグイン `poi-plugin-noro6-exporter` と `poi-plugin-forwarder` をインストールします
 
