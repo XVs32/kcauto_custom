@@ -429,8 +429,8 @@ class FleetCore(object):
                 for ship in fleet.ships:
                     Log.log_debug_1(
                         f"{ship.name} ({ship.ship_type.name}) - Level: {ship.level}, \
-                        Equipment name and production id: {[f'{eq.name} {eq.production_id}' for eq in ship.equipments]}, \
-                        Slot Ex: {f'{ship.slot_ex.name} {ship.slot_ex.production_id}' if ship.slot_ex != None else 'None'}"
+                        Equipment: {[f'slot {slot + 1}: {eq.name} {eq.stars}★' for slot, eq in enumerate(ship.equipments)]}, \
+                        Slot Ex: {f'{ship.slot_ex.name} {ship.slot_ex.stars}★' if ship.slot_ex != None else 'None'}"
                     )
 
         return ret
