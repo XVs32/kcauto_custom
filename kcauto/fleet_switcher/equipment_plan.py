@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 
 
 class EquipmentStarPreference(Enum):
-    EXACT = "exact"
+    CLOSEST = "closest"
     HIGHEST = "highest"
     ANY = "any"
 
@@ -67,7 +67,7 @@ class EquipmentRequirement:
         ship: Ship,
         slot: EquipmentSlot,
         equipment: Equipment,
-        star_preference: EquipmentStarPreference = EquipmentStarPreference.EXACT,
+        star_preference: EquipmentStarPreference = EquipmentStarPreference.CLOSEST,
     ) -> EquipmentRequirement:
         return cls(
             ship=ship,
@@ -77,7 +77,7 @@ class EquipmentRequirement:
             star_preference=star_preference,
             stars=(
                 equipment.stars
-                if star_preference is EquipmentStarPreference.EXACT
+                if star_preference is EquipmentStarPreference.CLOSEST
                 else None
             ),
         )
@@ -88,7 +88,7 @@ class EquipmentRequirement:
         if self.star_preference is EquipmentStarPreference.ANY:
             return 0
         if self.stars is None:
-            raise ValueError("Exact star preference requires a target star level")
+            raise ValueError("Closest star preference requires a target star level")
         return abs(equipment.stars - self.stars)
 
     @property

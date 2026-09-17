@@ -249,7 +249,7 @@ class FleetSwitcherCore(object):
                     if target_equipment.model_id <= 0:
                         continue
 
-                    star_preference = EquipmentStarPreference.EXACT
+                    star_preference = EquipmentStarPreference.CLOSEST
                     if target_fleet.fleet_type == FleetEnum.EXPEDITION_PRESET:
                         if (
                             target_equipment.model_id
@@ -389,7 +389,7 @@ class FleetSwitcherCore(object):
             )
 
             if (
-                requirement.star_preference is not EquipmentStarPreference.EXACT
+                requirement.star_preference is not EquipmentStarPreference.CLOSEST
                 or selected_equipment.stars == requirement.stars
             ):
                 continue
