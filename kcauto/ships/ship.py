@@ -184,20 +184,6 @@ class Ship(object):
         return False
 
     @property
-    def equipment_ids(self):
-        """
-        Returns a list of equipment production ids equipped on the ship.
-        """
-        ids = []
-        for equipment in self.equipments:
-            if equipment.model_id > 0:
-                ids.append(equipment.production_id)
-        if self.slot_ex != None and self.slot_ex.model_id > 0:
-            ids.append(self.slot_ex.production_id)
-
-        return ids
-
-    @property
     def equipment_count(self):
         """
         Returns the count equipments on board, slot_ex is not included
