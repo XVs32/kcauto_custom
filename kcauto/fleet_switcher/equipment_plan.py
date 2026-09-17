@@ -59,7 +59,7 @@ class EquipmentRequirement:
     model_id: int
     equipment_name: str
     star_preference: EquipmentStarPreference
-    stars: int | None = None
+    stars: int
 
     @classmethod
     def from_target_equipment(
@@ -75,11 +75,7 @@ class EquipmentRequirement:
             model_id=equipment.model_id,
             equipment_name=equipment.name,
             star_preference=star_preference,
-            stars=(
-                equipment.stars
-                if star_preference is EquipmentStarPreference.CLOSEST
-                else None
-            ),
+            stars=equipment.stars,
         )
 
     def star_priority(self, equipment: Equipment) -> int:
@@ -87,8 +83,6 @@ class EquipmentRequirement:
             return -equipment.stars
         if self.star_preference is EquipmentStarPreference.ANY:
             return 0
-        if self.stars is None:
-            raise ValueError("Closest star preference requires a target star level")
         return abs(equipment.stars - self.stars)
 
     @property
