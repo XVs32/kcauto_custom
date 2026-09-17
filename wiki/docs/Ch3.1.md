@@ -56,7 +56,7 @@ Open `Noro6 Exporter`
 Click export to Noro6  
 
 * Again, this plugin does not output to the original noro6,  
-instead, it outputs to [XVs32's noro6 edition](https://xvs32.github.io/kc-web/#/)
+instead, it outputs to [noro6 XVs32's edition](https://xvs32.github.io/kc-web/#/)
 
 
 <img width="339" height="117" alt="image" src="https://github.com/user-attachments/assets/3e465fc7-b8db-4f6b-ada5-6c3e19c7422a" />

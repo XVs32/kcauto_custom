@@ -1,81 +1,70 @@
-_Automation is good, so long as you know exactly where to put the machine_
+_自動化は素晴らしいものだ。どこに機械を導入すべきかを正確に把握している限りは。_
 
 ---
 
-## Overview -- `Factory module`
+## 概要 -- `Factory module`
 
-**Factory module automatically handle daily develop and construction for you. Simple.**
+**工廠モジュールは、デイリーの建造と開発を自動的に処理します。単純です。**
 
-To make sure user notice they have to setup `Factory module` before enabling it,  
-factory module is **disabled by default**.  
+`Factory module` を有効にする前に設定が必要であることをユーザーに認識してもらうため、工廠モジュールは **デフォルトで無効** になっています。
 
-You can enable it by editing your config file (`configs/config_cui.json` for CUI user),  
-this can be done by changing `factory.enabled` to `true`.  
-**Close the CUI panel before doing this, or else CUI might not notice the update you made.**
+設定ファイル（CUI ユーザーの場合は `configs/config_cui.json`）を編集し、`factory.enabled` を `true` に変更することで有効にできます。  
+**これを行う前に CUI パネルを閉じてください。そうしないと CUI が更新を認識できない場合があります。**
 
 ```json
     "factory.enabled": true,
 ```
 
-***Enabling factory module***
+***Factory module を有効にする***
 
 ---
 
-## Factory panel
+## 工場パネル
 
-The factory panel could be open with `"` key (`shift` + `'`) in home page.  
-User can setup the recipe and secretary ship for construction and development, respectively. 
-Press `"` key again to leave.
+工場パネルは、ホーム画面で `"` キー（`Shift` + `'`）を押すと開きます。  
+ここでは、建造と開発のレシピ、および秘書艦を設定できます。  
+もう一度 `"` キーを押すと閉じます。
 
 <img width="360" height="146" alt="image" src="https://github.com/user-attachments/assets/f0ebc274-7523-4655-97f3-a501cec4b9f5" />
 
-***Decide how many resources to invest***
+***リソースの投入量を決定する***
 
 ---
 
-## Selecting secretary ship by id
-The id of secretary ship can be found in [plugin-ship-info](https://github.com/poooi/plugin-ship-info),  
-it is the production id of the ship.  
+## ID による秘書艦の選択
+
+秘書艦の ID は [plugin-ship-info](https://github.com/poooi/plugin-ship-info) で確認できます。  
+これはその艦娘の製造番号です。
 
 <img width="398" height="174" alt="image" src="https://github.com/user-attachments/assets/6f8a1e75-54ae-4996-a68a-bb81d2525322" />
  
 <img width="206" height="62" alt="image" src="https://github.com/user-attachments/assets/acb251f4-e88e-4171-b1c3-bf0e2401b08f" />
 
-*Production id show in ship girls info*
+*艦娘の情報に表示される製造番号*
 
-So the id of this samidare is ```1```  
-Now we could setup the secretary ship.   
+この例では、五月雨の製造番号は ```1``` です。これで秘書艦を設定できます。
 
 <img width="439" height="134" alt="image" src="https://github.com/user-attachments/assets/b4ea5779-c20b-4b91-85c4-5610778244e7" />
 <img width="439" height="134" alt="image" src="https://github.com/user-attachments/assets/ee91682a-4ed0-49a9-9a07-5f63c5ecabc5" />
 
-***Specify secretary ship***
+***秘書艦を指定する***
 
 ---
 
-## Selecting secretary ship by ship type
+## 艦種による秘書艦の選択
 
-Beside using ID, 
-user can assign secretary ship by ship type
+ID を使用する以外に、艦種で秘書艦を割り当てることもできます。
 
 <img width="440" height="120" alt="image" src="https://github.com/user-attachments/assets/1e90613a-b7be-4f6b-89ff-0b54e917e854" />
 
 ---
 
-## Disable specifing secretary ship
+## 秘書艦の指定を無効化する
 
-When secretary ship id is set to `0`,  
-kcauto_custom would not switch secretary ship before commiting for construction or development.  
+秘書艦 ID を `0` に設定すると、`kcauto_custom` は建造や開発を実行する前に秘書艦を切り替えません。
 
 <img width="358" height="146" alt="image" src="https://github.com/user-attachments/assets/49628fd4-e7d7-45d2-9d83-abfaaad1a7fc" />
 
-***Do not switch for specific secretary ship***
+***特定の秘書艦への切り替えを行わない***
 
-Press `"` key again to leave.
-
----
-
-
-
-
-
+もう一度 `"` キーを押すと閉じます。

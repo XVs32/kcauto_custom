@@ -88,7 +88,7 @@
         panel.id = PANEL_ID;
         Object.assign(panel.style, {
             position: 'fixed',
-            right: '12px',
+            right: '50px',
             bottom: '12px',
             zIndex: 999999,
             background: 'rgba(30,30,30,0.95)',
@@ -97,7 +97,7 @@
             fontFamily: 'sans-serif',
             borderRadius: '8px',
             padding: '8px',
-            width: '280px',
+            width: '180px',
             boxShadow: '0 2px 8px rgba(0,0,0,0.5)',
         });
 

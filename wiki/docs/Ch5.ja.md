@@ -1,35 +1,33 @@
-_Out of clutter, find simplicity._
+_大道至簡。_
 
 ---
 
-## Config setting flow
+## 設定フロー (Config setting flow)
 
-kcauto_custom is basically a standalone program runs with a config file. 
+`kcauto_custom` は基本的に、設定ファイルのみで動作するプログラムです。
 
-The CUI(Command line User Interface) we use is just a config file editor,  
-it makes kcauto_custom easier to use, but it is not a must. 
+CUI (コマンドラインユーザーインターフェース) は、`kcauto_custom` を使いやすくするための設定ファイルエディタであり、必須ではありません。
 
-You can for sure edit the config file with notepad and runs kcauto_custom with it.
+メモ帳で設定ファイルを編集し、それを使用して `kcauto_custom` を実行することも可能です。
 
 ![image](https://github.com/XVs32/kcauto_custom/assets/16824564/6bd97995-62ba-4692-9c68-7b81315ecfbc)
 
 ---
 
-## KCAuto Configuration File Documentation
+## KCAuto 設定ファイルドキュメント
 
-## Overview
+## 概要
 
-KCAuto uses JSON configuration files to control its behavior. The configuration system is modular,  
-with different sections controlling different aspects of the automation. 
+KCAuto は挙動を制御するために JSON 設定ファイルを使用します。設定システムはモジュール式で、自動化の各側面を異なるセクションで制御します。
 
-All configuration files must be valid JSON format.
+すべての設定ファイルは有効な JSON 形式である必要があります。
 
-## File Format
+## ファイル形式
 
-Configuration files are JSON objects with dot-notation keys.  
-Each key follows the pattern `<module>.<setting>`.
+設定ファイルはドット表記のキーを持つ JSON オブジェクトです。  
+各キーは `<モジュール>.<設定>` というパターンに従います。
 
-### Example Basic Structure
+### 基本構造の例
 ```json
 {
     "general.interaction_mode": "chrome_driver",
@@ -40,340 +38,339 @@ Each key follows the pattern `<module>.<setting>`.
 }
 ```
 
-## Configuration Modules
+## 設定モジュール
 
-### General Settings (`general.*`)
+### 一般設定 (`general.*`)
 
-Controls basic application behavior and browser interaction.
+基本的なアプリケーションの挙動とブラウザとのインタラクションを制御します。
 
 #### `general.interaction_mode`
-- **Type**: string
-- **Valid Values**: `"chrome_driver"`, `"direct_control"`
-- **Default**: `"chrome_driver"`
-- **Description**: Determines how kcauto interacts with the browser.  
-Chrome driver mode sends control signal to browser directly,  
-while direct control mode control your mouse to interact with browser.
+- **型**: string
+- **有効な値**: `"chrome_driver"`, `"direct_control"`
+- **デフォルト**: `"chrome_driver"`
+- **説明**: `kcauto` がブラウザとどのようにインタラクションするかを決定します。  
+Chrome driver モードは制御信号をブラウザに直接送信し、Direct control モードはマウスを操作してブラウザとインタラクションします。
 
 #### `general.jst_offset`
-- **Type**: integer
-- **Valid Range**: -20 to 20
-- **Default**: 0
-- **Description**: Time offset in hours from JST (Japan Standard Time) for scheduling and time-based operations.
+- **型**: integer
+- **有効な範囲**: -20 ～ 20
+- **デフォルト**: 0
+- **説明**: スケジューリングや時間ベースの操作のための、JST (日本標準時) からの時差（時間単位）。
 
 #### `general.chrome_dev_port`
-- **Type**: integer
-- **Valid Range**: 0 to 65535
-- **Default**: 9222
-- **Description**: Port number for Chrome DevTools Protocol connection.  
-Do not change if you don't know what you're doing.
+- **型**: integer
+- **有効な範囲**: 0 ～ 65535
+- **デフォルト**: 9222
+- **説明**: Chrome DevTools Protocol 接続用のポート番号。  
+仕組みを理解していない場合は変更しないでください。
 
 #### `general.poi_api_port`
-- **Type**: integer
-- **Valid Range**: 0 to 65535
-- **Default**: 9223
-- **Description**: Port number for POI API forwarding.  
-Do not change if you don't know what you're doing.
+- **型**: integer
+- **有効な範囲**: 0 ～ 65535
+- **デフォルト**: 9223
+- **説明**: POI API フォワーディング用のポート番号。  
+仕組みを理解していない場合は変更しないでください。
 
-#### ~~`general.paused`~~ Not working at the moment(2025/07/17)
-- **Type**: boolean
-- **Default**: false
-- **Description**: Whether kcauto should start in paused state.
+#### ~~`general.paused`~~ （現在動作しません (2025/07/17)）
+- **型**: boolean
+- **デフォルト**: false
+- **説明**: `kcauto` を一時停止状態で起動するかどうか。
 
-### Combat Settings (`combat.*`)
+### 戦闘設定 (`combat.*`)
 
-Controls sortie and combat behavior.
+出撃と戦闘の挙動を制御します。
 
 #### `combat.enabled`
-- **Type**: boolean
-- **Default**: false
-- **Description**: Enables or disables the combat module entirely.
+- **型**: boolean
+- **デフォルト**: false
+- **説明**: 戦闘モジュール全体を有効/無効にします。
 
 #### `combat.sortie_map`
-- **Type**: string
-- **Valid Format**: Map notation like "1-1", "3-5", "6-4", or "auto"
-- **Default**: "1-1"
-- **Description**: Specifies which map to sortie to. Use "auto" for automatic map selection.
-- **Example**: `"1-1"`, `"3-5"`, `"E-1"`, `"auto"`
+- **型**: string
+- **有効な形式**: "1-1"、"3-5"、"6-4" などのマップ表記、または "auto"
+- **デフォルト**: "1-1"
+- **説明**: 出撃するマップを指定します。自動マップ選択には "auto" を使用してください。
+- **例**: `"1-1"`, `"3-5"`, `"E-1"`, `"auto"`
 
 #### `combat.fleet_mode`
-- **Type**: string
-- **Valid Values**: `"standard"`, `"strike"`, `"tcf"`, `"ctf"`, `"stf"`
-- **Default**: `"standard"`
-- **Description**: Defines the fleet formation mode for combat.
-  - `"standard"`: Single fleet
-  - `"strike"`: Strike force (uses fleet 3)
-  - `"tcf"`: Transport Combined Fleet
-  - `"ctf"`: Carrier Task Force
-  - `"stf"`: Surface Task Force
+- **型**: string
+- **有効な値**: `"standard"`, `"strike"`, `"tcf"`, `"ctf"`, `"stf"`
+- **デフォルト**: `"standard"`
+- **説明**: 戦闘用の艦隊編成モードを定義します。
+  - `"standard"`: 単艦隊
+  - `"strike"`: 打撃部隊（第 3 艦隊を使用）
+  - `"tcf"`: 輸送連合艦隊
+  - `"ctf"`: 空母機動部隊
+  - `"stf"`: 水上打撃部隊
 
 #### `combat.fleet_presets`
-- **Type**: array of integers or strings
-- **Valid Values**: Numbers 1-15 or `"auto"`
-- **Default**: `[]`
-- **Description**: List of fleet preset numbers to use for combat. Use `"auto"` for automatic fleet selection.
-- **Example**: `[1, 2, 3]`, `["auto"]`
+- **型**: array of integers or strings
+- **有効な値**: 1 ～ 15 または `"auto"`
+- **デフォルト**: `[]`
+- **説明**: 戦闘に使用する艦隊編成記録番号のリスト。自動選択には `"auto"` を使用してください。
+- **例**: `[1, 2, 3]`, `["auto"]`
 
 #### `combat.check_fatigue`
-- **Type**: boolean
-- **Default**: true
-- **Description**: Whether kcauto should check ship fatigue levels during combat operations.
+- **型**: boolean
+- **デフォルト**: true
+- **説明**: 戦闘操作中に艦娘の疲労度を確認するかどうか。
 
 #### `combat.check_lbas_fatigue`
-- **Type**: boolean
-- **Default**: true
-- **Description**: Whether kcauto should check Land-Based Air Squadron (LBAS) fatigue during combat.
+- **型**: boolean
+- **デフォルト**: true
+- **説明**: 戦闘中に基地航空隊 (LBAS) の疲労度を確認するかどうか。
 
 #### `combat.clear_stop`
-- **Type**: boolean
-- **Default**: false
-- **Description**: Whether kcauto should stop combat operations when the map has been cleared.
+- **型**: boolean
+- **デフォルト**: false
+- **説明**: マップ攻略完了時に戦闘操作を停止するかどうか。
 
 #### `combat.port_check`
-- **Type**: boolean
-- **Default**: false
-- **Description**: Whether to check port capacity before sorties.
+- **型**: boolean
+- **デフォルト**: false
+- **説明**: 出撃前に母港の空き容量を確認するかどうか。
 
 #### `combat.reserve_repair_dock`
-- **Type**: boolean
-- **Default**: true
-- **Description**: Whether to reserve repair dock slots for emergency repairs.
+- **型**: boolean
+- **デフォルト**: true
+- **説明**: 緊急修理用に修理ドックのスロットを予約するかどうか。
 
 #### `combat.retreat_limit`
-- **Type**: integer
-- **Valid Values**: 0-4 (damage state levels)
-- **Default**: 4
-- **Description**: Damage threshold for retreating ships. Values correspond to damage states:
-  - 0: No damage
-  - 1: Scratch damage
-  - 2: Minor damage
-  - 3: Moderate damage
-  - 4: Heavy damage
+- **型**: integer
+- **有効な値**: 0 ～ 4（ダメージ状態レベル）
+- **デフォルト**: 4
+- **説明**: 撤退するための艦娘のダメージ閾値。値はダメージ状態に対応：
+  - 0: 無傷
+  - 1: 小破（かすり傷）
+  - 2: 小破
+  - 3: 中破
+  - 4: 大破
 
 #### `combat.repair_limit`
-- **Type**: integer
-- **Valid Values**: 0-4 (damage state levels)
-- **Default**: 3
-- **Description**: Damage threshold for automatically repairing ships.
+- **型**: integer
+- **有効な値**: 0 ～ 4（ダメージ状態レベル）
+- **デフォルト**: 3
+- **説明**: 自動的に修理する艦娘のダメージ閾値。
 
 #### `combat.repair_bucket_threshold`
-- **Type**: integer
-- **Default**: 500
-- **Description**: Minimum number of repair buckets to maintain before using them for repairs.
+- **型**: integer
+- **デフォルト**: 500
+- **説明**: 修理に使用する前に維持しておくべき高速修復材（バケツ）の最小数。
 
 #### `combat.repair_timelimit_hours`
-- **Type**: integer
-- **Default**: 0
-- **Description**: Maximum hours to wait for natural repair before using buckets.
+- **型**: integer
+- **デフォルト**: 0
+- **説明**: バケツを使用する前に自然修理を待つ最大時間（時間単位）。
 
 #### `combat.repair_timelimit_minutes`
-- **Type**: integer
-- **Valid Range**: 0-59
-- **Default**: 0
-- **Description**: Maximum minutes to wait for natural repair before using buckets.
+- **型**: integer
+- **有効な範囲**: 0 ～ 59
+- **デフォルト**: 0
+- **説明**: バケツを使用する前に自然修理を待つ最大時間（分単位）。
 
 #### `combat.retreat_points`
-- **Type**: array of strings
-- **Default**: `[]`
-- **Description**: List of node names where the fleet should retreat.
-- **Example**: `["A", "B", "C"]`
+- **型**: array of strings
+- **デフォルト**: `[]`
+- **説明**: 艦隊が撤退すべきノード名のリスト。
+- **例**: `["A", "B", "C"]`
 
-#### `combat.push_nodes` (**!!DANGER!! 大破進擊警告!!**)
-- **Type**: array of strings
-- **Default**: `[]`
-- **Description**: List of node names where the fleet should push forward regardless of damage.
-- **Example**: `["D", "Z"]`
+#### `combat.push_nodes` (**!!DANGER!! 大破進撃警告!!**)
+- **型**: array of strings
+- **デフォルト**: `[]`
+- **説明**: ダメージに関係なく進撃すべきノード名のリスト。
+- **例**: `["D", "Z"]`
 
 #### `combat.node_selects`
-- **Type**: array of strings
-- **Format**: `"source_node>target_node"`
-- **Default**: `[]`
-- **Description**: Specifies node routing choices at branching points.
-- **Example**: `["A>B", "C>D"]`
+- **型**: array of strings
+- **形式**: `"source_node>target_node"`
+- **デフォルト**: `[]`
+- **説明**: 分岐点でのノード進行先の選択を指定します。
+- **例**: `["A>B", "C>D"]`
 
 #### `combat.node_formations`
-- **Type**: array of strings
-- **Format**: `"node:formation"`
-- **Valid formations**: `line_ahead`, `double_line`, `diamond`, `echelon`, `line_abreast`, `vanguard`, `combined_fleet_1`, `combined_fleet_2`, `combined_fleet_3`, `combined_fleet_4`
-- **Default**: `[]`
-- **Description**: Specifies formation to use at specific nodes.
-- **Example**: `["A:line_ahead", "B:double_line"]`
+- **型**: array of strings
+- **形式**: `"node:formation"`
+- **有効な陣形**: `line_ahead`, `double_line`, `diamond`, `echelon`, `line_abreast`, `vanguard`, `combined_fleet_1`, `combined_fleet_2`, `combined_fleet_3`, `combined_fleet_4`
+- **デフォルト**: `[]`
+- **説明**: 特定のノードで使用する陣形を指定します。
+- **例**: `["A:line_ahead", "B:double_line"]`
 
 #### `combat.node_night_battles`
-- **Type**: array of strings
-- **Format**: `"node:True/False"`
-- **Default**: `[]`
-- **Description**: Specifies whether to engage in night battle at specific nodes.
-- **Example**: `["X:True", "A:False"]`
+- **型**: array of strings
+- **形式**: `"node:True/False"`
+- **デフォルト**: `[]`
+- **説明**: 特定のノードで夜戦を行うかどうかを指定します。
+- **例**: `["X:True", "A:False"]`
 
 #### `combat.node_smoke`
-- **Type**: array of strings
-- **Default**: `[]`
-- **Description**: List of nodes where smoke screen should be used.
-- **Example**: `["A", "B"]`
+- **型**: array of strings
+- **デフォルト**: `[]`
+- **説明**: 煙幕を使用すべきノードのリスト。
+- **例**: `["A", "B"]`
 
 #### `combat.lbas_groups`
-- **Type**: array of integers 
-- **Valid Values**: `1`, `2`, `3`
-- **Default**: `[]`
-- **Description**: List of LBAS groups to activate.
-- **Example**: `[1, 2]`
+- **型**: array of integers
+- **有効な値**: `1`, `2`, `3`
+- **デフォルト**: `[]`
+- **説明**: アクティブにする基地航空隊 (LBAS) グループのリスト。
+- **例**: `[1, 2]`
 
 #### `combat.lbas_group_1_nodes`
-- **Type**: array of strings
-- **Default**: `[]`
-- **Description**: Target nodes for LBAS Group 1. Must specify exactly 0 or 2 nodes.
-- **Example**: `["A", "A"]`
+- **型**: array of strings
+- **デフォルト**: `[]`
+- **説明**: LBAS グループ 1 のターゲットノード。必ず 0 個または 2 個のノードを指定してください。
+- **例**: `["A", "A"]`
 
 #### `combat.lbas_group_2_nodes`
-- **Type**: array of strings
-- **Default**: `[]`
-- **Description**: Target nodes for LBAS Group 2. Must specify exactly 0 or 2 nodes.
+- **型**: array of strings
+- **デフォルト**: `[]`
+- **説明**: LBAS グループ 2 のターゲットノード。
 
 #### `combat.lbas_group_3_nodes`
-- **Type**: array of strings
-- **Default**: `[]`
-- **Description**: Target nodes for LBAS Group 3. Must specify exactly 0 or 2 nodes.
+- **型**: array of strings
+- **デフォルト**: `[]`
+- **説明**: LBAS グループ 3 のターゲットノード。
 
 #### `combat.override`
-- **Type**: boolean
-- **Default**: false
-- **Description**: Whether to allow configuration overrides during runtime.
+- **型**: boolean
+- **デフォルト**: false
+- **説明**: 実行時の設定上書きを許可するかどうか。
 
-### Expedition Settings (`expedition.*`)
+### 遠征設定 (`expedition.*`)
 
-Controls expedition management and resource gathering.
+遠征管理とリソース収集を制御します。
 
 #### `expedition.enabled`
-- **Type**: boolean
-- **Default**: true
-- **Description**: Enables or disables the expedition module.
+- **型**: boolean
+- **デフォルト**: true
+- **説明**: 遠征モジュールを有効/無効にします。
 
 #### `expedition.fleet_2`
-- **Type**: array of strings
-- **Default**: `[]`
-- **Description**: List of expedition IDs to assign to fleet 2. Use `"auto"` for automatic selection.
-- **Example**: `[2, 4, 5]`, `["auto"]`
+- **型**: array of strings
+- **デフォルト**: `[]`
+- **説明**: 第 2 艦隊に割り当てる遠征 ID のリスト。自動選択には `"auto"` を使用してください。
+- **例**: `[2, 4, 5]`, `["auto"]`
 
 #### `expedition.fleet_3`
-- **Type**: array of strings
-- **Default**: `[]`
-- **Description**: List of expedition IDs to assign to fleet 3.
+- **型**: array of strings
+- **デフォルト**: `[]`
+- **説明**: 第 3 艦隊に割り当てる遠征 ID のリスト。
 
 #### `expedition.fleet_4`
-- **Type**: array of strings
-- **Default**: `[]`
-- **Description**: List of expedition IDs to assign to fleet 4.
+- **型**: array of strings
+- **デフォルト**: `[]`
+- **説明**: 第 4 艦隊に割り当てる遠征 ID のリスト。
 
 #### `expedition.fleet_preset`
-- **Type**: string or null
-- **Valid Values**: `"auto"` or null
-- **Default**: null
-- **Description**: Fleet preset mode for expeditions. Currently only supports "auto" or null.
+- **型**: string or null
+- **有効な値**: `"auto"` or null
+- **デフォルト**: null
+- **説明**: 遠征の艦隊プリセットモード。現在は `"auto"` または `null` のみサポート。
 
 #### `expedition.desire_oil`
-- **Type**: integer
-- **Valid Range**: 0-350000
-- **Default**: 350000
-- **Description**: Target amount of fuel to maintain through expeditions.
+- **型**: integer
+- **有効な範囲**: 0 ～ 350000
+- **デフォルト**: 350000
+- **説明**: 遠征で維持する目標燃料量。
 
 #### `expedition.desire_ammo`
-- **Type**: integer
-- **Valid Range**: 0-350000
-- **Default**: 350000
-- **Description**: Target amount of ammunition to maintain.
+- **型**: integer
+- **有効な範囲**: 0 ～ 350000
+- **デフォルト**: 350000
+- **説明**: 維持する目標弾薬量。
 
 #### `expedition.desire_steel`
-- **Type**: integer
-- **Valid Range**: 0-350000
-- **Default**: 350000
-- **Description**: Target amount of steel to maintain.
+- **型**: integer
+- **有効な範囲**: 0 ～ 350000
+- **デフォルト**: 350000
+- **説明**: 維持する目標鋼材量。
 
 #### `expedition.desire_bauxite`
-- **Type**: integer
-- **Valid Range**: 0-350000
-- **Default**: 350000
-- **Description**: Target amount of bauxite to maintain.
+- **型**: integer
+- **有効な範囲**: 0 ～ 350000
+- **デフォルト**: 350000
+- **説明**: 維持する目標ボーキサイト量。
 
 #### `expedition.desire_bucket`
-- **Type**: integer
-- **Valid Range**: 0-3000
-- **Default**: 3000
-- **Description**: Target number of repair buckets to maintain.
+- **型**: integer
+- **有効な範囲**: 0 ～ 3000
+- **デフォルト**: 3000
+- **説明**: 維持する目標高速修復材（バケツ）数。
 
-### PvP Settings (`pvp.*`)
+### 演習設定 (`pvp.*`)
 
-Controls Player vs Player combat behavior.
+PvP（演習）の挙動を制御します。
 
 #### `pvp.enabled`
-- **Type**: boolean
-- **Default**: false
-- **Description**: Enables or disables PvP combat. Cannot be enabled when combat fleet is in combined mode.
+- **型**: boolean
+- **デフォルト**: false
+- **説明**: PvP を有効/無効にします。戦闘艦隊が連合艦隊モードの場合は有効にできません。
 
 #### `pvp.fleet_preset`
-- **Type**: integer, string, or null
-- **Valid Values**: 1-15, `"auto"`, or null
-- **Default**: 0
-- **Description**: Fleet preset to use for PvP battles. Use `"auto"` for automatic selection.
+- **型**: integer, string, or null
+- **有効な値**: 1 ～ 15, `"auto"`, or null
+- **デフォルト**: 0
+- **説明**: PvP 戦闘に使用する艦隊プリセット。自動選択には `"auto"` を使用してください。
 
-### Quest Settings (`quest.*`)
+### 任務設定 (`quest.*`)
 
-Controls daily/weekly/monthly quest management.
+デイリー/ウィークリー/マンスリー任務管理を制御します。
 
 #### `quest.enabled`
-- **Type**: boolean
-- **Default**: true
-- **Description**: Enables or disables automatic quest management.
+- **型**: boolean
+- **デフォルト**: true
+- **説明**: 自動任務管理を有効/無効にします。
 
 #### `quest.quests`
-- **Type**: array of strings
-- **Default**: `[]`
-- **Description**: List of quest IDs to automatically accept and complete.
-- **Example**: `["Bd1", "Bd2", "Bw1", "C2", "D2"]`
+- **型**: array of strings
+- **デフォルト**: `[]`
+- **説明**: 自動的に受理・完了する任務 ID のリスト。
+- **例**: `["Bd1", "Bd2", "Bw1", "C2", "D2"]`
 
-### Factory Settings (`factory.*`)
+### 工場設定 (`factory.*`)
 
-Controls ship construction and equipment development.
+建造と開発を制御します。
 
 #### `factory.enabled`
-- **Type**: boolean
-- **Default**: false
-- **Description**: Enables or disables factory operations.
+- **型**: boolean
+- **デフォルト**: false
+- **説明**: 工場操作を有効/無効にします。
 
 #### `factory.build_recipe`
-- **Type**: array of 4 integers
-- **Default**: `[30, 30, 30, 30]`
-- **Description**: Resource recipe for ship construction [fuel, ammo, steel, bauxite].
+- **型**: array of 4 integers
+- **デフォルト**: `[30, 30, 30, 30]`
+- **説明**: 建造レシピ [燃料, 弾薬, 鋼材, ボーキサイト]。
 
 #### `factory.build_secretary`
-- **Type**: integer
-- **Default**: 1234
-- **Description**: Ship ID to use as secretary for ship construction.
+- **型**: integer
+- **デフォルト**: 1234
+- **説明**: 建造で使用する秘書艦の艦娘 ID。
 
 #### `factory.develop_recipe`
-- **Type**: array of 4 integers
-- **Default**: `[10, 10, 10, 10]`
-- **Description**: Resource recipe for equipment development [fuel, ammo, steel, bauxite].
+- **型**: array of 4 integers
+- **デフォルト**: `[10, 10, 10, 10]`
+- **説明**: 開発レシピ [燃料, 弾薬, 鋼材, ボーキサイト]。
 
 #### `factory.develop_secretary`
-- **Type**: integer
-- **Default**: 1234
-- **Description**: Ship ID to use as secretary for equipment development.
+- **型**: integer
+- **デフォルト**: 1234
+- **説明**: 開発で使用する秘書艦の艦娘 ID。
 
-### Scheduler Settings (`scheduler.*`)
+### スケジューラ設定 (`scheduler.*`)
 
-Controls time-based automation rules.
+時間ベースの自動化ルールを制御します。
 
 #### `scheduler.enabled`
-- **Type**: boolean
-- **Default**: true
-- **Description**: Enables or disables the scheduler system.
+- **型**: boolean
+- **デフォルト**: true
+- **説明**: スケジューラシステムを有効/無効にします。
 
 #### `scheduler.rules`
-- **Type**: array of strings
-- **Format**: `"condition:value:action:module"` or `"condition:value:action:module:extra"`
-- **Default**: `[]`
-- **Description**: List of scheduler rules that trigger actions based on conditions.
-- **Example**: 
+- **型**: array of strings
+- **形式**: `"condition:value:action:module"` or `"condition:value:action:module:extra"`
+- **デフォルト**: `[]`
+- **説明**: 条件に基づいてアクションをトリガーするスケジューラルールのリスト。
+- **例**: 
   ```json
   [
     "time:0230:stop:kcauto",
@@ -381,82 +378,82 @@ Controls time-based automation rules.
   ]
   ```
 
-### Passive Repair Settings (`passive_repair.*`)
+### パッシブ修理設定 (`passive_repair.*`)
 
-Controls automatic repair dock management.
+自動修理ドック管理を制御します。
 
 #### `passive_repair.enabled`
-- **Type**: boolean
-- **Default**: false
-- **Description**: Enables or disables passive repair management.
+- **型**: boolean
+- **デフォルト**: false
+- **説明**: パッシブ修理管理を有効/無効にします。
 
 #### `passive_repair.repair_threshold`
-- **Type**: integer
-- **Valid Values**: 1-4 (damage state levels)
-- **Default**: 1
-- **Description**: Minimum damage level required to trigger passive repair.
+- **型**: integer
+- **有効な値**: 1 ～ 4（ダメージ状態レベル）
+- **デフォルト**: 1
+- **説明**: パッシブ修理をトリガーするために必要な最小ダメージレベル。
 
 #### `passive_repair.slots_to_reserve`
-- **Type**: integer
-- **Default**: 2
-- **Description**: Number of repair dock slots to keep available for emergency repairs.
+- **型**: integer
+- **デフォルト**: 2
+- **説明**: 緊急修理用に確保しておく修理ドックのスロット数。
 
-### Ship Switcher Settings (`ship_switcher.*`)
+### 艦娘スイッチャー設定 (`ship_switcher.*`)
 
-Controls automatic ship switching and management.
+自動艦娘切り替えと管理を制御します。
 
 #### `ship_switcher.enabled`
-- **Type**: boolean
-- **Default**: false
-- **Description**: Enables or disables automatic ship switching.
+- **型**: boolean
+- **デフォルト**: false
+- **説明**: 自動艦娘切り替えを有効/無効にします。
 
 #### `ship_switcher.slots`
-- **Type**: object
-- **Default**: `{}`
-- **Description**: Configuration for ship switching rules per fleet slot.
+- **型**: object
+- **デフォルト**: `{}`
+- **説明**: 艦隊スロットごとの艦娘切り替えルールの設定。
 
-### Event Reset Settings (`event_reset.*`)
+### イベントリセット設定 (`event_reset.*`)
 
-Controls event map reset behavior for farming.
+周回のためのイベントマップリセットの挙動を制御します。
 
 #### `event_reset.enabled`
-- **Type**: boolean
-- **Default**: false
-- **Description**: Enables or disables event reset functionality.
+- **型**: boolean
+- **デフォルト**: false
+- **説明**: イベントリセット機能を有効/無効にします。
 
 #### `event_reset.farm_difficulty`
-- **Type**: integer
-- **Valid Values**: 1-4 (difficulty levels)
-- **Default**: 2
-- **Description**: Difficulty level to use for farming runs.
+- **型**: integer
+- **有効な値**: 1 ～ 4（難易度レベル）
+- **デフォルト**: 2
+- **説明**: 周回に使用する難易度レベル。
 
 #### `event_reset.reset_difficulty`
-- **Type**: integer
-- **Valid Values**: 1-4 (difficulty levels)
-- **Default**: 3
-- **Description**: Difficulty level to reset to after farming.
+- **型**: integer
+- **有効な値**: 1 ～ 4（難易度レベル）
+- **デフォルト**: 3
+- **説明**: 周回後にリセットする難易度レベル。
 
 #### `event_reset.frequency`
-- **Type**: integer
-- **Default**: 3
-- **Description**: Number of farming runs before triggering a reset.
+- **型**: integer
+- **デフォルト**: 3
+- **説明**: リセットをトリガーするまでの周回数。
 
 ---
 
-## Best Practices
+## ベストプラクティス
 
-1. **Start Simple**: Begin with basic configurations and gradually add complexity
-2. **Test Incrementally**: Enable one module at a time to verify behavior
-3. **Use Templates**: Base your configuration on provided templates
-4. **Validate Settings**: Ensure all values are within valid ranges and formats
-5. **Monitor Logs**: Check logs for configuration warnings and errors
-6. **Backup Configs**: Keep backups of working configurations
+1. **シンプルに始める**: 基本的な設定から始めて、徐々に複雑さを加えていきます
+2. **段階的にテストする**: 挙動を確認するために、一度に 1 つのモジュールを有効にします
+3. **テンプレートを使用する**: 提供されたテンプレートをベースに設定します
+4. **設定を検証する**: すべての値が有効な範囲と形式であることを確認します
+5. **ログを監視する**: 設定の警告やエラーがないかログを確認します
+6. **設定をバックアップする**: 動作している設定のバックアップを保持します
 
 ---
 
-## Configuration Examples
+## 設定例
 
-### Basic Combat Configuration
+### 基本戦闘設定
 ```json
 {
     "general.interaction_mode": "chrome_driver",
@@ -473,7 +470,7 @@ Controls event map reset behavior for farming.
 }
 ```
 
-### Expedition Farming Configuration
+### 遠征周回設定
 ```json
 {
     "general.interaction_mode": "chrome_driver",
@@ -491,7 +488,7 @@ Controls event map reset behavior for farming.
 }
 ```
 
-### Combined Fleet Combat Configuration
+### 連合艦隊戦闘設定
 ```json
 {
     "combat.enabled": true,
@@ -508,7 +505,7 @@ Controls event map reset behavior for farming.
 }
 ```
 
-### Auto Mode Configuration
+### 自動モード設定
 ```json
 {
     "combat.enabled": true,
@@ -523,5 +520,3 @@ Controls event map reset behavior for farming.
     "pvp.fleet_preset": "auto"
 }
 ```
-
-

@@ -9,10 +9,10 @@ close all of them before re-starting with `remote-debugging` enabled.
 (For Windows user: If you don't know how to start POI with options, read [this](https://stackoverflow.com/a/56457835))  
 (`--remote-allow-origins=*` is needed at the moment (2023/05/04)[ref](https://github.com/XVs32/kcauto_custom/issues/19)):
   * How do I know if the `debug` mode is on?
-    * :heavy_check_mark:Access `127.0.0.1:9222`, you should see a blank screen as follow:  
-![Screenshot from 2023-05-04 22-34-30](https://user-images.githubusercontent.com/16824564/236221380-f2b52443-b2f7-4510-899f-c8582f431d12.png)  
+    * :heavy_check_mark:Access `127.0.0.1:9222`, you should see a screen like this:  
+![debug_port_success](./assets/debug_port_success.png)  
     * :x:Kill ALL POI process and retry if you see this:  
-![Screenshot from 2023-05-04 22-28-56](https://user-images.githubusercontent.com/16824564/236221730-c5445cc8-b270-4cb9-b7d2-0ed4f892be56.png)  
+![debug_port_fail](./assets/debug_port_fail.png)  
 
 * Install plugin `poi-plugin-noro6-exporter` and `poi-plugin-forwarder`  
     * please be noted that Noro6 Exporter does **NOT** export config to original Noro6 site,  
