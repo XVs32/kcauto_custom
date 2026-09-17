@@ -5,12 +5,12 @@
     2,
     3
   ],
-  "combat.lbas_group_1_nodes": [
+  "combat.lbas_group_2_nodes": [
     "I",
     "I"
   ],
-  "combat.lbas_group_2_nodes": [
-    "J",
-    "J"
+  "combat.lbas_group_3_nodes": [
+    "J2",
+    "J2"
   ]
 }
