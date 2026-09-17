@@ -1,4 +1,4 @@
-_Humanity is acquiring all the right technology for all the wrong reasons._
+_The biggest mistake a creative person can make is letting a template become a rut._
 
 ---
 
@@ -16,7 +16,7 @@ it finish PvP quests automatically:
 ## PvP quest handling
 
 To prevent kcauto_custom from selecting every available PvP quest,  
-kcauto_custom now has the ability to judge if the fleet matches the requirement of a quest. 
+kcauto_custom now has the ability to judge if current fleet matches the requirement of a quest. 
 
 For example, if the fleet doesn't has 1CL+3DD or 4DD,  
 kcauto_custom would not select the quest [`Cq4 (小艦艇群演習強化任務)`](https://wikiwiki.jp/kancolle/%E4%BB%BB%E5%8B%99#id-Cq).  

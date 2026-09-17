@@ -9,7 +9,7 @@ _Humanity is acquiring all the right technology for all the wrong reasons._
 1. Assign ships to form a valid fleet for specific expedition
 2. Balance player's resources by picking the most efficient expedition
 3. Handle Landing Craft and Drum Canisters requirements 
-4. Load fleets in Noro6 config if provided (See [section](https://github.com/XVs32/kcauto_custom/wiki/Ch3.2:-Gamer-user-guide-%E2%80%90%E2%80%90-Expedition#noro6) `Noro6`)
+4. Load fleets in Noro6 config if provided (See [section](#noro6) `Noro6`)
 
 <img width="889" height="928" alt="image" src="https://github.com/user-attachments/assets/f46ca530-b1ab-4861-9ee4-680fb6a99070" />
 
@@ -63,7 +63,7 @@ For example, `D-A3` is the config made for `A3`,
 since all Noro6 configs share the same ship and equipment pool**
 5. Feel free to add your own config 
 
-The general idea is the same as sortie noro6 config in [Ch3.1](https://github.com/XVs32/kcauto_custom/wiki/Ch3.1:-Gamer-user-guide-%E2%80%90%E2%80%90-Sortie) 
+The general idea is the same as sortie noro6 config in [Ch3.1](../Ch3.1#put-together-your-own-sortie-noro6-config) 
 
 ---
 

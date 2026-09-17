@@ -3,7 +3,7 @@ _We're all nerds, on one subject or another._
 ---
 
 ## Before you read
-There is a User config wiki page in [Ch5 Configuration File](Ch5.md)  
+There is a User config wiki page in [Ch5 Configuration File](../Ch5)  
 You can find the explain for each option in user config  
 Check that out if you find yourself surrounded by unknown terms
 

@@ -79,6 +79,8 @@ Do not change if you don't know what you're doing.
 - **Default**: false
 - **Description**: Whether kcauto should start in paused state.
 
+##### For CUI user, you can pause kcauto_custom by [pressing space bar](../Ch2)
+
 ### Combat Settings (`combat.*`)
 
 Controls sortie and combat behavior.
@@ -317,7 +319,7 @@ Controls Player vs Player combat behavior.
 
 ### Quest Settings (`quest.*`)
 
-Controls daily/weekly/monthly quest management.
+Controls quest management.
 
 #### `quest.enabled`
 - **Type**: boolean

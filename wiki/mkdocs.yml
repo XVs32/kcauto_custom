@@ -46,9 +46,11 @@ nav:
     - "Ch4: Expert User Guide":
         - "Ch4.1: Sortie": Ch4.1.md
         - "Ch4.2: Factory": Ch4.2.md
+        - "Ch4.3: Event guide": Ch4.3.md
     - "Ch5: Configuration File": Ch5.md
     - "Ch99: Appendix":
         - "Ch99.1: Your own event map support": Ch99.1.md
         - "Ch99.2: Your own (time limit) quest": Ch99.2.md
         - "Ch99.3: Noro6 equipment update script": Ch99.3.md
+        - "Ch99.4: Noro6 XVs32's edition": Ch99.4.md
 
