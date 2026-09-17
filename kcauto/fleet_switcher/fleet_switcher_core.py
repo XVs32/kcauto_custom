@@ -300,6 +300,32 @@ class FleetSwitcherCore(object):
             equipment.production_id,
         )
 
+    def _get_equipment_candidates(
+        self,
+        requirement: EquipmentRequirement,
+        movable_equipment_by_id: dict[int, MovableEquipment],
+    ) -> list[MovableEquipment]:
+        candidates = [
+            movable_equipment
+            for movable_equipment in movable_equipment_by_id.values()
+            if movable_equipment.equipment.model_id == requirement.model_id
+            and not self.equipment_plan.is_equipment_assigned(
+                movable_equipment.equipment.production_id
+            )
+            and (
+                requirement.slot is not EquipmentSlot.REINFORCEMENT
+                or equ.equipment.is_reinforcement_equipment_available(
+                    requirement.ship, movable_equipment.equipment
+                )
+            )
+        ]
+        return sorted(
+            candidates,
+            key=lambda movable_equipment: self._get_equipment_allocation_priority(
+                requirement, movable_equipment
+            ),
+        )
+
     def _plan_equipment_assignments(
         self, target_fleets: list[Fleet], protected_fleet_ids: set[int]
     ):
@@ -310,28 +336,21 @@ class FleetSwitcherCore(object):
             return False
 
         movable_equipment_by_id = self._get_movable_equipment_pool(protected_fleet_ids)
+        requirements.sort(
+            key=lambda requirement: len(
+                self._get_equipment_candidates(requirement, movable_equipment_by_id)
+            )
+        )
 
-        # Apply each requirement's star preference first. Equal-priority
-        # candidates keep the current target slot in place, then prefer free
-        # equipment before equipment mounted on another movable ship.
+        # Allocate constrained requirements first. Candidate ordering still
+        # applies star preference, same-slot reuse, free equipment, then ID.
         for requirement in requirements:
             if self.equipment_plan.has_assignment(requirement.ship, requirement.slot):
                 continue
 
-            candidates = [
-                movable_equipment
-                for movable_equipment in movable_equipment_by_id.values()
-                if movable_equipment.equipment.model_id == requirement.model_id
-                and not self.equipment_plan.is_equipment_assigned(
-                    movable_equipment.equipment.production_id
-                )
-                and (
-                    requirement.slot is not EquipmentSlot.REINFORCEMENT
-                    or equ.equipment.is_reinforcement_equipment_available(
-                        requirement.ship, movable_equipment.equipment
-                    )
-                )
-            ]
+            candidates = self._get_equipment_candidates(
+                requirement, movable_equipment_by_id
+            )
             slot_name = requirement.slot.display_name
             if not candidates:
                 Log.log_error(
@@ -343,12 +362,7 @@ class FleetSwitcherCore(object):
                 )
                 return False
 
-            selected_equipment = min(
-                candidates,
-                key=lambda movable_equipment: self._get_equipment_allocation_priority(
-                    requirement, movable_equipment
-                ),
-            ).equipment
+            selected_equipment = candidates[0].equipment
             self.equipment_plan.assign(
                 requirement.ship, requirement.slot, selected_equipment
             )
