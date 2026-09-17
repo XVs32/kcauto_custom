@@ -2,6 +2,7 @@ from util.pyvisauto import Region
 from sys import exit
 from random import choice
 from random import randrange
+from typing import Optional
 
 import api.api_core as api
 import config.config_core as cfg
@@ -88,28 +89,30 @@ class FleetSwitcherCore(object):
 
     def _find_equipment_row(
         self, equipment_list: list[Equipment], planned_equipment: Equipment
-    ):
+    ) -> tuple[int, Equipment]:
         for row_idx, equipment in enumerate(equipment_list):
             if equipment.production_id == planned_equipment.production_id:
                 return row_idx, equipment
 
         return -1, planned_equipment
 
-    def _find_active_fleet_for_ship(self, ship: Ship):
+    def _find_active_fleet_for_ship(self, ship: Ship) -> Optional[Fleet]:
         active_fleets = self._active_fleets
         for active_fleet in active_fleets.values():
             if ship.production_id in active_fleet.ship_ids:
                 return active_fleet
         return None
 
-    def _is_ship_equipment_movable(self, ship: Ship):
+    def _is_ship_equipment_movable(self, ship: Ship) -> bool:
         if ship.production_id in rep.repair.ships_under_repair:
             return False
 
         active_fleet = self._find_active_fleet_for_ship(ship)
         return active_fleet is None or active_fleet.at_base
 
-    def _get_planned_equipment_held_by_ship(self, ship: Ship, target_fleet: Fleet):
+    def _get_planned_equipment_held_by_ship(
+        self, ship: Ship, target_fleet: Fleet
+    ) -> list[Equipment]:
         target_equipment_ids = {
             equipment.production_id
             for equipment in self.equipment_plan.equipment_for_ship_ids(
@@ -131,7 +134,7 @@ class FleetSwitcherCore(object):
 
         return held_equipment
 
-    def _get_protected_ship_ids(self, protected_fleet_ids: set[int]):
+    def _get_protected_ship_ids(self, protected_fleet_ids: set[int]) -> set[int]:
         protected_ship_ids = set()
         active_fleets = self._active_fleets
         for fleet_id in protected_fleet_ids:
@@ -140,7 +143,7 @@ class FleetSwitcherCore(object):
 
     def _find_safe_free_equipment_refresh_ship(
         self, target_fleets: list[Fleet], protected_fleet_ids: set[int]
-    ):
+    ) -> Optional[Ship]:
         excluded_ship_ids = {
             ship.production_id
             for target_fleet in target_fleets
@@ -163,7 +166,7 @@ class FleetSwitcherCore(object):
 
     def _ensure_free_equipment_data_loaded(
         self, target_fleets: list[Fleet], protected_fleet_ids: set[int]
-    ):
+    ) -> bool:
         if equ.equipment.free_equipment_initialized:
             return True
 
@@ -187,14 +190,16 @@ class FleetSwitcherCore(object):
         )
         return equ.equipment.free_equipment_initialized
 
-    def _get_movable_equipment_pool(self, protected_fleet_ids: set[int]):
+    def _get_movable_equipment_pool(
+        self, protected_fleet_ids: set[int]
+    ) -> dict[int, MovableEquipment]:
         movable_equipment = {}
 
         def add_equipment(
             equipment: Equipment,
-            source_ship: Ship | None = None,
-            source_slot: EquipmentSlot | None = None,
-        ):
+            source_ship: Optional[Ship] = None,
+            source_slot: Optional[EquipmentSlot] = None,
+        ) -> None:
             if (
                 equipment.model_id <= 0
                 or equipment.production_id == Equipment.UNKNOWN_PRODUCTION_ID
@@ -209,7 +214,7 @@ class FleetSwitcherCore(object):
         for equipment in equ.equipment.equipment_pool[equ.equipment.FREE]:
             add_equipment(equipment)
 
-        def add_ship(ship: Ship):
+        def add_ship(ship: Ship) -> None:
             if not self._is_ship_equipment_movable(ship):
                 return
 
@@ -230,7 +235,9 @@ class FleetSwitcherCore(object):
 
         return movable_equipment
 
-    def _collect_equipment_requirements(self, target_fleets: list[Fleet]):
+    def _collect_equipment_requirements(
+        self, target_fleets: list[Fleet]
+    ) -> Optional[list[EquipmentRequirement]]:
         requirements = []
         target_ship_ids = set()
 
@@ -283,7 +290,7 @@ class FleetSwitcherCore(object):
         self,
         requirement: EquipmentRequirement,
         movable_equipment: MovableEquipment,
-    ):
+    ) -> tuple[int, int, int, int]:
         equipment = movable_equipment.equipment
         same_slot_priority = int(
             movable_equipment.source_ship is None
@@ -368,7 +375,7 @@ class FleetSwitcherCore(object):
 
     def _plan_equipment_assignments(
         self, target_fleets: list[Fleet], protected_fleet_ids: set[int]
-    ):
+    ) -> bool:
         requirements = self._collect_equipment_requirements(target_fleets)
         if requirements is None:
             return False
@@ -407,7 +414,7 @@ class FleetSwitcherCore(object):
 
     def _prepare_equipment_plan(
         self, target_fleets: list[Fleet], protected_fleet_ids: set[int]
-    ):
+    ) -> bool:
         self.equipment_plan.clear_assignments()
         if not target_fleets:
             return True
@@ -423,7 +430,7 @@ class FleetSwitcherCore(object):
         self,
         targets: list[tuple[int, Fleet]],
         protected_fleet_ids: set[int],
-    ):
+    ) -> bool:
         self.equipment_plan.set_targets(targets)
         return self._prepare_equipment_plan(
             [target_fleet for _, target_fleet in targets],
@@ -432,7 +439,7 @@ class FleetSwitcherCore(object):
 
     def _is_ship_equipment_assignment_matched(
         self, active_ship: Ship, target_ship: Ship
-    ):
+    ) -> bool:
         slot_count = max(
             active_ship.slot_num,
             target_ship.slot_num,
@@ -490,7 +497,9 @@ class FleetSwitcherCore(object):
             and active_slot_ex.production_id == planned_slot_ex.production_id
         )
 
-    def _is_custom_fleet_with_equipment_loaded(self, fleet_id, target_fleet: Fleet):
+    def _is_custom_fleet_with_equipment_loaded(
+        self, fleet_id: int, target_fleet: Fleet
+    ) -> bool:
         active_fleet = self._active_fleets[fleet_id]
 
         if active_fleet.ship_ids != target_fleet.ship_ids:
@@ -505,7 +514,7 @@ class FleetSwitcherCore(object):
 
         return True
 
-    def verify_equipment_plan(self):
+    def verify_equipment_plan(self) -> bool:
         for fleet_id, target_fleet in self.equipment_plan.targets:
             if not self._is_custom_fleet_with_equipment_loaded(fleet_id, target_fleet):
                 Log.log_error(

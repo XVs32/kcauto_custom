@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from ships.equipment import Equipment
 
@@ -97,8 +97,8 @@ class EquipmentRequirement:
 @dataclass(frozen=True, slots=True)
 class MovableEquipment:
     equipment: Equipment
-    source_ship: Ship | None
-    source_slot: EquipmentSlot | None
+    source_ship: Optional[Ship]
+    source_slot: Optional[EquipmentSlot]
 
     @property
     def is_free(self) -> bool:
