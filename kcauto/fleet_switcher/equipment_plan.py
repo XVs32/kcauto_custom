@@ -140,6 +140,11 @@ class EquipmentPlan:
         self._assignments[ref] = equipment
         self._assigned_equipment_ids.add(equipment.production_id)
 
+    def unassign(self, ship: Ship, slot: EquipmentSlot) -> None:
+        ref = EquipmentSlotRef(ship.production_id, slot)
+        equipment = self._assignments.pop(ref)
+        self._assigned_equipment_ids.remove(equipment.production_id)
+
     def has_assignment(self, ship: Ship, slot: EquipmentSlot) -> bool:
         return EquipmentSlotRef(ship.production_id, slot) in self._assignments
 

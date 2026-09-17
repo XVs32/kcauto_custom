@@ -326,6 +326,46 @@ class FleetSwitcherCore(object):
             ),
         )
 
+    def _assign_equipment_requirements(
+        self,
+        requirements: list[EquipmentRequirement],
+        movable_equipment_by_id: dict[int, MovableEquipment],
+    ) -> bool:
+        if not requirements:
+            return True
+
+        requirement_candidates = [
+            (
+                requirement,
+                self._get_equipment_candidates(
+                    requirement, movable_equipment_by_id
+                ),
+            )
+            for requirement in requirements
+        ]
+        requirement, candidates = min(
+            requirement_candidates, key=lambda item: len(item[1])
+        )
+        if not candidates:
+            return False
+
+        remaining_requirements = [
+            remaining
+            for remaining in requirements
+            if remaining is not requirement
+        ]
+        for movable_equipment in candidates:
+            self.equipment_plan.assign(
+                requirement.ship, requirement.slot, movable_equipment.equipment
+            )
+            if self._assign_equipment_requirements(
+                remaining_requirements, movable_equipment_by_id
+            ):
+                return True
+            self.equipment_plan.unassign(requirement.ship, requirement.slot)
+
+        return False
+
     def _plan_equipment_assignments(
         self, target_fleets: list[Fleet], protected_fleet_ids: set[int]
     ):
@@ -336,36 +376,14 @@ class FleetSwitcherCore(object):
             return False
 
         movable_equipment_by_id = self._get_movable_equipment_pool(protected_fleet_ids)
-        requirements.sort(
-            key=lambda requirement: len(
-                self._get_equipment_candidates(requirement, movable_equipment_by_id)
-            )
-        )
 
-        # Allocate constrained requirements first. Candidate ordering still
-        # applies star preference, same-slot reuse, free equipment, then ID.
-        for requirement in requirements:
-            if self.equipment_plan.has_assignment(requirement.ship, requirement.slot):
-                continue
-
-            candidates = self._get_equipment_candidates(
-                requirement, movable_equipment_by_id
+        if not self._assign_equipment_requirements(
+            requirements, movable_equipment_by_id
+        ):
+            Log.log_error(
+                "Cannot find a conflict-free equipment allocation for all target slots."
             )
-            slot_name = requirement.slot.display_name
-            if not candidates:
-                Log.log_error(
-                    f"Cannot find replacement for "
-                    f"{requirement.equipment_name} "
-                    f"({requirement.requested_star_description}, "
-                    f"model {requirement.model_id}) on "
-                    f"{requirement.ship.name_jp} {slot_name}."
-                )
-                return False
-
-            selected_equipment = candidates[0].equipment
-            self.equipment_plan.assign(
-                requirement.ship, requirement.slot, selected_equipment
-            )
+            return False
 
         for requirement in requirements:
             selected_equipment = self.equipment_plan.equipment_for(
