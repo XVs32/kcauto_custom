@@ -112,16 +112,6 @@ class EquipmentCore(object):
 
         return
 
-    def _remove_from_pool(self, target_equipment: Equipment, pool):
-
-        if target_equipment.production_id == Equipment.UNKNOWN_PRODUCTION_ID:
-            return
-
-        for equipment in self.equipment_pool[pool]:
-            if equipment.production_id == target_equipment.production_id:
-                self.equipment_pool[pool].remove(equipment)
-                break
-
     def get_equipment_from_noro6_equipment(self, noro6_equipment):
         """Convert a Noro6 equipment requirement to a kcauto Equipment target.
 
