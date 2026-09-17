@@ -3,7 +3,7 @@
 // @namespace    https://xvs32.github.io/kc-web/
 // @version      1.0.0
 // @description  Batch sync fleet/air base data of every saved tab to the current ship/equipment inventory via Vue/Vuex internal methods.
-// @author       you
+// @author       XVs32
 // @match        https://xvs32.github.io/kc-web/*
 // @run-at       document-idle
 // @grant        none
