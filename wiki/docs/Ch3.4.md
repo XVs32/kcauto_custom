@@ -71,8 +71,6 @@ kcauto_custom would not switch secretary ship before commiting for construction 
 
 ***Do not switch for specific secretary ship***
 
-Press `"` key again to leave.
-
 ---
 
 

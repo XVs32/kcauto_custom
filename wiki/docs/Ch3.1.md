@@ -53,19 +53,21 @@ Open `Noro6 Exporter`
 
 <img width="474" height="172" alt="image" src="https://github.com/user-attachments/assets/94ae6c1b-b111-47c3-9e7a-7a2a691df1ba" />
 
-Click export to Noro6
+Click export to Noro6  
+
+* Again, this plugin does not output to the original noro6,  
+instead, it outputs to [XVs32's noro6 edition](https://xvs32.github.io/kc-web/#/)
+
 
 <img width="339" height="117" alt="image" src="https://github.com/user-attachments/assets/3e465fc7-b8db-4f6b-ada5-6c3e19c7422a" />
 
 ![image](https://github.com/user-attachments/assets/ee4eff82-e3bf-448a-be37-1605dc388a6f)
 ***Your are automatically switched to noro6!***
 
-Now click setting, then import the tutorial in "configs/noro6/noro6_template"  
+Now click setting, then import the tutorial in `configs/noro6/noro6_tutorial`  
 ![Screenshot from 2024-10-31 01-44-44](https://github.com/user-attachments/assets/48e0a662-bc35-46bf-b0cb-0b5a475dc0f1)  
 
-
 <img width="496" height="157" alt="Screenshot_20260203_155850" src="https://github.com/user-attachments/assets/adf20a4a-8feb-4a0e-a7d7-73b14d40294a" />  
-
 
 <img width="576" height="345" alt="image" src="https://github.com/user-attachments/assets/9aa14bdd-75fb-4a8f-a374-6d10cc030f47" />  
 
@@ -105,7 +107,7 @@ Click setting => Create backup file => Overwrite the `configs/noro6/noro6` templ
 ### `Sortie mode: Auto` test run
 
 After you setup `B-1-1` config,  
-you can use this from kcauto_cui
+you can use auto fleet from kcauto_cui
 
 <img width="543" height="351" alt="image" src="https://github.com/user-attachments/assets/0b1b5822-1ab8-46ee-95b6-3f829aaab646" />
 
@@ -145,7 +147,7 @@ You do have to remove those unuse config if you decide to start from this templa
 ## Use `Sortie mode: Auto` in kcauto_cui
 
 After finishing all config you need,  
-you can use this from kcauto_cui
+you can use auto mode from kcauto_cui
 
 ![image](https://user-images.githubusercontent.com/16824564/236405886-2115dcdd-35b7-4d0c-8e09-71c09bc51595.png)
 

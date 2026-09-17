@@ -14,9 +14,14 @@ close all of them before re-starting with `remote-debugging` enabled.
     * :x:Kill ALL POI process and retry if you see this:  
 ![Screenshot from 2023-05-04 22-28-56](https://user-images.githubusercontent.com/16824564/236221730-c5445cc8-b270-4cb9-b7d2-0ed4f892be56.png)  
 
-* Install plugin `poi-plugin-noro6-exporter` and `poi-plugin-forwarder`
+* Install plugin `poi-plugin-noro6-exporter` and `poi-plugin-forwarder`  
+    * please be noted that Noro6 Exporter does **NOT** export config to original Noro6 site,  
+  it export to XVs32's customize version instead  
+(noro6 takes forever to review the pull request so... had no choice but to setup my own)
 
-<img width="474" height="707" alt="image" src="https://github.com/user-attachments/assets/570ebbfa-ca5f-4082-a340-ebee58ccd6c2" />
+![image](./assets/poi-plugin-tab.png)  
+![image](./assets/poi-plugin-noro6-exporter.png)  
+![image](./assets/poi-plugin-forwarder.png)  
 
 * **For Linux(Ubuntu) users**:  
 Wayland in Ubuntu does not work well with kcauto(and a lot of other stuffs, lol)  
@@ -43,7 +48,7 @@ _You have to deal with Noro6 but full access to all features._
 
 * Windows
     * run `.\kcauto_cui.exe` in Powershell for better user experience
-    * or, run `.\kcauto_custom.exe --cfg <your_config_name>` to specify your own config file  
+    * or, run `.\bin/kcauto_custom\kcauto_custom.exe --cfg <your_config_name>` to specify your own config file  
       (note that you do not need to add `.json` here)
 * Linux
     * Run `./kcauto_cui`
@@ -61,7 +66,7 @@ See Ch4 for detail
 ### Developer
 _Your own Python environment, free to edit/fix the tool yourself._
 
-* Install Python 3.11 and pip
+* Install Python 3.13 and pip
 * Install `pipenv` using `pip install pipenv`
 * Create your `.venv`, quick [ref](https://gist.github.com/ryumada/c22133988fd1c22a66e4ed1b23eca233) if you forgot how to make one
 * Activate venv by `source .venv/bin/activate`

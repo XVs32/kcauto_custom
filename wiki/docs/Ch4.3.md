@@ -1,8 +1,8 @@
-_A good plan today is better than a perfect plan tomorrow._
+_Better to know a knot and not need it, than to need a knot and not know it._
 
 ---
 
-## Appendix ‐‐ Noro6 equipment update
+## Appendix ‐‐ Noro6 setting for event
 
 Since Noro6 doesn't get update after you upgrade an equipment,  
 after time you will get spam by the following warning:  
@@ -28,11 +28,11 @@ so that you're sync with the equipment you have in stock.
 ### Preparation
 
 #### Updating equipment data
-First we need to grab the latest data from POI
+First we need to grab the latest data from KC3
 
-![Exporting data from POI](assets/poi-plugin-noro6-exporter_button.png)
+![Screenshot from 2024-10-31 01-15-58](https://github.com/user-attachments/assets/df8ca3e6-b450-4840-be1b-7e54bcf0212f)
 
-***Exporting data from POI***
+***Exporting data from KC3***
 
 #### Access control
 Only tabs opened would be handle by this script,  
@@ -64,7 +64,7 @@ this case it would be easier for kcauto_custom to tell if an equipment is missin
 
 ---
 
-### Running the script (browser's console)
+### Running the script
 
 Open F12 panel, head to `console` panel,
 
@@ -75,36 +75,27 @@ Open F12 panel, head to `console` panel,
 The script is locate in [develop/tool/noro6_equipment_update.js](https://github.com/XVs32/kcauto_custom/blob/develop/tool/noro6_equipment_update.js),  
 copy & paste the code into console panel, press `Enter` to run.
 
-![noro6 update script](assets/noro6_update_script.png)
+```js
+const isVisible = (el) => {
+    if (!el) return false;
+    const style = window.getComputedStyle(el);
+
+...
+...
+
+    console.log("✨ All tasks finished successfully!");
+}
+
+runTurboAutomation();
+```
+
+<img width="378" height="628" alt="image" src="https://github.com/user-attachments/assets/6e79e9b2-0630-4ab7-9854-5546b6a0b46c" />
 
 ***Script ready to run***
 
-![equipment update log](assets/noro6_update_log.png)
+https://github.com/user-attachments/assets/f9a48072-dc2d-4eb6-adcb-1209ef27cd07
 
 ***Equipment auto update***
-
-
----
-
-### Running the script (Tampermonkey)
-
-Alternatively, you can install the script via Tampermonkey extension for convenient one-click execution without opening DevTools every time.
-
-Install the [Tampermonkey](https://chromewebstore.google.com/detail/tampermonkey/dhdgffkkebhmkfjojejmpbldmpobfkfo) extension in your browser.
-
-![tampermonkey_install](assets/tampermonkey_install.png)
-
-Open Tampermonkey dashboard, click Create a new script, 
-and paste the Noro6 Turbo Sync userscript [code](). 
-
-Save the script (Ctrl+S) and make sure it is enabled.
-
-Navigate to the air calculator page: [https://xvs32.github.io/kc-web/#/aircalc](https://xvs32.github.io/kc-web/#/aircalc)
-
-A floating panel will automatically appear at the bottom-right corner. Click ⚡ Turbo Sync All Tabs to start the batch update.
-
-Floating panel injected by Tampermonkey script
-
 
 We are done! 
 Now you can export the config back to kcauto_custom's folder.
