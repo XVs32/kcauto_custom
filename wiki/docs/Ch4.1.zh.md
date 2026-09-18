@@ -1,95 +1,94 @@
-_We're all nerds, on one subject or another._
+_人無癖不可與交，以其無深情也。_
 
 ---
 
-## Before you read
-There is a User config wiki page in [Ch5 Configuration File](Ch5.md)  
-You can find the explain for each option in user config  
-Check that out if you find yourself surrounded by unknown terms
+## 閱讀前須知 (Before you read)
+在 [Ch5 設定檔 (Configuration File)](../Ch5) 有專屬的設定說明頁面。  
+你可以在那裡找到使用者設定檔中各個選項的詳細解釋。  
+如果你發現這邊都是一堆看不懂的專有名詞，去看那邊就對了。
 
 ---
 
-## Map specified Sortie setting (combat.override)
+## 海域專屬出擊設定 (`combat.override`)
 
-In most cases, kcauto_custom sortie with the same general logic.  
+在大多數情況下，`kcauto_custom` 都會使用同一套通用的出擊邏輯。  
 
-* Diamond for anti-air
-* Line Abreast for anti-sub
-* Vanguard instead of Line Ahead during event
-* Get into night battle against boss for rank S result
-* etc.
+* 防空時使用輪形陣
+* 反潛時使用單橫陣
+* 活動期間使用警戒陣而非單縱陣
+* 為了 S 勝利，BOSS 戰時突入夜戰
+* 諸如此類
 
-Though in some others maps, we do need to:
+但在其他某些地圖中，我們確實需要：
 
-* Select node (ex. In 5-3, we select node K to node O) 
-* Setup lbas (ex. In 6-4, 6-5, 7-4 etc.)
-* Attempt using Nelson touch
-* Attempt using smoke 
-* etc.
+* 選擇節點（例如：在 5-3 中，我們需要選擇從 K 點走到 O 點） 
+* 設定基地航空隊 (LBAS)（例如：在 6-4、6-5、7-4 等地圖）
+* 嘗試使用 Nelson 摸  
+* 嘗試使用煙幕  
+* 諸如此類
 
-Issue is those settings are not gonna work for other maps, and the map specified setting is here to help.
-
----
-
-### What if I don't need this?
-Set `combat.override` in your config to `true`.  
-Your kcauto works the same as before.
+問題是，這些特殊設定在其他地圖上根本不適用，而「海域專屬設定 (Map specified setting)」就是為了解決這個問題。
 
 ---
 
-There are 3 levels of Sortie settings:
+### 如果我不需要這個功能呢？
+請將你設定檔中的 `combat.override` 設為 `true`。  
 
-1. User config(Your normal config, `configs/config_cui.json` if you're using CUI)
-2. Default `data/config/combat/default.json` (Default sortie config for general map)
-3. Map specified setting (ex.`data/config/combat/B-4-5.json`)(Sortie config made for specific map)
+---
 
-The priority here is `User config` < `Default` < `Map specified`  
-And you can define `enabled`, `fleet_presets` and `sortie_map` from User config ***ONLY***(show as STATIC in the following pic).
+出擊設定共有 3 個層級：
+
+1. 使用者設定檔（你平常在使用的設定檔，如果使用 CUI 的話就是 `configs/config_cui.json`）
+2. 預設 `data/config/combat/default.json`（一般地圖的預設出擊設定）
+3. 海域專屬設定（例如：`data/config/combat/B-4-5.json`）（專為特定地圖製作的出擊設定）
+
+優先順序為：`使用者設定` < `預設` < `海域專屬設定`  
+此外，你**只能**從使用者設定檔中定義 `enabled`、`fleet_presets` 和 `sortie_map`（在下圖中顯示為 STATIC 的部分）。
 ![image](https://github.com/XVs32/kcauto_custom/assets/16824564/0ee2f28f-7b6a-43cf-90bd-906f016da836)
 
-Feel free to edit or add configs under `data/config/combat`.  
-As long as `combat.override` in your own config is set to `false`, 
-kcauto will read the corresponding setting automatically. 
+你可以隨意編輯或在 `data/config/combat` 資料夾下新增配置。  
+只要你自己設定檔中的 `combat.override` 設為 `false`，  
+`kcauto` 就會自動讀取對應的特殊設定。
 
 ---
 
-## `Sortie mode: Auto` -- quest handling
+## `Sortie mode: Auto` -- 任務處理機制
 
-***Before you read: Usually you don't need to set this up yourself if you are using the CUI.  
-Do NOT edit the files here if you're not sure what you're doing***
+***閱讀前須知：通常如果你使用的是 CUI，你並不需要手動設定這個部分。  
+如果你不確定自己在做什麼，請不要編輯這裡的檔案，LOL***
 
-Now we have told kcauto-custom what ship to use, but how do kcauto-custom pick a map and finish quests for me?
+現在我們已經告訴了 `kcauto-custom` 該用哪艘船，但 `kcauto-custom` 是如何主動挑選地圖並幫我完成任務的呢？
 
-There are 3 files that would affect the behavior of quest & map picking (usually you don't have to edit them):
+有 3 個檔案會影響任務與地圖的挑選行為（通常你不需要編輯它們）：
 
-1. Your config file (`config/config_cui.json` for cui user)
-2. ```data/quest/quest.json```
-3. ```data/quest/quest_priority.json```
+1. 你的設定檔（CUI 玩家為 `configs/config_cui.json`）
+2. `data/quest/quest.json`
+3. `data/quest/quest_priority.json`
 
-Let's take a look into the config file first:
+我們先來看一下設定檔：
 
 ```json
-	"quest.enabled":	true,       #Enable the quest module
+	"quest.enabled":	true,       # 啟用任務模組
 	"quest.quests":	["Bd1", "Bd2", "Bd3", "Bd4", "Bd5", "Bd6", "Bd7", "Bd8", "Bw1", "Bw2", "Bw3", "Bw4", "Bw5", "Bw7", "Bw8", "Bw9", "Bw10", "Bm2", "Bm3", "Bm4", "Bm5", "Bm6", "Bm8", "Bq1", "Bq3", "Bq4", "Bq8", "Bq9", "Bq10", "Bq11", "Bq12", "C2", "C3", "C4", "C8", "C16", "C29", "D2", "D3", "D4", "D9", "D11", "D22", "D24", "E3", "E4", "F5", "F6", "F7", "F8"]
-	# The quests that kcauto-custom will attempt to finish
+	# kcauto-custom 將嘗試完成的任務列表
 ```
 
-kcauto-custom will only handle the quests mentioned in `quest.quests`.  
+`kcauto-custom` 只會處理列在 `quest.quests` 中的任務。  
 
-Next one is ```data/quest/quest.json```, this file contains the details of a quest. Again, usually you wouldn't want to edit it.
+下一個是 `data/quest/quest.json`，這個檔案包含任務的詳細資訊。同樣地，通常你需要編輯它。
 
 ```json
 
-  "Bd1": {                         #The quest name
-    "id": 201,                     #The quest ID
-    "type": "daily",               #The quest type
-    "intervals": [1, 0, 0],        #Intervals between kcauto-custom checking if the quest is finished, with the order as [sortie, pvp, expedition]
-    "recommended_map": ["1-1"]     #The map which kcauto-custom will sortie to if no info could gather from KC3
+  "Bd1": {                         # 任務代號名稱
+    "id": 201,                     # 任務 ID
+    "type": "daily",               # 任務類型
+    "intervals": [1, 0, 0],        # kcauto-custom 檢查任務是否完成的間隔，順序為 [出擊, 演習, 遠征]
+    "recommended_map": ["1-1"]     # 如果無法從 KC3 收集到資訊，kcauto-custom 預設會出擊的地圖
   }
 
 ```
 
-The last one is ```data/quests/sorite_quest_priority.json```, it defines what quest kcauto-costom will prioritizes when user is in `Sortie mode: Auto`
+最後一個是 `data/quests/sorite_quest_priority.json`，它定義了當玩家處於 `Sortie mode: Auto` 時，`kcauto-custom` 會優先執行哪些任務。
 ```json
 {
 
@@ -132,6 +131,6 @@ The last one is ```data/quests/sorite_quest_priority.json```, it defines what qu
 }
 ```
 
-The priority here is `daily` > `weekly` > `monthly` > `quarterly` > `yearly` > `low_priority`
+這裡的優先順序為：`日常任務 (Daily)` > `週常任務 (Weekly)` > `月常任務 (Monthly)` > `季常任務 (Quarterly)` > `年常任務 (Yearly)` > `低優先度 (Low priority)`
 
 ---
