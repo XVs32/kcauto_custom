@@ -1,39 +1,40 @@
-_Standardization, not perfection, is the key to scale._
+_規模化的關鍵在於『標準化』，而非『追求完美』。_
 
 ---
 
-## `Factory recipe preset`
+## 工廠配方速查 (Factory recipe preset)
 
-To avoid wiki-ing every time when changing recipe.  
-kcauto_custom is capable to read recipe preset in JSON format.  
+為避免每次更換配方時都要去翻閱 Wiki 查詢，  
+`kcauto_custom` 支援讀取 JSON 格式的配方。  
 
-The files are `data/factory/construct_recipe_preset.json` and `data/factory/develop_recipe_preset.json`.  
-The format is:
+這些檔案分別是 `data/factory/construct_recipe_preset.json` 與 `data/factory/develop_recipe_preset.json`。  
+格式如下：
+
 ```json
-    <preset name>: {
+    <配方名稱>: {
         "factory.build_recipe": [
-            <fuel>,
-            <ammo>,
-            <steel>,
-            <bauxite>
+            <燃料>,
+            <彈藥>,
+            <鋼材>,
+            <鋁土>
         ],
-        "factory.build_secretary": <ship id>
+        "factory.build_secretary": <艦娘 ID>
     }
 ```
 
 ```json
-    <preset name>: {
+    <配方名稱>: {
         "factory.develop_recipe": [
-            <fuel>,
-            <ammo>,
-            <steel>,
-            <bauxite>
+            <燃料>,
+            <彈藥>,
+            <鋼材>,
+            <鋁土>
         ],
-        "factory.develop_secretary": <ship id>
+        "factory.develop_secretary": <艦娘 ID>
     }
 ```
 
-***Format of construct and develop recipe preset***
+***建造與開發配方格式***
 
 ---
 
@@ -84,14 +85,14 @@ The format is:
 
 ```
 
-***Example of construct and develop recipe preset***
+***建造與開發配方預設範例***
 
 ---
 
-The preset will appear on the left of factory panel after you setup the above files.  
-Simply selecting it will apply the corresponding recipe. 
+當你設定好上述檔案後，預設選項就會出現在工廠控制面板的左側。  
+只需直接點選即可自動套用對應的配方。 
 
 <img width="359" height="145" alt="image" src="https://github.com/user-attachments/assets/99faad4d-c784-4d91-b96d-b6b53926da19" />
 <img width="360" height="149" alt="image" src="https://github.com/user-attachments/assets/8a6152f6-72fe-49cf-a123-2b68145a7d63" />
 
-***Example of applying recipe preset***
+***套用配方預設之範例***
