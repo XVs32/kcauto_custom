@@ -6,6 +6,7 @@ import stats.stats_core as sts
 import expedition.expedition_core as exp
 
 import util.kca as kca_u
+from kca_enums.interaction_modes import InteractionModeEnum
 from util.logger import Log
 
 
@@ -59,7 +60,9 @@ class Recovery(object):
             if cls.recovery_from_chrome_crash(screen, crash_type=1):
                 return True
 
-        visual_events = kca_u.kca.api_hook.pop_messages()
+        visual_events = []
+        if cfg.config.general.interaction_mode is not InteractionModeEnum.POI:
+            visual_events = kca_u.kca.api_hook.pop_messages()
         for event in visual_events:
             if event["method"] == "Inspector.targetCrashed":
                 Log.log_warn("Chrome Crash (Type 2) detected.")
@@ -224,6 +227,9 @@ class Recovery(object):
             pyautogui.press("tab")
             kca_u.kca.sleep(0.5)
             pyautogui.press("space")
+            kca_u.kca.sleep(5)
+        elif cfg.config.general.interaction_mode is InteractionModeEnum.POI:
+            kca_u.kca.poi_client.refresh()
             kca_u.kca.sleep(5)
         else:
             kca_u.kca.api_hook.Page.reload()
