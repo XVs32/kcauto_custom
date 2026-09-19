@@ -636,6 +636,7 @@ class ApiWrapper(object):
             for key in sorted_keys:
                 for equipment in equipment_pool_temp[key]:
                     equ.equipment.equipment_pool[equ.equipment.FREE].append(equipment)
+            equ.equipment.free_equipment_initialized = True
             Log.log_debug_1(f"equipment updated")
 
             # for i, equipment in enumerate(equ.equipment.equipment_pool[equ.equipment.FREE]):

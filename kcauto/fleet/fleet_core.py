@@ -13,7 +13,11 @@ import ships.equipment_core as equ
 from ships.equipment import Equipment as Equipment
 import expedition.expedition_core as exp
 from kca_enums.expeditions import ExpeditionEnum
-from constants import AUTO_PRESET
+from constants import (
+    AUTO_PRESET,
+    EXPEDITION_DRUM_MODEL_ID,
+    EXPEDITION_LANDING_CRAFT_MODEL_ID,
+)
 
 import os
 import copy
@@ -322,22 +326,10 @@ class FleetCore(object):
         output: (kcauto preset)
         """
 
-        equipment_pool_read_only = equ.equipment.equipment_pool[equ.equipment.ID].copy()
-        equ.equipment.equipment_pool[equ.equipment.NON_NORO6] = (
-            equ.equipment.equipment_pool[equ.equipment.ID].copy()
-        )
-
         if cfg.config.expedition.is_auto_mode == False:
             Log.log_warn(
                 "Expedition mode is manual. Please make sure the expedition fleet does not occupy Noro6's ships and equipment."
             )
-
-            for fleet in self.expedition_fleets:
-                for ship in fleet.ships:
-                    for equipment in ship.equipments:
-                        equ.equipment._remove_from_pool(
-                            equipment, pool=equ.equipment.ID
-                        )
         else:
             if cfg.config.combat.is_auto_mode == False:
                 Log.log_warn(
@@ -349,16 +341,10 @@ class FleetCore(object):
                     "PvP mode is manual; the expedition module might mess up the PvP fleet on the fly."
                 )
 
-        equipment_pool_bak = equ.equipment.equipment_pool[equ.equipment.ID].copy()
-
         ret = {}
         noro6 = Noro6()
 
-        panic_flag = False
-
         for preset in noro6.presets:
-            is_first_not_exact_match = True
-
             noro6.get_map(preset["name"])
 
             fleet_type = noro6.get_preset_type()
@@ -388,83 +374,38 @@ class FleetCore(object):
                         sys.exit()
 
                     ship.equipments = []
+                    empty_normal_slot_seen = False
 
                     for j in range(1, noro6.get_equipment_count() + 1):
-                        this_equipment, is_exact_match = (
-                            equ.equipment.get_equipment_from_noro6_equipment(
-                                noro6.get_equipment(j)
-                            )
-                        )
+                        noro6_equipment = noro6.get_equipment(j)
+                        if noro6_equipment["i"] == Equipment.EMPTY_EQUIPMENT:
+                            empty_normal_slot_seen = True
+                            continue
 
-                        # send warring, can't find exact same equipment
-                        if (
-                            this_equipment != None
-                            and this_equipment.is_empty_equipment == False
-                            and is_exact_match == False
-                        ):
-                            if is_first_not_exact_match:
-                                Log.log_msg(f"In Noro6 preset {preset['name']}...")
-                                is_first_not_exact_match = False
-                            Log.log_warn(
-                                f"Can't find exact {this_equipment.name} with {noro6.get_equipment(j)['r']}★, using the closest one with {this_equipment.stars}★"
-                            )
-
-                        if this_equipment == None:
+                        if empty_normal_slot_seen:
                             Log.log_error(
-                                f"Failed finding equipment for {preset['name']}, exit..."
+                                f"Noro6 preset {preset['name']}, ship {ship.name} "
+                                "has equipment after an empty normal slot; "
+                                "normal equipment slots must be contiguous."
                             )
-                            panic_flag = True
-                            break
-                        elif (
-                            this_equipment.model_id == -1
-                            and fleet_type == FleetEnum.COMBAT
-                        ):
-                            Log.log_warn(
-                                f"In Noro6 preset {preset['name']}, ship {ship.name} has empty equipment slot"
+                            sys.exit()
+
+                        ship.equipments.append(
+                            Equipment(
+                                model_id=noro6_equipment["i"],
+                                stars=noro6_equipment["r"],
                             )
-
-                        ship.equipments.append(this_equipment)
-
-                        equ.equipment._remove_from_pool(
-                            this_equipment, pool=equ.equipment.ID
-                        )
-                        equ.equipment._remove_from_pool(
-                            this_equipment, pool=equ.equipment.NON_NORO6
                         )
 
                     reinforce_equipment = noro6.get_reinforce_equipment()
                     if reinforce_equipment["i"] > 0:
-                        this_equipment, is_exact_match = (
-                            equ.equipment.get_equipment_from_noro6_equipment(
-                                reinforce_equipment
-                            )
+                        ship.slot_ex = Equipment(
+                            model_id=reinforce_equipment["i"],
+                            stars=reinforce_equipment["r"],
                         )
-                        ship.slot_ex = this_equipment
-
-                        # send warring, can't find exact same equipment
-                        if (
-                            this_equipment != None
-                            and this_equipment.is_empty_equipment == False
-                            and is_exact_match == False
-                        ):
-                            if is_first_not_exact_match:
-                                Log.log_msg(f"In Noro6 preset {preset['name']}...")
-                                is_first_not_exact_match = False
-                            Log.log_warn(
-                                f"Can't find exact {this_equipment.name} with {reinforce_equipment['r']}★, using the closest one with {this_equipment.stars}★"
-                            )
-
-                        # remove this equipment from equipment pool
-                        if this_equipment != None and this_equipment.model_id != None:
-                            equ.equipment._remove_from_pool(
-                                this_equipment, pool=equ.equipment.ID
-                            )
-                            equ.equipment._remove_from_pool(
-                                this_equipment, pool=equ.equipment.NON_NORO6
-                            )
                     elif reinforce_equipment["i"] == 0:
                         ship.slot_ex = None
-                    elif reinforce_equipment["i"] == -1:
+                    elif reinforce_equipment["i"] == Equipment.EMPTY_EQUIPMENT:
                         ship.slot_ex = Equipment()
                     else:
                         Log.log_error(
@@ -475,17 +416,6 @@ class FleetCore(object):
                     temp.ships.append(ship)
 
                 ret[preset_name][fleet_id] = temp
-
-            # restore equipment pool for next noro6 preset
-            equ.equipment.equipment_pool[equ.equipment.ID] = equipment_pool_bak.copy()
-
-        if panic_flag == True:
-            Log.log_error(
-                "Something went wrong when setting up Noro6 fleet, exiting..."
-            )
-            exit()
-
-        equ.equipment.equipment_pool[equ.equipment.ID] = equipment_pool_read_only.copy()
 
         # print out the fleet data in debug log
         for key in ret:
@@ -499,16 +429,9 @@ class FleetCore(object):
                 for ship in fleet.ships:
                     Log.log_debug_1(
                         f"{ship.name} ({ship.ship_type.name}) - Level: {ship.level}, \
-                        Equipment name and production id: {[f'{eq.name} {eq.production_id}' for eq in ship.equipments]}, \
-                        Slot Ex: {f'{ship.slot_ex.name} {ship.slot_ex.production_id}' if ship.slot_ex != None else 'None'}"
+                        Equipment: {[f'slot {slot + 1}: {eq.name} {eq.stars}★' for slot, eq in enumerate(ship.equipments)]}, \
+                        Slot Ex: {f'{ship.slot_ex.name} {ship.slot_ex.stars}★' if ship.slot_ex != None else 'None'}"
                     )
-
-        # print out the whole NON_NORO6 equipment pool in debug log
-        Log.log_debug_1(f"NON_NORO6 equipment pool after Noro6 preset load:")
-        for equipment in equ.equipment.equipment_pool[equ.equipment.NON_NORO6]:
-            ret_str = f"Equipment ID {equipment.production_id}: "
-            ret_str += f"{equipment.name} ({equipment.stars}★)"
-            Log.log_debug_1(ret_str)
 
         return ret
 
@@ -518,9 +441,13 @@ class FleetCore(object):
 
         exp_ship_pool = copy.deepcopy(self.fleets[self.EXP_POOL_KEY])
 
-        non_noro6_equipment_readonly = copy.deepcopy(
-            equ.equipment.equipment_pool[equ.equipment.NON_NORO6]
-        )
+        auto_exp_equipment_counts = {
+            EXPEDITION_LANDING_CRAFT_MODEL_ID: 0,
+            EXPEDITION_DRUM_MODEL_ID: 0,
+        }
+        for equipment in equ.equipment.equipment_pool[equ.equipment.ID]:
+            if equipment.model_id in auto_exp_equipment_counts:
+                auto_exp_equipment_counts[equipment.model_id] += 1
 
         exp.expedition.exp_for_fleet = [None, None, None, None, None]
         fleet_id = self.get_next_exp_fleet_id()
@@ -531,10 +458,16 @@ class FleetCore(object):
                     for standby_ship in exp_ship_pool[ongoing_ship.ship_type][:]:
                         if standby_ship.production_id == ongoing_ship.production_id:
                             exp_ship_pool[ongoing_ship.ship_type].remove(standby_ship)
-                            for equipment in ongoing_ship.equipments:
-                                equ.equipment._remove_from_pool(
-                                    equipment, pool=equ.equipment.NON_NORO6
-                                )
+                            ongoing_equipments = list(ongoing_ship.equipments)
+                            if (
+                                ongoing_ship.slot_ex is not None
+                                and ongoing_ship.slot_ex.model_id > 0
+                            ):
+                                ongoing_equipments.append(ongoing_ship.slot_ex)
+
+                            for equipment in ongoing_equipments:
+                                if equipment.model_id in auto_exp_equipment_counts:
+                                    auto_exp_equipment_counts[equipment.model_id] -= 1
 
         for exp_in_rank in exp.expedition.exp_rank:
             exp_static_data = exp.expedition.get_expedition_static_data(
@@ -543,9 +476,7 @@ class FleetCore(object):
 
             if exp_static_data != None:
                 exp_ship_pool_bak = copy.deepcopy(exp_ship_pool)
-                non_noro6_equipment_pool_bak = copy.deepcopy(
-                    equ.equipment.equipment_pool[equ.equipment.NON_NORO6]
-                )
+                auto_exp_equipment_counts_bak = auto_exp_equipment_counts.copy()
 
                 exp_ship_requirement = self._get_exp_ship_requirement_from_composition(
                     exp_static_data["reqComposition"]
@@ -554,6 +485,7 @@ class FleetCore(object):
                 assigned_fleet, exp_ship_pool = self._assign_ship(
                     exp_ship_requirement,
                     exp_ship_pool,
+                    auto_exp_equipment_counts,
                     exp_static_data["reqDrum"],
                     exp_static_data["reqDrumCarriers"],
                     4,
@@ -562,22 +494,18 @@ class FleetCore(object):
                 )
 
                 if assigned_fleet == self.ASSIGN_SHIP_FAILED:
-                    # failed to assign ships for this exp, restore the ship pool
-                    Log.log_debug_1(f"ship_pool and equipment_pool restore")
+                    # failed to assign ships for this exp, restore assignment pools
+                    Log.log_debug_1(f"ship_pool and equipment counts restore")
                     exp_ship_pool = exp_ship_pool_bak
-                    equ.equipment.equipment_pool[equ.equipment.NON_NORO6] = (
-                        non_noro6_equipment_pool_bak
-                    )
+                    auto_exp_equipment_counts = auto_exp_equipment_counts_bak
                 elif (
                     assigned_fleet == self.ASSIGN_DRUM_FAILED
                     or assigned_fleet == self.ASSIGN_LC_FAILED
                 ):
-                    # failed to assign equipment for this exp, restore the ship pool
-                    Log.log_debug_1(f"ship_pool and equipment_pool restore")
+                    # failed to assign equipment for this exp, restore assignment pools
+                    Log.log_debug_1(f"ship_pool and equipment counts restore")
                     exp_ship_pool = exp_ship_pool_bak
-                    equ.equipment.equipment_pool[equ.equipment.NON_NORO6] = (
-                        non_noro6_equipment_pool_bak
-                    )
+                    auto_exp_equipment_counts = auto_exp_equipment_counts_bak
                 else:
                     # Save the fleetShipId
                     DEFAULT_FLEET_ID = 1
@@ -610,11 +538,6 @@ class FleetCore(object):
                         self.fleets[self.IDLE_FLEET_KEY].append(ship)
                 break
 
-        # restore the equipment pool for next assignment
-        equ.equipment.equipment_pool[equ.equipment.NON_NORO6] = (
-            non_noro6_equipment_readonly
-        )
-
         if fleet_id == None:
             # assign for all fleets success
             Log.log_success(
@@ -629,6 +552,7 @@ class FleetCore(object):
         self,
         fleet_list: dict[ShipTypeEnum, list[Ship]],
         ship_pool: dict[ShipTypeEnum, list[Ship]],
+        equipment_counts: dict[int, int],
         req_dc=0,
         req_dc_carrier=0,
         req_lc=4,
@@ -642,6 +566,7 @@ class FleetCore(object):
             fleet_list: The list of ship type (shipTypeEnum)
             ship_pool(dict): The pool of ship to use
                 ex. {"DD":[<list of ship() obj>], "CL":[<list of ship() obj>]}
+            equipment_counts(dict): Remaining auto-expedition equipment counts by model
 
         output:
             -1: failed to assign a valid fleet
@@ -655,11 +580,8 @@ class FleetCore(object):
         TYPE_NA = 0
         TYPE_DD = 2
 
-        DRUM_MODELS = [75]
-        LC_MODELS = [68, 193]
-
-        NAME_ID_DRUM = 75
-        NAME_ID_LC = 68
+        DRUM_MODELS = [EXPEDITION_DRUM_MODEL_ID]
+        LC_MODELS = [EXPEDITION_LANDING_CRAFT_MODEL_ID, 193]
 
         MORK_FLEET_ID = 2
         assign_fleet = Fleet(MORK_FLEET_ID, FleetEnum.EXPEDITION_PRESET, False)
@@ -699,9 +621,19 @@ class FleetCore(object):
                         lc_count = min(req_lc, ship.slot_num)
 
                         temp_ship = copy.deepcopy(ship)
-                        temp_ship.fill_with_equipment(NAME_ID_LC, lc_count, True)
+                        assigned_lc_count = min(
+                            lc_count,
+                            equipment_counts[EXPEDITION_LANDING_CRAFT_MODEL_ID],
+                        )
+                        temp_ship.equipments = [
+                            Equipment(model_id=EXPEDITION_LANDING_CRAFT_MODEL_ID)
+                            for _ in range(assigned_lc_count)
+                        ]
 
                         if temp_ship.equipments != []:
+                            equipment_counts[EXPEDITION_LANDING_CRAFT_MODEL_ID] -= (
+                                assigned_lc_count
+                            )
                             req_lc -= lc_count
                             if temp_ship.slot_ex != None:
                                 temp_ship.slot_ex = Equipment()
@@ -738,9 +670,18 @@ class FleetCore(object):
                         dc_count = min(req_dc - req_dc_carrier + 1, ship.slot_num)
 
                         temp_ship = copy.deepcopy(ship)
-                        temp_ship.fill_with_equipment(NAME_ID_DRUM, dc_count)
+                        assigned_dc_count = min(
+                            dc_count, equipment_counts[EXPEDITION_DRUM_MODEL_ID]
+                        )
+                        temp_ship.equipments = [
+                            Equipment(model_id=EXPEDITION_DRUM_MODEL_ID)
+                            for _ in range(assigned_dc_count)
+                        ]
 
                         if temp_ship.equipments != []:
+                            equipment_counts[EXPEDITION_DRUM_MODEL_ID] -= (
+                                assigned_dc_count
+                            )
                             req_dc -= dc_count
                             req_dc_carrier -= 1
                             if temp_ship.slot_ex != None:
