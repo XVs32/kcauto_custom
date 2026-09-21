@@ -227,9 +227,9 @@ class ConfigExpedition(ConfigBase):
     @desire_devmat.setter
     def desire_devmat(self, value):
         if type(value) is not int:
-            raise ValueError("Specified value for desire_devmat is not an integer.")
+            raise ValueError("Specified value for desire develop material is not an integer.")
         elif value < 0 or value > 3000:
             raise ValueError(
-                "Specified value for desire_devmat is out of range (0-3000)."
+                "Specified value for desire develop material is out of range (0-3000)."
             )
         self._desire_devmat = value
