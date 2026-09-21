@@ -1,4 +1,4 @@
-_Automation is good, so long as you know exactly where to put the machine_
+_Automation is good, so long as you know exactly where to put the machine._
 
 ---
 
