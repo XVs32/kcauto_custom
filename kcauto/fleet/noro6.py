@@ -50,6 +50,10 @@ class Noro6(object):
 
     def get_presets(self, config):
 
+        if config["name"].endswith("-bak"):
+            Log.log_debug_2(f"Skip {config['name']}")
+            return
+
         if config["isDirectory"] == True:
             for item in config["childItems"]:
                 self.get_presets(item)
