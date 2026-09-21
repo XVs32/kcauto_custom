@@ -17,6 +17,7 @@ class ConfigExpedition(ConfigBase):
     _desire_bauxite = 0
     _desire_steel = 0
     _desire_bucket = 0
+    _desire_devmat = 0
 
     def __init__(self, config):
         super().__init__(config)
@@ -39,6 +40,7 @@ class ConfigExpedition(ConfigBase):
         self.desire_bauxite = config.get("expedition.desire_bauxite", 350000)
         self.desire_steel = config.get("expedition.desire_steel", 350000)
         self.desire_bucket = config.get("expedition.desire_bucket", 3000)
+        self.desire_devmat = config.get("expedition.desire_devmat", 3000)
 
     @property
     def enabled(self):
@@ -217,3 +219,17 @@ class ConfigExpedition(ConfigBase):
                 "Specified value for desire_bucket is out of range (0-3000)."
             )
         self._desire_bucket = value
+
+    @property
+    def desire_devmat(self):
+        return self._desire_devmat
+
+    @desire_devmat.setter
+    def desire_devmat(self, value):
+        if type(value) is not int:
+            raise ValueError("Specified value for desire_devmat is not an integer.")
+        elif value < 0 or value > 3000:
+            raise ValueError(
+                "Specified value for desire_devmat is out of range (0-3000)."
+            )
+        self._desire_devmat = value
