@@ -1,5 +1,6 @@
 
 site_name: kcauto_custom Wiki
+site_url: https://xvs32.github.io/kcauto_custom/
 
 theme:
     name: material
