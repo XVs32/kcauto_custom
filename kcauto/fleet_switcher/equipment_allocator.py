@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import Enum
-from typing import Optional, Sequence
+from types import MappingProxyType
+from typing import Mapping, Optional, Sequence
 
 from ships.equipment import Equipment
 
@@ -91,25 +92,24 @@ class MovableEquipment:
 @dataclass(frozen=True, slots=True)
 class EquipmentPlan:
     targets: tuple[FleetTarget, ...] = ()
-    assignments: tuple[tuple[EquipmentSlotRef, Equipment], ...] = ()
+    assignments: Mapping[EquipmentSlotRef, Equipment] = MappingProxyType({})
+
+    def __post_init__(self) -> None:
+        object.__setattr__(
+            self, "assignments", MappingProxyType(dict(self.assignments))
+        )
 
     def equipment_for(self, slot_ref: EquipmentSlotRef) -> Equipment:
-        for assigned_ref, equipment in self.assignments:
-            if assigned_ref == slot_ref:
-                return equipment
-        raise KeyError(slot_ref)
+        return self.assignments[slot_ref]
 
     def equipment_for_or_none(self, slot_ref: EquipmentSlotRef) -> Optional[Equipment]:
-        for assigned_ref, equipment in self.assignments:
-            if assigned_ref == slot_ref:
-                return equipment
-        return None
+        return self.assignments.get(slot_ref)
 
     def equipment_for_ship_ids(self, ship_ids: Sequence[int]) -> list[Equipment]:
         target_ship_ids = set(ship_ids)
         return [
             equipment
-            for slot_ref, equipment in self.assignments
+            for slot_ref, equipment in self.assignments.items()
             if slot_ref.ship_id in target_ship_ids
         ]
 
@@ -229,5 +229,5 @@ class EquipmentAllocator:
 
         return EquipmentPlan(
             targets=targets,
-            assignments=tuple(assignments.items()),
+            assignments=assignments,
         )
