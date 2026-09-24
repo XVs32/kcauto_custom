@@ -196,8 +196,9 @@ class FleetSwitcherCore(object):
 
     def _get_movable_equipment_pool(
         self, protected_fleet_ids: set[int]
-    ) -> dict[int, MovableEquipment]:
-        movable_equipment = {}
+    ) -> list[MovableEquipment]:
+        movable_equipment: list[MovableEquipment] = []
+        seen_production_ids: set[int] = set()
 
         def add_equipment(
             equipment: Equipment,
@@ -209,10 +210,11 @@ class FleetSwitcherCore(object):
             ):
                 return
 
-            movable_equipment.setdefault(
-                equipment.production_id,
-                MovableEquipment(equipment, source_ref),
-            )
+            if equipment.production_id in seen_production_ids:
+                return
+
+            seen_production_ids.add(equipment.production_id)
+            movable_equipment.append(MovableEquipment(equipment, source_ref))
 
         for equipment in equ.equipment.equipment_pool[equ.equipment.FREE]:
             add_equipment(equipment)
@@ -334,7 +336,7 @@ class FleetSwitcherCore(object):
         if requirements is None:
             return False
 
-        movable_equipment_by_id = self._get_movable_equipment_pool(protected_fleet_ids)
+        movable_equipments = self._get_movable_equipment_pool(protected_fleet_ids)
         reinforcement_eligible_ids: dict[int, set[int]] = {}
         for requirement in requirements:
             if not requirement.slot_ref.slot.is_reinforcement:
@@ -348,7 +350,7 @@ class FleetSwitcherCore(object):
 
             reinforcement_eligible_ids[requirement.slot_ref.ship_id] = {
                 movable.equipment.production_id
-                for movable in movable_equipment_by_id.values()
+                for movable in movable_equipments
                 if equ.equipment.is_reinforcement_equipment_available(
                     active_ship, movable.equipment
                 )
@@ -361,7 +363,7 @@ class FleetSwitcherCore(object):
         plan = self.equipment_allocator.allocate(
             fleet_targets,
             requirements,
-            movable_equipment_by_id,
+            movable_equipments,
             reinforcement_eligible_ids,
         )
         if plan is None:

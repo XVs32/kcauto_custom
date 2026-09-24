@@ -134,13 +134,13 @@ class EquipmentAllocator:
     def _get_candidates(
         self,
         requirement: EquipmentRequirement,
-        movable_equipment_by_id: dict[int, MovableEquipment],
+        movable_equipments: list[MovableEquipment],
         assigned_equipment_ids: set[int],
         reinforcement_eligible_ids: dict[int, set[int]],
     ) -> list[MovableEquipment]:
         candidates = [
             movable_equipment
-            for movable_equipment in movable_equipment_by_id.values()
+            for movable_equipment in movable_equipments
             if movable_equipment.equipment.model_id == requirement.model_id
             and movable_equipment.equipment.production_id not in assigned_equipment_ids
             and (
@@ -159,7 +159,7 @@ class EquipmentAllocator:
     def _assign_requirements(
         self,
         requirements: list[EquipmentRequirement],
-        movable_equipment_by_id: dict[int, MovableEquipment],
+        movable_equipments: list[MovableEquipment],
         reinforcement_eligible_ids: dict[int, set[int]],
         assignments: dict[EquipmentSlotRef, Equipment],
         assigned_equipment_ids: set[int],
@@ -172,7 +172,7 @@ class EquipmentAllocator:
                 requirement,
                 self._get_candidates(
                     requirement,
-                    movable_equipment_by_id,
+                    movable_equipments,
                     assigned_equipment_ids,
                     reinforcement_eligible_ids,
                 ),
@@ -195,7 +195,7 @@ class EquipmentAllocator:
 
             if self._assign_requirements(
                 remaining_requirements,
-                movable_equipment_by_id,
+                movable_equipments,
                 reinforcement_eligible_ids,
                 assignments,
                 assigned_equipment_ids,
@@ -211,7 +211,7 @@ class EquipmentAllocator:
         self,
         targets: tuple[FleetTarget, ...],
         requirements: list[EquipmentRequirement],
-        movable_equipment_by_id: dict[int, MovableEquipment],
+        movable_equipments: list[MovableEquipment],
         reinforcement_eligible_ids: dict[int, set[int]],
     ) -> Optional[EquipmentPlan]:
         assignments: dict[EquipmentSlotRef, Equipment] = {}
@@ -219,7 +219,7 @@ class EquipmentAllocator:
 
         if not self._assign_requirements(
             requirements,
-            movable_equipment_by_id,
+            movable_equipments,
             reinforcement_eligible_ids,
             assignments,
             assigned_equipment_ids,
