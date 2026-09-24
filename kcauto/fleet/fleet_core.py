@@ -627,7 +627,7 @@ class FleetCore(object):
                             equipment_counts[EXPEDITION_LANDING_CRAFT_MODEL_ID] -= (
                                 assigned_lc_count
                             )
-                            req_lc -= lc_count
+                            req_lc -= assigned_lc_count
                             if temp_ship.slot_ex != None:
                                 temp_ship.slot_ex = Equipment()
                             assign_fleet.add_ship(temp_ship)
@@ -675,7 +675,7 @@ class FleetCore(object):
                             equipment_counts[EXPEDITION_DRUM_MODEL_ID] -= (
                                 assigned_dc_count
                             )
-                            req_dc -= dc_count
+                            req_dc -= assigned_dc_count
                             req_dc_carrier -= 1
                             if temp_ship.slot_ex != None:
                                 temp_ship.slot_ex = Equipment()
