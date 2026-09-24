@@ -121,7 +121,8 @@ class EquipmentAllocator:
         movable_equipment: MovableEquipment,
     ) -> tuple[int, int, int, int]:
         equipment = movable_equipment.equipment
-        same_slot_priority = int(movable_equipment.source_ref != requirement.slot_ref)
+        same_slot = movable_equipment.source_ref == requirement.slot_ref
+        same_slot_priority = int(not same_slot)
         source_priority = 0 if movable_equipment.is_free else 1
 
         return (
