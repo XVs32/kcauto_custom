@@ -515,7 +515,6 @@ class FleetSwitcherCore(object):
                     if not self.switch_to_costom_fleet_with_equipment(
                         combat_fleet_id,
                         target_fleet,
-                        protected_fleet_ids,
                     ):
                         return False
 
@@ -580,7 +579,7 @@ class FleetSwitcherCore(object):
                     return False
 
                 if not self.switch_to_costom_fleet_with_equipment(
-                    1, fleet_list[1], protected_fleet_ids
+                    1, fleet_list[1]
                 ):
                     return False
 
@@ -610,7 +609,6 @@ class FleetSwitcherCore(object):
                     if not self.switch_to_costom_fleet_with_equipment(
                         fleet_id,
                         target_fleet,
-                        protected_fleet_ids,
                     ):
                         return False
 
@@ -773,7 +771,6 @@ class FleetSwitcherCore(object):
         self,
         fleet_id,
         costom_fleet: Fleet,
-        protected_fleet_ids: set[int],
     ):
         """
         method to switch the ship in {fleet_id} to ships defined in {ship_list}
@@ -786,7 +783,7 @@ class FleetSwitcherCore(object):
             Log.log_msg(f"Fleet {fleet_id} ships and equipment are already loaded")
             return True
 
-        if not self._unload_fleet_required_equipment(costom_fleet, protected_fleet_ids):
+        if not self._unload_fleet_required_equipment(costom_fleet):
             return False
 
         Log.log_success("Equipment unloaded.")
@@ -843,9 +840,7 @@ class FleetSwitcherCore(object):
 
         return temp_list
 
-    def _unload_fleet_required_equipment(
-        self, target_fleet: Fleet, protected_fleet_ids: set[int]
-    ):
+    def _unload_fleet_required_equipment(self, target_fleet: Fleet):
         """
         method to unload the equipments used by this fleet
         """
@@ -853,7 +848,6 @@ class FleetSwitcherCore(object):
         nav.navigate.to("refresh_home")
 
         unload_ships: list[Ship] = []
-        protected_ship_ids = self._get_protected_ship_ids(protected_fleet_ids)
         needed_load = False
         for production_id in shp.ships.ship_pool:
             ship = shp.ships.ship_pool[production_id]
@@ -868,21 +862,11 @@ class FleetSwitcherCore(object):
                             f"Ship {ship.name} has a reinforce slot, but Noro6 config says she doesn't, you might want to update your config."
                         )
 
-                    if (
-                        ship.has_equipment()
-                        and self._is_ship_equipment_movable(ship)
-                        and ship.production_id not in protected_ship_ids
-                    ):
+                    if ship.has_equipment():
                         unload_ships.append(ship)
             else:  # target_config does not care this ship, but we still have to strip it if it holds any equipment we care
                 conflicts = self._get_planned_equipment_held_by_ship(ship, target_fleet)
                 if conflicts:
-                    if (
-                        ship.production_id in protected_ship_ids
-                        or not self._is_ship_equipment_movable(ship)
-                    ):
-                        continue
-
                     unload_ships.append(ship)
 
         if not unload_ships:
