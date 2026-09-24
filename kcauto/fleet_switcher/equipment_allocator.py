@@ -99,10 +99,7 @@ class EquipmentPlan:
             self, "assignments", MappingProxyType(dict(self.assignments))
         )
 
-    def equipment_for(self, slot_ref: EquipmentSlotRef) -> Equipment:
-        return self.assignments[slot_ref]
-
-    def equipment_for_or_none(self, slot_ref: EquipmentSlotRef) -> Optional[Equipment]:
+    def equipment_for(self, slot_ref: EquipmentSlotRef) -> Optional[Equipment]:
         return self.assignments.get(slot_ref)
 
     def equipment_for_ship_ids(self, ship_ids: Sequence[int]) -> list[Equipment]:

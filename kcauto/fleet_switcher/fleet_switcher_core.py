@@ -409,7 +409,7 @@ class FleetSwitcherCore(object):
                 if slot < len(active_ship.equipments)
                 else None
             )
-            planned_equipment = self.equipment_plan.equipment_for_or_none(
+            planned_equipment = self.equipment_plan.equipment_for(
                 EquipmentSlotRef(
                     active_ship.production_id, EquipmentSlot.from_index(slot)
                 )
@@ -433,7 +433,7 @@ class FleetSwitcherCore(object):
             and not active_ship.slot_ex.is_empty_equipment
             else None
         )
-        planned_slot_ex = self.equipment_plan.equipment_for_or_none(
+        planned_slot_ex = self.equipment_plan.equipment_for(
             EquipmentSlotRef(
                 active_ship.production_id, EquipmentSlot.REINFORCEMENT
             )
