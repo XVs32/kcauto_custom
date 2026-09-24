@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 from types import MappingProxyType
 from typing import Mapping, Optional, Sequence
@@ -92,11 +92,13 @@ class MovableEquipment:
 @dataclass(frozen=True, slots=True)
 class EquipmentPlan:
     targets: tuple[FleetTarget, ...] = ()
-    assignments: Mapping[EquipmentSlotRef, Equipment] = MappingProxyType({})
+    assignments: Mapping[EquipmentSlotRef, Equipment] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         object.__setattr__(
-            self, "assignments", MappingProxyType(dict(self.assignments))
+            self,
+            "assignments",
+            MappingProxyType(dict(self.assignments)),
         )
 
     def equipment_for(self, slot_ref: EquipmentSlotRef) -> Optional[Equipment]:
