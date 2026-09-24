@@ -34,16 +34,10 @@ class EquipmentSlot(Enum):
         return self is EquipmentSlot.REINFORCEMENT
 
     @property
-    def normal_index(self) -> int:
-        if self.is_reinforcement:
-            raise ValueError("Reinforcement slot has no normal slot index")
-        return self.value
-
-    @property
     def display_name(self) -> str:
         if self.is_reinforcement:
             return "slot_ex"
-        return f"slot {self.normal_index + 1}"
+        return f"slot {self.value + 1}"
 
 
 @dataclass(frozen=True, slots=True)
