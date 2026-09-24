@@ -154,57 +154,6 @@ class EquipmentAllocator:
             ),
         )
 
-    def _assign_requirements(
-        self,
-        requirements: list[EquipmentRequirement],
-        movable_equipments: list[MovableEquipment],
-        reinforcement_eligible_ids: dict[int, set[int]],
-        assignments: dict[EquipmentSlotRef, Equipment],
-        assigned_equipment_ids: set[int],
-    ) -> bool:
-        if not requirements:
-            return True
-
-        requirement_candidates = [
-            (
-                requirement,
-                self._get_candidates(
-                    requirement,
-                    movable_equipments,
-                    assigned_equipment_ids,
-                    reinforcement_eligible_ids,
-                ),
-            )
-            for requirement in requirements
-        ]
-        requirement, candidates = min(
-            requirement_candidates, key=lambda item: len(item[1])
-        )
-        if not candidates:
-            return False
-
-        remaining_requirements = [
-            remaining for remaining in requirements if remaining is not requirement
-        ]
-        for movable_equipment in candidates:
-            equipment = movable_equipment.equipment
-            assignments[requirement.slot_ref] = equipment
-            assigned_equipment_ids.add(equipment.production_id)
-
-            if self._assign_requirements(
-                remaining_requirements,
-                movable_equipments,
-                reinforcement_eligible_ids,
-                assignments,
-                assigned_equipment_ids,
-            ):
-                return True
-
-            del assignments[requirement.slot_ref]
-            assigned_equipment_ids.remove(equipment.production_id)
-
-        return False
-
     def allocate(
         self,
         targets: tuple[FleetTarget, ...],
@@ -215,13 +164,47 @@ class EquipmentAllocator:
         assignments: dict[EquipmentSlotRef, Equipment] = {}
         assigned_equipment_ids: set[int] = set()
 
-        if not self._assign_requirements(
-            requirements,
-            movable_equipments,
-            reinforcement_eligible_ids,
-            assignments,
-            assigned_equipment_ids,
-        ):
+        def search(remaining_requirements: list[EquipmentRequirement]) -> bool:
+            if not remaining_requirements:
+                return True
+
+            requirement_candidates = [
+                (
+                    requirement,
+                    self._get_candidates(
+                        requirement,
+                        movable_equipments,
+                        assigned_equipment_ids,
+                        reinforcement_eligible_ids,
+                    ),
+                )
+                for requirement in remaining_requirements
+            ]
+            requirement, candidates = min(
+                requirement_candidates, key=lambda item: len(item[1])
+            )
+            if not candidates:
+                return False
+
+            next_requirements = [
+                remaining
+                for remaining in remaining_requirements
+                if remaining is not requirement
+            ]
+            for movable_equipment in candidates:
+                equipment = movable_equipment.equipment
+                assignments[requirement.slot_ref] = equipment
+                assigned_equipment_ids.add(equipment.production_id)
+
+                if search(next_requirements):
+                    return True
+
+                del assignments[requirement.slot_ref]
+                assigned_equipment_ids.remove(equipment.production_id)
+
+            return False
+
+        if not search(requirements):
             return None
 
         return EquipmentPlan(
