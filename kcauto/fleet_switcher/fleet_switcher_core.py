@@ -100,20 +100,6 @@ class FleetSwitcherCore(object):
 
         return -1
 
-    def _find_active_fleet_for_ship(self, ship: Ship) -> Optional[Fleet]:
-        active_fleets = self._active_fleets
-        for active_fleet in active_fleets.values():
-            if ship.production_id in active_fleet.ship_ids:
-                return active_fleet
-        return None
-
-    def _is_ship_equipment_movable(self, ship: Ship) -> bool:
-        if ship.production_id in rep.repair.ships_under_repair:
-            return False
-
-        active_fleet = self._find_active_fleet_for_ship(ship)
-        return active_fleet is None or active_fleet.at_base
-
     def _get_planned_equipment_held_by_ship(
         self, ship: Ship, target_fleet: Fleet
     ) -> list[Equipment]:
@@ -197,41 +183,33 @@ class FleetSwitcherCore(object):
     def _get_movable_equipment_pool(
         self, protected_fleet_ids: set[int]
     ) -> list[MovableEquipment]:
-        movable_equipment: list[MovableEquipment] = []
-        seen_production_ids: set[int] = set()
-
-        def add_equipment(
-            equipment: Equipment,
-            source_ref: Optional[EquipmentSlotRef] = None,
-        ) -> None:
-            if (
-                equipment.model_id <= 0
-                or equipment.production_id == Equipment.UNKNOWN_PRODUCTION_ID
-            ):
-                return
-
-            if equipment.production_id in seen_production_ids:
-                return
-
-            seen_production_ids.add(equipment.production_id)
-            movable_equipment.append(MovableEquipment(equipment, source_ref))
-
-        for equipment in equ.equipment.equipment_pool[equ.equipment.FREE]:
-            add_equipment(equipment)
+        movable_equipment = [
+            MovableEquipment(equipment, None)
+            for equipment in equ.equipment.equipment_pool[equ.equipment.FREE]
+        ]
 
         def add_ship(ship: Ship) -> None:
-            if not self._is_ship_equipment_movable(ship):
+            if ship.production_id in rep.repair.ships_under_repair:
                 return
 
             for slot, equipment in enumerate(ship.equipments):
-                add_equipment(
-                    equipment,
-                    EquipmentSlotRef(ship.production_id, EquipmentSlot.from_index(slot)),
+                movable_equipment.append(
+                    MovableEquipment(
+                        equipment,
+                        EquipmentSlotRef(
+                            ship.production_id, EquipmentSlot.from_index(slot)
+                        ),
+                    )
                 )
-            if ship.slot_ex is not None:
-                add_equipment(
-                    ship.slot_ex,
-                    EquipmentSlotRef(ship.production_id, EquipmentSlot.REINFORCEMENT),
+
+            if ship.slot_ex is not None and not ship.slot_ex.is_empty_equipment:
+                movable_equipment.append(
+                    MovableEquipment(
+                        ship.slot_ex,
+                        EquipmentSlotRef(
+                            ship.production_id, EquipmentSlot.REINFORCEMENT
+                        ),
+                    )
                 )
 
         for ship in flt.fleets.ships_not_in_fleets:
@@ -345,9 +323,6 @@ class FleetSwitcherCore(object):
             active_ship = shp.ships.get_ship_from_production_id(
                 requirement.slot_ref.ship_id
             )
-            if active_ship is None:
-                return False
-
             reinforcement_eligible_ids[requirement.slot_ref.ship_id] = {
                 movable.equipment.production_id
                 for movable in movable_equipments
@@ -386,18 +361,13 @@ class FleetSwitcherCore(object):
             active_ship = shp.ships.get_ship_from_production_id(
                 requirement.slot_ref.ship_id
             )
-            ship_name = (
-                active_ship.name_jp
-                if active_ship is not None
-                else str(requirement.slot_ref.ship_id)
-            )
             requested_equipment = Equipment(model_id=requirement.model_id)
             Log.log_warn(
                 f"Using {selected_equipment.name} {selected_equipment.stars}★ "
                 f"({selected_equipment.production_id}) instead of requested "
                 f"{requested_equipment.name} {requirement.stars}★ "
                 f"(model {requirement.model_id}) for "
-                f"{ship_name} {requirement.slot_ref.slot.display_name}."
+                f"{active_ship.name_jp} {requirement.slot_ref.slot.display_name}."
             )
 
         return True

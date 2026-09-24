@@ -144,7 +144,7 @@ class EquipmentAllocator:
             and (
                 not requirement.slot_ref.slot.is_reinforcement
                 or movable_equipment.equipment.production_id
-                in reinforcement_eligible_ids.get(requirement.slot_ref.ship_id, set())
+                in reinforcement_eligible_ids[requirement.slot_ref.ship_id]
             )
         ]
         return sorted(
