@@ -98,12 +98,16 @@ class MovableEquipment:
 
 @dataclass(slots=True)
 class EquipmentPlan:
-    targets: list[tuple[int, Fleet]] = field(default_factory=list)
+    _targets: list[tuple[int, Fleet]] = field(default_factory=list)
     _assignments: dict[EquipmentSlotRef, Equipment] = field(default_factory=dict)
     _assigned_equipment_ids: set[int] = field(default_factory=set)
 
+    @property
+    def targets(self) -> list[tuple[int, Fleet]]:
+        return self._targets
+
     def clear(self) -> None:
-        self.targets.clear()
+        self._targets.clear()
         self.clear_assignments()
 
     def clear_assignments(self) -> None:
@@ -111,7 +115,7 @@ class EquipmentPlan:
         self._assigned_equipment_ids.clear()
 
     def set_targets(self, targets: list[tuple[int, Fleet]]) -> None:
-        self.targets = list(targets)
+        self._targets = list(targets)
 
     def assign(self, ship: Ship, slot: EquipmentSlot, equipment: Equipment) -> None:
         ref = EquipmentSlotRef(ship.production_id, slot)
