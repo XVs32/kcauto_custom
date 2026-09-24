@@ -458,14 +458,7 @@ class FleetCore(object):
                     for standby_ship in exp_ship_pool[ongoing_ship.ship_type][:]:
                         if standby_ship.production_id == ongoing_ship.production_id:
                             exp_ship_pool[ongoing_ship.ship_type].remove(standby_ship)
-                            ongoing_equipments = list(ongoing_ship.equipments)
-                            if (
-                                ongoing_ship.slot_ex is not None
-                                and ongoing_ship.slot_ex.model_id > 0
-                            ):
-                                ongoing_equipments.append(ongoing_ship.slot_ex)
-
-                            for equipment in ongoing_equipments:
+                            for equipment in ongoing_ship.equipments:
                                 if equipment.model_id in auto_exp_equipment_counts:
                                     auto_exp_equipment_counts[equipment.model_id] -= 1
 
