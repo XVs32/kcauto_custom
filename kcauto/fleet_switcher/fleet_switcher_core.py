@@ -317,7 +317,7 @@ class FleetSwitcherCore(object):
 
         return requirements
 
-    def _prepare_equipment_plan(
+    def _prepare_context_equipment_plan(
         self,
         targets: list[tuple[int, Fleet]],
         protected_fleet_ids: set[int],
@@ -401,13 +401,6 @@ class FleetSwitcherCore(object):
             )
 
         return True
-
-    def _prepare_context_equipment_plan(
-        self,
-        targets: list[tuple[int, Fleet]],
-        protected_fleet_ids: set[int],
-    ) -> bool:
-        return self._prepare_equipment_plan(targets, protected_fleet_ids)
 
     def _is_ship_equipment_assignment_matched(
         self, active_ship: Ship, target_ship: Ship
