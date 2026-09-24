@@ -92,13 +92,13 @@ class FleetSwitcherCore(object):
         return flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY]
 
     def _find_equipment_row(
-        self, equipment_list: list[Equipment], planned_equipment: Equipment
-    ) -> tuple[int, Equipment]:
+        self, equipment_list: list[Equipment], production_id: int
+    ) -> int:
         for row_idx, equipment in enumerate(equipment_list):
-            if equipment.production_id == planned_equipment.production_id:
-                return row_idx, equipment
+            if equipment.production_id == production_id:
+                return row_idx
 
-        return -1, planned_equipment
+        return -1
 
     def _find_active_fleet_for_ship(self, ship: Ship) -> Optional[Fleet]:
         active_fleets = self._active_fleets
@@ -1159,9 +1159,9 @@ class FleetSwitcherCore(object):
                         fleet.ships[i].production_id, EquipmentSlot.from_index(slot)
                     )
                 )
-                row_idx, selected_equipment = self._find_equipment_row(
+                row_idx = self._find_equipment_row(
                     equ.equipment.equipment_pool[equ.equipment.FREE],
-                    planned_equipment,
+                    planned_equipment.production_id,
                 )
 
                 if row_idx == -1:
@@ -1173,7 +1173,7 @@ class FleetSwitcherCore(object):
                     return False
 
                 Log.log_msg(
-                    f"Selecting {selected_equipment.name} {selected_equipment.stars} ★"
+                    f"Selecting {planned_equipment.name} {planned_equipment.stars} ★"
                 )
                 ssw.ship_switcher.select_replacement_row(
                     row_idx=row_idx, mode=ssw.ship_switcher.EQUIPMENT_MODE
@@ -1207,9 +1207,9 @@ class FleetSwitcherCore(object):
                         fleet.ships[i].production_id, EquipmentSlot.REINFORCEMENT
                     )
                 )
-                row_idx, selected_equipment = self._find_equipment_row(
+                row_idx = self._find_equipment_row(
                     reinforce_equipment_list,
-                    planned_equipment,
+                    planned_equipment.production_id,
                 )
 
                 if row_idx == -1:
@@ -1221,7 +1221,7 @@ class FleetSwitcherCore(object):
                     return False
 
                 Log.log_msg(
-                    f"Selecting {selected_equipment.name} {selected_equipment.stars} ★ on page {row_idx // 10 + 1} position {(row_idx % 10) + 1}"
+                    f"Selecting {planned_equipment.name} {planned_equipment.stars} ★ on page {row_idx // 10 + 1} position {(row_idx % 10) + 1}"
                 )
                 ssw.ship_switcher.select_replacement_row(
                     row_idx=row_idx,
