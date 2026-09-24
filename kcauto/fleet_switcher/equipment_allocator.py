@@ -89,6 +89,12 @@ class MovableEquipment:
         return self.source_ref is None
 
 
+class EquipmentAllocationFailure(Exception):
+    def __init__(self, requirement: EquipmentRequirement):
+        self.requirement = requirement
+        super().__init__(f"Unable to allocate equipment model {requirement.model_id}.")
+
+
 @dataclass(frozen=True, slots=True)
 class EquipmentPlan:
     targets: tuple[FleetTarget, ...] = ()
@@ -162,13 +168,13 @@ class EquipmentAllocator:
         requirements: list[EquipmentRequirement],
         movable_equipments: list[MovableEquipment],
         reinforcement_eligible_ids: dict[int, set[int]],
-    ) -> Optional[EquipmentPlan]:
+    ) -> EquipmentPlan:
         assignments: dict[EquipmentSlotRef, Equipment] = {}
         assigned_equipment_ids: set[int] = set()
 
-        def search(remaining_requirements: list[EquipmentRequirement]) -> bool:
+        def search(remaining_requirements: list[EquipmentRequirement]) -> None:
             if not remaining_requirements:
-                return True
+                return
 
             requirement_candidates = [
                 (
@@ -186,28 +192,30 @@ class EquipmentAllocator:
                 requirement_candidates, key=lambda item: len(item[1])
             )
             if not candidates:
-                return False
+                raise EquipmentAllocationFailure(requirement)
 
             next_requirements = [
                 remaining
                 for remaining in remaining_requirements
                 if remaining is not requirement
             ]
+            last_failure = EquipmentAllocationFailure(requirement)
             for movable_equipment in candidates:
                 equipment = movable_equipment.equipment
                 assignments[requirement.slot_ref] = equipment
                 assigned_equipment_ids.add(equipment.production_id)
 
-                if search(next_requirements):
-                    return True
+                try:
+                    search(next_requirements)
+                    return
+                except EquipmentAllocationFailure as failure:
+                    del assignments[requirement.slot_ref]
+                    assigned_equipment_ids.remove(equipment.production_id)
+                    last_failure = failure
 
-                del assignments[requirement.slot_ref]
-                assigned_equipment_ids.remove(equipment.production_id)
+            raise last_failure
 
-            return False
-
-        if not search(requirements):
-            return None
+        search(requirements)
 
         return EquipmentPlan(
             targets=targets,

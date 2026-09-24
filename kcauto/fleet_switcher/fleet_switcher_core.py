@@ -24,6 +24,7 @@ from constants import (
 )
 from fleet.fleet import Fleet
 from fleet_switcher.equipment_allocator import (
+    EquipmentAllocationFailure,
     EquipmentAllocator,
     EquipmentPlan,
     EquipmentRequirement,
@@ -335,23 +336,26 @@ class FleetSwitcherCore(object):
             FleetTarget(fleet_id, tuple(target_fleet.ship_ids))
             for fleet_id, target_fleet in targets
         )
-        plan = self.equipment_allocator.allocate(
-            fleet_targets,
-            requirements,
-            movable_equipments,
-            reinforcement_eligible_ids,
-        )
-        if plan is None:
+        try:
+            plan = self.equipment_allocator.allocate(
+                fleet_targets,
+                requirements,
+                movable_equipments,
+                reinforcement_eligible_ids,
+            )
+        except EquipmentAllocationFailure as failure:
+            equipment = Equipment(model_id=failure.requirement.model_id)
             Log.log_error(
-                "Cannot find a conflict-free equipment allocation for all target slots."
+                "Cannot find a conflict-free equipment allocation: "
+                f"insufficient usable equipment for model "
+                f"{failure.requirement.model_id} ({equipment.name}) "
+                "to satisfy all target slots."
             )
             return False
 
         self.equipment_plan = plan
         for requirement in requirements:
-            selected_equipment = self.equipment_plan.equipment_for(
-                requirement.slot_ref
-            )
+            selected_equipment = self.equipment_plan.equipment_for(requirement.slot_ref)
             if (
                 requirement.star_preference is not EquipmentStarPreference.CLOSEST
                 or selected_equipment.stars == requirement.stars
@@ -399,14 +403,10 @@ class FleetSwitcherCore(object):
             else None
         )
         planned_slot_ex = self.equipment_plan.equipment_for(
-            EquipmentSlotRef(
-                active_ship.production_id, EquipmentSlot.REINFORCEMENT
-            )
+            EquipmentSlotRef(active_ship.production_id, EquipmentSlot.REINFORCEMENT)
         )
         planned_slot_ex_id = (
-            planned_slot_ex.production_id
-            if planned_slot_ex is not None
-            else None
+            planned_slot_ex.production_id if planned_slot_ex is not None else None
         )
         return active_slot_ex_id == planned_slot_ex_id
 
@@ -483,7 +483,6 @@ class FleetSwitcherCore(object):
                     ):
                         return False
 
-
                 nav.navigate.to("refresh_home")
 
                 if cfg.config.combat.fleet_mode != flt.fleets.combined_flag:
@@ -543,9 +542,7 @@ class FleetSwitcherCore(object):
                 ):
                     return False
 
-                if not self.switch_to_costom_fleet_with_equipment(
-                    1, fleet_list[1]
-                ):
+                if not self.switch_to_costom_fleet_with_equipment(1, fleet_list[1]):
                     return False
 
             elif context == "expedition":
