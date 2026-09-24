@@ -519,7 +519,6 @@ class FleetSwitcherCore(object):
                     ):
                         return False
 
-                    protected_fleet_ids.add(combat_fleet_id)
 
                 nav.navigate.to("refresh_home")
 
@@ -614,7 +613,6 @@ class FleetSwitcherCore(object):
                         protected_fleet_ids,
                     ):
                         return False
-                    protected_fleet_ids.add(fleet_id)
 
             elif context == "factory_develop":
                 develop_sec = cfg.config.factory.develop_secretary
