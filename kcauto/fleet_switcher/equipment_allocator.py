@@ -49,9 +49,8 @@ class EquipmentSlotRef:
 @dataclass(frozen=True, slots=True)
 class EquipmentRequirement:
     ship: Ship
-    slot: EquipmentSlot
+    slot_ref: EquipmentSlotRef
     model_id: int
-    equipment_name: str
     star_preference: EquipmentStarPreference
     stars: int
 
@@ -65,9 +64,8 @@ class EquipmentRequirement:
     ) -> EquipmentRequirement:
         return cls(
             ship=ship,
-            slot=slot,
+            slot_ref=EquipmentSlotRef(ship.production_id, slot),
             model_id=equipment.model_id,
-            equipment_name=equipment.name,
             star_preference=star_preference,
             stars=equipment.stars,
         )
@@ -161,7 +159,7 @@ class EquipmentAllocator:
             movable_equipment.source_ship is None
             or movable_equipment.source_ship.production_id
             != requirement.ship.production_id
-            or movable_equipment.source_slot is not requirement.slot
+            or movable_equipment.source_slot is not requirement.slot_ref.slot
         )
         source_priority = 0 if movable_equipment.is_free else 1
 
@@ -187,7 +185,7 @@ class EquipmentAllocator:
                 movable_equipment.equipment.production_id
             )
             and (
-                requirement.slot is not EquipmentSlot.REINFORCEMENT
+                requirement.slot_ref.slot is not EquipmentSlot.REINFORCEMENT
                 or equ.equipment.is_reinforcement_equipment_available(
                     requirement.ship, movable_equipment.equipment
                 )
@@ -228,11 +226,11 @@ class EquipmentAllocator:
         ]
         for movable_equipment in candidates:
             self.plan.assign(
-                requirement.ship, requirement.slot, movable_equipment.equipment
+                requirement.ship, requirement.slot_ref.slot, movable_equipment.equipment
             )
             if self._assign_requirements(remaining_requirements, movable_equipment_by_id):
                 return True
-            self.plan.unassign(requirement.ship, requirement.slot)
+            self.plan.unassign(requirement.ship, requirement.slot_ref.slot)
 
         return False
 
@@ -251,7 +249,7 @@ class EquipmentAllocator:
 
         for requirement in requirements:
             selected_equipment = self.plan.equipment_for(
-                requirement.ship, requirement.slot
+                requirement.ship, requirement.slot_ref.slot
             )
 
             if (
@@ -263,9 +261,9 @@ class EquipmentAllocator:
             Log.log_warn(
                 f"Using {selected_equipment.name} {selected_equipment.stars}★ "
                 f"({selected_equipment.production_id}) instead of requested "
-                f"{requirement.equipment_name} {requirement.stars}★ "
+                f"{Equipment(model_id=requirement.model_id).name} {requirement.stars}★ "
                 f"(model {requirement.model_id}) for "
-                f"{requirement.ship.name_jp} {requirement.slot.display_name}."
+                f"{requirement.ship.name_jp} {requirement.slot_ref.slot.display_name}."
             )
 
         return True
