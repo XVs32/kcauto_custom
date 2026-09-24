@@ -151,3 +151,127 @@ class EquipmentPlan:
             for slot_ref, equipment in self._assignments.items()
             if slot_ref.ship_id in ship_ids
         ]
+
+
+class EquipmentAllocator:
+    def __init__(self, plan: EquipmentPlan):
+        self.plan = plan
+
+    def _get_allocation_priority(
+        self,
+        requirement: EquipmentRequirement,
+        movable_equipment: MovableEquipment,
+    ) -> tuple[int, int, int, int]:
+        equipment = movable_equipment.equipment
+        same_slot_priority = int(
+            movable_equipment.source_ship is None
+            or movable_equipment.source_ship.production_id
+            != requirement.ship.production_id
+            or movable_equipment.source_slot is not requirement.slot
+        )
+        source_priority = 0 if movable_equipment.is_free else 1
+
+        return (
+            requirement.star_priority(equipment),
+            same_slot_priority,
+            source_priority,
+            equipment.production_id,
+        )
+
+    def _get_candidates(
+        self,
+        requirement: EquipmentRequirement,
+        movable_equipment_by_id: dict[int, MovableEquipment],
+    ) -> list[MovableEquipment]:
+        import ships.equipment_core as equ
+
+        candidates = [
+            movable_equipment
+            for movable_equipment in movable_equipment_by_id.values()
+            if movable_equipment.equipment.model_id == requirement.model_id
+            and not self.plan.is_equipment_assigned(
+                movable_equipment.equipment.production_id
+            )
+            and (
+                requirement.slot is not EquipmentSlot.REINFORCEMENT
+                or equ.equipment.is_reinforcement_equipment_available(
+                    requirement.ship, movable_equipment.equipment
+                )
+            )
+        ]
+        return sorted(
+            candidates,
+            key=lambda movable_equipment: self._get_allocation_priority(
+                requirement, movable_equipment
+            ),
+        )
+
+    def _assign_requirements(
+        self,
+        requirements: list[EquipmentRequirement],
+        movable_equipment_by_id: dict[int, MovableEquipment],
+    ) -> bool:
+        if not requirements:
+            return True
+
+        requirement_candidates = [
+            (
+                requirement,
+                self._get_candidates(requirement, movable_equipment_by_id),
+            )
+            for requirement in requirements
+        ]
+        requirement, candidates = min(
+            requirement_candidates, key=lambda item: len(item[1])
+        )
+        if not candidates:
+            return False
+
+        remaining_requirements = [
+            remaining
+            for remaining in requirements
+            if remaining is not requirement
+        ]
+        for movable_equipment in candidates:
+            self.plan.assign(
+                requirement.ship, requirement.slot, movable_equipment.equipment
+            )
+            if self._assign_requirements(remaining_requirements, movable_equipment_by_id):
+                return True
+            self.plan.unassign(requirement.ship, requirement.slot)
+
+        return False
+
+    def allocate(
+        self,
+        requirements: list[EquipmentRequirement],
+        movable_equipment_by_id: dict[int, MovableEquipment],
+    ) -> bool:
+        from util.logger import Log
+
+        if not self._assign_requirements(requirements, movable_equipment_by_id):
+            Log.log_error(
+                "Cannot find a conflict-free equipment allocation for all target slots."
+            )
+            return False
+
+        for requirement in requirements:
+            selected_equipment = self.plan.equipment_for(
+                requirement.ship, requirement.slot
+            )
+
+            if (
+                requirement.star_preference is not EquipmentStarPreference.CLOSEST
+                or selected_equipment.stars == requirement.stars
+            ):
+                continue
+
+            Log.log_warn(
+                f"Using {selected_equipment.name} {selected_equipment.stars}★ "
+                f"({selected_equipment.production_id}) instead of requested "
+                f"{requirement.equipment_name} {requirement.stars}★ "
+                f"(model {requirement.model_id}) for "
+                f"{requirement.ship.name_jp} {requirement.slot.display_name}."
+            )
+
+        return True

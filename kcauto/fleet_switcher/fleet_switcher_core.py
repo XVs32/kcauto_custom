@@ -23,7 +23,8 @@ from constants import (
     EXPEDITION_LANDING_CRAFT_MODEL_ID,
 )
 from fleet.fleet import Fleet
-from fleet_switcher.equipment_plan import (
+from fleet_switcher.equipment_allocator import (
+    EquipmentAllocator,
     EquipmentPlan,
     EquipmentRequirement,
     EquipmentSlot,
@@ -51,6 +52,7 @@ class FleetSwitcherCore(object):
 
     def __init__(self):
         self.equipment_plan = EquipmentPlan()
+        self.equipment_allocator = EquipmentAllocator(self.equipment_plan)
         self._set_next_combat_preset()
 
     def update_fleetpreset_data(self, data):
@@ -286,132 +288,6 @@ class FleetSwitcherCore(object):
 
         return requirements
 
-    def _get_equipment_allocation_priority(
-        self,
-        requirement: EquipmentRequirement,
-        movable_equipment: MovableEquipment,
-    ) -> tuple[int, int, int, int]:
-        equipment = movable_equipment.equipment
-        same_slot_priority = int(
-            movable_equipment.source_ship is None
-            or movable_equipment.source_ship.production_id
-            != requirement.ship.production_id
-            or movable_equipment.source_slot is not requirement.slot
-        )
-        source_priority = 0 if movable_equipment.is_free else 1
-
-        return (
-            requirement.star_priority(equipment),
-            same_slot_priority,
-            source_priority,
-            equipment.production_id,
-        )
-
-    def _get_equipment_candidates(
-        self,
-        requirement: EquipmentRequirement,
-        movable_equipment_by_id: dict[int, MovableEquipment],
-    ) -> list[MovableEquipment]:
-        candidates = [
-            movable_equipment
-            for movable_equipment in movable_equipment_by_id.values()
-            if movable_equipment.equipment.model_id == requirement.model_id
-            and not self.equipment_plan.is_equipment_assigned(
-                movable_equipment.equipment.production_id
-            )
-            and (
-                requirement.slot is not EquipmentSlot.REINFORCEMENT
-                or equ.equipment.is_reinforcement_equipment_available(
-                    requirement.ship, movable_equipment.equipment
-                )
-            )
-        ]
-        return sorted(
-            candidates,
-            key=lambda movable_equipment: self._get_equipment_allocation_priority(
-                requirement, movable_equipment
-            ),
-        )
-
-    def _assign_equipment_requirements(
-        self,
-        requirements: list[EquipmentRequirement],
-        movable_equipment_by_id: dict[int, MovableEquipment],
-    ) -> bool:
-        if not requirements:
-            return True
-
-        requirement_candidates = [
-            (
-                requirement,
-                self._get_equipment_candidates(
-                    requirement, movable_equipment_by_id
-                ),
-            )
-            for requirement in requirements
-        ]
-        requirement, candidates = min(
-            requirement_candidates, key=lambda item: len(item[1])
-        )
-        if not candidates:
-            return False
-
-        remaining_requirements = [
-            remaining
-            for remaining in requirements
-            if remaining is not requirement
-        ]
-        for movable_equipment in candidates:
-            self.equipment_plan.assign(
-                requirement.ship, requirement.slot, movable_equipment.equipment
-            )
-            if self._assign_equipment_requirements(
-                remaining_requirements, movable_equipment_by_id
-            ):
-                return True
-            self.equipment_plan.unassign(requirement.ship, requirement.slot)
-
-        return False
-
-    def _plan_equipment_assignments(
-        self, target_fleets: list[Fleet], protected_fleet_ids: set[int]
-    ) -> bool:
-        requirements = self._collect_equipment_requirements(target_fleets)
-        if requirements is None:
-            return False
-
-        movable_equipment_by_id = self._get_movable_equipment_pool(protected_fleet_ids)
-
-        if not self._assign_equipment_requirements(
-            requirements, movable_equipment_by_id
-        ):
-            Log.log_error(
-                "Cannot find a conflict-free equipment allocation for all target slots."
-            )
-            return False
-
-        for requirement in requirements:
-            selected_equipment = self.equipment_plan.equipment_for(
-                requirement.ship, requirement.slot
-            )
-
-            if (
-                requirement.star_preference is not EquipmentStarPreference.CLOSEST
-                or selected_equipment.stars == requirement.stars
-            ):
-                continue
-
-            slot_name = requirement.slot.display_name
-            Log.log_warn(
-                f"Using {selected_equipment.name} {selected_equipment.stars}★ "
-                f"({selected_equipment.production_id}) instead of requested "
-                f"{requirement.equipment_name} {requirement.stars}★ "
-                f"(model {requirement.model_id}) for "
-                f"{requirement.ship.name_jp} {slot_name}."
-            )
-
-        return True
-
     def _prepare_equipment_plan(
         self, target_fleets: list[Fleet], protected_fleet_ids: set[int]
     ) -> bool:
@@ -424,7 +300,12 @@ class FleetSwitcherCore(object):
         ):
             return False
 
-        return self._plan_equipment_assignments(target_fleets, protected_fleet_ids)
+        requirements = self._collect_equipment_requirements(target_fleets)
+        if requirements is None:
+            return False
+
+        movable_equipment_by_id = self._get_movable_equipment_pool(protected_fleet_ids)
+        return self.equipment_allocator.allocate(requirements, movable_equipment_by_id)
 
     def _prepare_context_equipment_plan(
         self,
