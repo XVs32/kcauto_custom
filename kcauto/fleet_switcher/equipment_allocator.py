@@ -1,14 +1,10 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import Enum
-from typing import TYPE_CHECKING, Optional
+from typing import Optional, Sequence
 
 from ships.equipment import Equipment
-
-if TYPE_CHECKING:
-    from fleet.fleet import Fleet
-    from ships.ship import Ship
 
 
 class EquipmentStarPreference(Enum):
@@ -47,8 +43,13 @@ class EquipmentSlotRef:
 
 
 @dataclass(frozen=True, slots=True)
+class FleetTarget:
+    fleet_id: int
+    ship_ids: tuple[int, ...]
+
+
+@dataclass(frozen=True, slots=True)
 class EquipmentRequirement:
-    ship: Ship
     slot_ref: EquipmentSlotRef
     model_id: int
     star_preference: EquipmentStarPreference
@@ -57,14 +58,13 @@ class EquipmentRequirement:
     @classmethod
     def from_target_equipment(
         cls,
-        ship: Ship,
+        ship_id: int,
         slot: EquipmentSlot,
         equipment: Equipment,
         star_preference: EquipmentStarPreference = EquipmentStarPreference.CLOSEST,
     ) -> EquipmentRequirement:
         return cls(
-            ship=ship,
-            slot_ref=EquipmentSlotRef(ship.production_id, slot),
+            slot_ref=EquipmentSlotRef(ship_id, slot),
             model_id=equipment.model_id,
             star_preference=star_preference,
             stars=equipment.stars,
@@ -77,14 +77,6 @@ class EquipmentRequirement:
             return 0
         return abs(equipment.stars - self.stars)
 
-    @property
-    def requested_star_description(self) -> str:
-        if self.star_preference is EquipmentStarPreference.HIGHEST:
-            return "highest available star level"
-        if self.star_preference is EquipmentStarPreference.ANY:
-            return "any star level"
-        return f"{self.stars}★"
-
 
 @dataclass(frozen=True, slots=True)
 class MovableEquipment:
@@ -96,71 +88,40 @@ class MovableEquipment:
         return self.source_ref is None
 
 
-@dataclass(slots=True)
+@dataclass(frozen=True, slots=True)
 class EquipmentPlan:
-    _targets: list[tuple[int, Fleet]] = field(default_factory=list)
-    _assignments: dict[EquipmentSlotRef, Equipment] = field(default_factory=dict)
-    _assigned_equipment_ids: set[int] = field(default_factory=set)
+    targets: tuple[FleetTarget, ...] = ()
+    assignments: tuple[tuple[EquipmentSlotRef, Equipment], ...] = ()
 
-    @property
-    def targets(self) -> list[tuple[int, Fleet]]:
-        return self._targets
+    def equipment_for(self, slot_ref: EquipmentSlotRef) -> Equipment:
+        for assigned_ref, equipment in self.assignments:
+            if assigned_ref == slot_ref:
+                return equipment
+        raise KeyError(slot_ref)
 
-    def clear(self) -> None:
-        self._targets.clear()
-        self.clear_assignments()
+    def equipment_for_or_none(self, slot_ref: EquipmentSlotRef) -> Optional[Equipment]:
+        for assigned_ref, equipment in self.assignments:
+            if assigned_ref == slot_ref:
+                return equipment
+        return None
 
-    def clear_assignments(self) -> None:
-        self._assignments.clear()
-        self._assigned_equipment_ids.clear()
-
-    def set_targets(self, targets: list[tuple[int, Fleet]]) -> None:
-        self._targets = list(targets)
-
-    def assign(self, ship: Ship, slot: EquipmentSlot, equipment: Equipment) -> None:
-        ref = EquipmentSlotRef(ship.production_id, slot)
-        if ref in self._assignments:
-            raise ValueError(f"Equipment slot {ref} is already assigned")
-        if equipment.production_id in self._assigned_equipment_ids:
-            raise ValueError(f"Equipment {equipment.production_id} is already assigned")
-        if equipment.production_id == Equipment.UNKNOWN_PRODUCTION_ID:
-            raise ValueError("Equipment plan requires a physical production ID")
-
-        self._assignments[ref] = equipment
-        self._assigned_equipment_ids.add(equipment.production_id)
-
-    def unassign(self, ship: Ship, slot: EquipmentSlot) -> None:
-        ref = EquipmentSlotRef(ship.production_id, slot)
-        equipment = self._assignments.pop(ref)
-        self._assigned_equipment_ids.remove(equipment.production_id)
-
-    def equipment_for(self, ship: Ship, slot: EquipmentSlot) -> Equipment:
-        return self._assignments[EquipmentSlotRef(ship.production_id, slot)]
-
-    def is_equipment_assigned(self, production_id: int) -> bool:
-        return production_id in self._assigned_equipment_ids
-
-    def equipment_for_ship_ids(self, ship_ids: list[int]) -> list[Equipment]:
+    def equipment_for_ship_ids(self, ship_ids: Sequence[int]) -> list[Equipment]:
+        target_ship_ids = set(ship_ids)
         return [
             equipment
-            for slot_ref, equipment in self._assignments.items()
-            if slot_ref.ship_id in ship_ids
+            for slot_ref, equipment in self.assignments
+            if slot_ref.ship_id in target_ship_ids
         ]
 
 
 class EquipmentAllocator:
-    def __init__(self, plan: EquipmentPlan):
-        self.plan = plan
-
     def _get_allocation_priority(
         self,
         requirement: EquipmentRequirement,
         movable_equipment: MovableEquipment,
     ) -> tuple[int, int, int, int]:
         equipment = movable_equipment.equipment
-        same_slot_priority = int(
-            movable_equipment.source_ref != requirement.slot_ref
-        )
+        same_slot_priority = int(movable_equipment.source_ref != requirement.slot_ref)
         source_priority = 0 if movable_equipment.is_free else 1
 
         return (
@@ -174,21 +135,18 @@ class EquipmentAllocator:
         self,
         requirement: EquipmentRequirement,
         movable_equipment_by_id: dict[int, MovableEquipment],
+        assigned_equipment_ids: set[int],
+        reinforcement_eligible_ids: dict[int, set[int]],
     ) -> list[MovableEquipment]:
-        import ships.equipment_core as equ
-
         candidates = [
             movable_equipment
             for movable_equipment in movable_equipment_by_id.values()
             if movable_equipment.equipment.model_id == requirement.model_id
-            and not self.plan.is_equipment_assigned(
-                movable_equipment.equipment.production_id
-            )
+            and movable_equipment.equipment.production_id not in assigned_equipment_ids
             and (
-                requirement.slot_ref.slot is not EquipmentSlot.REINFORCEMENT
-                or equ.equipment.is_reinforcement_equipment_available(
-                    requirement.ship, movable_equipment.equipment
-                )
+                not requirement.slot_ref.slot.is_reinforcement
+                or movable_equipment.equipment.production_id
+                in reinforcement_eligible_ids.get(requirement.slot_ref.ship_id, set())
             )
         ]
         return sorted(
@@ -202,6 +160,9 @@ class EquipmentAllocator:
         self,
         requirements: list[EquipmentRequirement],
         movable_equipment_by_id: dict[int, MovableEquipment],
+        reinforcement_eligible_ids: dict[int, set[int]],
+        assignments: dict[EquipmentSlotRef, Equipment],
+        assigned_equipment_ids: set[int],
     ) -> bool:
         if not requirements:
             return True
@@ -209,7 +170,12 @@ class EquipmentAllocator:
         requirement_candidates = [
             (
                 requirement,
-                self._get_candidates(requirement, movable_equipment_by_id),
+                self._get_candidates(
+                    requirement,
+                    movable_equipment_by_id,
+                    assigned_equipment_ids,
+                    reinforcement_eligible_ids,
+                ),
             )
             for requirement in requirements
         ]
@@ -220,50 +186,47 @@ class EquipmentAllocator:
             return False
 
         remaining_requirements = [
-            remaining
-            for remaining in requirements
-            if remaining is not requirement
+            remaining for remaining in requirements if remaining is not requirement
         ]
         for movable_equipment in candidates:
-            self.plan.assign(
-                requirement.ship, requirement.slot_ref.slot, movable_equipment.equipment
-            )
-            if self._assign_requirements(remaining_requirements, movable_equipment_by_id):
+            equipment = movable_equipment.equipment
+            assignments[requirement.slot_ref] = equipment
+            assigned_equipment_ids.add(equipment.production_id)
+
+            if self._assign_requirements(
+                remaining_requirements,
+                movable_equipment_by_id,
+                reinforcement_eligible_ids,
+                assignments,
+                assigned_equipment_ids,
+            ):
                 return True
-            self.plan.unassign(requirement.ship, requirement.slot_ref.slot)
+
+            del assignments[requirement.slot_ref]
+            assigned_equipment_ids.remove(equipment.production_id)
 
         return False
 
     def allocate(
         self,
+        targets: tuple[FleetTarget, ...],
         requirements: list[EquipmentRequirement],
         movable_equipment_by_id: dict[int, MovableEquipment],
-    ) -> bool:
-        from util.logger import Log
+        reinforcement_eligible_ids: dict[int, set[int]],
+    ) -> Optional[EquipmentPlan]:
+        assignments: dict[EquipmentSlotRef, Equipment] = {}
+        assigned_equipment_ids: set[int] = set()
 
-        if not self._assign_requirements(requirements, movable_equipment_by_id):
-            Log.log_error(
-                "Cannot find a conflict-free equipment allocation for all target slots."
-            )
-            return False
+        if not self._assign_requirements(
+            requirements,
+            movable_equipment_by_id,
+            reinforcement_eligible_ids,
+            assignments,
+            assigned_equipment_ids,
+        ):
+            return None
 
-        for requirement in requirements:
-            selected_equipment = self.plan.equipment_for(
-                requirement.ship, requirement.slot_ref.slot
-            )
-
-            if (
-                requirement.star_preference is not EquipmentStarPreference.CLOSEST
-                or selected_equipment.stars == requirement.stars
-            ):
-                continue
-
-            Log.log_warn(
-                f"Using {selected_equipment.name} {selected_equipment.stars}★ "
-                f"({selected_equipment.production_id}) instead of requested "
-                f"{Equipment(model_id=requirement.model_id).name} {requirement.stars}★ "
-                f"(model {requirement.model_id}) for "
-                f"{requirement.ship.name_jp} {requirement.slot_ref.slot.display_name}."
-            )
-
-        return True
+        return EquipmentPlan(
+            targets=targets,
+            assignments=tuple(assignments.items()),
+        )
