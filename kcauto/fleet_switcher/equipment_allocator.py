@@ -89,12 +89,11 @@ class EquipmentRequirement:
 @dataclass(frozen=True, slots=True)
 class MovableEquipment:
     equipment: Equipment
-    source_ship: Optional[Ship]
-    source_slot: Optional[EquipmentSlot]
+    source_ref: Optional[EquipmentSlotRef]
 
     @property
     def is_free(self) -> bool:
-        return self.source_ship is None
+        return self.source_ref is None
 
 
 @dataclass(slots=True)
@@ -156,10 +155,7 @@ class EquipmentAllocator:
     ) -> tuple[int, int, int, int]:
         equipment = movable_equipment.equipment
         same_slot_priority = int(
-            movable_equipment.source_ship is None
-            or movable_equipment.source_ship.production_id
-            != requirement.ship.production_id
-            or movable_equipment.source_slot is not requirement.slot_ref.slot
+            movable_equipment.source_ref != requirement.slot_ref
         )
         source_priority = 0 if movable_equipment.is_free else 1
 

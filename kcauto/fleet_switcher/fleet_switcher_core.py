@@ -28,6 +28,7 @@ from fleet_switcher.equipment_allocator import (
     EquipmentPlan,
     EquipmentRequirement,
     EquipmentSlot,
+    EquipmentSlotRef,
     EquipmentStarPreference,
     MovableEquipment,
 )
@@ -199,8 +200,7 @@ class FleetSwitcherCore(object):
 
         def add_equipment(
             equipment: Equipment,
-            source_ship: Optional[Ship] = None,
-            source_slot: Optional[EquipmentSlot] = None,
+            source_ref: Optional[EquipmentSlotRef] = None,
         ) -> None:
             if (
                 equipment.model_id <= 0
@@ -210,7 +210,7 @@ class FleetSwitcherCore(object):
 
             movable_equipment.setdefault(
                 equipment.production_id,
-                MovableEquipment(equipment, source_ship, source_slot),
+                MovableEquipment(equipment, source_ref),
             )
 
         for equipment in equ.equipment.equipment_pool[equ.equipment.FREE]:
@@ -221,9 +221,15 @@ class FleetSwitcherCore(object):
                 return
 
             for slot, equipment in enumerate(ship.equipments):
-                add_equipment(equipment, ship, EquipmentSlot.from_index(slot))
+                add_equipment(
+                    equipment,
+                    EquipmentSlotRef(ship.production_id, EquipmentSlot.from_index(slot)),
+                )
             if ship.slot_ex is not None:
-                add_equipment(ship.slot_ex, ship, EquipmentSlot.REINFORCEMENT)
+                add_equipment(
+                    ship.slot_ex,
+                    EquipmentSlotRef(ship.production_id, EquipmentSlot.REINFORCEMENT),
+                )
 
         for ship in flt.fleets.ships_not_in_fleets:
             add_ship(ship)
