@@ -404,8 +404,8 @@ class FleetSwitcherCore(object):
 
     def _is_ship_equipment_assignment_matched(self, active_ship: Ship) -> bool:
         for slot in range(active_ship.slot_num):
-            active_equipment = (
-                active_ship.equipments[slot]
+            active_production_id = (
+                active_ship.equipments[slot].production_id
                 if slot < len(active_ship.equipments)
                 else None
             )
@@ -413,11 +413,6 @@ class FleetSwitcherCore(object):
                 EquipmentSlotRef(
                     active_ship.production_id, EquipmentSlot.from_index(slot)
                 )
-            )
-            active_production_id = (
-                active_equipment.production_id
-                if active_equipment is not None and active_equipment.model_id > 0
-                else None
             )
             planned_production_id = (
                 planned_equipment.production_id
