@@ -402,67 +402,48 @@ class FleetSwitcherCore(object):
 
         return True
 
-    def _is_ship_equipment_assignment_matched(
-        self, active_ship: Ship, target_ship: Ship
-    ) -> bool:
-        slot_count = max(
-            active_ship.slot_num,
-            target_ship.slot_num,
-            len(active_ship.equipments),
-            len(target_ship.equipments),
-        )
-
-        for slot in range(slot_count):
+    def _is_ship_equipment_assignment_matched(self, active_ship: Ship) -> bool:
+        for slot in range(active_ship.slot_num):
             active_equipment = (
                 active_ship.equipments[slot]
                 if slot < len(active_ship.equipments)
                 else None
             )
-            target_equipment = (
-                target_ship.equipments[slot]
-                if slot < len(target_ship.equipments)
-                else None
-            )
-
-            if target_equipment is None or target_equipment.model_id <= 0:
-                if active_equipment is not None and active_equipment.model_id > 0:
-                    return False
-                continue
-
-            planned_equipment = self.equipment_plan.equipment_for(
+            planned_equipment = self.equipment_plan.equipment_for_or_none(
                 EquipmentSlotRef(
-                    target_ship.production_id, EquipmentSlot.from_index(slot)
+                    active_ship.production_id, EquipmentSlot.from_index(slot)
                 )
             )
-            if (
-                active_equipment is None
-                or active_equipment.production_id != planned_equipment.production_id
-            ):
+            active_production_id = (
+                active_equipment.production_id
+                if active_equipment is not None and active_equipment.model_id > 0
+                else None
+            )
+            planned_production_id = (
+                planned_equipment.production_id
+                if planned_equipment is not None
+                else None
+            )
+            if active_production_id != planned_production_id:
                 return False
 
-        active_slot_ex = (
-            active_ship.slot_ex
+        active_slot_ex_id = (
+            active_ship.slot_ex.production_id
             if active_ship.slot_ex is not None
             and not active_ship.slot_ex.is_empty_equipment
             else None
         )
-        target_slot_ex = (
-            target_ship.slot_ex
-            if target_ship.slot_ex is not None
-            and not target_ship.slot_ex.is_empty_equipment
+        planned_slot_ex = self.equipment_plan.equipment_for_or_none(
+            EquipmentSlotRef(
+                active_ship.production_id, EquipmentSlot.REINFORCEMENT
+            )
+        )
+        planned_slot_ex_id = (
+            planned_slot_ex.production_id
+            if planned_slot_ex is not None
             else None
         )
-
-        if target_slot_ex is None:
-            return active_slot_ex is None
-
-        planned_slot_ex = self.equipment_plan.equipment_for(
-            EquipmentSlotRef(target_ship.production_id, EquipmentSlot.REINFORCEMENT)
-        )
-        return (
-            active_slot_ex is not None
-            and active_slot_ex.production_id == planned_slot_ex.production_id
-        )
+        return active_slot_ex_id == planned_slot_ex_id
 
     def _is_custom_fleet_with_equipment_loaded(
         self, fleet_id: int, target_fleet: Fleet
@@ -472,54 +453,20 @@ class FleetSwitcherCore(object):
         if active_fleet.ship_ids != target_fleet.ship_ids:
             return False
 
-        for i in range(target_fleet.size):
-            active_ship = active_fleet.ships[i]
-            target_ship = target_fleet.ships[i]
-
-            if not self._is_ship_equipment_assignment_matched(active_ship, target_ship):
-                return False
-
-        return True
+        return all(
+            self._is_ship_equipment_assignment_matched(active_ship)
+            for active_ship in active_fleet.ships
+        )
 
     def _is_planned_fleet_loaded(self, target: FleetTarget) -> bool:
         active_fleet = self._active_fleets[target.fleet_id]
         if tuple(active_fleet.ship_ids) != target.ship_ids:
             return False
 
-        for active_ship in active_fleet.ships:
-            for slot, active_equipment in enumerate(active_ship.equipments):
-                planned_equipment = self.equipment_plan.equipment_for_or_none(
-                    EquipmentSlotRef(
-                        active_ship.production_id, EquipmentSlot.from_index(slot)
-                    )
-                )
-                if planned_equipment is None:
-                    if active_equipment.model_id > 0:
-                        return False
-                elif active_equipment.production_id != planned_equipment.production_id:
-                    return False
-
-            planned_slot_ex = self.equipment_plan.equipment_for_or_none(
-                EquipmentSlotRef(
-                    active_ship.production_id, EquipmentSlot.REINFORCEMENT
-                )
-            )
-            active_slot_ex = (
-                active_ship.slot_ex
-                if active_ship.slot_ex is not None
-                and not active_ship.slot_ex.is_empty_equipment
-                else None
-            )
-            if planned_slot_ex is None:
-                if active_slot_ex is not None:
-                    return False
-            elif (
-                active_slot_ex is None
-                or active_slot_ex.production_id != planned_slot_ex.production_id
-            ):
-                return False
-
-        return True
+        return all(
+            self._is_ship_equipment_assignment_matched(active_ship)
+            for active_ship in active_fleet.ships
+        )
 
     def verify_equipment_plan(self) -> bool:
         for target in self.equipment_plan.targets:
@@ -915,7 +862,7 @@ class FleetSwitcherCore(object):
             if ship.production_id in target_fleet.ship_ids:
                 target_ship = target_fleet.get_ship_by_production_id(ship.production_id)
 
-                if not self._is_ship_equipment_assignment_matched(ship, target_ship):
+                if not self._is_ship_equipment_assignment_matched(ship):
                     needed_load = True
 
                     if ship.slot_ex is not None and target_ship.slot_ex is None:
@@ -1100,8 +1047,7 @@ class FleetSwitcherCore(object):
         needed_load = False
         for i in range(fleet.size):
             if not self._is_ship_equipment_assignment_matched(
-                self._active_fleets[fleet_id].ships[i],
-                fleet.ships[i],
+                self._active_fleets[fleet_id].ships[i]
             ):
                 needed_load = True
                 break
@@ -1115,8 +1061,7 @@ class FleetSwitcherCore(object):
 
         for i in range(fleet.size):
             if self._is_ship_equipment_assignment_matched(
-                self._active_fleets[fleet_id].ships[i],
-                fleet.ships[i],
+                self._active_fleets[fleet_id].ships[i]
             ):
                 Log.log_msg(f"equipment for {fleet.ships[i].name_jp} is already loaded")
                 continue
