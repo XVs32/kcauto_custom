@@ -433,13 +433,30 @@ class FleetSwitcherCore(object):
             for active_ship in active_fleet.ships
         )
 
+    def _log_equipment_verification_failure(self, target: FleetTarget) -> None:
+        target_ship_ids = set(target.ship_ids)
+
+        Log.log_debug_1(f"Equipment plan for fleet {target.fleet_id}:")
+        for slot_ref, equipment in self.equipment_plan.assignments.items():
+            if slot_ref.ship_id in target_ship_ids:
+                Log.log_debug_1(f"{slot_ref}: {equipment!r}")
+
+        Log.log_debug_1(f"Active equipment for fleet {target.fleet_id}:")
+        for ship in self._active_fleets[target.fleet_id].ships:
+            Log.log_debug_1(
+                f"{ship.name_jp} ({ship.production_id}): "
+                f"slots={ship.equipments}, slot_ex={ship.slot_ex!r}"
+            )
+
+        Log.log_error(
+            f"Fleet {target.fleet_id} ships or equipment do not match the "
+            "planned fleet after refresh."
+        )
+
     def verify_equipment_plan(self) -> bool:
         for target in self.equipment_plan.targets:
             if not self._is_planned_fleet_loaded(target):
-                Log.log_error(
-                    f"Fleet {target.fleet_id} ships or equipment do not match the "
-                    "planned fleet after refresh."
-                )
+                self._log_equipment_verification_failure(target)
                 return False
 
         return True

@@ -33,6 +33,12 @@ class Equipment:
         if Equipment.equipment_static_data == {}:
             Equipment.staic_data_reload()
 
+    def __repr__(self) -> str:
+        return (
+            f"Equipment(model={self.model_id}, production={self.production_id}, "
+            f"stars={self.stars})"
+        )
+
     def staic_data_reload():
         """
         method to reload the static data of equipment from json file
