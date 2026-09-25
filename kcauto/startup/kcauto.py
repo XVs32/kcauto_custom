@@ -203,7 +203,11 @@ class Kcauto(object):
                     CONTEXT_AUTO_PVP, fast_check=False, back_to_home=False, force=True
                 )
 
-            self._run_fleetswitch_logic("pvp")
+            if self._run_fleetswitch_logic("pvp") != 0:
+                pvp.pvp.enabled = False
+                Log.log_error("Failed to configure PvP fleet. Disabling PvP module.")
+                return False
+
             self.run_repair_logic()
 
             self.run_quest_logic(CONTEXT_PVP, back_to_home=True)
@@ -373,9 +377,12 @@ class Kcauto(object):
                     f"{cfg.config.combat.sortie_map.value} combat config not found, use default combat config instead."
                 )
 
-        port_api_update = False
-        if self._run_fleetswitch_logic("combat") == 0:
-            port_api_update = True
+        if self._run_fleetswitch_logic("combat") != 0:
+            com.combat.enabled = False
+            Log.log_error("Failed to configure sortie fleet. Disabling combat module.")
+            return False
+
+        port_api_update = True
 
         kca_u.kca.pause_if_configured("Combat fleetswitch dryrun enabled.")
 
@@ -520,7 +527,13 @@ class Kcauto(object):
         if not fsw.fleet_switcher.switch_fleet(context):
             Log.log_error(f"Failed to switch ships for {context}.")
             return -1
+
         self.handle_back_to_home(True)
+
+        if not fsw.fleet_switcher.verify_equipment_plan():
+            Log.log_error(f"Failed to verify fleet equipment for {context}.")
+            return -1
+
         return 0
 
     def run_shipswitch_logic(self, back_to_home=False):

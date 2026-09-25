@@ -3,6 +3,7 @@ import os
 from kca_enums.fleet import FleetEnum
 
 from constants import VISUAL_DAMAGE, FLEET_ID_ICON
+from ships.equipment import Equipment
 from util.logger import Log
 from util.json_data import JsonData
 from kca_enums.fleet_modes import FleetModeEnum
@@ -218,6 +219,9 @@ class Noro6(object):
 
         self.item = self.ship["is"][item_id - 1]
 
+        if self.item["i"] == 0:
+            self.item["i"] = Equipment.EMPTY_EQUIPMENT
+
         if "r" not in self.item:
             self.item["r"] = 0
         if "l" not in self.item:
@@ -239,7 +243,7 @@ class Noro6(object):
 
         # if reinforce slot enable but empty
         if self.ship["re"] is True and self.item["i"] == 0:
-            self.item["i"] = -1
+            self.item["i"] = Equipment.EMPTY_EQUIPMENT
 
         if "r" not in self.item:
             self.item["r"] = 0

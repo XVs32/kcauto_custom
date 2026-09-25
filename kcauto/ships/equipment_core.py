@@ -21,10 +21,6 @@ class EquipmentCore(object):
     FREE = "free"
     ID = "id"
 
-    NON_NORO6 = (
-        "NON_NORO6"  # contain all equipments which does not exist in noro6 config
-    )
-
     equipment_pool: dict[str, list[Equipment]] = {}
     reinforce_general_category = {}
     reinforce_special = {}
@@ -47,7 +43,7 @@ class EquipmentCore(object):
         self.equipment_pool[self.LOADED] = []
         self.equipment_pool[self.FREE] = []
         self.equipment_pool[self.ID] = []
-        self.equipment_pool[self.NON_NORO6] = []
+        self.free_equipment_initialized = False
 
         try:
             self.reinforce_general_category = JsonData.load_json(
@@ -77,7 +73,7 @@ class EquipmentCore(object):
                         production_id=raw_equipment["api_id"],
                         stars=raw_equipment["api_level"],
                         lock=raw_equipment["api_locked"],
-                        ace=raw_equipment.get("api_alv", Equipment().ace),
+                        ace=raw_equipment.get("api_alv", Equipment.UNKNOWN_ACE),
                     )
                 )
             self.equipment_pool[self.ID].append(Equipment())
@@ -116,59 +112,22 @@ class EquipmentCore(object):
 
         return
 
-    def _remove_from_pool(self, target_equipment: Equipment, pool):
-
-        if target_equipment.production_id == Equipment().production_id:
-            return
-
-        for equipment in self.equipment_pool[pool]:
-            if equipment.production_id == target_equipment.production_id:
-                self.equipment_pool[pool].remove(equipment)
-                break
-
-    def get_equipment_from_noro6_equipment(self, noro6_equipment):
-        """
-        method to convert noro6 equipment to kcauto equipment
-        noro6_equipment (dict): noro6 equipment data
-        output (int) : equipment production id
-        output (bool) : is exact match
-        """
-
-        equipment_list = self._get_match_equipment(
-            self.equipment_pool[self.ID], noro6_equipment["i"]
-        )
-
-        if equipment_list == []:
-            Log.log_error("can't find any match equipment")
-            return None, False
-
-        for equipment in equipment_list:
-            # @todo handle "api_alv"/"l" (plane exp level)
-            # if "api_alv" in temp_equipment[i] and "l" in noro6_equipment:
-            if equipment.stars == noro6_equipment["r"]:
-                return equipment, True
-
-        # sort by the absolute value of difference between api_lv and rf
-        equipment_list.sort(key=lambda x: abs(x.stars - noro6_equipment["r"]))
-
-        return equipment_list[0], False
-
     def get_reinforce_equipment_list(self, ship: Ship):
+        return [
+            equipment
+            for equipment in self.equipment_pool[self.FREE]
+            if self.is_reinforcement_equipment_available(ship, equipment)
+        ]
 
-        available_equipments = self.get_ship_available_equipment_list(ship)
+    def is_reinforcement_equipment_available(
+        self, ship: Ship, equipment: Equipment
+    ) -> bool:
+        """Return whether a physical equipment can be used in ship's slot_ex."""
 
-        for i in range(len(available_equipments) - 1, 0 - 1, -1):
-            equipment = available_equipments[i]
+        if not self.is_available_equipments(ship, [equipment]):
+            return False
 
-            if self._is_special_reinforce_equipment(ship, equipment):
-                continue
-
-            Log.log_debug_1(
-                f"Equipment {equipment.name} ({equipment.production_id}) {equipment.category} is not a special reinforce equipment for ship {ship.name}, skipping"
-            )
-            available_equipments.pop(i)
-
-        return available_equipments
+        return self._is_special_reinforce_equipment(ship, equipment)
 
     def _is_special_reinforce_equipment(self, ship: Ship, equipment: Equipment):
         """method to check if the equipment is a special reinforce equipment for the ship,
@@ -221,44 +180,6 @@ class EquipmentCore(object):
 
         return False
 
-    def _get_match_equipment(self, equipment_pool, model_id) -> list[Equipment]:
-        """method to find all equipment in the equipment pool with the specified model id
-        arg:
-            equipment_pool (list of equipment obj): the equipment pool to search in
-            model_id (int): the equipment model id to search for
-        """
-
-        is_any_match = False
-        output_list = []
-
-        if (
-            model_id != Equipment.EMPTY_EQUIPMENT
-            and model_id != Equipment.UNKNOWN_EQUIPMENT
-        ):
-            for equipment in equipment_pool:
-                if equipment.model_id == model_id:
-                    output_list.append(equipment)
-                    is_any_match = True
-
-            if is_any_match != True:
-                for equipment in self.equipment_pool[self.ID]:
-                    if equipment.model_id == model_id:
-                        Log.log_warn(
-                            f"Cannot find {equipment.name} in equipment pool, maybe it is in use"
-                        )
-                        is_any_match = True
-                        break
-                if is_any_match != True:
-                    temp = Equipment(model_id=model_id)
-                    Log.log_warn(
-                        f"Cannot find {temp.name} in equipment list, looks like you don't have any"
-                    )
-        else:
-            Log.log_debug_1("EMPTY equipment slot")
-            output_list = [Equipment()]
-
-        return output_list
-
     def get_equipment_by_production_id(
         self, equipment_pool: list[Equipment], production_id
     ) -> Equipment:
@@ -280,7 +201,7 @@ class EquipmentCore(object):
                 )
                 return None
 
-        return Equipment(Equipment().UNKNOWN_EQUIPMENT, production_id=production_id)
+        return Equipment(Equipment.UNKNOWN_EQUIPMENT, production_id=production_id)
 
     def is_available_equipments(self, ship: Ship, equipments: list[Equipment]):
         """method to check if the equipment is available for the ship
