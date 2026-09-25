@@ -165,22 +165,23 @@ class ExpeditionCore(CoreBase):
             self.exp_rank = []
 
             for exp in self.exp_data:
+                duration = math.ceil(exp["time"] / pooling_interval) * pooling_interval
                 horuly_rsc = {}
-                horuly_rsc["fuel"] = exp["fuel"] / (
-                    math.ceil(exp["time"] / pooling_interval) * pooling_interval
-                )
-                horuly_rsc["ammo"] = exp["ammo"] / (
-                    math.ceil(exp["time"] / pooling_interval) * pooling_interval
-                )
-                horuly_rsc["steel"] = exp["steel"] / (
-                    math.ceil(exp["time"] / pooling_interval) * pooling_interval
-                )
-                horuly_rsc["baux"] = exp["baux"] / (
-                    math.ceil(exp["time"] / pooling_interval) * pooling_interval
-                )
-                horuly_rsc["bucket"] = (1 if exp["item"] == "bucket" else 0) / (
-                    math.ceil(exp["time"] / pooling_interval) * pooling_interval
-                )
+                horuly_rsc["fuel"] = exp["fuel"] / duration
+                horuly_rsc["ammo"] = exp["ammo"] / duration
+                horuly_rsc["steel"] = exp["steel"] / duration
+                horuly_rsc["baux"] = exp["baux"] / duration
+
+                def get_item_count(exp, item_name):
+                    count = 0
+                    if exp.get("item") == item_name:
+                        count += exp.get("itemCount", 0)
+                    if exp.get("gsItem") == item_name:
+                        count += exp.get("gsItemCount", 0)
+                    return count
+
+                horuly_rsc["bucket"] = get_item_count(exp, "bucket") / duration
+                horuly_rsc["dev_mat"] = get_item_count(exp, "devmat") / duration
 
                 # Check and nullify overflowed resources
                 if sts.stats.rsc.fuel >= cfg.config.expedition.desire_oil:
@@ -193,6 +194,8 @@ class ExpeditionCore(CoreBase):
                     horuly_rsc["baux"] = 0
                 if sts.stats.rsc.bucket >= cfg.config.expedition.desire_bucket:
                     horuly_rsc["bucket"] = 0
+                if sts.stats.rsc.dev_mat >= cfg.config.expedition.desire_devmat:
+                    horuly_rsc["dev_mat"] = 0
 
                 exp_enum = ExpeditionEnum(exp["id"])
 
@@ -207,7 +210,9 @@ class ExpeditionCore(CoreBase):
                     / cfg.config.expedition.desire_bauxite
                     + (horuly_rsc["bucket"] + sts.stats.rsc.bucket)
                     / cfg.config.expedition.desire_bucket
-                ) / 5
+                    + (horuly_rsc["dev_mat"] + sts.stats.rsc.dev_mat)
+                    / cfg.config.expedition.desire_devmat
+                ) / 6
 
                 balace_score = (
                     abs(
@@ -233,6 +238,11 @@ class ExpeditionCore(CoreBase):
                     + abs(
                         (horuly_rsc["bucket"] + sts.stats.rsc.bucket)
                         / cfg.config.expedition.desire_bucket
+                        - avg_fill_rate
+                    )
+                    + abs(
+                        (horuly_rsc["dev_mat"] + sts.stats.rsc.dev_mat)
+                        / cfg.config.expedition.desire_devmat
                         - avg_fill_rate
                     )
                 ) * (-1)
