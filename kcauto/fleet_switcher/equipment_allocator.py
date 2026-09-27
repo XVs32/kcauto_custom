@@ -124,15 +124,21 @@ class EquipmentAllocator:
         self,
         requirement: EquipmentRequirement,
         movable_equipment: MovableEquipment,
-    ) -> tuple[int, int, int, int]:
+        reserved_slot_refs: set[EquipmentSlotRef],
+    ) -> tuple[int, int, int, int, int]:
         equipment = movable_equipment.equipment
         same_slot = movable_equipment.source_ref == requirement.slot_ref
         same_slot_priority = int(not same_slot)
+        reserved_by_other_requirement = (
+            movable_equipment.source_ref in reserved_slot_refs
+        )
+        reservation_priority = int(reserved_by_other_requirement)
         source_priority = 0 if movable_equipment.is_free else 1
 
         return (
             requirement.star_priority(equipment),
             same_slot_priority,
+            reservation_priority,
             source_priority,
             equipment.production_id,
         )
@@ -140,10 +146,17 @@ class EquipmentAllocator:
     def _get_candidates(
         self,
         requirement: EquipmentRequirement,
+        remaining_requirements: list[EquipmentRequirement],
         movable_equipments: list[MovableEquipment],
         assigned_equipment_ids: set[int],
         reinforcement_eligible_ids: dict[int, set[int]],
     ) -> list[MovableEquipment]:
+        reserved_slot_refs = {
+            remaining.slot_ref
+            for remaining in remaining_requirements
+            if remaining is not requirement
+            and remaining.model_id == requirement.model_id
+        }
         candidates = [
             movable_equipment
             for movable_equipment in movable_equipments
@@ -158,7 +171,7 @@ class EquipmentAllocator:
         return sorted(
             candidates,
             key=lambda movable_equipment: self._get_allocation_priority(
-                requirement, movable_equipment
+                requirement, movable_equipment, reserved_slot_refs
             ),
         )
 
@@ -181,6 +194,7 @@ class EquipmentAllocator:
                     requirement,
                     self._get_candidates(
                         requirement,
+                        remaining_requirements,
                         movable_equipments,
                         assigned_equipment_ids,
                         reinforcement_eligible_ids,
