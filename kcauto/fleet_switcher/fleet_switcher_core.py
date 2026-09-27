@@ -136,8 +136,9 @@ class FleetSwitcherCore(object):
 
         candidates = [
             ship
-            for ship in flt.fleets.fleets[flt.fleets.IDLE_FLEET_KEY]
-            if ship.production_id not in excluded_ship_ids
+            for ship in flt.fleets.ships_not_in_fleets
+            if ship.locked
+            and ship.production_id not in excluded_ship_ids
             and ship.ship_type != ShipTypeEnum.AR
             and ship.production_id not in rep.repair.ships_under_repair
         ]
