@@ -481,7 +481,7 @@ class FleetSwitcherCore(object):
                     return False
 
                 for combat_fleet_id, target_fleet in combat_targets:
-                    if not self.switch_to_costom_fleet_with_equipment(
+                    if not self.switch_to_custom_fleet_with_equipment(
                         combat_fleet_id,
                         target_fleet,
                     ):
@@ -541,7 +541,7 @@ class FleetSwitcherCore(object):
                 if not self._prepare_context_equipment_plan(pvp_targets, context):
                     return False
 
-                if not self.switch_to_costom_fleet_with_equipment(1, fleet_list[1]):
+                if not self.switch_to_custom_fleet_with_equipment(1, fleet_list[1]):
                     return False
 
             elif context == "expedition":
@@ -566,7 +566,7 @@ class FleetSwitcherCore(object):
                     return False
 
                 for fleet_id, target_fleet in expedition_targets:
-                    if not self.switch_to_costom_fleet_with_equipment(
+                    if not self.switch_to_custom_fleet_with_equipment(
                         fleet_id,
                         target_fleet,
                     ):
@@ -649,7 +649,7 @@ class FleetSwitcherCore(object):
                 self._set_next_combat_preset()
         return True
 
-    def switch_to_costom_fleet(self, fleet_id, costom_fleet: Fleet):
+    def switch_to_custom_fleet(self, fleet_id, custom_fleet: Fleet):
         """
         method to switch the ship in {fleet_id} to ships defined in {ship_list}
 
@@ -666,7 +666,7 @@ class FleetSwitcherCore(object):
 
             size = max(
                 self._active_fleets[fleet_id].size,
-                costom_fleet.size,
+                custom_fleet.size,
             )
 
             STRIKE_FLEET_SIZE = 7
@@ -684,11 +684,11 @@ class FleetSwitcherCore(object):
             any_vaild_switch = False
             retry = False
             for i in range(1, size + 1):
-                if i > costom_fleet.size:
+                if i > custom_fleet.size:
                     ship = None
                 else:
                     ship = shp.ships.get_ship_from_production_id(
-                        costom_fleet.ship_ids[i - 1]
+                        custom_fleet.ship_ids[i - 1]
                     )
                     if ship is None:
                         return False
@@ -727,10 +727,10 @@ class FleetSwitcherCore(object):
         Log.log_success("Fleet load complete.")
         return True
 
-    def switch_to_costom_fleet_with_equipment(
+    def switch_to_custom_fleet_with_equipment(
         self,
         fleet_id,
-        costom_fleet: Fleet,
+        custom_fleet: Fleet,
     ):
         """
         method to switch the ship in {fleet_id} to ships defined in {ship_list}
@@ -739,11 +739,11 @@ class FleetSwitcherCore(object):
         custom_fleet(Fleet): Fleet obj contain ships to use
         """
 
-        if self._is_custom_fleet_with_equipment_loaded(fleet_id, costom_fleet):
+        if self._is_custom_fleet_with_equipment_loaded(fleet_id, custom_fleet):
             Log.log_msg(f"Fleet {fleet_id} ships and equipment are already loaded")
             return True
 
-        if not self._unload_fleet_required_equipment(costom_fleet):
+        if not self._unload_fleet_required_equipment(custom_fleet):
             return False
 
         Log.log_success("Equipment unloaded.")
@@ -752,10 +752,10 @@ class FleetSwitcherCore(object):
 
         self.goto()
 
-        if not self.switch_to_costom_fleet(fleet_id, costom_fleet):
+        if not self.switch_to_custom_fleet(fleet_id, custom_fleet):
             return False
 
-        if not self._load_equipment(fleet_id, costom_fleet):
+        if not self._load_equipment(fleet_id, custom_fleet):
             return False
 
         Log.log_success("Equipment loaded.")
