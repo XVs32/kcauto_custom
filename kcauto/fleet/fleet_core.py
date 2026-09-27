@@ -29,7 +29,6 @@ class FleetCore(object):
 
     ACTIVE_FLEET_KEY = "active_fleet"
     EXP_POOL_KEY = "exp_pool"
-    PVP_FLEET_KEY = "pvp_fleet"
 
     ASSIGN_SHIP_FAILED = -1
     ASSIGN_DRUM_FAILED = -2
@@ -54,7 +53,6 @@ class FleetCore(object):
         self.fleets[self.EXP_POOL_KEY] = (
             self.EMPTY
         )  # the data structure is self.fleets[self.EXP_POOL_KEY][shipTypeEnum] = [ship1, ship2, ...]
-        self.fleets[self.PVP_FLEET_KEY] = self.EMPTY
 
     def update_fleets(self, data):
 
@@ -252,11 +250,7 @@ class FleetCore(object):
         exp_pool = shp.ships.ship_pool.copy()
 
         for key in self.fleets:
-            if (
-                key == self.ACTIVE_FLEET_KEY
-                or key == self.EXP_POOL_KEY
-                or key == self.PVP_FLEET_KEY
-            ):
+            if key == self.ACTIVE_FLEET_KEY or key == self.EXP_POOL_KEY:
                 continue
 
             for fleet_id in self.fleets[key]:
