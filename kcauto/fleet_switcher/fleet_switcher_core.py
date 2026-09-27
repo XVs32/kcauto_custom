@@ -126,19 +126,13 @@ class FleetSwitcherCore(object):
         return held_equipment
 
     def _find_safe_free_equipment_refresh_ship(
-        self, target_fleets: list[Fleet], context: str
+        self, target_fleets: list[Fleet]
     ) -> Optional[Ship]:
         excluded_ship_ids = {
             ship.production_id
             for target_fleet in target_fleets
             for ship in target_fleet.ships
         }
-        if context in ("combat", "pvp"):
-            excluded_ship_ids.update(
-                ship_id
-                for fleet in flt.fleets.expedition_fleets
-                for ship_id in fleet.ship_ids
-            )
 
         candidates = [
             ship
@@ -153,15 +147,11 @@ class FleetSwitcherCore(object):
 
         return candidates[randrange(len(candidates))]
 
-    def _ensure_free_equipment_data_loaded(
-        self, target_fleets: list[Fleet], context: str
-    ) -> bool:
+    def _ensure_free_equipment_data_loaded(self, target_fleets: list[Fleet]) -> bool:
         if equ.equipment.free_equipment_initialized:
             return True
 
-        refresh_ship = self._find_safe_free_equipment_refresh_ship(
-            target_fleets, context
-        )
+        refresh_ship = self._find_safe_free_equipment_refresh_ship(target_fleets)
         if refresh_ship is None:
             Log.log_error(
                 "No safe idle ship is available to initialize free equipment data."
@@ -307,7 +297,7 @@ class FleetSwitcherCore(object):
             self.equipment_plan = EquipmentPlan()
             return True
 
-        if not self._ensure_free_equipment_data_loaded(target_fleets, context):
+        if not self._ensure_free_equipment_data_loaded(target_fleets):
             return False
 
         requirements = self._collect_equipment_requirements(target_fleets)
