@@ -376,7 +376,6 @@ class ApiWrapper(object):
             flt.fleets.update_fleets(fleet_data)
             flt.fleets.load_custom_fleets()
             flt.fleets.load_custom_exp_pool()
-            flt.fleets.load_idle_pool()
         except KeyError:
             Log.log_debug_1("No fleet data found in API response.")
 

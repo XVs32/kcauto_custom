@@ -30,7 +30,6 @@ class FleetCore(object):
     ACTIVE_FLEET_KEY = "active_fleet"
     EXP_POOL_KEY = "exp_pool"
     PVP_FLEET_KEY = "pvp_fleet"
-    IDLE_FLEET_KEY = "idle_fleet"
 
     ASSIGN_SHIP_FAILED = -1
     ASSIGN_DRUM_FAILED = -2
@@ -56,7 +55,6 @@ class FleetCore(object):
             self.EMPTY
         )  # the data structure is self.fleets[self.EXP_POOL_KEY][shipTypeEnum] = [ship1, ship2, ...]
         self.fleets[self.PVP_FLEET_KEY] = self.EMPTY
-        self.fleets[self.IDLE_FLEET_KEY] = self.EMPTY
 
     def update_fleets(self, data):
 
@@ -258,7 +256,6 @@ class FleetCore(object):
                 key == self.ACTIVE_FLEET_KEY
                 or key == self.EXP_POOL_KEY
                 or key == self.PVP_FLEET_KEY
-                or key == self.IDLE_FLEET_KEY
             ):
                 continue
 
@@ -284,39 +281,6 @@ class FleetCore(object):
             self.fleets[self.EXP_POOL_KEY][ship_type].sort(
                 key=lambda x: (x.ammo_max + x.fuel_max, x.level)
             )
-
-        return
-
-    def load_idle_pool(self):
-        """
-        method to get ships currently not used
-        by exclude ships in custom fleets
-
-        Assume load_custom_fleets is called
-
-        output: (list of ship ids)
-        """
-
-        self.fleets[self.IDLE_FLEET_KEY] = []
-        ship_pool = shp.ships.ship_pool.copy()
-
-        for key in self.fleets:
-            if key != self.ACTIVE_FLEET_KEY:
-                continue
-
-            for fleet_id in self.fleets[key]:
-                for ship in self.fleets[key][fleet_id].ships:
-                    if ship.production_id in ship_pool:
-                        ship_pool.pop(ship.production_id)
-
-        for ship_id in ship_pool:
-            ship = shp.ships.get_ship_from_production_id(ship_id)
-
-            # if this ship is not locked, do not add to exp pool
-            if ship.locked == False:
-                continue
-
-            self.fleets[self.IDLE_FLEET_KEY].append(ship)
 
         return
 
@@ -524,11 +488,6 @@ class FleetCore(object):
 
             if fleet_id == None:
                 # assign for all fleets success
-                # remaining ships in exp_ship_pool are the ships that are not used
-                self.fleets[self.IDLE_FLEET_KEY] = []
-                for key in exp_ship_pool:
-                    for ship in exp_ship_pool[key]:
-                        self.fleets[self.IDLE_FLEET_KEY].append(ship)
                 break
 
         if fleet_id == None:
