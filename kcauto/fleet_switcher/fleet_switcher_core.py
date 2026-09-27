@@ -125,22 +125,20 @@ class FleetSwitcherCore(object):
 
         return held_equipment
 
-    def _get_protected_ship_ids(self, protected_fleet_ids: set[int]) -> set[int]:
-        protected_ship_ids = set()
-        active_fleets = self._active_fleets
-        for fleet_id in protected_fleet_ids:
-            protected_ship_ids.update(active_fleets[fleet_id].ship_ids)
-        return protected_ship_ids
-
     def _find_safe_free_equipment_refresh_ship(
-        self, target_fleets: list[Fleet], protected_fleet_ids: set[int]
+        self, target_fleets: list[Fleet], context: str
     ) -> Optional[Ship]:
         excluded_ship_ids = {
             ship.production_id
             for target_fleet in target_fleets
             for ship in target_fleet.ships
         }
-        excluded_ship_ids.update(self._get_protected_ship_ids(protected_fleet_ids))
+        if context in ("combat", "pvp"):
+            excluded_ship_ids.update(
+                ship_id
+                for fleet in flt.fleets.expedition_fleets
+                for ship_id in fleet.ship_ids
+            )
 
         candidates = [
             ship
@@ -156,13 +154,13 @@ class FleetSwitcherCore(object):
         return candidates[randrange(len(candidates))]
 
     def _ensure_free_equipment_data_loaded(
-        self, target_fleets: list[Fleet], protected_fleet_ids: set[int]
+        self, target_fleets: list[Fleet], context: str
     ) -> bool:
         if equ.equipment.free_equipment_initialized:
             return True
 
         refresh_ship = self._find_safe_free_equipment_refresh_ship(
-            target_fleets, protected_fleet_ids
+            target_fleets, context
         )
         if refresh_ship is None:
             Log.log_error(
@@ -181,9 +179,12 @@ class FleetSwitcherCore(object):
         )
         return equ.equipment.free_equipment_initialized
 
-    def _get_movable_equipment_pool(
-        self, protected_fleet_ids: set[int]
-    ) -> list[MovableEquipment]:
+    def _get_movable_equipment_pool(self, context: str) -> list[MovableEquipment]:
+        reserved_expedition_fleet_ids = (
+            {fleet.fleet_id for fleet in flt.fleets.expedition_fleets}
+            if context in ("combat", "pvp")
+            else set()
+        )
         movable_equipment = [
             MovableEquipment(equipment, None)
             for equipment in equ.equipment.equipment_pool[equ.equipment.FREE]
@@ -217,7 +218,7 @@ class FleetSwitcherCore(object):
             add_ship(ship)
 
         for fleet_id, active_fleet in self._active_fleets.items():
-            if fleet_id in protected_fleet_ids or not active_fleet.at_base:
+            if fleet_id in reserved_expedition_fleet_ids or not active_fleet.at_base:
                 continue
 
             for ship in active_fleet.ships:
@@ -299,23 +300,21 @@ class FleetSwitcherCore(object):
     def _prepare_context_equipment_plan(
         self,
         targets: list[tuple[int, Fleet]],
-        protected_fleet_ids: set[int],
+        context: str,
     ) -> bool:
         target_fleets = [target_fleet for _, target_fleet in targets]
         if not target_fleets:
             self.equipment_plan = EquipmentPlan()
             return True
 
-        if not self._ensure_free_equipment_data_loaded(
-            target_fleets, protected_fleet_ids
-        ):
+        if not self._ensure_free_equipment_data_loaded(target_fleets, context):
             return False
 
         requirements = self._collect_equipment_requirements(target_fleets)
         if requirements is None:
             return False
 
-        movable_equipments = self._get_movable_equipment_pool(protected_fleet_ids)
+        movable_equipments = self._get_movable_equipment_pool(context)
         reinforcement_eligible_ids: dict[int, set[int]] = {}
         for requirement in requirements:
             if not requirement.slot_ref.slot.is_reinforcement:
@@ -478,9 +477,6 @@ class FleetSwitcherCore(object):
                 # Combat is a property, sort does not saved inside it
                 rev_fleet_id = flt.fleets.combat_fleets_id.copy()
                 rev_fleet_id.sort(reverse=True)
-                protected_fleet_ids = {
-                    fleet.fleet_id for fleet in flt.fleets.expedition_fleets
-                }
                 combat_targets = []
 
                 for combat_fleet_id in rev_fleet_id:
@@ -489,7 +485,7 @@ class FleetSwitcherCore(object):
                     combat_targets.append((combat_fleet_id, target_fleet))
 
                 if not self._prepare_context_equipment_plan(
-                    combat_targets, protected_fleet_ids
+                    combat_targets, context
                 ):
                     return False
 
@@ -550,13 +546,8 @@ class FleetSwitcherCore(object):
                     pvp.pvp.next_pvp_quest.name + "-pvp"
                 )
 
-                protected_fleet_ids = {
-                    fleet.fleet_id for fleet in flt.fleets.expedition_fleets
-                }
                 pvp_targets = [(1, fleet_list[1])]
-                if not self._prepare_context_equipment_plan(
-                    pvp_targets, protected_fleet_ids
-                ):
+                if not self._prepare_context_equipment_plan(pvp_targets, context):
                     return False
 
                 if not self.switch_to_costom_fleet_with_equipment(1, fleet_list[1]):
@@ -565,7 +556,6 @@ class FleetSwitcherCore(object):
             elif context == "expedition":
                 Log.log_msg(f"Switching to Exp Preset.")
 
-                protected_fleet_ids = set()
                 expedition_targets = []
                 fleet_id = flt.fleets.get_next_exp_fleet_id()
 
@@ -580,7 +570,7 @@ class FleetSwitcherCore(object):
                     fleet_id = flt.fleets.get_next_exp_fleet_id(fleet_id)
 
                 if expedition_targets and not self._prepare_context_equipment_plan(
-                    expedition_targets, protected_fleet_ids
+                    expedition_targets, context
                 ):
                     return False
 
