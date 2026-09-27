@@ -1,3 +1,4 @@
+from collections.abc import Sequence
 from util.pyvisauto import Region
 from sys import exit
 from random import choice
@@ -400,22 +401,14 @@ class FleetSwitcherCore(object):
         )
         return active_slot_ex_id == planned_slot_ex_id
 
-    def _is_custom_fleet_with_equipment_loaded(
-        self, fleet_id: int, target_fleet: Fleet
+    def _is_fleet_with_planned_equipment_loaded(
+        self,
+        fleet_id: int,
+        expected_ship_ids: Sequence[int],
     ) -> bool:
         active_fleet = self._active_fleets[fleet_id]
 
-        if active_fleet.ship_ids != target_fleet.ship_ids:
-            return False
-
-        return all(
-            self._is_ship_equipment_assignment_matched(active_ship)
-            for active_ship in active_fleet.ships
-        )
-
-    def _is_planned_fleet_loaded(self, target: FleetTarget) -> bool:
-        active_fleet = self._active_fleets[target.fleet_id]
-        if tuple(active_fleet.ship_ids) != target.ship_ids:
+        if tuple(active_fleet.ship_ids) != tuple(expected_ship_ids):
             return False
 
         return all(
@@ -445,7 +438,9 @@ class FleetSwitcherCore(object):
 
     def verify_equipment_plan(self) -> bool:
         for target in self.equipment_plan.targets:
-            if not self._is_planned_fleet_loaded(target):
+            if not self._is_fleet_with_planned_equipment_loaded(
+                target.fleet_id, target.ship_ids
+            ):
                 self._log_equipment_verification_failure(target)
                 return False
 
@@ -475,9 +470,7 @@ class FleetSwitcherCore(object):
                     target_fleet = fleet_list[target_fleet_id]
                     combat_targets.append((combat_fleet_id, target_fleet))
 
-                if not self._prepare_context_equipment_plan(
-                    combat_targets, context
-                ):
+                if not self._prepare_context_equipment_plan(combat_targets, context):
                     return False
 
                 for combat_fleet_id, target_fleet in combat_targets:
@@ -739,7 +732,9 @@ class FleetSwitcherCore(object):
         custom_fleet(Fleet): Fleet obj contain ships to use
         """
 
-        if self._is_custom_fleet_with_equipment_loaded(fleet_id, custom_fleet):
+        if self._is_fleet_with_planned_equipment_loaded(
+            fleet_id, custom_fleet.ship_ids
+        ):
             Log.log_msg(f"Fleet {fleet_id} ships and equipment are already loaded")
             return True
 
