@@ -48,6 +48,7 @@ class EquipmentCore(object):
         self.equipment_pool[self.FREE] = []
         self.equipment_pool[self.ID] = []
         self.equipment_pool[self.NON_NORO6] = []
+        self._noro6_equipment_ids = set()
 
         try:
             self.reinforce_general_category = JsonData.load_json(
@@ -92,6 +93,18 @@ class EquipmentCore(object):
                 )
             )
         self.equipment_pool[self.ID].append(Equipment())
+        self.update_non_noro6_equipment_pool()
+
+    def set_noro6_equipment_ids(self, equipment_ids):
+        self._noro6_equipment_ids = set(equipment_ids)
+        self.update_non_noro6_equipment_pool()
+
+    def update_non_noro6_equipment_pool(self):
+        self.equipment_pool[self.NON_NORO6] = [
+            equipment
+            for equipment in self.equipment_pool[self.ID]
+            if equipment.production_id not in self._noro6_equipment_ids
+        ]
 
     def goto(self):
         nav.navigate.to("equipment")
@@ -132,16 +145,19 @@ class EquipmentCore(object):
                 self.equipment_pool[pool].remove(equipment)
                 break
 
-    def get_equipment_from_noro6_equipment(self, noro6_equipment):
+    def get_equipment_from_noro6_equipment(
+        self, noro6_equipment, equipment_pool: list[Equipment]
+    ):
         """
         method to convert noro6 equipment to kcauto equipment
         noro6_equipment (dict): noro6 equipment data
+        equipment_pool (list[Equipment]): equipment pool to search in
         output (int) : equipment production id
         output (bool) : is exact match
         """
 
         equipment_list = self._get_match_equipment(
-            self.equipment_pool[self.ID], noro6_equipment["i"]
+            equipment_pool, noro6_equipment["i"]
         )
 
         if equipment_list == []:
