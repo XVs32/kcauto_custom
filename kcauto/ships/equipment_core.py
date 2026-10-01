@@ -16,8 +16,6 @@ import util.kca as kca_u
 
 
 class EquipmentCore(object):
-    RAW = "raw"
-    LOADED = "loaded"
     FREE = "free"
     ID = "id"
 
@@ -43,8 +41,6 @@ class EquipmentCore(object):
     SLOT_EX_NOT_AVAILABLE = 0
 
     def __init__(self):
-        self.equipment_pool[self.RAW] = {}
-        self.equipment_pool[self.LOADED] = []
         self.equipment_pool[self.FREE] = []
         self.equipment_pool[self.ID] = []
         self.equipment_pool[self.NON_NORO6] = []
