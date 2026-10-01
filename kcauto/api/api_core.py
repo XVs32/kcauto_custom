@@ -376,7 +376,6 @@ class ApiWrapper(object):
             flt.fleets.update_fleets(fleet_data)
             flt.fleets.load_custom_fleets()
             flt.fleets.load_custom_exp_pool()
-            flt.fleets.load_idle_pool()
         except KeyError:
             Log.log_debug_1("No fleet data found in API response.")
 
@@ -636,6 +635,7 @@ class ApiWrapper(object):
             for key in sorted_keys:
                 for equipment in equipment_pool_temp[key]:
                     equ.equipment.equipment_pool[equ.equipment.FREE].append(equipment)
+            equ.equipment.free_equipment_initialized = True
             Log.log_debug_1(f"equipment updated")
 
             # for i, equipment in enumerate(equ.equipment.equipment_pool[equ.equipment.FREE]):

@@ -184,20 +184,6 @@ class Ship(object):
         return False
 
     @property
-    def equipment_ids(self):
-        """
-        Returns a list of equipment production ids equipped on the ship.
-        """
-        ids = []
-        for equipment in self.equipments:
-            if equipment.model_id > 0:
-                ids.append(equipment.production_id)
-        if self.slot_ex != None and self.slot_ex.model_id > 0:
-            ids.append(self.slot_ex.production_id)
-
-        return ids
-
-    @property
     def equipment_count(self):
         """
         Returns the count equipments on board, slot_ex is not included
@@ -215,39 +201,3 @@ class Ship(object):
     @property
     def available_reinforcement_equipments(self):
         return equ.equipment.get_reinforce_equipment_list(self)
-
-    def fill_with_equipment(
-        self, model_id: int, count: int, sort_by_level: bool = False
-    ) -> dict[int, list[int]]:
-        """
-        method to fill a ship with one type of equipment
-
-        arg:
-            ship (Ship): ship instance
-            equipment (int): equipment model id
-            count (int): how many equipment to fill
-            sort_by_level (bool): if True, use high level equipment first
-
-        output a kcauto format ship equipment list
-        """
-
-        self.equipments = []
-
-        count = min(count, self.slot_num)
-
-        temp_equipment = equ.equipment._get_match_equipment(
-            equ.equipment.equipment_pool[equ.equipment.NON_NORO6], model_id
-        )
-        # sort by level if needed
-        if sort_by_level:
-            temp_equipment.sort(key=lambda x: x.stars, reverse=True)
-        count = min(count, len(temp_equipment))
-
-        self.equipments = temp_equipment[:count]
-
-        for i in range(count):
-            equ.equipment._remove_from_pool(
-                target_equipment=temp_equipment[i], pool=equ.equipment.NON_NORO6
-            )
-
-        return
