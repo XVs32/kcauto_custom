@@ -84,12 +84,22 @@ class FleetSwitcherCore(object):
                 # Combat is a property, sort does not saved inside it
                 rev_fleet_id = flt.fleets.combat_fleets_id.copy()
                 rev_fleet_id.sort(reverse=True)
-                for combat_fleet_id in rev_fleet_id:
-                    if combat_fleet_id == 3:
-                        fleet_list[3] = fleet_list[1]
+                combat_targets = []
 
+                for combat_fleet_id in rev_fleet_id:
+                    target_fleet_id = 1 if combat_fleet_id == 3 else combat_fleet_id
+                    combat_targets.append(
+                        (combat_fleet_id, fleet_list[target_fleet_id])
+                    )
+
+                if not self._unload_target_fleets_before_custom_switch(
+                    combat_targets
+                ):
+                    return False
+
+                for combat_fleet_id, target_fleet in combat_targets:
                     if not self.switch_to_costom_fleet_with_equipment(
-                        combat_fleet_id, fleet_list[combat_fleet_id]
+                        combat_fleet_id, target_fleet
                     ):
                         return False
 
@@ -143,24 +153,38 @@ class FleetSwitcherCore(object):
                     pvp.pvp.next_pvp_quest.name + "-pvp"
                 )
 
+                pvp_targets = [(1, fleet_list[1])]
+                if not self._unload_target_fleets_before_custom_switch(pvp_targets):
+                    return False
+
                 if not self.switch_to_costom_fleet_with_equipment(1, fleet_list[1]):
                     return False
 
             elif context == "expedition":
                 Log.log_msg(f"Switching to Exp Preset.")
 
+                expedition_targets = []
                 fleet_id = flt.fleets.get_next_exp_fleet_id()
                 while (
                     fleet_id != None and exp.expedition.exp_for_fleet[fleet_id] != None
                 ):
                     DEFAULT_FLEET_ID = 1
-                    temp = self._get_fleet_preset(
+                    target_fleet = self._get_fleet_preset(
                         exp.expedition.exp_for_fleet[fleet_id]
                     )[DEFAULT_FLEET_ID]
-
-                    if not self.switch_to_costom_fleet_with_equipment(fleet_id, temp):
-                        return False
+                    expedition_targets.append((fleet_id, target_fleet))
                     fleet_id = flt.fleets.get_next_exp_fleet_id(fleet_id)
+
+                if not self._unload_target_fleets_before_custom_switch(
+                    expedition_targets
+                ):
+                    return False
+
+                for fleet_id, target_fleet in expedition_targets:
+                    if not self.switch_to_costom_fleet_with_equipment(
+                        fleet_id, target_fleet
+                    ):
+                        return False
 
             elif context == "factory_develop":
                 develop_sec = cfg.config.factory.develop_secretary
@@ -242,6 +266,33 @@ class FleetSwitcherCore(object):
     def _is_custom_fleet_loaded(self, fleet_id, target_fleet: Fleet):
         active_fleet = flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][fleet_id]
         return active_fleet.ship_ids == target_fleet.ship_ids
+
+    def _unload_target_fleets_before_custom_switch(
+        self, targets: list[tuple[int, Fleet]]
+    ) -> bool:
+        if len(targets) <= 1:
+            return True
+
+        Log.log_msg(
+            "Unloading target fleets before multi-fleet custom switch."
+        )
+        self.goto()
+
+        for fleet_id, target_fleet in targets:
+            if self._is_custom_fleet_loaded(fleet_id, target_fleet):
+                continue
+
+            active_fleet = flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][fleet_id]
+            if active_fleet.size <= 1:
+                continue
+
+            active_fleet.select()
+            if not self._unload_all_ships_before_custom_switch(fleet_id):
+                return False
+
+            kca_u.kca.sleep(5)
+
+        return True
 
     def switch_to_costom_fleet(self, fleet_id, costom_fleet: Fleet):
         """
