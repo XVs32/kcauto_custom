@@ -344,8 +344,10 @@ class ApiWrapper(object):
 
     def _process_require_info(self, data):
         try:
+            equipment_data = self._filter_equipment(data["api_slot_item"])
+            equ.equipment.update_equipment_pool(equipment_data)
             JsonData.dump_json(
-                self._filter_equipment(data["api_slot_item"]),
+                equipment_data,
                 "data|temp|equipment_list.json",
             )
         except KeyError:
@@ -562,8 +564,10 @@ class ApiWrapper(object):
 
     def _process_equipment_data(self, data):
         try:
+            equipment_data = self._filter_equipment(data)
+            equ.equipment.update_equipment_pool(equipment_data)
             JsonData.dump_json(
-                self._filter_equipment(data),
+                equipment_data,
                 "data|temp|equipment_list.json",
             )
         except KeyError:
