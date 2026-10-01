@@ -415,7 +415,7 @@ class FleetCore(object):
                             panic_flag = True
                             break
                         elif (
-                            this_equipment.model_id == -1
+                            this_equipment.is_empty_equipment
                             and fleet_type == FleetEnum.COMBAT
                         ):
                             Log.log_warn(
@@ -426,7 +426,7 @@ class FleetCore(object):
 
                         if (
                             this_equipment.production_id
-                            != Equipment().production_id
+                            != Equipment.UNKNOWN_PRODUCTION_ID
                         ):
                             noro6_equipment_ids.add(
                                 this_equipment.production_id
@@ -459,7 +459,7 @@ class FleetCore(object):
                         if this_equipment != None and this_equipment.model_id != None:
                             if (
                                 this_equipment.production_id
-                                != Equipment().production_id
+                                != Equipment.UNKNOWN_PRODUCTION_ID
                             ):
                                 noro6_equipment_ids.add(
                                     this_equipment.production_id
@@ -467,7 +467,7 @@ class FleetCore(object):
                                 preset_equipment_pool.remove(this_equipment)
                     elif reinforce_equipment["i"] == 0:
                         ship.slot_ex = None
-                    elif reinforce_equipment["i"] == -1:
+                    elif reinforce_equipment["i"] == Equipment.EMPTY_EQUIPMENT:
                         ship.slot_ex = Equipment()
                     else:
                         Log.log_error(

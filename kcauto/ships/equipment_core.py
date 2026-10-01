@@ -85,7 +85,7 @@ class EquipmentCore(object):
                     production_id=raw_equipment["api_id"],
                     stars=raw_equipment["api_level"],
                     lock=raw_equipment["api_locked"],
-                    ace=raw_equipment.get("api_alv", Equipment().ace),
+                    ace=raw_equipment.get("api_alv", Equipment.UNKNOWN_ACE),
                 )
             )
         self.equipment_pool[self.ID].append(Equipment())
@@ -133,7 +133,7 @@ class EquipmentCore(object):
 
     def _remove_from_pool(self, target_equipment: Equipment, pool):
 
-        if target_equipment.production_id == Equipment().production_id:
+        if target_equipment.production_id == Equipment.UNKNOWN_PRODUCTION_ID:
             return
 
         for equipment in self.equipment_pool[pool]:
@@ -298,7 +298,7 @@ class EquipmentCore(object):
                 )
                 return None
 
-        return Equipment(Equipment().UNKNOWN_EQUIPMENT, production_id=production_id)
+        return Equipment(Equipment.UNKNOWN_EQUIPMENT, production_id=production_id)
 
     def is_available_equipments(self, ship: Ship, equipments: list[Equipment]):
         """method to check if the equipment is available for the ship
