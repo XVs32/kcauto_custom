@@ -540,8 +540,15 @@ class FleetCore(object):
             exp_static_data = exp.expedition.get_expedition_static_data(
                 ExpeditionEnum(exp_in_rank[exp.expedition.EXP_ENUM])
             )
+            expEnum = exp_in_rank[exp.expedition.EXP_ENUM]
 
-            if exp_static_data != None:
+            if noro6_available == True and expEnum in self.fleets:
+                Log.log_msg(f"Using Noro6 for {expEnum.expedition}.")
+                noro6_available = False
+                exp.expedition.exp_for_fleet[fleet_id] = expEnum
+                fleet_id = self.get_next_exp_fleet_id(fleet_id)
+
+            elif exp_static_data != None:
                 exp_ship_pool_bak = copy.deepcopy(exp_ship_pool)
                 non_noro6_equipment_pool_bak = copy.deepcopy(
                     equ.equipment.equipment_pool[equ.equipment.NON_NORO6]
@@ -590,15 +597,6 @@ class FleetCore(object):
                         exp.expedition.EXP_ENUM
                     ]
 
-                    fleet_id = self.get_next_exp_fleet_id(fleet_id)
-
-            elif noro6_available == True:
-                expEnum = exp_in_rank[exp.expedition.EXP_ENUM]
-
-                if expEnum in self.fleets:
-                    Log.log_msg(f"Using Noro6 for {expEnum.expedition}.")
-                    noro6_available = False
-                    exp.expedition.exp_for_fleet[fleet_id] = expEnum
                     fleet_id = self.get_next_exp_fleet_id(fleet_id)
 
             if fleet_id == None:
