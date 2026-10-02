@@ -39,6 +39,7 @@
   "expedition.desire_bauxite": 350000,
   "expedition.desire_steel": 350000,
   "expedition.desire_bucket": 3000,
+  "expedition.desire_devmat": 3000,
   "factory.build_recipe": [
     30,
     30,
