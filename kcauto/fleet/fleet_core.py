@@ -428,9 +428,7 @@ class FleetCore(object):
                             this_equipment.production_id
                             != Equipment.UNKNOWN_PRODUCTION_ID
                         ):
-                            noro6_equipment_ids.add(
-                                this_equipment.production_id
-                            )
+                            noro6_equipment_ids.add(this_equipment.production_id)
                             preset_equipment_pool.remove(this_equipment)
 
                     reinforce_equipment = noro6.get_reinforce_equipment()
@@ -461,9 +459,7 @@ class FleetCore(object):
                                 this_equipment.production_id
                                 != Equipment.UNKNOWN_PRODUCTION_ID
                             ):
-                                noro6_equipment_ids.add(
-                                    this_equipment.production_id
-                                )
+                                noro6_equipment_ids.add(this_equipment.production_id)
                                 preset_equipment_pool.remove(this_equipment)
                     elif reinforce_equipment["i"] == 0:
                         ship.slot_ex = None

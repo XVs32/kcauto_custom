@@ -152,9 +152,7 @@ class EquipmentCore(object):
         output (bool) : is exact match
         """
 
-        equipment_list = self._get_match_equipment(
-            equipment_pool, noro6_equipment["i"]
-        )
+        equipment_list = self._get_match_equipment(equipment_pool, noro6_equipment["i"])
 
         if equipment_list == []:
             Log.log_error("can't find any match equipment")
