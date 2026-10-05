@@ -322,7 +322,7 @@ class FleetCore(object):
         output: (kcauto preset)
         """
 
-        equipment_pool: list[Equipment] = equ.equipment.equipment_pool[
+        equipment_list: list[Equipment] = equ.equipment.equipment_pool[
             equ.equipment.ID
         ].copy()
         noro6_equipment_ids = set()
@@ -337,7 +337,9 @@ class FleetCore(object):
                     for equipment in ship.equipments:
                         if equipment.is_empty_equipment:
                             continue
-                        equipment_pool.remove(equipment)
+                        equ.equipment.remove_from_equipment_list(
+                            equipment, equipment_list=equipment_list
+                        )
         else:
             if cfg.config.combat.is_auto_mode == False:
                 Log.log_warn(
@@ -356,7 +358,7 @@ class FleetCore(object):
 
         for preset in noro6.presets:
             is_first_not_exact_match = True
-            preset_equipment_pool: list[Equipment] = equipment_pool.copy()
+            preset_equipment_list: list[Equipment] = equipment_list.copy()
 
             noro6.get_map(preset["name"])
 
@@ -391,7 +393,7 @@ class FleetCore(object):
                     for j in range(1, noro6.get_equipment_count() + 1):
                         this_equipment, is_exact_match = (
                             equ.equipment.get_equipment_from_noro6_equipment(
-                                noro6.get_equipment(j), preset_equipment_pool
+                                noro6.get_equipment(j), preset_equipment_list
                             )
                         )
 
@@ -429,13 +431,15 @@ class FleetCore(object):
                             != Equipment.UNKNOWN_PRODUCTION_ID
                         ):
                             noro6_equipment_ids.add(this_equipment.production_id)
-                            preset_equipment_pool.remove(this_equipment)
+                            equ.equipment.remove_from_equipment_list(
+                                this_equipment, equipment_list=preset_equipment_list
+                            )
 
                     reinforce_equipment = noro6.get_reinforce_equipment()
                     if reinforce_equipment["i"] > 0:
                         this_equipment, is_exact_match = (
                             equ.equipment.get_equipment_from_noro6_equipment(
-                                reinforce_equipment, preset_equipment_pool
+                                reinforce_equipment, preset_equipment_list
                             )
                         )
                         ship.slot_ex = this_equipment
@@ -460,7 +464,9 @@ class FleetCore(object):
                                 != Equipment.UNKNOWN_PRODUCTION_ID
                             ):
                                 noro6_equipment_ids.add(this_equipment.production_id)
-                                preset_equipment_pool.remove(this_equipment)
+                                equ.equipment.remove_from_equipment_list(
+                                    this_equipment, equipment_list=preset_equipment_list
+                                )
                     elif reinforce_equipment["i"] == 0:
                         ship.slot_ex = None
                     elif reinforce_equipment["i"] == Equipment.EMPTY_EQUIPMENT:
