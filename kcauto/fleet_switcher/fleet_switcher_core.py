@@ -685,7 +685,7 @@ class FleetSwitcherCore(object):
 
             if (
                 fleet.ships[i].slot_ex != None
-                and fleet.ships[i].slot_ex.model_id != Equipment().model_id
+                and fleet.ships[i].slot_ex.model_id != Equipment.EMPTY_EQUIPMENT
             ):
                 kca_u.kca.click("reinforce_slot_equipment")
 

@@ -3,8 +3,14 @@ from util.json_data import JsonData
 
 
 class Equipment:
+    # model id
     UNKNOWN_EQUIPMENT = 0
     EMPTY_EQUIPMENT = -1
+
+    UNKNOWN_PRODUCTION_ID = -1
+    UNKNOWN_STARS = -1
+    UNKNOWN_LOCK = -1
+    UNKNOWN_ACE = -1
 
     equipment_static_data = {}
 
@@ -16,7 +22,14 @@ class Equipment:
 
     _category = None
 
-    def __init__(self, model_id=-1, production_id=-1, stars=-1, lock=-1, ace=-1):
+    def __init__(
+        self,
+        model_id=EMPTY_EQUIPMENT,
+        production_id=UNKNOWN_PRODUCTION_ID,
+        stars=UNKNOWN_STARS,
+        lock=UNKNOWN_LOCK,
+        ace=UNKNOWN_ACE,
+    ):
         self.update(model_id, production_id, stars, lock, ace)
 
         if Equipment.equipment_static_data == {}:

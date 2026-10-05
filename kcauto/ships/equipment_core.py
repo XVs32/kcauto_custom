@@ -16,8 +16,6 @@ import util.kca as kca_u
 
 
 class EquipmentCore(object):
-    RAW = "raw"
-    LOADED = "loaded"
     FREE = "free"
     ID = "id"
 
@@ -43,11 +41,10 @@ class EquipmentCore(object):
     SLOT_EX_NOT_AVAILABLE = 0
 
     def __init__(self):
-        self.equipment_pool[self.RAW] = {}
-        self.equipment_pool[self.LOADED] = []
         self.equipment_pool[self.FREE] = []
         self.equipment_pool[self.ID] = []
         self.equipment_pool[self.NON_NORO6] = []
+        self._noro6_equipment_ids = set()
 
         try:
             self.reinforce_general_category = JsonData.load_json(
@@ -70,22 +67,40 @@ class EquipmentCore(object):
             Log.log_error(e)
 
         try:
-            for raw_equipment in JsonData.load_json("data|temp|equipment_list.json"):
-                self.equipment_pool[self.ID].append(
-                    Equipment(
-                        model_id=raw_equipment["api_slotitem_id"],
-                        production_id=raw_equipment["api_id"],
-                        stars=raw_equipment["api_level"],
-                        lock=raw_equipment["api_locked"],
-                        ace=raw_equipment.get("api_alv", Equipment().ace),
-                    )
-                )
-            self.equipment_pool[self.ID].append(Equipment())
+            self.update_equipment_pool(
+                JsonData.load_json("data|temp|equipment_list.json")
+            )
         except FileNotFoundError as e:
             Log.log_error(
                 "Equipment data not found, please start kcauto from splash screen"
             )
             Log.log_error(e)
+
+    def update_equipment_pool(self, equipment_data):
+        self.equipment_pool[self.ID] = []
+        for raw_equipment in equipment_data:
+            self.equipment_pool[self.ID].append(
+                Equipment(
+                    model_id=raw_equipment["api_slotitem_id"],
+                    production_id=raw_equipment["api_id"],
+                    stars=raw_equipment["api_level"],
+                    lock=raw_equipment["api_locked"],
+                    ace=raw_equipment.get("api_alv", Equipment.UNKNOWN_ACE),
+                )
+            )
+        self.equipment_pool[self.ID].append(Equipment())
+        self.update_non_noro6_equipment_pool()
+
+    def set_noro6_equipment_ids(self, equipment_ids):
+        self._noro6_equipment_ids = set(equipment_ids)
+        self.update_non_noro6_equipment_pool()
+
+    def update_non_noro6_equipment_pool(self):
+        self.equipment_pool[self.NON_NORO6] = [
+            equipment
+            for equipment in self.equipment_pool[self.ID]
+            if equipment.production_id not in self._noro6_equipment_ids
+        ]
 
     def goto(self):
         nav.navigate.to("equipment")
@@ -116,27 +131,29 @@ class EquipmentCore(object):
 
         return
 
-    def _remove_from_pool(self, target_equipment: Equipment, pool):
-
-        if target_equipment.production_id == Equipment().production_id:
+    def remove_from_equipment_list(
+        self, target_equipment: Equipment, equipment_list: list[Equipment]
+    ):
+        if target_equipment.production_id == Equipment.UNKNOWN_PRODUCTION_ID:
             return
 
-        for equipment in self.equipment_pool[pool]:
+        for equipment in equipment_list:
             if equipment.production_id == target_equipment.production_id:
-                self.equipment_pool[pool].remove(equipment)
-                break
+                equipment_list.remove(equipment)
+                return
 
-    def get_equipment_from_noro6_equipment(self, noro6_equipment):
+    def get_equipment_from_noro6_equipment(
+        self, noro6_equipment, equipment_pool: list[Equipment]
+    ):
         """
         method to convert noro6 equipment to kcauto equipment
         noro6_equipment (dict): noro6 equipment data
+        equipment_pool (list[Equipment]): equipment pool to search in
         output (int) : equipment production id
         output (bool) : is exact match
         """
 
-        equipment_list = self._get_match_equipment(
-            self.equipment_pool[self.ID], noro6_equipment["i"]
-        )
+        equipment_list = self._get_match_equipment(equipment_pool, noro6_equipment["i"])
 
         if equipment_list == []:
             Log.log_error("can't find any match equipment")
@@ -280,7 +297,7 @@ class EquipmentCore(object):
                 )
                 return None
 
-        return Equipment(Equipment().UNKNOWN_EQUIPMENT, production_id=production_id)
+        return Equipment(Equipment.UNKNOWN_EQUIPMENT, production_id=production_id)
 
     def is_available_equipments(self, ship: Ship, equipments: list[Equipment]):
         """method to check if the equipment is available for the ship
