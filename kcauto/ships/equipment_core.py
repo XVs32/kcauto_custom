@@ -131,15 +131,21 @@ class EquipmentCore(object):
 
         return
 
-    def _remove_from_pool(self, target_equipment: Equipment, pool):
-
+    def _remove_from_equipment_list(
+        self, target_equipment: Equipment, equipment_list: list[Equipment]
+    ):
         if target_equipment.production_id == Equipment.UNKNOWN_PRODUCTION_ID:
             return
 
-        for equipment in self.equipment_pool[pool]:
+        for equipment in equipment_list:
             if equipment.production_id == target_equipment.production_id:
-                self.equipment_pool[pool].remove(equipment)
-                break
+                equipment_list.remove(equipment)
+                return
+
+    def _remove_from_pool(self, target_equipment: Equipment, pool_name: str):
+        self._remove_from_equipment_list(
+            target_equipment, self.equipment_pool[pool_name]
+        )
 
     def get_equipment_from_noro6_equipment(
         self, noro6_equipment, equipment_pool: list[Equipment]

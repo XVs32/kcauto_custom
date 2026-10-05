@@ -247,7 +247,7 @@ class Ship(object):
 
         for i in range(count):
             equ.equipment._remove_from_pool(
-                target_equipment=temp_equipment[i], pool=equ.equipment.NON_NORO6
+                target_equipment=temp_equipment[i], pool_name=equ.equipment.NON_NORO6
             )
 
         return

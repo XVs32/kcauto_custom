@@ -529,7 +529,7 @@ class FleetCore(object):
                             exp_ship_pool[ongoing_ship.ship_type].remove(standby_ship)
                             for equipment in ongoing_ship.equipments:
                                 equ.equipment._remove_from_pool(
-                                    equipment, pool=equ.equipment.NON_NORO6
+                                    equipment, pool_name=equ.equipment.NON_NORO6
                                 )
 
         for exp_in_rank in exp.expedition.exp_rank:
