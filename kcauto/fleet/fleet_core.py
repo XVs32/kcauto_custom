@@ -528,7 +528,7 @@ class FleetCore(object):
                         if standby_ship.production_id == ongoing_ship.production_id:
                             exp_ship_pool[ongoing_ship.ship_type].remove(standby_ship)
                             for equipment in ongoing_ship.equipments:
-                                equ.equipment._remove_from_pool(
+                                equ.equipment.remove_from_pool(
                                     equipment, pool_name=equ.equipment.NON_NORO6
                                 )
 

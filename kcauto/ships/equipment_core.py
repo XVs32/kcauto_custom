@@ -131,7 +131,7 @@ class EquipmentCore(object):
 
         return
 
-    def _remove_from_equipment_list(
+    def remove_from_equipment_list(
         self, target_equipment: Equipment, equipment_list: list[Equipment]
     ):
         if target_equipment.production_id == Equipment.UNKNOWN_PRODUCTION_ID:
@@ -142,8 +142,8 @@ class EquipmentCore(object):
                 equipment_list.remove(equipment)
                 return
 
-    def _remove_from_pool(self, target_equipment: Equipment, pool_name: str):
-        self._remove_from_equipment_list(
+    def remove_from_pool(self, target_equipment: Equipment, pool_name: str):
+        self.remove_from_equipment_list(
             target_equipment, self.equipment_pool[pool_name]
         )
 
