@@ -142,11 +142,6 @@ class EquipmentCore(object):
                 equipment_list.remove(equipment)
                 return
 
-    def remove_from_pool(self, target_equipment: Equipment, pool_name: str):
-        self.remove_from_equipment_list(
-            target_equipment, self.equipment_pool[pool_name]
-        )
-
     def get_equipment_from_noro6_equipment(
         self, noro6_equipment, equipment_pool: list[Equipment]
     ):
