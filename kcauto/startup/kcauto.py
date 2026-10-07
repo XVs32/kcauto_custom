@@ -312,6 +312,11 @@ class Kcauto(object):
 
                 Log.log_error(f"stage: {current_stage}")
                 cfg.config.combat._sortie_map = current_stage
+        
+        com.combat.goto()
+        com.combat.check_clear_stop()
+        if not com.combat.enabled:
+            return False
 
         # update map_data for combat module
         com.combat.load_map_data(cfg.config.combat.sortie_map)

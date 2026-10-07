@@ -291,10 +291,6 @@ class CombatCore(CoreBase):
                 self.enabled = False
 
             return False
-        if cfg.config.combat.clear_stop and self._sortie_map_is_cleared:
-            Log.log_msg(f"Map {sortie_map.world_and_map} has been cleared.")
-            self.enabled = False
-            return False
         self._select_world(sortie_map)
         time_to_rest = lbas.lbas.manage_lbas()
         if time_to_rest:
@@ -306,10 +302,9 @@ class CombatCore(CoreBase):
             self.nodes_run = []
             self.combat_nodes_run = []
             self.rescued_ships = []
-            self.map_cleared = False
             sts.stats.combat.combat_sorties += 1
             self._handle_combat(sortie_map)
-            self._check_map_clear()
+            self.check_clear_stop()
             if self.enabled:
                 self.set_next_sortie_time()
             return True
@@ -373,11 +368,11 @@ class CombatCore(CoreBase):
             Log.log_warn("Cannot start combat.")
         return False
 
-    def _check_map_clear(self):
-        if self.map_cleared:
-            if cfg.config.combat.clear_stop:
-                Log.log_debug_1("Map has been cleared!")
-                self.enabled = False
+    def check_clear_stop(self):
+        if cfg.config.combat.clear_stop and (self._sortie_map_is_cleared or self.map_cleared):
+            Log.log_msg(f"Map has been cleared.")
+            self.enabled = False
+        self.map_cleared = False
 
     def _handle_combat(self, sortie_map):
 
