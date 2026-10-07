@@ -270,12 +270,10 @@ class FleetSwitcherCore(object):
     def _unload_target_fleets_before_custom_switch(
         self, targets: list[tuple[int, Fleet]]
     ) -> bool:
-        if len(targets) <= 1:
+        if not targets:
             return True
 
-        Log.log_msg(
-            "Unloading target fleets before multi-fleet custom switch."
-        )
+        Log.log_msg("Unloading target fleets before custom switch.")
         self.goto()
 
         for fleet_id, target_fleet in targets:
@@ -309,11 +307,6 @@ class FleetSwitcherCore(object):
             if self._is_custom_fleet_loaded(fleet_id, costom_fleet):
                 Log.log_msg(f"Fleet {fleet_id} ships are already loaded")
                 return True
-
-            if not self._unload_all_ships_before_custom_switch(fleet_id):
-                return False
-
-            kca_u.kca.sleep(5)
 
             empty_slot_count = 0
 
