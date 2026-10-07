@@ -98,7 +98,7 @@ class FleetSwitcherCore(object):
                     return False
 
                 for combat_fleet_id, target_fleet in combat_targets:
-                    if not self.switch_to_costom_fleet_with_equipment(
+                    if not self._switch_to_costom_fleet_with_equipment(
                         combat_fleet_id, target_fleet
                     ):
                         return False
@@ -157,7 +157,7 @@ class FleetSwitcherCore(object):
                 if not self._unload_target_fleets_before_custom_switch(pvp_targets):
                     return False
 
-                if not self.switch_to_costom_fleet_with_equipment(1, fleet_list[1]):
+                if not self._switch_to_costom_fleet_with_equipment(1, fleet_list[1]):
                     return False
 
             elif context == "expedition":
@@ -181,7 +181,7 @@ class FleetSwitcherCore(object):
                     return False
 
                 for fleet_id, target_fleet in expedition_targets:
-                    if not self.switch_to_costom_fleet_with_equipment(
+                    if not self._switch_to_costom_fleet_with_equipment(
                         fleet_id, target_fleet
                     ):
                         return False
@@ -294,7 +294,7 @@ class FleetSwitcherCore(object):
 
         return True
 
-    def switch_to_costom_fleet(self, fleet_id, costom_fleet: Fleet):
+    def _switch_to_costom_fleet(self, fleet_id, costom_fleet: Fleet):
         """
         method to switch the ship in {fleet_id} to ships defined in {ship_list}
 
@@ -413,7 +413,7 @@ class FleetSwitcherCore(object):
         )
         return False
 
-    def switch_to_costom_fleet_with_equipment(self, fleet_id, costom_fleet: Fleet):
+    def _switch_to_costom_fleet_with_equipment(self, fleet_id, costom_fleet: Fleet):
         """
         method to switch the ship in {fleet_id} to ships defined in {ship_list}
 
@@ -429,7 +429,7 @@ class FleetSwitcherCore(object):
 
         self.goto()
 
-        self.switch_to_costom_fleet(fleet_id, costom_fleet)
+        self._switch_to_costom_fleet(fleet_id, costom_fleet)
 
         self._load_equipment(fleet_id, costom_fleet)
         Log.log_success("Equipment loaded.")
