@@ -92,9 +92,7 @@ class FleetSwitcherCore(object):
                         (combat_fleet_id, fleet_list[target_fleet_id])
                     )
 
-                if not self._unload_target_fleets_before_custom_switch(
-                    combat_targets
-                ):
+                if not self._unload_target_fleets_before_custom_switch(combat_targets):
                     return False
 
                 for combat_fleet_id, target_fleet in combat_targets:
