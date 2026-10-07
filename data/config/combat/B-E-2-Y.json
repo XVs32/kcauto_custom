@@ -1,5 +1,8 @@
 {
   "combat.fleet_mode": "ctf",
+  "combat.node_formations": [
+    "Y:combined_fleet_2"
+  ],
   "combat.lbas_groups": [
     1,
     2

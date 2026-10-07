@@ -1,7 +1,11 @@
 {
   "combat.fleet_mode": "ctf",
+  "combat.repair_limit": 2,
   "combat.node_selects": [
     "H>M"
+  ],
+  "combat.node_formations": [
+    "Y:combined_fleet_2"
   ],
   "combat.lbas_groups": [
     1,

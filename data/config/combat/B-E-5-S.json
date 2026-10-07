@@ -3,18 +3,21 @@
   "combat.node_selects": [
     "K3>L"
   ],
+  "combat.node_formations": [
+    "S:combined_fleet_2"
+  ],
   "combat.lbas_groups": [
     1,
     2,
     3
   ],
   "combat.lbas_group_1_nodes": [
-    "S",
-    "S"
+    "K",
+    "K"
   ],
   "combat.lbas_group_2_nodes": [
-    "S",
-    "S"
+    "L",
+    "L"
   ],
   "combat.lbas_group_3_nodes": [
     "S",

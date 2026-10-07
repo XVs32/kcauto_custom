@@ -344,8 +344,10 @@ class ApiWrapper(object):
 
     def _process_require_info(self, data):
         try:
+            equipment_data = self._filter_equipment(data["api_slot_item"])
+            equ.equipment.update_equipment_pool(equipment_data)
             JsonData.dump_json(
-                self._filter_equipment(data["api_slot_item"]),
+                equipment_data,
                 "data|temp|equipment_list.json",
             )
         except KeyError:
@@ -561,27 +563,26 @@ class ApiWrapper(object):
 
     def _process_equipment_data(self, data):
         try:
+            equipment_data = self._filter_equipment(data)
+            equ.equipment.update_equipment_pool(equipment_data)
             JsonData.dump_json(
-                self._filter_equipment(data),
+                equipment_data,
                 "data|temp|equipment_list.json",
             )
         except KeyError:
             Log.log_debug_1("No equipment found in API response.")
 
     def _process_free_equipment_data(self, data):
-        equ.equipment.equipment_pool[equ.equipment.RAW] = {}
         equ.equipment.equipment_pool[equ.equipment.FREE] = []
         try:
-            equ.equipment.equipment_pool[equ.equipment.RAW] = data["api_slot_data"]
+            slot_data = data["api_slot_data"]
 
             equipment_pool_temp: dict[str, list[Equipment]] = {}
 
-            for key in equ.equipment.equipment_pool[equ.equipment.RAW]:
+            for key in slot_data:
                 equipment_pool_temp[key] = []
 
-                for equipment_production_id in equ.equipment.equipment_pool[
-                    equ.equipment.RAW
-                ][key]:
+                for equipment_production_id in slot_data[key]:
                     equipment_temp = equ.equipment.get_equipment_by_production_id(
                         equ.equipment.equipment_pool[equ.equipment.ID],
                         equipment_production_id,
@@ -590,7 +591,7 @@ class ApiWrapper(object):
                     # Equipment.category_patch(equipment_temp.model_id, int(key[len("api_slottype"):]))
                     equipment_pool_temp[key].append(equipment_temp)
 
-            keys = equ.equipment.equipment_pool[equ.equipment.RAW].keys()
+            keys = slot_data.keys()
 
             SECONDARY_GUN = "api_slottype4"
             EVENT_SECONDARY_GUN = "api_slottype95"

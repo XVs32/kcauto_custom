@@ -1,5 +1,12 @@
 {
   "combat.fleet_mode": "strike",
+  "combat.node_formations": [
+    "D2:line_abreast"
+  ],
+  "combat.lbas_groups": [
+    1,
+    2
+  ],
   "combat.node_selects": [
     "D>D1"
   ],

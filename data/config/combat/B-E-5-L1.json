@@ -5,5 +5,18 @@
   ],
   "combat.node_night_battles": [
     "L1:True"
+  ],
+  "combat.lbas_groups": [
+    1,
+    2,
+    3
+  ],
+  "combat.lbas_group_2_nodes": [
+    "K",
+    "K"
+  ],
+  "combat.lbas_group_3_nodes": [
+    "L1",
+    "L1"
   ]
 }

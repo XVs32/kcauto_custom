@@ -1,5 +1,18 @@
 {
   "combat.fleet_mode": "stf",
+  "combat.lbas_groups": [
+    1,
+    2,
+    3
+  ],
+  "combat.lbas_group_2_nodes": [
+    "P1",
+    "P1"
+  ],
+  "combat.lbas_group_3_nodes": [
+    "P3",
+    "P3"
+  ],
   "combat.node_selects": [
     "O>P1"
   ],

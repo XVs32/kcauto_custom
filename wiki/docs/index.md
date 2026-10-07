@@ -10,7 +10,7 @@ Executable file is provided for those don't want to build their own python env.
 User can setup their fleet and equipment configuration in [Noro6](https://noro6.github.io/kc-web/#/aircalc), then excute the plan with kcauto_custom.  
 This tool is designed to help users automate repetitive tasks such as Expedition, Combat, PvP, Repair & Resupply, ultimately saving time and improving efficiency. 
 
-<img width="1340" height="1080" alt="image" src="https://github.com/user-attachments/assets/c5c4f4eb-55d4-4842-8502-7cd3efa4226a" />
+![kcauto_custom_overview](assets/kcauto_custom_overview.png)
 
 ---
 
@@ -50,13 +50,13 @@ This tool is designed to help users automate repetitive tasks such as Expedition
 * Bug fix(Fleet Switcher Module, interaction_mode, quest handling, LBAS Module etc.)
 
 ## Wiki page
-### [Setup guide](https://github.com/XVs32/kcauto_custom/wiki/Ch1:-Setup-guide)  
-### [Beginner user guide](https://github.com/XVs32/kcauto_custom/wiki/Ch2:-Beginner-user-guide)  
-### [Gamer user guide ‐‐ Sortie](https://github.com/XVs32/kcauto_custom/wiki/Ch3.1:-Gamer-user-guide-%E2%80%90%E2%80%90-Sortie)  
-### [Gamer user guide ‐‐ Expedition](https://github.com/XVs32/kcauto_custom/wiki/Ch3.2:-Gamer-user-guide-%E2%80%90%E2%80%90-Expedition)  
+
+### [POI version](https://xvs32.github.io/kcauto_custom/)
+
+### [Brave(KC3) version](https://github.com/XVs32/kcauto_custom/wiki)  
 
 ---
 *You will need a github account for the following*
 ### [Wishing pool](https://github.com/XVs32/kcauto_custom/discussions/categories/ideas): Wish/Idea for new functions
 ### [Bug report](https://github.com/XVs32/kcauto_custom/issues): Bro, something goes wrong
-### [Q&A](https://github.com/XVs32/kcauto_custom/discussions/categories/q-a): How to use this/that?
+### [Q&A](https://github.com/XVs32/kcauto_custom/discussions/categories/q-a): Any questions?

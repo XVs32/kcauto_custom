@@ -1,5 +1,8 @@
 {
-  "combat.fleet_mode": "stf",
+  "combat.fleet_mode": "ctf",
+  "combat.node_formations": [
+    "Z:combined_fleet_2"
+  ],
   "combat.node_selects": [
     "P>P1",
     "T>T1"

@@ -1,20 +1,23 @@
 {
-  "combat.fleet_mode": "stf",
+  "combat.fleet_mode": "ctf",
+  "combat.node_formations": [
+    "V:combined_fleet_1",
+    "ZZ:combined_fleet_2"
+  ],
+  "combat.smoke_screen_nodes": [
+    "Z"
+  ],
   "combat.lbas_groups": [
     1,
     2,
     3
   ],
   "combat.lbas_group_1_nodes": [
-    "ZZ",
-    "ZZ"
+    "V",
+    "V"
   ],
   "combat.lbas_group_2_nodes": [
-    "ZZ",
-    "ZZ"
-  ],
-  "combat.lbas_group_3_nodes": [
-    "ZZ",
-    "ZZ"
+    "Z",
+    "Z"
   ]
 }

@@ -16,8 +16,6 @@ import util.kca as kca_u
 
 
 class EquipmentCore(object):
-    RAW = "raw"
-    LOADED = "loaded"
     FREE = "free"
     ID = "id"
 
@@ -39,8 +37,6 @@ class EquipmentCore(object):
     SLOT_EX_NOT_AVAILABLE = 0
 
     def __init__(self):
-        self.equipment_pool[self.RAW] = {}
-        self.equipment_pool[self.LOADED] = []
         self.equipment_pool[self.FREE] = []
         self.equipment_pool[self.ID] = []
         self.free_equipment_initialized = False
@@ -66,22 +62,28 @@ class EquipmentCore(object):
             Log.log_error(e)
 
         try:
-            for raw_equipment in JsonData.load_json("data|temp|equipment_list.json"):
-                self.equipment_pool[self.ID].append(
-                    Equipment(
-                        model_id=raw_equipment["api_slotitem_id"],
-                        production_id=raw_equipment["api_id"],
-                        stars=raw_equipment["api_level"],
-                        lock=raw_equipment["api_locked"],
-                        ace=raw_equipment.get("api_alv", Equipment.UNKNOWN_ACE),
-                    )
-                )
-            self.equipment_pool[self.ID].append(Equipment())
+            self.update_equipment_pool(
+                JsonData.load_json("data|temp|equipment_list.json")
+            )
         except FileNotFoundError as e:
             Log.log_error(
                 "Equipment data not found, please start kcauto from splash screen"
             )
             Log.log_error(e)
+
+    def update_equipment_pool(self, equipment_data):
+        self.equipment_pool[self.ID] = []
+        for raw_equipment in equipment_data:
+            self.equipment_pool[self.ID].append(
+                Equipment(
+                    model_id=raw_equipment["api_slotitem_id"],
+                    production_id=raw_equipment["api_id"],
+                    stars=raw_equipment["api_level"],
+                    lock=raw_equipment["api_locked"],
+                    ace=raw_equipment.get("api_alv", Equipment.UNKNOWN_ACE),
+                )
+            )
+        self.equipment_pool[self.ID].append(Equipment())
 
     def goto(self):
         nav.navigate.to("equipment")

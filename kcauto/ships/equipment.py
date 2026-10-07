@@ -8,6 +8,8 @@ class Equipment:
     EMPTY_EQUIPMENT = -1
 
     UNKNOWN_PRODUCTION_ID = -1
+    UNKNOWN_STARS = -1
+    UNKNOWN_LOCK = -1
     UNKNOWN_ACE = -1
 
     equipment_static_data = {}
@@ -24,8 +26,8 @@ class Equipment:
         self,
         model_id=EMPTY_EQUIPMENT,
         production_id=UNKNOWN_PRODUCTION_ID,
-        stars=-1,
-        lock=-1,
+        stars=UNKNOWN_STARS,
+        lock=UNKNOWN_LOCK,
         ace=UNKNOWN_ACE,
     ):
         self.update(model_id, production_id, stars, lock, ace)

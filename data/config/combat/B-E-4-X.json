@@ -4,6 +4,9 @@
     "P>P1",
     "T>T1"
   ],
+  "combat.node_formations": [
+    "X:combined_fleet_2"
+  ],
   "combat.lbas_groups": [
     1,
     2,

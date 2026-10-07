@@ -1,5 +1,8 @@
 {
   "combat.retreat_points": [
     "A2"
+  ],
+  "combat.lbas_groups": [
+    1
   ]
 }

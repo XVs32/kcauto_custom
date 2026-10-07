@@ -8,11 +8,13 @@ class ResourceStats(StatsBase):
     _steel_start = None
     _bauxite_start = None
     _bucket_start = None
+    _dev_mat_start = None
     _fuel = None
     _ammo = None
     _steel = None
     _bauxite = None
     _bucket = None
+    _dev_mat = None
 
     def __init__(self, start_time):
         super().__init__(start_time)
@@ -31,6 +33,8 @@ class ResourceStats(StatsBase):
                 self.bauxite = rsc["api_value"]
             if rsc["api_id"] == 6:
                 self.bucket = rsc["api_value"]
+            if rsc["api_id"] == 7:
+                self.dev_mat = rsc["api_value"]
 
     @property
     def fuel(self):
@@ -122,6 +126,24 @@ class ResourceStats(StatsBase):
     def bucket_ph(self):
         return self.bucket_delta / self.hours_run
 
+    @property
+    def dev_mat(self):
+        return self._dev_mat
+
+    @dev_mat.setter
+    def dev_mat(self, value):
+        if not self._dev_mat_start:
+            self._dev_mat_start = value
+        self._dev_mat = value
+
+    @property
+    def dev_mat_delta(self):
+        return self._dev_mat - self._dev_mat_start
+
+    @property
+    def dev_mat_ph(self):
+        return self.dev_mat_delta / self.hours_run
+
     def __str__(self):
         return (
             f"Fuel:{self.fuel} "
@@ -133,5 +155,7 @@ class ResourceStats(StatsBase):
             f"Bauxite:{self.bauxite} "
             f"(Δ{self.bauxite_delta} : {self.bauxite_ph:.2f}/hr) / "
             f"Bucket:{self.bucket} "
-            f"(Δ{self.bucket_delta} : {self.bucket_ph:.2f}/hr)"
+            f"(Δ{self.bucket_delta} : {self.bucket_ph:.2f}/hr) / "
+            f"DevMat:{self.dev_mat} "
+            f"(Δ{self.dev_mat_delta} : {self.dev_mat_ph:.2f}/hr)"
         )

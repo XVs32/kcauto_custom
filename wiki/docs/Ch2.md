@@ -30,7 +30,7 @@ You can change the expedition Id as needed.
 }
 ```
 
-Auto assign is not available in beginner guide, please select `disable` here.  
+Auto assign is not available in beginner guide, select `disable` here please.  
 ![image](https://github.com/XVs32/kcauto_custom/assets/16824564/d2e35af7-314a-4226-9a1b-ede83bd1926f)
 
 ---

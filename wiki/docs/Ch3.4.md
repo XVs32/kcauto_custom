@@ -1,4 +1,4 @@
-_Automation is good, so long as you know exactly where to put the machine_
+_Automation is good, so long as you know exactly where to put the machine._
 
 ---
 
@@ -70,8 +70,6 @@ kcauto_custom would not switch secretary ship before commiting for construction 
 <img width="358" height="146" alt="image" src="https://github.com/user-attachments/assets/49628fd4-e7d7-45d2-9d83-abfaaad1a7fc" />
 
 ***Do not switch for specific secretary ship***
-
-Press `"` key again to leave.
 
 ---
 
