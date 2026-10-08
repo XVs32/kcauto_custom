@@ -191,10 +191,6 @@ class FleetCore(object):
         noro6.get_map(preset_name)
         fleet_type = noro6.get_preset_type()
         fleet_count = noro6.get_fleet_count()
-        if fleet_count == 0:
-            raise Noro6MaterializationFailure(
-                f"Noro6 preset {preset_name} contains no fleets."
-            )
 
         fleets = {}
 
