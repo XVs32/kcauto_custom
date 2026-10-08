@@ -112,7 +112,7 @@ class Kcauto(object):
                     f"Expedition rank: {[expedition[exp.expedition.EXP_ENUM].display_name for expedition in exp.expedition.exp_rank]}"
                 )
 
-                if not flt.fleets.assign_exp_ship():
+                if not exp.expedition.assign_exp_ship():
                     exp.expedition.enabled = False
                     Log.log_error(
                         f"Failed to assign ships for self-balance expedition. Disabling expedition module."
@@ -150,7 +150,9 @@ class Kcauto(object):
         for i in qst.quest.next_check_intervals:
             if qst.quest.next_check_intervals[i].category.is_factory():
                 # be careful action_count is not int, but dict[int, int]
-                action_count = kca_u.kca.get_quest_count(target_quest=qst.quest.next_check_intervals[i])
+                action_count = kca_u.kca.get_quest_count(
+                    target_quest=qst.quest.next_check_intervals[i]
+                )
                 quest_type = next(iter(action_count))
 
                 if quest_type == fty.factory.CONSTRUCTION:
@@ -165,7 +167,9 @@ class Kcauto(object):
                     self._run_fleetswitch_logic("factory_build")
                     fty.factory.goto()
 
-                    success = fty.factory.build_logic(action_count[fty.factory.CONSTRUCTION])
+                    success = fty.factory.build_logic(
+                        action_count[fty.factory.CONSTRUCTION]
+                    )
 
                     if success == False:
                         fty.factory.set_timer()
@@ -176,7 +180,9 @@ class Kcauto(object):
                     self._run_fleetswitch_logic("factory_develop")
                     fty.factory.goto()
 
-                    success = fty.factory.develop_logic(action_count[fty.factory.DEVELOPMENT])
+                    success = fty.factory.develop_logic(
+                        action_count[fty.factory.DEVELOPMENT]
+                    )
 
                     if success == True:
                         anything_is_done = True
@@ -187,7 +193,7 @@ class Kcauto(object):
         if anything_is_done == False:
             """Daily factory process done, disable from now"""
             fty.factory.enabled = False
-                
+
     def run_pvp_logic(self):
         if not pvp.pvp.enabled:
             return False
@@ -203,7 +209,11 @@ class Kcauto(object):
                     CONTEXT_AUTO_PVP, fast_check=False, back_to_home=False, force=True
                 )
 
-            self._run_fleetswitch_logic("pvp")
+            if self._run_fleetswitch_logic("pvp") != 0:
+                pvp.pvp.enabled = False
+                Log.log_error("Failed to configure PvP fleet. Disabling PvP module.")
+                return False
+
             self.run_repair_logic()
 
             self.run_quest_logic(CONTEXT_PVP, back_to_home=True)
@@ -378,9 +388,12 @@ class Kcauto(object):
                     f"{cfg.config.combat.sortie_map.value} combat config not found, use default combat config instead."
                 )
 
-        port_api_update = False
-        if self._run_fleetswitch_logic("combat") == 0:
-            port_api_update = True
+        if self._run_fleetswitch_logic("combat") != 0:
+            com.combat.enabled = False
+            Log.log_error("Failed to configure sortie fleet. Disabling combat module.")
+            return False
+
+        port_api_update = True
 
         kca_u.kca.pause_if_configured("Combat fleetswitch dryrun enabled.")
 
@@ -525,7 +538,13 @@ class Kcauto(object):
         if not fsw.fleet_switcher.switch_fleet(context):
             Log.log_error(f"Failed to switch ships for {context}.")
             return -1
+
         self.handle_back_to_home(True)
+
+        if not fsw.fleet_switcher.verify_equipment_plan():
+            Log.log_error(f"Failed to verify fleet equipment for {context}.")
+            return -1
+
         return 0
 
     def run_shipswitch_logic(self, back_to_home=False):

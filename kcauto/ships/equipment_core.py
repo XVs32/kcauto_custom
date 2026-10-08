@@ -19,10 +19,6 @@ class EquipmentCore(object):
     FREE = "free"
     ID = "id"
 
-    NON_NORO6 = (
-        "NON_NORO6"  # contain all equipments which does not exist in noro6 config
-    )
-
     equipment_pool: dict[str, list[Equipment]] = {}
     reinforce_general_category = {}
     reinforce_special = {}
@@ -43,8 +39,7 @@ class EquipmentCore(object):
     def __init__(self):
         self.equipment_pool[self.FREE] = []
         self.equipment_pool[self.ID] = []
-        self.equipment_pool[self.NON_NORO6] = []
-        self._noro6_equipment_ids = set()
+        self.free_equipment_initialized = False
 
         try:
             self.reinforce_general_category = JsonData.load_json(
@@ -89,18 +84,6 @@ class EquipmentCore(object):
                 )
             )
         self.equipment_pool[self.ID].append(Equipment())
-        self.update_non_noro6_equipment_pool()
-
-    def set_noro6_equipment_ids(self, equipment_ids):
-        self._noro6_equipment_ids = set(equipment_ids)
-        self.update_non_noro6_equipment_pool()
-
-    def update_non_noro6_equipment_pool(self):
-        self.equipment_pool[self.NON_NORO6] = [
-            equipment
-            for equipment in self.equipment_pool[self.ID]
-            if equipment.production_id not in self._noro6_equipment_ids
-        ]
 
     def goto(self):
         nav.navigate.to("equipment")
@@ -131,61 +114,22 @@ class EquipmentCore(object):
 
         return
 
-    def remove_from_equipment_list(
-        self, target_equipment: Equipment, equipment_list: list[Equipment]
-    ):
-        if target_equipment.production_id == Equipment.UNKNOWN_PRODUCTION_ID:
-            return
-
-        for equipment in equipment_list:
-            if equipment.production_id == target_equipment.production_id:
-                equipment_list.remove(equipment)
-                return
-
-    def get_equipment_from_noro6_equipment(
-        self, noro6_equipment, equipment_pool: list[Equipment]
-    ):
-        """
-        method to convert noro6 equipment to kcauto equipment
-        noro6_equipment (dict): noro6 equipment data
-        equipment_pool (list[Equipment]): equipment pool to search in
-        output (int) : equipment production id
-        output (bool) : is exact match
-        """
-
-        equipment_list = self._get_match_equipment(equipment_pool, noro6_equipment["i"])
-
-        if equipment_list == []:
-            Log.log_error("can't find any match equipment")
-            return None, False
-
-        for equipment in equipment_list:
-            # @todo handle "api_alv"/"l" (plane exp level)
-            # if "api_alv" in temp_equipment[i] and "l" in noro6_equipment:
-            if equipment.stars == noro6_equipment["r"]:
-                return equipment, True
-
-        # sort by the absolute value of difference between api_lv and rf
-        equipment_list.sort(key=lambda x: abs(x.stars - noro6_equipment["r"]))
-
-        return equipment_list[0], False
-
     def get_reinforce_equipment_list(self, ship: Ship):
+        return [
+            equipment
+            for equipment in self.equipment_pool[self.FREE]
+            if self.is_reinforcement_equipment_available(ship, equipment)
+        ]
 
-        available_equipments = self.get_ship_available_equipment_list(ship)
+    def is_reinforcement_equipment_available(
+        self, ship: Ship, equipment: Equipment
+    ) -> bool:
+        """Return whether a physical equipment can be used in ship's slot_ex."""
 
-        for i in range(len(available_equipments) - 1, 0 - 1, -1):
-            equipment = available_equipments[i]
+        if not self.is_available_equipments(ship, [equipment]):
+            return False
 
-            if self._is_special_reinforce_equipment(ship, equipment):
-                continue
-
-            Log.log_debug_1(
-                f"Equipment {equipment.name} ({equipment.production_id}) {equipment.category} is not a special reinforce equipment for ship {ship.name}, skipping"
-            )
-            available_equipments.pop(i)
-
-        return available_equipments
+        return self._is_special_reinforce_equipment(ship, equipment)
 
     def _is_special_reinforce_equipment(self, ship: Ship, equipment: Equipment):
         """method to check if the equipment is a special reinforce equipment for the ship,
@@ -237,44 +181,6 @@ class EquipmentCore(object):
             return True
 
         return False
-
-    def _get_match_equipment(self, equipment_pool, model_id) -> list[Equipment]:
-        """method to find all equipment in the equipment pool with the specified model id
-        arg:
-            equipment_pool (list of equipment obj): the equipment pool to search in
-            model_id (int): the equipment model id to search for
-        """
-
-        is_any_match = False
-        output_list = []
-
-        if (
-            model_id != Equipment.EMPTY_EQUIPMENT
-            and model_id != Equipment.UNKNOWN_EQUIPMENT
-        ):
-            for equipment in equipment_pool:
-                if equipment.model_id == model_id:
-                    output_list.append(equipment)
-                    is_any_match = True
-
-            if is_any_match != True:
-                for equipment in self.equipment_pool[self.ID]:
-                    if equipment.model_id == model_id:
-                        Log.log_warn(
-                            f"Cannot find {equipment.name} in equipment pool, maybe it is in use"
-                        )
-                        is_any_match = True
-                        break
-                if is_any_match != True:
-                    temp = Equipment(model_id=model_id)
-                    Log.log_warn(
-                        f"Cannot find {temp.name} in equipment list, looks like you don't have any"
-                    )
-        else:
-            Log.log_debug_1("EMPTY equipment slot")
-            output_list = [Equipment()]
-
-        return output_list
 
     def get_equipment_by_production_id(
         self, equipment_pool: list[Equipment], production_id

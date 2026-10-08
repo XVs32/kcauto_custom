@@ -1,23 +1,41 @@
 from util.pyvisauto import Region
 from random import choice
+import copy
 import math
 
-from constants import PASSIVE_TIME_INTERVAL, OVERNIGHT_TIME_INTERVAL
+from constants import (
+    PASSIVE_TIME_INTERVAL,
+    OVERNIGHT_TIME_INTERVAL,
+    EXPEDITION_DRUM_MODEL_ID,
+    EXPEDITION_LANDING_CRAFT_MODEL_ID,
+)
 import api.api_core as api
 import combat.combat_core as com
 import config.config_core as cfg
 import fleet.fleet_core as flt
+from fleet.fleet import Fleet
+from fleet.noro6 import Noro6
 import random
 import resupply.resupply_core as res
 import stats.stats_core as sts
+import ships.ships_core as shp
+import ships.equipment_core as equ
 import util.kca as kca_u
 from util.timer import Timer
 from kca_enums.expeditions import ExpeditionEnum
 from kca_enums.kcsapi_paths import KCSAPIEnum
+from kca_enums.fleet import FleetEnum
+from kca_enums.ship_types import ShipTypeEnum
 from kca_enums.scroll_directions import ScrollDirectionEnum
 from util.core_base import CoreBase
 from util.logger import Log
 from util.json_data import JsonData
+from ships.ship import Ship
+from ships.equipment import Equipment
+
+
+class ExpeditionAssignmentError(Exception):
+    pass
 
 
 class ExpeditionCore(CoreBase):
@@ -73,6 +91,7 @@ class ExpeditionCore(CoreBase):
         """
         super().__init__()
         self.timer = Timer()
+        self.generated_expedition_fleets = {}
         self.exp_data = JsonData.load_json("data|expedition|expedition.json")
         self.prerequisite_table = JsonData.load_json(
             "data|expedition|expedition_unlock_table.json"
@@ -115,6 +134,346 @@ class ExpeditionCore(CoreBase):
             return True
         else:
             return False
+
+    def _build_exp_ship_pool(self):
+        exp_ship_pool = {
+            ship_type: []
+            for ship_type in ShipTypeEnum
+            if ship_type != ShipTypeEnum.WILDCARD
+        }
+        exp_pool = shp.ships.ship_pool.copy()
+
+        for production_id in self._get_noro6_ship_ids():
+            exp_pool.pop(production_id, None)
+
+        for ship_id in exp_pool:
+            ship = shp.ships.get_ship_from_production_id(ship_id)
+
+            # if this ship is not locked, do not add to exp pool
+            if ship.locked == False:
+                continue
+
+            exp_ship_pool[ship.ship_type].append(ship)
+
+        for ship_type in exp_ship_pool:
+            # sort each ship_type with ammo_max + fuel_max, if ammo_max + fuel_max are the same, sort with level
+            exp_ship_pool[ship_type].sort(
+                key=lambda x: (x.ammo_max + x.fuel_max, x.level)
+            )
+
+        return exp_ship_pool
+
+    def _get_noro6_ship_ids(self):
+        noro6 = Noro6()
+        ship_ids = set()
+
+        for preset in noro6.presets:
+            noro6.get_map(preset["name"])
+
+            for fleet_id in range(1, noro6.get_fleet_count() + 1):
+                noro6.get_fleet(fleet_id)
+
+                for ship_id in range(1, noro6.get_ship_count() + 1):
+                    ship_ids.add(noro6.get_ship(ship_id)["un"])
+
+        return ship_ids
+
+    def assign_exp_ship(self):
+        noro6_available = not self.is_noro6_in_use()
+        self.generated_expedition_fleets = {}
+
+        exp_ship_pool = self._build_exp_ship_pool()
+
+        auto_exp_equipment_counts = {
+            EXPEDITION_LANDING_CRAFT_MODEL_ID: 0,
+            EXPEDITION_DRUM_MODEL_ID: 0,
+        }
+        for equipment in equ.equipment.equipment_pool[equ.equipment.ID]:
+            if equipment.model_id in auto_exp_equipment_counts:
+                auto_exp_equipment_counts[equipment.model_id] += 1
+
+        self.exp_for_fleet = [None, None, None, None, None]
+        fleet_id = flt.fleets.get_next_exp_fleet_id()
+
+        for i in range(len(self.cur_exp)):
+            if self.cur_exp[i] != ExpeditionEnum.NULL:
+                for ongoing_ship in flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][
+                    i + 1
+                ].ships:
+                    for standby_ship in exp_ship_pool[ongoing_ship.ship_type][:]:
+                        if standby_ship.production_id == ongoing_ship.production_id:
+                            exp_ship_pool[ongoing_ship.ship_type].remove(standby_ship)
+                            for equipment in ongoing_ship.equipments:
+                                if equipment.model_id in auto_exp_equipment_counts:
+                                    auto_exp_equipment_counts[equipment.model_id] -= 1
+
+        for exp_in_rank in self.exp_rank:
+            exp_static_data = self.get_expedition_static_data(
+                ExpeditionEnum(exp_in_rank[self.EXP_ENUM])
+            )
+            expEnum = exp_in_rank[self.EXP_ENUM]
+
+            if (
+                noro6_available
+                and flt.fleets.get_noro6_fleet_preset(
+                    f"D-{expEnum.expedition}", warn=False
+                )
+                is not None
+            ):
+                Log.log_msg(f"Using Noro6 for {expEnum.expedition}.")
+                noro6_available = False
+                self.exp_for_fleet[fleet_id] = expEnum
+                fleet_id = flt.fleets.get_next_exp_fleet_id(fleet_id)
+
+            elif exp_static_data != None:
+                exp_ship_requirement = self._get_exp_ship_requirement_from_composition(
+                    exp_static_data["reqComposition"]
+                )
+
+                try:
+                    (
+                        assigned_fleet,
+                        exp_ship_pool,
+                        auto_exp_equipment_counts,
+                    ) = self._assign_ship(
+                        exp_ship_requirement,
+                        exp_ship_pool,
+                        auto_exp_equipment_counts,
+                        exp_static_data["reqDrum"],
+                        exp_static_data["reqDrumCarriers"],
+                        4,
+                        exp_static_data["reqFlagLevel"],
+                        exp_static_data["reqCombinedLevel"],
+                    )
+                except ExpeditionAssignmentError as error:
+                    Log.log_debug_1(str(error))
+                    continue
+
+                # Save the fleetShipId
+                DEFAULT_FLEET_ID = 1
+                self.generated_expedition_fleets[expEnum] = {
+                    DEFAULT_FLEET_ID: assigned_fleet
+                }
+                self.exp_for_fleet[fleet_id] = expEnum
+
+                fleet_id = flt.fleets.get_next_exp_fleet_id(fleet_id)
+
+            if fleet_id == None:
+                # assign for all fleets success
+                break
+
+        if fleet_id == None:
+            # assign for all fleets success
+            Log.log_success(
+                f"Auto mode assigned ships for expeditions: {[expedition.display_name if expedition != None else None for expedition in self.exp_for_fleet[2:]]}"
+            )
+            return True
+        else:
+            # some assign failed
+            return False
+
+    def _assign_ship(
+        self,
+        fleet_list: list[ShipTypeEnum],
+        ship_pool: dict[ShipTypeEnum, list[Ship]],
+        equipment_counts: dict[int, int],
+        req_dc=0,
+        req_dc_carrier=0,
+        req_lc=4,
+        req_lv_flag=0,
+        req_lv_sum=0,
+    ):
+        """
+        Method to assign the ship with the given fleet_list and ship_pool
+
+        input:
+            fleet_list: The list of ship type (shipTypeEnum)
+            ship_pool(dict): The pool of ship to use
+                ex. {"DD":[<list of ship() obj>], "CL":[<list of ship() obj>]}
+            equipment_counts(dict): Remaining auto-expedition equipment counts by model
+
+        output:
+            assigned fleet, remaining ship pool, and remaining equipment counts
+        Note:
+            This function should handle the wildcard("NA") type,
+            so that the output here should not contain any "NA"
+        """
+
+        ship_pool = {ship_type: ships.copy() for ship_type, ships in ship_pool.items()}
+        equipment_counts = equipment_counts.copy()
+
+        DRUM_MODELS = [EXPEDITION_DRUM_MODEL_ID]
+        LC_MODELS = [EXPEDITION_LANDING_CRAFT_MODEL_ID, 193]
+
+        MORK_FLEET_ID = 2
+        assign_fleet = Fleet(MORK_FLEET_ID, FleetEnum.EXPEDITION_PRESET, False)
+
+        flag_ship = True
+        pool_level_reverse = False
+
+        for ship_enum in fleet_list:
+            if ship_enum == ShipTypeEnum.NA:
+                # @todo: apply the wildcard handling
+                ship_enum = ShipTypeEnum.DD
+
+            if assign_fleet.sum_level < req_lv_sum and pool_level_reverse == False:
+                # If the current fleet level sum is less than the required level sum, assign high level ship first
+                ship_pool[ship_enum].sort(key=lambda x: x.level, reverse=True)
+                pool_level_reverse = True
+            elif assign_fleet.sum_level >= req_lv_sum and pool_level_reverse == True:
+                ship_pool[ship_enum].sort(key=lambda x: x.level)
+                pool_level_reverse = False
+
+            has_match_ship = False
+            ship = None
+
+            for ship in ship_pool[ship_enum]:
+                if flag_ship == True and ship.level < req_lv_flag:
+                    continue
+                # Check if the ship could load LC first
+                if req_lc > 0:
+                    if len(
+                        equ.equipment.is_available_equipments(
+                            ship,
+                            [Equipment(model_id=model_id) for model_id in LC_MODELS],
+                        )
+                    ) == len(LC_MODELS):
+                        # @todo if the ship is kinu kai 2, she has +1 lc
+
+                        lc_count = min(req_lc, ship.slot_num)
+
+                        temp_ship = copy.deepcopy(ship)
+                        assigned_lc_count = min(
+                            lc_count,
+                            equipment_counts[EXPEDITION_LANDING_CRAFT_MODEL_ID],
+                        )
+                        temp_ship.equipments = [
+                            Equipment(model_id=EXPEDITION_LANDING_CRAFT_MODEL_ID)
+                            for _ in range(assigned_lc_count)
+                        ]
+
+                        if temp_ship.equipments != []:
+                            equipment_counts[EXPEDITION_LANDING_CRAFT_MODEL_ID] -= (
+                                assigned_lc_count
+                            )
+                            req_lc -= assigned_lc_count
+                            if temp_ship.slot_ex != None:
+                                temp_ship.slot_ex = Equipment()
+                            assign_fleet.add_ship(temp_ship)
+                            ship_pool[ship_enum].remove(ship)
+                            Log.log_debug_1(
+                                f"expedition_core: assign ship {ship} for {fleet_list}"
+                            )
+                            has_match_ship = True
+                            break
+                        else:
+                            raise ExpeditionAssignmentError(
+                                f"Failed to assign ships for {fleet_list}: "
+                                "insufficient landing craft equipment"
+                            )
+            if has_match_ship == True:
+                continue
+
+            for ship in ship_pool[ship_enum]:
+                if flag_ship == True and ship.level < req_lv_flag:
+                    continue
+                # Check if the ship could load drum, if she can't load LC
+                if req_dc > 0 or req_dc_carrier > 0:
+                    if len(
+                        equ.equipment.is_available_equipments(
+                            ship,
+                            [Equipment(model_id=model_id) for model_id in DRUM_MODELS],
+                        )
+                    ) == len(DRUM_MODELS):
+                        req_dc_carrier = max(
+                            req_dc_carrier, 1
+                        )  # make it at least one dc carrier needed, for easier math
+
+                        dc_count = min(req_dc - req_dc_carrier + 1, ship.slot_num)
+
+                        temp_ship = copy.deepcopy(ship)
+                        assigned_dc_count = min(
+                            dc_count, equipment_counts[EXPEDITION_DRUM_MODEL_ID]
+                        )
+                        temp_ship.equipments = [
+                            Equipment(model_id=EXPEDITION_DRUM_MODEL_ID)
+                            for _ in range(assigned_dc_count)
+                        ]
+
+                        if temp_ship.equipments != []:
+                            equipment_counts[EXPEDITION_DRUM_MODEL_ID] -= (
+                                assigned_dc_count
+                            )
+                            req_dc -= assigned_dc_count
+                            req_dc_carrier -= 1
+                            if temp_ship.slot_ex != None:
+                                temp_ship.slot_ex = Equipment()
+                            assign_fleet.add_ship(temp_ship)
+                            ship_pool[ship_enum].remove(ship)
+                            Log.log_debug_1(
+                                f"expedition_core: assign ship {ship} for {fleet_list}"
+                            )
+                            has_match_ship = True
+                            break
+                        else:
+                            raise ExpeditionAssignmentError(
+                                f"Failed to assign ships for {fleet_list}: "
+                                "insufficient drum equipment"
+                            )
+            if has_match_ship == True:
+                continue
+
+            # sadly in this case, no ship can load LC or drum, at least now we try to load whatever ship we can find
+            for ship in ship_pool[ship_enum]:
+                if flag_ship == True and ship.level < req_lv_flag:
+                    continue
+
+                temp_ship = copy.deepcopy(ship)
+                temp_ship.equipments = []
+                if temp_ship.slot_ex != None:
+                    temp_ship.slot_ex = Equipment()
+                assign_fleet.add_ship(temp_ship)
+                ship_pool[ship_enum].remove(ship)
+                Log.log_debug_1(f"expedition_core: assign ship {ship} for {fleet_list}")
+                has_match_ship = True
+                break
+
+            if has_match_ship == False:
+                # Cannot find a valid ship
+                raise ExpeditionAssignmentError(
+                    f"Failed to assign ships for {fleet_list}: "
+                    f"no eligible {ship_enum.name} ship available"
+                )
+
+            flag_ship = False
+
+        if assign_fleet.sum_level < req_lv_sum:
+            raise ExpeditionAssignmentError(
+                f"Failed to assign ships for {fleet_list}: "
+                f"fleet level sum {assign_fleet.sum_level} is below {req_lv_sum}"
+            )
+
+        return assign_fleet, ship_pool, equipment_counts
+
+    def _get_exp_ship_requirement_from_composition(self, composition):
+        """
+        Convert the string composition (ex. "5DD, 1NA") to
+        fleetShipType (ex. [2, 2, 2, 2, 2, 0]
+        numbers above is the "stype" of ships (0 for NA is defined by XV, not offical kancolle)
+        which is the "api_name" under "api_mst_stype" in kancolle api
+
+        return: list of ShipTypeEnum
+        """
+        fleetShipType = []
+
+        for type in composition.split(","):
+            count = int(type[:1])  # Extract the count from the substring
+            item_type = type[1:]  # Extract the type from the substring
+
+            for _ in range(count):
+                fleetShipType.append(ShipTypeEnum[item_type])
+
+        return fleetShipType
 
     def get_prerequisite_expedition(self, exp_enum):
         """

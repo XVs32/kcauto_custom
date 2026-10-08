@@ -375,12 +375,11 @@ class ApiWrapper(object):
 
         try:
             fleet_data = data["api_deck_port"]
-            flt.fleets.update_fleets(fleet_data)
-            flt.fleets.load_custom_fleets()
-            flt.fleets.load_custom_exp_pool()
-            flt.fleets.load_idle_pool()
         except KeyError:
             Log.log_debug_1("No fleet data found in API response.")
+        else:
+            flt.fleets.update_fleets(fleet_data)
+            fsw.fleet_switcher.validate_noro6_presets()
 
         try:
             repair_data = data["api_ndock"]
@@ -637,6 +636,7 @@ class ApiWrapper(object):
             for key in sorted_keys:
                 for equipment in equipment_pool_temp[key]:
                     equ.equipment.equipment_pool[equ.equipment.FREE].append(equipment)
+            equ.equipment.free_equipment_initialized = True
             Log.log_debug_1(f"equipment updated")
 
             # for i, equipment in enumerate(equ.equipment.equipment_pool[equ.equipment.FREE]):
