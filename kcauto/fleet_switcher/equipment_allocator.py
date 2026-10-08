@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from enum import Enum
 from types import MappingProxyType
-from typing import Mapping, Optional, Sequence
+from typing import Mapping, Optional
 
 from ships.equipment import Equipment
 
@@ -110,13 +110,25 @@ class EquipmentPlan:
     def equipment_for(self, slot_ref: EquipmentSlotRef) -> Optional[Equipment]:
         return self.assignments.get(slot_ref)
 
-    def equipment_for_ship_ids(self, ship_ids: Sequence[int]) -> list[Equipment]:
+    def equipment_for_ship_ids(self, ship_ids: list[int]) -> list[Equipment]:
         target_ship_ids = set(ship_ids)
         return [
             equipment
             for slot_ref, equipment in self.assignments.items()
             if slot_ref.ship_id in target_ship_ids
         ]
+
+
+@dataclass(frozen=True, slots=True)
+class EquipmentSubstitution:
+    requirement: EquipmentRequirement
+    selected_equipment: Equipment
+
+
+@dataclass(frozen=True, slots=True)
+class EquipmentAllocationResult:
+    plan: EquipmentPlan
+    substitutions: tuple[EquipmentSubstitution, ...] = ()
 
 
 class EquipmentAllocator:
@@ -181,7 +193,7 @@ class EquipmentAllocator:
         requirements: list[EquipmentRequirement],
         movable_equipments: list[MovableEquipment],
         reinforcement_eligible_ids: dict[int, set[int]],
-    ) -> EquipmentPlan:
+    ) -> EquipmentAllocationResult:
         assignments: dict[EquipmentSlotRef, Equipment] = {}
         assigned_equipment_ids: set[int] = set()
 
@@ -231,7 +243,20 @@ class EquipmentAllocator:
 
         search(requirements)
 
-        return EquipmentPlan(
+        plan = EquipmentPlan(
             targets=targets,
             assignments=assignments,
+        )
+        substitutions = tuple(
+            EquipmentSubstitution(
+                requirement=requirement,
+                selected_equipment=assignments[requirement.slot_ref],
+            )
+            for requirement in requirements
+            if requirement.star_preference is EquipmentStarPreference.CLOSEST
+            and assignments[requirement.slot_ref].stars != requirement.stars
+        )
+        return EquipmentAllocationResult(
+            plan=plan,
+            substitutions=substitutions,
         )

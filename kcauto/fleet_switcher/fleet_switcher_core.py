@@ -27,6 +27,7 @@ from fleet.fleet import Fleet
 from fleet.noro6 import Noro6
 from fleet_switcher.equipment_allocator import (
     EquipmentAllocationFailure,
+    EquipmentAllocationResult,
     EquipmentAllocator,
     EquipmentPlan,
     EquipmentRequirement,
@@ -43,6 +44,10 @@ from kca_enums.kcsapi_paths import KCSAPIEnum
 from kca_enums.ship_types import ShipTypeEnum
 from ships.equipment import Equipment
 from util.logger import Log
+
+
+class EquipmentRequirementError(Exception):
+    pass
 
 
 class FleetSwitcherCore(object):
@@ -113,69 +118,19 @@ class FleetSwitcherCore(object):
 
             try:
                 fleets = flt.fleets.materialize_noro6_preset(noro6, preset_name)
-                requirements = []
-
-                for fleet in fleets.values():
-                    for ship in fleet.ships:
-                        for slot_index, equipment in enumerate(ship.equipments):
-                            requirements.append(
-                                EquipmentRequirement.from_target_equipment(
-                                    ship.production_id,
-                                    EquipmentSlot.from_index(slot_index),
-                                    equipment,
-                                )
-                            )
-
-                        if (
-                            ship.slot_ex is not None
-                            and not ship.slot_ex.is_empty_equipment
-                        ):
-                            requirements.append(
-                                EquipmentRequirement.from_target_equipment(
-                                    ship.production_id,
-                                    EquipmentSlot.REINFORCEMENT,
-                                    ship.slot_ex,
-                                )
-                            )
-
                 movable_equipments = [
                     MovableEquipment(equipment, None)
                     for equipment in equ.equipment.equipment_pool[equ.equipment.ID]
                     if equipment.production_id != Equipment.UNKNOWN_PRODUCTION_ID
                 ]
-
-                ships_by_id = {
-                    ship.production_id: ship
-                    for fleet in fleets.values()
-                    for ship in fleet.ships
-                }
-                reinforcement_eligible_ids = {}
-                for requirement in requirements:
-                    if not requirement.slot_ref.slot.is_reinforcement:
-                        continue
-
-                    ship = ships_by_id[requirement.slot_ref.ship_id]
-                    reinforcement_eligible_ids[requirement.slot_ref.ship_id] = {
-                        movable.equipment.production_id
-                        for movable in movable_equipments
-                        if equ.equipment.is_reinforcement_equipment_available(
-                            ship,
-                            movable.equipment,
-                        )
-                    }
-
-                fleet_targets = tuple(
-                    FleetTarget(fleet_id, tuple(fleet.ship_ids))
-                    for fleet_id, fleet in fleets.items()
-                )
-                self.equipment_allocator.allocate(
-                    fleet_targets,
-                    requirements,
+                self._allocate_target_equipment(
+                    list(fleets.items()),
                     movable_equipments,
-                    reinforcement_eligible_ids,
                 )
             except flt.Noro6MaterializationFailure as failure:
                 Log.log_warn(str(failure))
+            except EquipmentRequirementError as error:
+                Log.log_warn(str(error))
             except EquipmentAllocationFailure as failure:
                 Log.log_warn(
                     f"{preset_name}: insufficient usable equipment for model "
@@ -328,18 +283,17 @@ class FleetSwitcherCore(object):
 
     def _collect_equipment_requirements(
         self, target_fleets: list[Fleet]
-    ) -> Optional[list[EquipmentRequirement]]:
+    ) -> list[EquipmentRequirement]:
         requirements = []
         target_ship_ids = set()
 
         for target_fleet in target_fleets:
             for target_ship in target_fleet.ships:
                 if target_ship.production_id in target_ship_ids:
-                    Log.log_error(
+                    raise EquipmentRequirementError(
                         f"Ship {target_ship.production_id}/{target_ship.name_jp} "
                         "is assigned to more than one target fleet."
                     )
-                    return None
 
                 target_ship_ids.add(target_ship.production_id)
 
@@ -347,15 +301,17 @@ class FleetSwitcherCore(object):
                     target_ship.production_id
                 )
                 if active_ship is None:
-                    return None
+                    raise EquipmentRequirementError(
+                        f"Ship {target_ship.production_id}/{target_ship.name_jp} "
+                        "is not in the current ship pool."
+                    )
 
                 if len(target_ship.equipments) > active_ship.slot_num:
-                    Log.log_error(
+                    raise EquipmentRequirementError(
                         f"Target config for {target_ship.production_id}/{target_ship.name_jp} "
                         f"uses {len(target_ship.equipments)} normal slots, but the ship "
                         f"currently has {active_ship.slot_num}."
                     )
-                    return None
 
                 for slot, target_equipment in enumerate(target_ship.equipments):
                     if target_equipment.model_id <= 0:
@@ -382,11 +338,10 @@ class FleetSwitcherCore(object):
 
                 if target_ship.slot_ex is not None and target_ship.slot_ex.model_id > 0:
                     if active_ship.slot_ex is None:
-                        Log.log_error(
+                        raise EquipmentRequirementError(
                             f"Target config for {target_ship.production_id}/{target_ship.name_jp} "
                             "uses slot_ex, but the ship does not currently have one."
                         )
-                        return None
                     requirements.append(
                         EquipmentRequirement.from_target_equipment(
                             target_ship.production_id,
@@ -397,24 +352,13 @@ class FleetSwitcherCore(object):
 
         return requirements
 
-    def _prepare_context_equipment_plan(
+    def _allocate_target_equipment(
         self,
         targets: list[tuple[int, Fleet]],
-        context: str,
-    ) -> bool:
+        movable_equipments: list[MovableEquipment],
+    ) -> EquipmentAllocationResult:
         target_fleets = [target_fleet for _, target_fleet in targets]
-        if not target_fleets:
-            self.equipment_plan = EquipmentPlan()
-            return True
-
-        if not self._ensure_free_equipment_data_loaded(target_fleets):
-            return False
-
         requirements = self._collect_equipment_requirements(target_fleets)
-        if requirements is None:
-            return False
-
-        movable_equipments = self._get_movable_equipment_pool(context)
         reinforcement_eligible_ids: dict[int, set[int]] = {}
         for requirement in requirements:
             if not requirement.slot_ref.slot.is_reinforcement:
@@ -435,13 +379,34 @@ class FleetSwitcherCore(object):
             FleetTarget(fleet_id, tuple(target_fleet.ship_ids))
             for fleet_id, target_fleet in targets
         )
+        return self.equipment_allocator.allocate(
+            fleet_targets,
+            requirements,
+            movable_equipments,
+            reinforcement_eligible_ids,
+        )
+
+    def _prepare_context_equipment_plan(
+        self,
+        targets: list[tuple[int, Fleet]],
+        context: str,
+    ) -> bool:
+        target_fleets = [target_fleet for _, target_fleet in targets]
+        if not target_fleets:
+            self.equipment_plan = EquipmentPlan()
+            return True
+
+        if not self._ensure_free_equipment_data_loaded(target_fleets):
+            return False
+
+        movable_equipments = self._get_movable_equipment_pool(context)
         try:
-            plan = self.equipment_allocator.allocate(
-                fleet_targets,
-                requirements,
-                movable_equipments,
-                reinforcement_eligible_ids,
+            allocation = self._allocate_target_equipment(
+                targets, movable_equipments
             )
+        except EquipmentRequirementError as error:
+            Log.log_error(str(error))
+            return False
         except EquipmentAllocationFailure as failure:
             equipment = Equipment(model_id=failure.requirement.model_id)
             Log.log_error(
@@ -452,15 +417,10 @@ class FleetSwitcherCore(object):
             )
             return False
 
-        self.equipment_plan = plan
-        for requirement in requirements:
-            selected_equipment = self.equipment_plan.equipment_for(requirement.slot_ref)
-            if (
-                requirement.star_preference is not EquipmentStarPreference.CLOSEST
-                or selected_equipment.stars == requirement.stars
-            ):
-                continue
-
+        self.equipment_plan = allocation.plan
+        for substitution in allocation.substitutions:
+            requirement = substitution.requirement
+            selected_equipment = substitution.selected_equipment
             active_ship = shp.ships.get_ship_from_production_id(
                 requirement.slot_ref.ship_id
             )
