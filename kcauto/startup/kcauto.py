@@ -112,7 +112,7 @@ class Kcauto(object):
                     f"Expedition rank: {[expedition[exp.expedition.EXP_ENUM].display_name for expedition in exp.expedition.exp_rank]}"
                 )
 
-                if not flt.fleets.assign_exp_ship():
+                if not exp.expedition.assign_exp_ship():
                     exp.expedition.enabled = False
                     Log.log_error(
                         f"Failed to assign ships for self-balance expedition. Disabling expedition module."

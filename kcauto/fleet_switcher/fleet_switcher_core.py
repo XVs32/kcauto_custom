@@ -547,9 +547,22 @@ class FleetSwitcherCore(object):
                     fleet_id != None and exp.expedition.exp_for_fleet[fleet_id] != None
                 ):
                     DEFAULT_FLEET_ID = 1
-                    target_fleet = self._get_fleet_preset(
-                        exp.expedition.exp_for_fleet[fleet_id]
-                    )[DEFAULT_FLEET_ID]
+                    expedition = exp.expedition.exp_for_fleet[fleet_id]
+                    fleet_list = exp.expedition.generated_expedition_fleets.get(
+                        expedition
+                    )
+                    if fleet_list is None:
+                        fleet_list = flt.fleets.get_noro6_fleet_preset(
+                            f"D-{expedition.expedition}"
+                        )
+
+                    if fleet_list is None:
+                        Log.log_error(
+                            f"No expedition fleet preset available for {expedition}."
+                        )
+                        return False
+
+                    target_fleet = fleet_list[DEFAULT_FLEET_ID]
                     expedition_targets.append((fleet_id, target_fleet))
                     fleet_id = flt.fleets.get_next_exp_fleet_id(fleet_id)
 
