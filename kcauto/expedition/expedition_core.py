@@ -314,6 +314,10 @@ class ExpeditionCore(CoreBase):
         pool_level_reverse = False
 
         for ship_enum in fleet_list:
+            if ship_enum == ShipTypeEnum.NA:
+                # @todo: apply the wildcard handling
+                ship_enum = ShipTypeEnum.DD
+
             if assign_fleet.sum_level < req_lv_sum and pool_level_reverse == False:
                 # If the current fleet level sum is less than the required level sum, assign high level ship first
                 ship_pool[ship_enum].sort(key=lambda x: x.level, reverse=True)
@@ -321,10 +325,6 @@ class ExpeditionCore(CoreBase):
             elif assign_fleet.sum_level >= req_lv_sum and pool_level_reverse == True:
                 ship_pool[ship_enum].sort(key=lambda x: x.level)
                 pool_level_reverse = False
-
-            if ship_enum == ShipTypeEnum.NA:
-                # @todo: apply the wildcard handling
-                ship_enum = ShipTypeEnum.DD
 
             has_match_ship = False
             ship = None
