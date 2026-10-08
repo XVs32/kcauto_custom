@@ -458,6 +458,8 @@ class FleetSwitcherCore(object):
                 )
 
                 fleet_list = self._get_fleet_preset(cfg.config.combat.sortie_map.value)
+                if fleet_list is None:
+                    return False
 
                 # Avoiding load process of fleet 2, 3 messing up fleet 1
                 # Combat is a property, sort does not saved inside it
@@ -529,6 +531,8 @@ class FleetSwitcherCore(object):
                 fleet_list = self._get_fleet_preset(
                     pvp.pvp.next_pvp_quest.name + "-pvp"
                 )
+                if fleet_list is None:
+                    return False
 
                 pvp_targets = [(1, fleet_list[1])]
                 if not self._prepare_context_equipment_plan(pvp_targets, context):
@@ -552,7 +556,7 @@ class FleetSwitcherCore(object):
                         expedition
                     )
                     if fleet_list is None:
-                        fleet_list = flt.fleets.get_noro6_fleet_preset(
+                        fleet_list = self._get_fleet_preset(
                             f"D-{expedition.expedition}"
                         )
 
@@ -776,14 +780,15 @@ class FleetSwitcherCore(object):
             kca_u.kca.click_existing("lower_left", "global|scroll_next.png")
             clicks += 1
 
-    def _get_fleet_preset(self, key):
+    def _get_fleet_preset(self, key: str):
         """
         method to get the preset for combat or expedition
         input:
             key(string): the name of combat map(ex. Bm2-1-1)
         """
-        if key in flt.fleets.fleets:
-            return flt.fleets.fleets[key]
+        fleet_list = flt.fleets.get_noro6_fleet_preset(key, warn=False)
+        if fleet_list is not None:
+            return fleet_list
         else:
             if key[0] == "B" or key[0] == "C":
                 quest_end = key.find("-")
@@ -792,9 +797,7 @@ class FleetSwitcherCore(object):
                     f"Preset {str(key)} not found, use default {key[0] + key[quest_end:]}"
                 )
                 key = key[0] + key[quest_end:]
-            else:
-                Log.log_error("Unexpected preset id:" + str(key))
-            return flt.fleets.fleets[key]
+            return flt.fleets.get_noro6_fleet_preset(key)
 
     @property
     def _idel_ships_sorted_by_equipment(self):
@@ -824,11 +827,6 @@ class FleetSwitcherCore(object):
 
                 if not self._is_ship_equipment_assignment_matched(ship):
                     needed_load = True
-
-                    if ship.slot_ex is not None and target_ship.slot_ex is None:
-                        Log.log_warn(
-                            f"Ship {ship.name} has a reinforce slot, but Noro6 config says she doesn't, you might want to update your config."
-                        )
 
                     if ship.has_equipment():
                         unload_ships.append(ship)
