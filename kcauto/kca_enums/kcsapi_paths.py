@@ -12,7 +12,7 @@ class KCSAPIEnum(EnumBase):
     PVP_LIST = "kcsapi/api_get_member/practice"
     EXPEDITION_LIST = "kcsapi/api_get_member/mission"
     FLEETCOMP_PRESETS = "kcsapi/api_get_member/preset_deck"
-    HENSEI_CHANGE = "kcsapi/api_req_hensei/change"
+    FLEET_COMPOSITION_CHANGE = "kcsapi/api_req_hensei/change"
     RESUPPLY_ACTION = "kcsapi/api_req_hokyu/charge"
     LBAS_RESUPPLY_ACTION = "kcsapi/api_req_air_corps/supply"
     REPAIR_DOCKS = "kcsapi/api_get_member/ndock"

@@ -390,17 +390,19 @@ class FleetSwitcherCore(object):
             return False
 
         api_result = api.api.update_from_api(
-            {KCSAPIEnum.HENSEI_CHANGE}, process_all=False
+            {KCSAPIEnum.FLEET_COMPOSITION_CHANGE}, process_all=False
         )
-        hensei_change = api_result[KCSAPIEnum.HENSEI_CHANGE.name][0]
+        fleet_composition_change = api_result[KCSAPIEnum.FLEET_COMPOSITION_CHANGE.name][
+            0
+        ]
 
-        if "api_change_count" in hensei_change:
+        if "api_change_count" in fleet_composition_change:
             active_fleet.ships = active_fleet.ships[:1]
             Log.log_msg(f"Fleet {fleet_id} unload-all complete.")
             return True
 
         Log.log_error(
-            f"Unexpected unload-all response for fleet {fleet_id}: {hensei_change}"
+            f"Unexpected unload-all response for fleet {fleet_id}: {fleet_composition_change}"
         )
         return False
 
