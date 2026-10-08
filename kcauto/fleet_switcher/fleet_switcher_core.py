@@ -107,7 +107,6 @@ class FleetSwitcherCore(object):
                 )
 
         noro6 = Noro6()
-        failures = []
 
         for preset in noro6.presets:
             preset_name = preset["name"]
@@ -175,19 +174,13 @@ class FleetSwitcherCore(object):
                     movable_equipments,
                     reinforcement_eligible_ids,
                 )
+            except flt.Noro6MaterializationFailure as failure:
+                Log.log_warn(str(failure))
             except EquipmentAllocationFailure as failure:
-                failures.append(
+                Log.log_warn(
                     f"{preset_name}: insufficient usable equipment for model "
                     f"{failure.requirement.model_id}"
                 )
-            except Exception as error:
-                failures.append(f"{preset_name}: {error}")
-
-        if failures:
-            Log.log_error(
-                "Noro6 startup validation failed:\n"
-                + "\n".join(f"- {failure}" for failure in failures)
-            )
 
     def _get_next_preset_id(self, context):
         preset_id = None

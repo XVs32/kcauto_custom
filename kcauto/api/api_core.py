@@ -375,10 +375,11 @@ class ApiWrapper(object):
 
         try:
             fleet_data = data["api_deck_port"]
-            flt.fleets.update_fleets(fleet_data)
-            fsw.fleet_switcher.validate_noro6_presets()
         except KeyError:
             Log.log_debug_1("No fleet data found in API response.")
+        else:
+            flt.fleets.update_fleets(fleet_data)
+            fsw.fleet_switcher.validate_noro6_presets()
 
         try:
             repair_data = data["api_ndock"]

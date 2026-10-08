@@ -11,6 +11,10 @@ from ships.equipment import Equipment as Equipment
 import copy
 
 
+class Noro6MaterializationFailure(Exception):
+    pass
+
+
 class FleetCore(object):
     ACTIVE_FLEET_KEY = "active_fleet"
     FleetDict = dict[int, Fleet]
@@ -188,7 +192,9 @@ class FleetCore(object):
         fleet_type = noro6.get_preset_type()
         fleet_count = noro6.get_fleet_count()
         if fleet_count == 0:
-            raise ValueError(f"Noro6 preset {preset_name} contains no fleets.")
+            raise Noro6MaterializationFailure(
+                f"Noro6 preset {preset_name} contains no fleets."
+            )
 
         fleets = {}
 
@@ -205,12 +211,17 @@ class FleetCore(object):
 
             for ship_id in range(1, noro6.get_ship_count() + 1):
                 noro6_ship = noro6.get_ship(ship_id)
-                production_id = noro6_ship["un"]
+                production_id = noro6_ship.get("un", 0)
                 active_ship = shp.ships.ship_pool.get(production_id)
                 if active_ship is None:
-                    raise ValueError(
+                    static_data = shp.ships.get_ship_static_data(
+                        None, api_id=noro6_ship["i"]
+                    )
+                    ship_name = static_data["api_name"] if static_data else "Unknown"
+                    raise Noro6MaterializationFailure(
                         f"Noro6 preset {preset_name} references ship "
-                        f"production ID {production_id}, which is not in port."
+                        f"{ship_name} #{noro6_ship.get('i', 'Unknown')}, "
+                        "which is not in port."
                     )
 
                 ship = copy.deepcopy(active_ship)
@@ -220,15 +231,11 @@ class FleetCore(object):
                 for slot_id in range(1, noro6.get_equipment_count() + 1):
                     noro6_equipment = noro6.get_equipment(slot_id)
                     if noro6_equipment["i"] == Equipment.EMPTY_EQUIPMENT:
-                        if fleet_type == FleetEnum.COMBAT:
-                            Log.log_warn(
-                                f"In Noro6 preset {preset_name}, ship {ship.name} has empty equipment slot"
-                            )
                         empty_normal_slot_seen = True
                         continue
 
                     if empty_normal_slot_seen:
-                        raise ValueError(
+                        raise Noro6MaterializationFailure(
                             f"Noro6 preset {preset_name}, ship {ship.name} "
                             "has equipment after an empty normal slot; "
                             "normal equipment slots must be contiguous."
@@ -239,6 +246,11 @@ class FleetCore(object):
                             model_id=noro6_equipment["i"],
                             stars=noro6_equipment["r"],
                         )
+                    )
+
+                if empty_normal_slot_seen and fleet_type == FleetEnum.COMBAT:
+                    Log.log_warn(
+                        f"In Noro6 preset {preset_name}, ship {ship.name} has empty equipment slot"
                     )
 
                 reinforce_equipment = noro6.get_reinforce_equipment()
@@ -256,7 +268,7 @@ class FleetCore(object):
                 elif reinforce_equipment["i"] == Equipment.EMPTY_EQUIPMENT:
                     ship.slot_ex = Equipment()
                 else:
-                    raise ValueError(
+                    raise Noro6MaterializationFailure(
                         f"Noro6 preset {preset_name} has unknown reinforcement "
                         f"equipment {reinforce_equipment}."
                     )
@@ -277,11 +289,9 @@ class FleetCore(object):
 
             try:
                 return self.materialize_noro6_preset(noro6, preset_name)
-            except Exception as error:
+            except Noro6MaterializationFailure as failure:
                 if warn:
-                    Log.log_error(
-                        f"Failed to load Noro6 preset {preset_name}: {error}"
-                    )
+                    Log.log_error(str(failure))
                 return None
 
         if warn:
