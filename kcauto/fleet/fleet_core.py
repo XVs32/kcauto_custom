@@ -8,10 +8,7 @@ from kca_enums.fleet import FleetEnum
 from util.kc_time import KCTime
 from util.logger import Log
 from ships.equipment import Equipment as Equipment
-import expedition.expedition_core as exp
-
 import copy
-import sys
 
 
 class FleetCore(object):
@@ -20,8 +17,6 @@ class FleetCore(object):
     fleets: dict[str | int, FleetDict | Fleet] = {}
 
     combined_flag = None
-
-    is_custom_fleet_loaded = False
 
     def __init__(self):
 
@@ -186,31 +181,6 @@ class FleetCore(object):
             if fleet.enabled:
                 Log.log_msg(fleet)
 
-    def load_custom_fleets(self):
-        """
-        method to load the noro6 settings under config/noro6
-        gets trigger on the first time when port api received
-        """
-
-        if (
-            not cfg.config.combat.is_auto_mode
-            and not cfg.config.expedition.is_auto_mode
-            and not cfg.config.pvp.is_auto_mode
-        ):
-            Log.log_success("kcauto is running in manual mode; Noro6 config ignored.")
-            self.is_custom_fleet_loaded = True
-            return
-        elif self.is_custom_fleet_loaded == False:
-            self.is_custom_fleet_loaded = True
-        elif self.is_custom_fleet_loaded == True:
-            Log.log_debug_1("Custom fleets setting is already loaded")
-            return
-        else:
-            Log.log_error("Unexpected state for noro6 config load, exiting...")
-
-        # merge custom fleets data into fleet core
-        self.fleets = {**self.fleets, **self._noro6_to_kcauto()}
-
     def materialize_noro6_preset(
         self, noro6: Noro6, preset_name: str
     ) -> dict[int, Fleet]:
@@ -317,121 +287,6 @@ class FleetCore(object):
         if warn:
             Log.log_error(f"Noro6 preset not found: {key}")
         return None
-
-    def _noro6_to_kcauto(self):
-        """
-        method to convert noro6 preset to kcauto preset
-        output: (kcauto preset)
-        """
-
-        if cfg.config.expedition.is_auto_mode == False:
-            Log.log_warn(
-                "Expedition mode is manual. Please make sure the expedition fleet does not occupy Noro6's ships and equipment."
-            )
-        else:
-            if cfg.config.combat.is_auto_mode == False:
-                Log.log_warn(
-                    "Combat mode is manual; the expedition module might mess up the combat fleet on the fly."
-                )
-
-            if cfg.config.pvp.is_auto_mode == False:
-                Log.log_warn(
-                    "PvP mode is manual; the expedition module might mess up the PvP fleet on the fly."
-                )
-
-        ret = {}
-        noro6 = Noro6()
-
-        for preset in noro6.presets:
-            noro6.get_map(preset["name"])
-
-            fleet_type = noro6.get_preset_type()
-            if fleet_type == FleetEnum.EXPEDITION:
-                preset_name = exp.expedition.get_exp_enum_from_name(
-                    preset["name"].split("-")[-1]
-                )
-            else:
-                preset_name = preset["name"]
-
-            ret[preset_name] = {}
-
-            for fleet_id in range(0, noro6.get_fleet_count()):
-                noro6.get_fleet(fleet_id)
-
-                temp = Fleet(fleet_id + fleet_type.value, fleet_type, False)
-                temp.ships = []
-
-                for i in range(1, noro6.get_ship_count() + 1):
-                    ship = copy.deepcopy(
-                        shp.ships.get_ship_from_noro6_ship(noro6.get_ship(i))
-                    )  # avoid modifying ship data in ship_pool
-                    if ship == None:
-                        Log.log_error(
-                            f"Something went wrong when setting up Noro6 {preset['name']} fleet, exiting..."
-                        )
-                        sys.exit()
-
-                    ship.equipments = []
-                    empty_normal_slot_seen = False
-
-                    for j in range(1, noro6.get_equipment_count() + 1):
-                        noro6_equipment = noro6.get_equipment(j)
-                        if noro6_equipment["i"] == Equipment.EMPTY_EQUIPMENT:
-                            empty_normal_slot_seen = True
-                            continue
-
-                        if empty_normal_slot_seen:
-                            Log.log_error(
-                                f"Noro6 preset {preset['name']}, ship {ship.name} "
-                                "has equipment after an empty normal slot; "
-                                "normal equipment slots must be contiguous."
-                            )
-                            sys.exit()
-
-                        ship.equipments.append(
-                            Equipment(
-                                model_id=noro6_equipment["i"],
-                                stars=noro6_equipment["r"],
-                            )
-                        )
-
-                    reinforce_equipment = noro6.get_reinforce_equipment()
-                    if reinforce_equipment["i"] > 0:
-                        ship.slot_ex = Equipment(
-                            model_id=reinforce_equipment["i"],
-                            stars=reinforce_equipment["r"],
-                        )
-                    elif reinforce_equipment["i"] == 0:
-                        ship.slot_ex = None
-                    elif reinforce_equipment["i"] == Equipment.EMPTY_EQUIPMENT:
-                        ship.slot_ex = Equipment()
-                    else:
-                        Log.log_error(
-                            f"Unknown reinforce equipment {reinforce_equipment}, exit..."
-                        )
-                        exit(1)
-
-                    temp.ships.append(ship)
-
-                ret[preset_name][fleet_id] = temp
-
-        # print out the fleet data in debug log
-        for key in ret:
-            Log.log_debug_1(f"Fleet preset: {key}")
-            for fleet_id in ret[key]:
-                Log.log_debug_1(
-                    f"Fleet ID: {fleet_id}, Fleet Type: {ret[key][fleet_id].fleet_type.name}"
-                )
-
-                fleet = ret[key][fleet_id]
-                for ship in fleet.ships:
-                    Log.log_debug_1(
-                        f"{ship.name} ({ship.ship_type.name}) - Level: {ship.level}, \
-                        Equipment: {[f'slot {slot + 1}: {eq.name} {eq.stars}★' for slot, eq in enumerate(ship.equipments)]}, \
-                        Slot Ex: {f'{ship.slot_ex.name} {ship.slot_ex.stars}★' if ship.slot_ex != None else 'None'}"
-                    )
-
-        return ret
 
     def _current_fleet_level_sum(self, fleet_list):
         sum = 0

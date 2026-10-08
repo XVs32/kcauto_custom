@@ -24,6 +24,7 @@ from constants import (
     EXPEDITION_LANDING_CRAFT_MODEL_ID,
 )
 from fleet.fleet import Fleet
+from fleet.noro6 import Noro6
 from fleet_switcher.equipment_allocator import (
     EquipmentAllocationFailure,
     EquipmentAllocator,
@@ -56,6 +57,7 @@ class FleetSwitcherCore(object):
 
     def __init__(self):
         self.equipment_plan = EquipmentPlan()
+        self.is_noro6_validated = False
         self.equipment_allocator = EquipmentAllocator()
         self._set_next_combat_preset()
 
@@ -73,6 +75,119 @@ class FleetSwitcherCore(object):
     def _set_next_combat_preset(self):
         if len(cfg.config.combat.fleet_presets) > 0:
             self.next_combat_preset = choice(cfg.config.combat.fleet_presets)
+
+    def validate_noro6_presets(self):
+        if self.is_noro6_validated:
+            Log.log_debug_1("Noro6 presets are already validated")
+            return
+
+        self.is_noro6_validated = True
+
+        if (
+            not cfg.config.combat.is_auto_mode
+            and not cfg.config.expedition.is_auto_mode
+            and not cfg.config.pvp.is_auto_mode
+        ):
+            Log.log_success("kcauto is running in manual mode; Noro6 config ignored.")
+            return
+
+        if cfg.config.expedition.is_auto_mode == False:
+            Log.log_warn(
+                "Expedition mode is manual. Please make sure the expedition fleet does not occupy Noro6's ships and equipment."
+            )
+        else:
+            if cfg.config.combat.is_auto_mode == False:
+                Log.log_warn(
+                    "Combat mode is manual; the expedition module might mess up the combat fleet on the fly."
+                )
+
+            if cfg.config.pvp.is_auto_mode == False:
+                Log.log_warn(
+                    "PvP mode is manual; the expedition module might mess up the PvP fleet on the fly."
+                )
+
+        noro6 = Noro6()
+        failures = []
+
+        for preset in noro6.presets:
+            preset_name = preset["name"]
+
+            try:
+                fleets = flt.fleets.materialize_noro6_preset(noro6, preset_name)
+                requirements = []
+
+                for fleet in fleets.values():
+                    for ship in fleet.ships:
+                        for slot_index, equipment in enumerate(ship.equipments):
+                            requirements.append(
+                                EquipmentRequirement.from_target_equipment(
+                                    ship.production_id,
+                                    EquipmentSlot.from_index(slot_index),
+                                    equipment,
+                                )
+                            )
+
+                        if (
+                            ship.slot_ex is not None
+                            and not ship.slot_ex.is_empty_equipment
+                        ):
+                            requirements.append(
+                                EquipmentRequirement.from_target_equipment(
+                                    ship.production_id,
+                                    EquipmentSlot.REINFORCEMENT,
+                                    ship.slot_ex,
+                                )
+                            )
+
+                movable_equipments = [
+                    MovableEquipment(equipment, None)
+                    for equipment in equ.equipment.equipment_pool[equ.equipment.ID]
+                    if equipment.production_id != Equipment.UNKNOWN_PRODUCTION_ID
+                ]
+
+                ships_by_id = {
+                    ship.production_id: ship
+                    for fleet in fleets.values()
+                    for ship in fleet.ships
+                }
+                reinforcement_eligible_ids = {}
+                for requirement in requirements:
+                    if not requirement.slot_ref.slot.is_reinforcement:
+                        continue
+
+                    ship = ships_by_id[requirement.slot_ref.ship_id]
+                    reinforcement_eligible_ids[requirement.slot_ref.ship_id] = {
+                        movable.equipment.production_id
+                        for movable in movable_equipments
+                        if equ.equipment.is_reinforcement_equipment_available(
+                            ship,
+                            movable.equipment,
+                        )
+                    }
+
+                fleet_targets = tuple(
+                    FleetTarget(fleet_id, tuple(fleet.ship_ids))
+                    for fleet_id, fleet in fleets.items()
+                )
+                self.equipment_allocator.allocate(
+                    fleet_targets,
+                    requirements,
+                    movable_equipments,
+                    reinforcement_eligible_ids,
+                )
+            except EquipmentAllocationFailure as failure:
+                failures.append(
+                    f"{preset_name}: insufficient usable equipment for model "
+                    f"{failure.requirement.model_id}"
+                )
+            except Exception as error:
+                failures.append(f"{preset_name}: {error}")
+
+        if failures:
+            Log.log_error(
+                "Noro6 startup validation failed:\n"
+                + "\n".join(f"- {failure}" for failure in failures)
+            )
 
     def _get_next_preset_id(self, context):
         preset_id = None
