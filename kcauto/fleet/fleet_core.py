@@ -278,6 +278,113 @@ class FleetCore(object):
 
         return
 
+    def materialize_noro6_preset(
+        self, noro6: Noro6, preset_name: str
+    ) -> dict[int, Fleet]:
+        noro6.get_map(preset_name)
+        fleet_type = noro6.get_preset_type()
+        fleet_count = noro6.get_fleet_count()
+        if fleet_count == 0:
+            raise ValueError(f"Noro6 preset {preset_name} contains no fleets.")
+
+        fleets = {}
+
+        for fleet_index in range(fleet_count):
+            noro6_fleet_id = fleet_index + 1
+            noro6.get_fleet(noro6_fleet_id)
+
+            target_fleet = Fleet(
+                fleet_index + fleet_type.value,
+                fleet_type,
+                False,
+            )
+            target_fleet.ships = []
+
+            for ship_id in range(1, noro6.get_ship_count() + 1):
+                noro6_ship = noro6.get_ship(ship_id)
+                production_id = noro6_ship["un"]
+                active_ship = shp.ships.ship_pool.get(production_id)
+                if active_ship is None:
+                    raise ValueError(
+                        f"Noro6 preset {preset_name} references ship "
+                        f"production ID {production_id}, which is not in port."
+                    )
+
+                ship = copy.deepcopy(active_ship)
+                ship.equipments = []
+                empty_normal_slot_seen = False
+
+                for slot_id in range(1, noro6.get_equipment_count() + 1):
+                    noro6_equipment = noro6.get_equipment(slot_id)
+                    if noro6_equipment["i"] == Equipment.EMPTY_EQUIPMENT:
+                        if fleet_type == FleetEnum.COMBAT:
+                            Log.log_warn(
+                                f"In Noro6 preset {preset_name}, ship {ship.name} has empty equipment slot"
+                            )
+                        empty_normal_slot_seen = True
+                        continue
+
+                    if empty_normal_slot_seen:
+                        raise ValueError(
+                            f"Noro6 preset {preset_name}, ship {ship.name} "
+                            "has equipment after an empty normal slot; "
+                            "normal equipment slots must be contiguous."
+                        )
+
+                    ship.equipments.append(
+                        Equipment(
+                            model_id=noro6_equipment["i"],
+                            stars=noro6_equipment["r"],
+                        )
+                    )
+
+                reinforce_equipment = noro6.get_reinforce_equipment()
+                if reinforce_equipment["i"] > 0:
+                    ship.slot_ex = Equipment(
+                        model_id=reinforce_equipment["i"],
+                        stars=reinforce_equipment["r"],
+                    )
+                elif reinforce_equipment["i"] == 0:
+                    if active_ship.slot_ex is not None:
+                        Log.log_warn(
+                            f"Ship {ship.name} has a reinforce slot, but Noro6 config says she doesn't, you might want to update your config."
+                        )
+                    ship.slot_ex = None
+                elif reinforce_equipment["i"] == Equipment.EMPTY_EQUIPMENT:
+                    ship.slot_ex = Equipment()
+                else:
+                    raise ValueError(
+                        f"Noro6 preset {preset_name} has unknown reinforcement "
+                        f"equipment {reinforce_equipment}."
+                    )
+
+                target_fleet.ships.append(ship)
+
+            fleets[noro6_fleet_id] = target_fleet
+
+        return fleets
+
+    def get_noro6_fleet_preset(self, key: str, warn: bool = True):
+        noro6 = Noro6()
+
+        for preset in noro6.presets:
+            preset_name = preset["name"]
+            if preset_name != key:
+                continue
+
+            try:
+                return self.materialize_noro6_preset(noro6, preset_name)
+            except Exception as error:
+                if warn:
+                    Log.log_error(
+                        f"Failed to load Noro6 preset {preset_name}: {error}"
+                    )
+                return None
+
+        if warn:
+            Log.log_error(f"Noro6 preset not found: {key}")
+        return None
+
     def _noro6_to_kcauto(self):
         """
         method to convert noro6 preset to kcauto preset
