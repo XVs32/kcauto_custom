@@ -150,7 +150,9 @@ class Kcauto(object):
         for i in qst.quest.next_check_intervals:
             if qst.quest.next_check_intervals[i].category.is_factory():
                 # be careful action_count is not int, but dict[int, int]
-                action_count = kca_u.kca.get_quest_count(target_quest=qst.quest.next_check_intervals[i])
+                action_count = kca_u.kca.get_quest_count(
+                    target_quest=qst.quest.next_check_intervals[i]
+                )
                 quest_type = next(iter(action_count))
 
                 if quest_type == fty.factory.CONSTRUCTION:
@@ -165,7 +167,9 @@ class Kcauto(object):
                     self._run_fleetswitch_logic("factory_build")
                     fty.factory.goto()
 
-                    success = fty.factory.build_logic(action_count[fty.factory.CONSTRUCTION])
+                    success = fty.factory.build_logic(
+                        action_count[fty.factory.CONSTRUCTION]
+                    )
 
                     if success == False:
                         fty.factory.set_timer()
@@ -176,7 +180,9 @@ class Kcauto(object):
                     self._run_fleetswitch_logic("factory_develop")
                     fty.factory.goto()
 
-                    success = fty.factory.develop_logic(action_count[fty.factory.DEVELOPMENT])
+                    success = fty.factory.develop_logic(
+                        action_count[fty.factory.DEVELOPMENT]
+                    )
 
                     if success == True:
                         anything_is_done = True
@@ -187,7 +193,7 @@ class Kcauto(object):
         if anything_is_done == False:
             """Daily factory process done, disable from now"""
             fty.factory.enabled = False
-                
+
     def run_pvp_logic(self):
         if not pvp.pvp.enabled:
             return False

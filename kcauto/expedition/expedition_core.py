@@ -299,9 +299,7 @@ class ExpeditionCore(CoreBase):
             so that the output here should not contain any "NA"
         """
 
-        ship_pool = {
-            ship_type: ships.copy() for ship_type, ships in ship_pool.items()
-        }
+        ship_pool = {ship_type: ships.copy() for ship_type, ships in ship_pool.items()}
         equipment_counts = equipment_counts.copy()
 
         DRUM_MODELS = [EXPEDITION_DRUM_MODEL_ID]
@@ -436,9 +434,7 @@ class ExpeditionCore(CoreBase):
                     temp_ship.slot_ex = Equipment()
                 assign_fleet.add_ship(temp_ship)
                 ship_pool[ship_enum].remove(ship)
-                Log.log_debug_1(
-                    f"expedition_core: assign ship {ship} for {fleet_list}"
-                )
+                Log.log_debug_1(f"expedition_core: assign ship {ship} for {fleet_list}")
                 has_match_ship = True
                 break
 

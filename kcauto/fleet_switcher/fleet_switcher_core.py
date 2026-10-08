@@ -401,9 +401,7 @@ class FleetSwitcherCore(object):
 
         movable_equipments = self._get_movable_equipment_pool(context)
         try:
-            allocation = self._allocate_target_equipment(
-                targets, movable_equipments
-            )
+            allocation = self._allocate_target_equipment(targets, movable_equipments)
         except EquipmentRequirementError as error:
             Log.log_error(str(error))
             return False
