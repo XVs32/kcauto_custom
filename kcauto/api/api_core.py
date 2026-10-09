@@ -295,6 +295,8 @@ class ApiWrapper(object):
             return self._process_pvp_enemy_info(data)
         elif request_url is KCSAPIEnum.FLEETCOMP_PRESETS:
             return self._process_fleetcomp_presets(data)
+        elif request_url is KCSAPIEnum.FLEET_COMPOSITION_CHANGE:
+            return self._process_fleet_composition_change(data)
         elif request_url is KCSAPIEnum.REPAIR_DOCKS:
             return self._process_repair_dock_data(data)
         elif request_url is KCSAPIEnum.QUEST_LIST:
@@ -309,6 +311,11 @@ class ApiWrapper(object):
             return self._process_map_info_json(data)
 
         return None
+
+    def _process_fleet_composition_change(self, data):
+        if "api_data" in data:
+            return data["api_data"]
+        return data
 
     def _process_get_data(self, data):
         try:
