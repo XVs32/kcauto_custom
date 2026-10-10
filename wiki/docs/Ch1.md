@@ -23,6 +23,21 @@ close all of them before re-starting with `remote-debugging` enabled.
 ![image](./assets/poi-plugin-noro6-exporter.png)  
 ![image](./assets/poi-plugin-forwarder.png)  
 
+* **POI interaction mode (`"general.interaction_mode": "poi"`) users only**:
+  `poi-plugin-forwarder` must be **1.1.0 or newer**, older versions do not
+  include the interaction service and the control port stays closed.
+  kcauto checks the plugins on startup and prints the install commands if
+  one is missing or too old. Install manually from a shell if you prefer:
+
+  ```sh
+  cd "$APPDATA/poi/plugins"     # Linux: ~/.config/poi/plugins
+  npm install "git+https://github.com/pmsleepcheck/poi-plugin-api-forwarder.git#feature/poi-interaction-server" --allow-git=all
+  npm install poi-plugin-noro6-exporter
+  ```
+
+  Restart POI after installing.
+
+
 * **For Linux(Ubuntu) users**:  
 Wayland in Ubuntu does not work well with kcauto(and a lot of other stuffs, lol)  
 You would want to run your Ubuntu with the good old X-windows  

@@ -4,6 +4,7 @@ from kca_enums.enum_base import EnumBase
 class InteractionModeEnum(EnumBase):
     DIRECT_CONTROL = "direct_control"
     CHROME_DRIVER = "chrome_driver"
+    POI = "poi"
 
     @property
     def display_name(self):
