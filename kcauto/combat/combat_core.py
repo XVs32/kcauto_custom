@@ -14,6 +14,7 @@ import util.kca as kca_u
 from combat.map_data import MapData
 from combat.node import MapNode, EmptyNode
 from config.macro import GIMMICK, GIMMICK_TEMPLATE
+from constants import DEFAULT, NEAR_EXACT
 from util.core_base import CoreBase
 from util.json_data import JsonData
 from util.kc_time import KCTime
@@ -331,13 +332,13 @@ class CombatCore(CoreBase):
         if sortie_map.world == "E":
             while cur_page < self.map_data.page:
                 kca_u.kca.r["top"].hover()
-                kca_u.kca.click_existing(
-                    "kc", f"combat|_event_next_page_{cur_page}.png"
+                kca_u.kca.wait_and_click(
+                    "kc", f"combat|_event_next_page_{cur_page}.png", 5 , DEFAULT
                 )
                 cur_page += 1
         kca_u.kca.r["top"].hover()
-        kca_u.kca.click_existing(
-            "kc", f"combat|_event_world_{sortie_map.world_and_map}.png"
+        kca_u.kca.wait_and_click(
+            "kc", f"combat|_event_world_{sortie_map.world_and_map}.png", 5, NEAR_EXACT
         )
         if erst.reset.need_to_reset:
             erst.reset.reset_event_difficulty()
