@@ -39,6 +39,7 @@ import util.click_tracker as clt
 from util.exceptions import ChromeCrashException
 from util.logger import Log
 from util.poi_client import PoiClient, PoiClientError
+from util import poi_plugins
 
 import asyncio
 from pyppeteer import connect
@@ -135,6 +136,11 @@ class Kca(object):
     def hook_poi(self):
         """Connect to POI's loopback interaction service without CDP."""
         Log.log_msg("Connecting to the POI interaction service.")
+        if not poi_plugins.check_and_prompt():
+            raise Exception(
+                "Required POI plugins are missing. See the install "
+                "instructions above, then restart POI."
+            )
         api_listener.api_listener.set_port(cfg.config.general.poi_api_port)
         api_listener.api_listener.start()
 
