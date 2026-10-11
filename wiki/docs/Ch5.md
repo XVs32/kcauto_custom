@@ -48,11 +48,12 @@ Controls basic application behavior and browser interaction.
 
 #### `general.interaction_mode`
 - **Type**: string
-- **Valid Values**: `"chrome_driver"`, `"direct_control"`
+- **Valid Values**: `"chrome_driver"`, `"direct_control"`, `"poi"`
 - **Default**: `"chrome_driver"`
 - **Description**: Determines how kcauto interacts with the browser.  
-Chrome driver mode sends control signal to browser directly,  
-while direct control mode control your mouse to interact with browser.
+Chrome driver mode sends control signals through Chrome DevTools, direct
+control mode uses the desktop mouse, and POI mode uses the API Forwarder
+plugin's loopback screenshot and input service.
 
 #### `general.jst_offset`
 - **Type**: integer
@@ -73,6 +74,13 @@ Do not change if you don't know what you're doing.
 - **Default**: 9223
 - **Description**: Port number for POI API forwarding.  
 Do not change if you don't know what you're doing.
+
+#### `general.poi_control_port`
+- **Type**: integer
+- **Valid Range**: 0 to 65535
+- **Default**: 38591
+- **Description**: Loopback port for POI screenshots and input when
+`general.interaction_mode` is `"poi"`.
 
 #### ~~`general.paused`~~ Not working at the moment(2025/07/17)
 - **Type**: boolean
