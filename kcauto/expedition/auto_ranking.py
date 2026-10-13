@@ -176,22 +176,27 @@ def _get_resource_state(current, desire):
     else:
         zero_boundary = _ZeroBoundary.PARTIAL
 
-    # R_r = GM(x_s, s != r)
+    # R_r = GM(x_s, s != r, x_s > 0)
     # lag_r = max(0, 1 - x_r / R_r)
     #
-    # At a partial-zero boundary, a zero resource with positive peers is
-    # maximally behind, while a positive resource with any zero peer is not.
+    # Ignore zero-valued peers when building the peer reference so a
+    # partial-zero boundary does not erase relative balance information
+    # among the remaining positive resources.
+    positive_fill = {
+        resource: value for resource, value in fill.items() if value > 0
+    }
     lag = {}
     for resource in active:
-        peers = [fill[name] for name in active if name != resource]
-        if not peers or zero_boundary is _ZeroBoundary.ALL:
+        peers = [
+            value
+            for peer, value in positive_fill.items()
+            if peer != resource
+        ]
+        if not peers:
             lag[resource] = 0.0
         elif fill[resource] == 0:
             # A zero resource lags any positive peer maximally.
             lag[resource] = 1.0
-        elif zero_boundary is _ZeroBoundary.PARTIAL:
-            # A positive resource does not lag a peer set containing zero.
-            lag[resource] = 0.0
         else:
             peer_reference = _geometric_mean(peers)
             lag[resource] = max(
