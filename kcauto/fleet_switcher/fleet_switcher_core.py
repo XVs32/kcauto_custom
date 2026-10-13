@@ -535,16 +535,19 @@ class FleetSwitcherCore(object):
 
                 for combat_fleet_id in rev_fleet_id:
                     target_fleet_id = 1 if combat_fleet_id == 3 else combat_fleet_id
-                    target_fleet = fleet_list[target_fleet_id]
-                    combat_targets.append((combat_fleet_id, target_fleet))
+                    combat_targets.append(
+                        (combat_fleet_id, fleet_list[target_fleet_id])
+                    )
 
                 if not self._prepare_context_equipment_plan(combat_targets, context):
                     return False
 
+                if not self._unload_target_fleets_before_custom_switch(combat_targets):
+                    return False
+
                 for combat_fleet_id, target_fleet in combat_targets:
                     if not self._switch_to_custom_fleet_with_equipment(
-                        combat_fleet_id,
-                        target_fleet,
+                        combat_fleet_id, target_fleet
                     ):
                         return False
 
@@ -604,6 +607,9 @@ class FleetSwitcherCore(object):
                 if not self._prepare_context_equipment_plan(pvp_targets, context):
                     return False
 
+                if not self._unload_target_fleets_before_custom_switch(pvp_targets):
+                    return False
+
                 if not self._switch_to_custom_fleet_with_equipment(1, fleet_list[1]):
                     return False
 
@@ -641,10 +647,14 @@ class FleetSwitcherCore(object):
                 ):
                     return False
 
+                if not self._unload_target_fleets_before_custom_switch(
+                    expedition_targets
+                ):
+                    return False
+
                 for fleet_id, target_fleet in expedition_targets:
                     if not self._switch_to_custom_fleet_with_equipment(
-                        fleet_id,
-                        target_fleet,
+                        fleet_id, target_fleet
                     ):
                         return False
 
@@ -725,7 +735,36 @@ class FleetSwitcherCore(object):
                 self._set_next_combat_preset()
         return True
 
-    def switch_to_custom_fleet(self, fleet_id, custom_fleet: Fleet):
+    def _is_custom_fleet_loaded(self, fleet_id, target_fleet: Fleet):
+        active_fleet = flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][fleet_id]
+        return active_fleet.ship_ids == target_fleet.ship_ids
+
+    def _unload_target_fleets_before_custom_switch(
+        self, targets: list[tuple[int, Fleet]]
+    ) -> bool:
+        if not targets:
+            return True
+
+        Log.log_msg("Unloading target fleets before custom switch.")
+        self.goto()
+
+        for fleet_id, target_fleet in targets:
+            if self._is_custom_fleet_loaded(fleet_id, target_fleet):
+                continue
+
+            active_fleet = flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][fleet_id]
+            if active_fleet.size <= 1:
+                continue
+
+            active_fleet.select()
+            if not self._unload_all_ships_before_custom_switch(fleet_id):
+                return False
+
+            kca_u.kca.sleep(5)
+
+        return True
+
+    def _switch_to_custom_fleet(self, fleet_id, custom_fleet: Fleet):
         """
         method to switch the ship in {fleet_id} to ships defined in {ship_list}
 
@@ -736,12 +775,15 @@ class FleetSwitcherCore(object):
         retry = 0
 
         while True:
-            self._active_fleets[fleet_id].select()
+            flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][fleet_id].select()
+            if self._is_custom_fleet_loaded(fleet_id, custom_fleet):
+                Log.log_msg(f"Fleet {fleet_id} ships are already loaded")
+                return True
 
             empty_slot_count = 0
 
             size = max(
-                self._active_fleets[fleet_id].size,
+                flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][fleet_id].size,
                 custom_fleet.size,
             )
 
@@ -803,11 +845,40 @@ class FleetSwitcherCore(object):
         Log.log_success("Fleet load complete.")
         return True
 
-    def _switch_to_custom_fleet_with_equipment(
-        self,
-        fleet_id,
-        custom_fleet: Fleet,
-    ):
+    def _unload_all_ships_before_custom_switch(self, fleet_id):
+        active_fleet = flt.fleets.fleets[flt.fleets.ACTIVE_FLEET_KEY][fleet_id]
+        if active_fleet.size <= 1:
+            return True
+
+        Log.log_msg(
+            f"Fleet {fleet_id} has {active_fleet.size} ships; unloading all ships before fleet switch."
+        )
+        if not kca_u.kca.click_existing(
+            "upper", "shipswitcher|fleetcomp_unload_all_ships.png"
+        ):
+            Log.log_error(
+                f"Failed to find unload-all button for fleet {fleet_id} before fleet switch."
+            )
+            return False
+
+        api_result = api.api.update_from_api(
+            {KCSAPIEnum.FLEET_COMPOSITION_CHANGE}, process_all=False
+        )
+        fleet_composition_change = api_result[KCSAPIEnum.FLEET_COMPOSITION_CHANGE.name][
+            0
+        ]
+
+        if "api_change_count" in fleet_composition_change:
+            active_fleet.ships = active_fleet.ships[:1]
+            Log.log_msg(f"Fleet {fleet_id} unload-all complete.")
+            return True
+
+        Log.log_error(
+            f"Unexpected unload-all response for fleet {fleet_id}: {fleet_composition_change}"
+        )
+        return False
+
+    def _switch_to_custom_fleet_with_equipment(self, fleet_id, custom_fleet: Fleet):
         """
         method to switch the ship in {fleet_id} to ships defined in {ship_list}
 
@@ -830,7 +901,7 @@ class FleetSwitcherCore(object):
 
         self.goto()
 
-        if not self.switch_to_custom_fleet(fleet_id, custom_fleet):
+        if not self._switch_to_custom_fleet(fleet_id, custom_fleet):
             return False
 
         if not self._load_equipment(fleet_id, custom_fleet):

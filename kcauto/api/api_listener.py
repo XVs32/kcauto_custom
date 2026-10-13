@@ -19,6 +19,8 @@ class PoiWebhookServer:
         self.server_thread: Optional[threading.Thread] = None
 
     def set_port(self, port: int):
+        if self.server is not None and port != self.port:
+            raise RuntimeError("Cannot change POI API port while the server is running")
         self.port = port
 
     def set_filter(self, filter_function: Callable[[str, Dict[str, Any]], bool]):
@@ -112,16 +114,27 @@ class PoiWebhookServer:
             def log_message(self, format, *args):
                 pass
 
-        self.server = HTTPServer(("", self.port), WebhookHandler)
+        self.server = HTTPServer(("127.0.0.1", self.port), WebhookHandler)
         Log.log_success(f"Webhook server started, listening on Port {self.port}...")
         self.server.serve_forever()
 
     def start(self):
         """Start the HTTP server in a background daemon thread to avoid blocking the main thread"""
+        if self.server_thread is not None and self.server_thread.is_alive():
+            return
         self.server_thread = threading.Thread(
             target=self._start_http_server, daemon=True
         )
         self.server_thread.start()
+
+    def stop(self):
+        """Stop the HTTP server and release its loopback port."""
+        if self.server is None:
+            return
+        self.server.shutdown()
+        self.server.server_close()
+        self.server = None
+        self.server_thread = None
 
 
 api_listener = PoiWebhookServer()
