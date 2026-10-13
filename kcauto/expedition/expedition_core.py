@@ -1,8 +1,5 @@
 from util.pyvisauto import Region
 from random import choice
-import math
-
-from constants import PASSIVE_TIME_INTERVAL, OVERNIGHT_TIME_INTERVAL
 import api.api_core as api
 import combat.combat_core as com
 import config.config_core as cfg
@@ -15,6 +12,7 @@ from util.timer import Timer
 from kca_enums.expeditions import ExpeditionEnum
 from kca_enums.kcsapi_paths import KCSAPIEnum
 from kca_enums.scroll_directions import ScrollDirectionEnum
+from expedition.auto_ranking import rank_expeditions
 from util.core_base import CoreBase
 from util.logger import Log
 from util.json_data import JsonData
@@ -143,115 +141,40 @@ class ExpeditionCore(CoreBase):
             or ExpeditionEnum.PASSIVE in cfg.config.expedition.all_expeditions
             or ExpeditionEnum.OVERNIGHT in cfg.config.expedition.all_expeditions
         ):
-            pooling_interval = 1
+            excluded_ids = {
+                expedition.value
+                for expedition in self.MONTHLY_EXPEDITION + self.SUPPORT_EXPEDITIONS
+            }
+            candidates = [
+                exp_data
+                for exp_data in self.exp_data
+                if exp_data["id"] not in excluded_ids
+            ]
+            current = {
+                "fuel": sts.stats.rsc.fuel,
+                "ammo": sts.stats.rsc.ammo,
+                "steel": sts.stats.rsc.steel,
+                "bauxite": sts.stats.rsc.bauxite,
+                "bucket": sts.stats.rsc.bucket,
+                "devmat": sts.stats.rsc.dev_mat,
+            }
+            desire = {
+                "fuel": cfg.config.expedition.desire_oil,
+                "ammo": cfg.config.expedition.desire_ammo,
+                "steel": cfg.config.expedition.desire_steel,
+                "bauxite": cfg.config.expedition.desire_bauxite,
+                "bucket": cfg.config.expedition.desire_bucket,
+                "devmat": cfg.config.expedition.desire_devmat,
+            }
 
-            if ExpeditionEnum.AUTO in cfg.config.expedition.all_expeditions:
-                if com.combat.enabled == False:
-                    # Passive mode
-                    pooling_interval = PASSIVE_TIME_INTERVAL
-                else:
-                    # Active mode
-                    pooling_interval = 1
-            elif ExpeditionEnum.ACTIVE in cfg.config.expedition.all_expeditions:
-                # Active mode
-                pooling_interval = 1
-            elif ExpeditionEnum.PASSIVE in cfg.config.expedition.all_expeditions:
-                # Passive mode
-                pooling_interval = PASSIVE_TIME_INTERVAL
-            elif ExpeditionEnum.OVERNIGHT in cfg.config.expedition.all_expeditions:
-                # Active mode
-                pooling_interval = OVERNIGHT_TIME_INTERVAL
-
-            self.exp_rank = []
-
-            for exp in self.exp_data:
-                duration = math.ceil(exp["time"] / pooling_interval) * pooling_interval
-                horuly_rsc = {}
-                horuly_rsc["fuel"] = exp["fuel"] / duration
-                horuly_rsc["ammo"] = exp["ammo"] / duration
-                horuly_rsc["steel"] = exp["steel"] / duration
-                horuly_rsc["baux"] = exp["baux"] / duration
-
-                def get_item_count(exp, item_name):
-                    count = 0
-                    if exp.get("item") == item_name:
-                        count += exp.get("itemCount", 0)
-                    if exp.get("gsItem") == item_name:
-                        count += exp.get("gsItemCount", 0)
-                    return count
-
-                horuly_rsc["bucket"] = get_item_count(exp, "bucket") / duration
-                horuly_rsc["dev_mat"] = get_item_count(exp, "devmat") / duration
-
-                # Check and nullify overflowed resources
-                if sts.stats.rsc.fuel >= cfg.config.expedition.desire_oil:
-                    horuly_rsc["fuel"] = 0
-                if sts.stats.rsc.ammo >= cfg.config.expedition.desire_ammo:
-                    horuly_rsc["ammo"] = 0
-                if sts.stats.rsc.steel >= cfg.config.expedition.desire_steel:
-                    horuly_rsc["steel"] = 0
-                if sts.stats.rsc.bauxite >= cfg.config.expedition.desire_bauxite:
-                    horuly_rsc["baux"] = 0
-                if sts.stats.rsc.bucket >= cfg.config.expedition.desire_bucket:
-                    horuly_rsc["bucket"] = 0
-                if sts.stats.rsc.dev_mat >= cfg.config.expedition.desire_devmat:
-                    horuly_rsc["dev_mat"] = 0
-
-                exp_enum = ExpeditionEnum(exp["id"])
-
-                avg_fill_rate = (
-                    (horuly_rsc["fuel"] + sts.stats.rsc.fuel)
-                    / cfg.config.expedition.desire_oil
-                    + (horuly_rsc["ammo"] + sts.stats.rsc.ammo)
-                    / cfg.config.expedition.desire_ammo
-                    + (horuly_rsc["steel"] + sts.stats.rsc.steel)
-                    / cfg.config.expedition.desire_steel
-                    + (horuly_rsc["baux"] + sts.stats.rsc.bauxite)
-                    / cfg.config.expedition.desire_bauxite
-                    + (horuly_rsc["bucket"] + sts.stats.rsc.bucket)
-                    / cfg.config.expedition.desire_bucket
-                    + (horuly_rsc["dev_mat"] + sts.stats.rsc.dev_mat)
-                    / cfg.config.expedition.desire_devmat
-                ) / 6
-
-                balace_score = (
-                    abs(
-                        (horuly_rsc["fuel"] + sts.stats.rsc.fuel)
-                        / cfg.config.expedition.desire_oil
-                        - avg_fill_rate
-                    )
-                    + abs(
-                        (horuly_rsc["ammo"] + sts.stats.rsc.ammo)
-                        / cfg.config.expedition.desire_ammo
-                        - avg_fill_rate
-                    )
-                    + abs(
-                        (horuly_rsc["steel"] + sts.stats.rsc.steel)
-                        / cfg.config.expedition.desire_steel
-                        - avg_fill_rate
-                    )
-                    + abs(
-                        (horuly_rsc["baux"] + sts.stats.rsc.bauxite)
-                        / cfg.config.expedition.desire_bauxite
-                        - avg_fill_rate
-                    )
-                    + abs(
-                        (horuly_rsc["bucket"] + sts.stats.rsc.bucket)
-                        / cfg.config.expedition.desire_bucket
-                        - avg_fill_rate
-                    )
-                    + abs(
-                        (horuly_rsc["dev_mat"] + sts.stats.rsc.dev_mat)
-                        / cfg.config.expedition.desire_devmat
-                        - avg_fill_rate
-                    )
-                ) * (-1)
-
-                self.exp_rank.append(
-                    {self.EXP_ENUM: exp_enum, self.SCORE: balace_score}
-                )
-            self.exp_rank.sort(key=self.cmp, reverse=True)
-
+            ranked = rank_expeditions(candidates, current, desire)
+            self.exp_rank = [
+                {
+                    self.EXP_ENUM: ExpeditionEnum(row["id"]),
+                    self.SCORE: row["score"],
+                }
+                for row in ranked
+            ]
         else:
             self.exp_rank = []
 
