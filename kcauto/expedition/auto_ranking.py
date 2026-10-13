@@ -3,6 +3,8 @@ import re
 from dataclasses import dataclass
 from enum import Enum, auto
 
+from kca_enums.ship_types import ShipTypeEnum
+
 
 RESOURCE_NAMES = ("fuel", "ammo", "steel", "bauxite", "bucket", "devmat")
 
@@ -25,16 +27,16 @@ class _ResourceState:
 # Reference maximum Fuel/Ammo supply used to estimate expedition running cost.
 # NA follows the current auto-assignment behavior and uses the DD reference.
 REFERENCE_SUPPLY = {
-    "DD": (15, 15),
-    "CL": (25, 25),
-    "CVL": (35, 35),
-    "AV": (30, 15),
-    "BBV": (95, 105),
-    "SS": (10, 5),
-    "CA": (35, 55),
-    "CT": (35, 20),
-    "AS": (35, 10),
-    "NA": (15, 15),
+    ShipTypeEnum.DD: (15, 15),
+    ShipTypeEnum.CL: (25, 25),
+    ShipTypeEnum.CVL: (35, 35),
+    ShipTypeEnum.AV: (30, 15),
+    ShipTypeEnum.BBV: (95, 105),
+    ShipTypeEnum.SS: (10, 5),
+    ShipTypeEnum.CA: (35, 55),
+    ShipTypeEnum.CT: (35, 20),
+    ShipTypeEnum.AS: (35, 10),
+    ShipTypeEnum.NA: (15, 15),
 }
 
 
@@ -92,10 +94,18 @@ def _get_reference_consumption_rates(exp_data):
             )
 
         count = int(match.group(1))
-        ship_type = match.group(2)
+        ship_type_name = match.group(2)
+        try:
+            ship_type = ShipTypeEnum[ship_type_name]
+        except KeyError as exc:
+            raise ValueError(
+                f"Missing expedition reference supply for {ship_type_name} "
+                f"in expedition {exp_data['id']}"
+            ) from exc
+
         if ship_type not in REFERENCE_SUPPLY:
             raise ValueError(
-                f"Missing expedition reference supply for {ship_type} "
+                f"Missing expedition reference supply for {ship_type.name} "
                 f"in expedition {exp_data['id']}"
             )
 
