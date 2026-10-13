@@ -25,7 +25,6 @@ class _ResourceState:
 
 
 # Reference maximum Fuel/Ammo supply used to estimate expedition running cost.
-# NA follows the current auto-assignment behavior and uses the DD reference.
 REFERENCE_SUPPLY = {
     ShipTypeEnum.DD: (15, 15),
     ShipTypeEnum.CL: (25, 25),
@@ -36,8 +35,13 @@ REFERENCE_SUPPLY = {
     ShipTypeEnum.CA: (35, 55),
     ShipTypeEnum.CT: (35, 20),
     ShipTypeEnum.AS: (35, 10),
-    ShipTypeEnum.NA: (15, 15),
 }
+
+
+def _get_reference_ship_type(ship_type):
+    if ship_type is ShipTypeEnum.NA:
+        return ShipTypeEnum.DD
+    return ship_type
 
 
 def _geometric_mean(values):
@@ -103,13 +107,14 @@ def _get_reference_consumption_rates(exp_data):
                 f"in expedition {exp_data['id']}"
             ) from exc
 
-        if ship_type not in REFERENCE_SUPPLY:
+        reference_ship_type = _get_reference_ship_type(ship_type)
+        if reference_ship_type not in REFERENCE_SUPPLY:
             raise ValueError(
                 f"Missing expedition reference supply for {ship_type.name} "
                 f"in expedition {exp_data['id']}"
             )
 
-        fuel_max, ammo_max = REFERENCE_SUPPLY[ship_type]
+        fuel_max, ammo_max = REFERENCE_SUPPLY[reference_ship_type]
         # Preserve per-ship integer rounding before multiplying by ship count.
         fuel += count * int(fuel_max * fuel_ratio)
         ammo += count * int(ammo_max * ammo_ratio)
