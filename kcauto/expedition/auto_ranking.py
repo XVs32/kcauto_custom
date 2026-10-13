@@ -1,18 +1,11 @@
 import math
 import re
 from dataclasses import dataclass
-from enum import Enum, auto
 
 from kca_enums.ship_types import ShipTypeEnum
 
 
 RESOURCE_NAMES = ("fuel", "ammo", "steel", "bauxite", "bucket", "devmat")
-
-
-class _ZeroBoundary(Enum):
-    NONE = auto()
-    PARTIAL = auto()
-    ALL = auto()
 
 
 @dataclass(frozen=True)
@@ -21,7 +14,16 @@ class _ResourceState:
     headroom: dict[str, float]
     lag: dict[str, float]
     overall_fill: float
-    zero_boundary: _ZeroBoundary
+
+    @property
+    def all_zero(self):
+        return all(
+            self.headroom[resource] == 1.0 for resource in self.active
+        )
+
+    @property
+    def partial_zero(self):
+        return self.overall_fill == 0.0 and not self.all_zero
 
 
 # Reference maximum Fuel/Ammo supply used to estimate expedition running cost.
@@ -168,14 +170,6 @@ def _get_resource_state(current, desire):
         for resource in active
     }
     headroom = {resource: 1.0 - fill[resource] for resource in active}
-    zero_count = sum(value == 0 for value in fill.values())
-    if zero_count == 0:
-        zero_boundary = _ZeroBoundary.NONE
-    elif zero_count == len(fill):
-        zero_boundary = _ZeroBoundary.ALL
-    else:
-        zero_boundary = _ZeroBoundary.PARTIAL
-
     # R_r = GM(x_s, s != r, x_s > 0)
     # lag_r = max(0, 1 - x_r / R_r)
     #
@@ -209,7 +203,6 @@ def _get_resource_state(current, desire):
         lag=lag,
         # F = GM(x_r). F weights target completion against relative balance.
         overall_fill=_geometric_mean(fill.values()),
-        zero_boundary=zero_boundary,
     )
 
 
@@ -240,8 +233,9 @@ def rank_expeditions(expeditions, current, desire):
         Score_e = sum_r W_r C[e,r]
 
     Geometric mean becomes zero when any active resource is zero. At all-zero,
-    there is no relative imbalance, so ranking uses U. At partial-zero, ranking
-    uses B and U only as an exact-score tie-break.
+    there is no relative imbalance, so ranking uses U. At partial-zero, F = 0
+    makes the general formula reduce to B, with U only as an exact-score
+    tie-break.
     """
     expeditions = tuple(expeditions)
     if not expeditions:
@@ -263,10 +257,8 @@ def rank_expeditions(expeditions, current, desire):
             for resource in state.active
         )
 
-        if state.zero_boundary is _ZeroBoundary.ALL:
+        if state.all_zero:
             score = completion_utility
-        elif state.zero_boundary is _ZeroBoundary.PARTIAL:
-            score = balance_utility
         else:
             fill = state.overall_fill
             score = fill * completion_utility + (1 - fill) * balance_utility
@@ -279,7 +271,7 @@ def rank_expeditions(expeditions, current, desire):
             }
         )
 
-    if state.zero_boundary is _ZeroBoundary.PARTIAL:
+    if state.partial_zero:
         rows.sort(
             key=lambda row: (
                 -row["score"],
