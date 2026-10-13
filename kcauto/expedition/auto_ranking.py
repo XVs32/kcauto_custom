@@ -189,9 +189,11 @@ def _get_resource_state(current, desire):
         peers = [fill[name] for name in active if name != resource]
         if not peers or zero_boundary is _ZeroBoundary.ALL:
             lag[resource] = 0.0
-        elif fill[resource] == 0 and any(peer > 0 for peer in peers):
+        elif fill[resource] == 0:
+            # A zero resource lags any positive peer maximally.
             lag[resource] = 1.0
-        elif fill[resource] > 0 and any(peer == 0 for peer in peers):
+        elif zero_boundary is _ZeroBoundary.PARTIAL:
+            # A positive resource does not lag a peer set containing zero.
             lag[resource] = 0.0
         else:
             peer_reference = _geometric_mean(peers)
