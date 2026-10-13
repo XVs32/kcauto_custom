@@ -1,8 +1,26 @@
 import math
 import re
+from dataclasses import dataclass
+from enum import Enum, auto
 
 
 RESOURCE_NAMES = ("fuel", "ammo", "steel", "bauxite", "bucket", "devmat")
+
+
+class _ZeroBoundary(Enum):
+    NONE = auto()
+    PARTIAL = auto()
+    ALL = auto()
+
+
+@dataclass(frozen=True)
+class _ResourceState:
+    active: tuple[str, ...]
+    headroom: dict[str, float]
+    lag: dict[str, float]
+    overall_fill: float
+    zero_boundary: _ZeroBoundary
+
 
 # Reference maximum Fuel/Ammo supply used to estimate expedition running cost.
 # NA follows the current auto-assignment behavior and uses the DD reference.
@@ -138,8 +156,13 @@ def _get_resource_state(current, desire):
         for resource in active
     }
     headroom = {resource: 1.0 - fill[resource] for resource in active}
-    all_zero = all(value == 0 for value in fill.values())
-    partial_zero = not all_zero and any(value == 0 for value in fill.values())
+    zero_count = sum(value == 0 for value in fill.values())
+    if zero_count == 0:
+        zero_boundary = _ZeroBoundary.NONE
+    elif zero_count == len(fill):
+        zero_boundary = _ZeroBoundary.ALL
+    else:
+        zero_boundary = _ZeroBoundary.PARTIAL
 
     # R_r = GM(x_s, s != r)
     # lag_r = max(0, 1 - x_r / R_r)
@@ -149,7 +172,7 @@ def _get_resource_state(current, desire):
     lag = {}
     for resource in active:
         peers = [fill[name] for name in active if name != resource]
-        if not peers or all_zero:
+        if not peers or zero_boundary is _ZeroBoundary.ALL:
             lag[resource] = 0.0
         elif fill[resource] == 0 and any(peer > 0 for peer in peers):
             lag[resource] = 1.0
@@ -161,15 +184,14 @@ def _get_resource_state(current, desire):
                 0.0, 1.0 - fill[resource] / peer_reference
             )
 
-    return {
-        "active": active,
-        "headroom": headroom,
-        "lag": lag,
+    return _ResourceState(
+        active=active,
+        headroom=headroom,
+        lag=lag,
         # F = GM(x_r). F weights target completion against relative balance.
-        "overall_fill": _geometric_mean(fill.values()),
-        "all_zero": all_zero,
-        "partial_zero": partial_zero,
-    }
+        overall_fill=_geometric_mean(fill.values()),
+        zero_boundary=zero_boundary,
+    )
 
 
 def rank_expeditions(expeditions, current, desire):
@@ -214,20 +236,20 @@ def rank_expeditions(expeditions, current, desire):
         exp_id = exp_data["id"]
         coefficient = coefficients[exp_id]
         completion_utility = sum(
-            state["headroom"][resource] * coefficient[resource]
-            for resource in state["active"]
+            state.headroom[resource] * coefficient[resource]
+            for resource in state.active
         )
         balance_utility = sum(
-            state["lag"][resource] * coefficient[resource]
-            for resource in state["active"]
+            state.lag[resource] * coefficient[resource]
+            for resource in state.active
         )
 
-        if state["all_zero"]:
+        if state.zero_boundary is _ZeroBoundary.ALL:
             score = completion_utility
-        elif state["partial_zero"]:
+        elif state.zero_boundary is _ZeroBoundary.PARTIAL:
             score = balance_utility
         else:
-            fill = state["overall_fill"]
+            fill = state.overall_fill
             score = fill * completion_utility + (1 - fill) * balance_utility
 
         rows.append(
@@ -238,7 +260,7 @@ def rank_expeditions(expeditions, current, desire):
             }
         )
 
-    if state["partial_zero"]:
+    if state.zero_boundary is _ZeroBoundary.PARTIAL:
         rows.sort(
             key=lambda row: (
                 -row["score"],
