@@ -1,9 +1,31 @@
 import math
 import re
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
+from typing import TypedDict
 
 from kca_enums.resources import ResourceEnum
 from kca_enums.ship_types import ShipTypeEnum
+
+
+class _ExpeditionData(TypedDict):
+    id: int
+    time: int
+    reqComposition: str
+    fuel: int
+    ammo: int
+    steel: int
+    baux: int
+    item: str
+    itemCount: int
+    fuelConsum: float
+    ammoConsum: float
+
+
+class _RankingRow(TypedDict):
+    id: int
+    score: float
+    completion_utility: float
 
 
 @dataclass(frozen=True)
@@ -14,13 +36,13 @@ class _ResourceState:
     overall_fill: float
 
     @property
-    def all_zero(self):
+    def all_zero(self) -> bool:
         return all(
             self.headroom[resource] == 1.0 for resource in self.active
         )
 
     @property
-    def partial_zero(self):
+    def partial_zero(self) -> bool:
         return self.overall_fill == 0.0 and not self.all_zero
 
 
@@ -38,7 +60,7 @@ REFERENCE_SUPPLY = {
 }
 
 
-def _geometric_mean(values):
+def _geometric_mean(values: Iterable[float]) -> float:
     values = tuple(float(value) for value in values)
     if not values:
         raise ValueError("Geometric mean requires at least one value")
@@ -49,7 +71,10 @@ def _geometric_mean(values):
     return math.exp(sum(math.log(value) for value in values) / len(values))
 
 
-def _get_item_expected_count(exp_data, resource):
+def _get_item_expected_count(
+    exp_data: _ExpeditionData,
+    resource: ResourceEnum,
+) -> float:
     if exp_data["item"] != resource.value:
         return 0.0
 
@@ -58,7 +83,9 @@ def _get_item_expected_count(exp_data, resource):
     return exp_data["itemCount"] * 0.5
 
 
-def _get_gross_rates(exp_data):
+def _get_gross_rates(
+    exp_data: _ExpeditionData,
+) -> dict[ResourceEnum, float]:
     duration = exp_data["time"]
     if duration <= 0:
         raise ValueError(f"Invalid expedition duration: {duration}")
@@ -79,7 +106,9 @@ def _get_gross_rates(exp_data):
     }
 
 
-def _get_reference_consumption_rates(exp_data):
+def _get_reference_consumption_rates(
+    exp_data: _ExpeditionData,
+) -> tuple[float, float]:
     duration = exp_data["time"]
     if duration <= 0:
         raise ValueError(f"Invalid expedition duration: {duration}")
@@ -125,7 +154,9 @@ def _get_reference_consumption_rates(exp_data):
     return fuel / duration, ammo / duration
 
 
-def _get_efficiencies(expeditions):
+def _get_efficiencies(
+    expeditions: Iterable[_ExpeditionData],
+) -> dict[int, dict[ResourceEnum, float]]:
     net_rates = {}
     for exp_data in expeditions:
         exp_id = exp_data["id"]
@@ -159,7 +190,10 @@ def _get_efficiencies(expeditions):
     }
 
 
-def _get_resource_state(current, desire):
+def _get_resource_state(
+    current: Mapping[ResourceEnum, float],
+    desire: Mapping[ResourceEnum, float],
+) -> _ResourceState:
     active = tuple(
         resource for resource in ResourceEnum if desire[resource] > 0
     )
@@ -207,7 +241,11 @@ def _get_resource_state(current, desire):
     )
 
 
-def rank_expeditions(expeditions, current, desire):
+def rank_expeditions(
+    expeditions: Iterable[_ExpeditionData],
+    current: Mapping[ResourceEnum, float],
+    desire: Mapping[ResourceEnum, float],
+) -> list[_RankingRow]:
     """Rank a pre-filtered auto-expedition candidate pool.
 
     For expedition e:
