@@ -122,38 +122,37 @@ def _get_reference_consumption_rates(exp_data):
 
 
 def _get_coefficients(expeditions):
-    gross_rates = {
-        exp_data["id"]: _get_gross_rates(exp_data) for exp_data in expeditions
-    }
-    best_gross_rates = {
+    net_rates = {}
+    for exp_data in expeditions:
+        exp_id = exp_data["id"]
+        rates = _get_gross_rates(exp_data)
+        fuel_cost_rate, ammo_cost_rate = _get_reference_consumption_rates(exp_data)
+        rates["fuel"] -= fuel_cost_rate
+        rates["ammo"] -= ammo_cost_rate
+        net_rates[exp_id] = rates
+
+    best_net_rates = {
         resource: max(
-            (rates[resource] for rates in gross_rates.values()), default=0.0
+            (rates[resource] for rates in net_rates.values()), default=0.0
         )
         for resource in RESOURCE_NAMES
     }
 
-    coefficients = {}
-    for exp_data in expeditions:
-        exp_id = exp_data["id"]
-        net_rates = dict(gross_rates[exp_id])
-        fuel_cost_rate, ammo_cost_rate = _get_reference_consumption_rates(exp_data)
-        net_rates["fuel"] -= fuel_cost_rate
-        net_rates["ammo"] -= ammo_cost_rate
-
-        # C[e,r] = netRate[e,r] / bestGrossRate[r]
-        #
-        # Fuel/Ammo cost is subtracted in the numerator while the denominator
-        # remains the common gross-production frontier for that resource.
-        coefficients[exp_id] = {
+    # C[e,r] = netRate[e,r] / bestNetRate[r]
+    #
+    # Normalize each resource against the same net-production quantity used in
+    # the numerator, so the best attainable net producer defines C = 1.
+    return {
+        exp_id: {
             resource: (
-                net_rates[resource] / best_gross_rates[resource]
-                if best_gross_rates[resource] > 0
+                rates[resource] / best_net_rates[resource]
+                if best_net_rates[resource] > 0
                 else 0.0
             )
             for resource in RESOURCE_NAMES
         }
-
-    return coefficients
+        for exp_id, rates in net_rates.items()
+    }
 
 
 def _get_resource_state(current, desire):
