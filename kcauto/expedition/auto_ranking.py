@@ -56,7 +56,7 @@ def _get_item_expected_count(exp_data, item_name):
         return 0.0
 
     # Normal random item rewards use their expected value. Great-Success-only
-    # item rewards are intentionally excluded from the static coefficient.
+    # item rewards are intentionally excluded from the static efficiency model.
     return exp_data["itemCount"] * 0.5
 
 
@@ -121,7 +121,7 @@ def _get_reference_consumption_rates(exp_data):
     return fuel / duration, ammo / duration
 
 
-def _get_coefficients(expeditions):
+def _get_efficiencies(expeditions):
     net_rates = {}
     for exp_data in expeditions:
         exp_id = exp_data["id"]
@@ -138,10 +138,10 @@ def _get_coefficients(expeditions):
         for resource in RESOURCE_NAMES
     }
 
-    # C[e,r] = netRate[e,r] / bestNetRate[r]
+    # E[e,r] = netRate[e,r] / bestNetRate[r]
     #
     # Normalize each resource against the same net-production quantity used in
-    # the numerator, so the best attainable net producer defines C = 1.
+    # the numerator, so the best attainable net producer defines E = 1.
     return {
         exp_id: {
             resource: (
@@ -210,8 +210,8 @@ def rank_expeditions(expeditions, current, desire):
 
     For expedition e:
 
-        U_e = sum_r H_r * C[e,r]
-        B_e = sum_r lag_r * C[e,r]
+        U_e = sum_r H_r * E[e,r]
+        B_e = sum_r lag_r * E[e,r]
         Score_e = F * U_e + (1 - F) * B_e
 
     H_r = 1 - x_r is the remaining-target weight for resource r.
@@ -222,14 +222,14 @@ def rank_expeditions(expeditions, current, desire):
     Expanding the score:
 
         Score_e
-          = F * sum_r H_r C[e,r]
-            + (1 - F) * sum_r lag_r C[e,r]
-          = sum_r [F H_r + (1 - F) lag_r] C[e,r]
+          = F * sum_r H_r E[e,r]
+            + (1 - F) * sum_r lag_r E[e,r]
+          = sum_r [F H_r + (1 - F) lag_r] E[e,r]
 
     Therefore each resource has one state-dependent ranking weight:
 
         W_r = F(1 - x_r) + (1 - F)lag_r
-        Score_e = sum_r W_r C[e,r]
+        Score_e = sum_r W_r E[e,r]
 
     Geometric mean becomes zero when any active resource is zero. At all-zero,
     there is no relative imbalance, so ranking uses U. At partial-zero, F = 0
@@ -240,19 +240,19 @@ def rank_expeditions(expeditions, current, desire):
     if not expeditions:
         return []
 
-    coefficients = _get_coefficients(expeditions)
+    efficiencies = _get_efficiencies(expeditions)
     state = _get_resource_state(current, desire)
     rows = []
 
     for exp_data in expeditions:
         exp_id = exp_data["id"]
-        coefficient = coefficients[exp_id]
+        efficiency = efficiencies[exp_id]
         completion_utility = sum(
-            state.headroom[resource] * coefficient[resource]
+            state.headroom[resource] * efficiency[resource]
             for resource in state.active
         )
         balance_utility = sum(
-            state.lag[resource] * coefficient[resource]
+            state.lag[resource] * efficiency[resource]
             for resource in state.active
         )
 
