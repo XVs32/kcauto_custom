@@ -208,7 +208,7 @@ def _get_resource_state(
     }
     headroom = {resource: 1.0 - fill[resource] for resource in active}
     # d(r,s) = 0 if x_r >= x_s else 1 - x_r / x_s
-    # lag_r = mean_s d(r,s), s != r
+    # L_r = mean_s(d(r,s)), s != r
     #
     # Compare each resource directly with every active peer instead of first
     # collapsing the peer set into one reference value. Only a richer peer
@@ -246,35 +246,59 @@ def rank_expeditions(
 ) -> list[_RankingRow]:
     """Rank a pre-filtered auto-expedition candidate pool.
 
+    Resource state
+    --------------
+    For each active resource r:
+
+        x_r = min(1, max(0, current_r / desire_r))
+        H_r = 1 - x_r
+        d(r,s) = 0 if x_r >= x_s else 1 - x_r / x_s
+        L_r = mean_s(d(r,s)), s != r
+        F = GM(x_r)
+
+    H_r measures remaining target headroom, L_r measures mean pairwise
+    relative lag, and F is overall fill. Low F emphasizes relative balance;
+    high F emphasizes finishing the remaining configured targets.
+
+    Expedition efficiency
+    ---------------------
+    For expedition e and resource r:
+
+        E[e,r] = netRate[e,r] / bestNetRate[r]
+
+    Fuel and Ammo net rates subtract the reference fleet running cost. Normal
+    random item rewards use expected value. bestNetRate is taken over the
+    pre-filtered candidate pool.
+
+    Utilities and original score
+    ----------------------------
     For expedition e:
 
-        U_e = sum_r H_r * E[e,r]
-        B_e = sum_r lag_r * E[e,r]
+        U_e = sum_r(H_r * E[e,r])
+        B_e = sum_r(L_r * E[e,r])
         Score_e = F * U_e + (1 - F) * B_e
 
-    H_r = 1 - x_r is the remaining-target weight for resource r.
-    lag_r is the mean pairwise relative-balance weight for a resource behind
-    its peers. A zero-valued peer contributes no lag; a zero resource lags
-    each positive peer maximally.
-    F = GM(x_r) is overall fill: low F emphasizes balance, while high F
-    emphasizes finishing the remaining configured targets.
+    U_e measures target-completion utility and B_e measures relative-balance
+    utility.
 
-    Expanding the score:
+    Score simplification
+    --------------------
+    Expanding the original score:
 
-        Score_e
-          = F * sum_r H_r E[e,r]
-            + (1 - F) * sum_r lag_r E[e,r]
-          = sum_r [F H_r + (1 - F) lag_r] E[e,r]
+        Score_e = F * sum_r(H_r * E[e,r]) + (1 - F) * sum_r(L_r * E[e,r])
+        Score_e = sum_r((F * H_r + (1 - F) * L_r) * E[e,r])
 
-    Therefore each resource has one state-dependent ranking weight:
+    Since H_r = 1 - x_r, each resource has one state-dependent weight:
 
-        W_r = F(1 - x_r) + (1 - F)lag_r
-        Score_e = sum_r W_r E[e,r]
+        W_r = F * (1 - x_r) + (1 - F) * L_r
+        Score_e = sum_r(W_r * E[e,r])
 
-    Geometric mean becomes zero when any active resource is zero. At all-zero,
-    there is no relative imbalance, so ranking uses U. At partial-zero, F = 0
-    makes the general formula reduce to B, with U only as an exact-score
-    tie-break.
+    Zero boundaries
+    ---------------
+    Geometric mean becomes zero when any active resource is zero. At
+    partial-zero, F = 0 makes the general formula reduce naturally to B, with
+    U used only as an exact-score tie-break. At all-zero, every pairwise lag
+    is also zero, so B = 0 and ranking falls back to U.
     """
     expeditions = tuple(expeditions)
     if not expeditions:
