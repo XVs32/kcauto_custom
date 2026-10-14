@@ -37,9 +37,7 @@ class _ResourceState:
 
     @property
     def all_zero(self) -> bool:
-        return all(
-            self.headroom[resource] == 1.0 for resource in self.active
-        )
+        return all(self.headroom[resource] == 1.0 for resource in self.active)
 
     @property
     def partial_zero(self) -> bool:
@@ -95,13 +93,9 @@ def _get_gross_rates(
         ResourceEnum.AMMO: exp_data["ammo"] / duration,
         ResourceEnum.STEEL: exp_data["steel"] / duration,
         ResourceEnum.BAUXITE: exp_data["baux"] / duration,
-        ResourceEnum.BUCKET: _get_item_expected_count(
-            exp_data, ResourceEnum.BUCKET
-        )
+        ResourceEnum.BUCKET: _get_item_expected_count(exp_data, ResourceEnum.BUCKET)
         / duration,
-        ResourceEnum.DEVMAT: _get_item_expected_count(
-            exp_data, ResourceEnum.DEVMAT
-        )
+        ResourceEnum.DEVMAT: _get_item_expected_count(exp_data, ResourceEnum.DEVMAT)
         / duration,
     }
 
@@ -167,9 +161,7 @@ def _get_efficiencies(
         net_rates[exp_id] = rates
 
     best_net_rates = {
-        resource: max(
-            (rates[resource] for rates in net_rates.values()), default=0.0
-        )
+        resource: max((rates[resource] for rates in net_rates.values()), default=0.0)
         for resource in ResourceEnum
     }
 
@@ -194,9 +186,7 @@ def _get_resource_state(
     current: Mapping[ResourceEnum, float],
     desire: Mapping[ResourceEnum, float],
 ) -> _ResourceState:
-    active = tuple(
-        resource for resource in ResourceEnum if desire[resource] > 0
-    )
+    active = tuple(resource for resource in ResourceEnum if desire[resource] > 0)
     if not active:
         raise ValueError("At least one expedition resource desire must be positive")
 
@@ -216,17 +206,13 @@ def _get_resource_state(
     # without a separate zero branch or an arbitrary epsilon.
     lag = {}
     for resource in active:
-        peers = [
-            value for peer, value in fill.items() if peer is not resource
-        ]
+        peers = [value for peer, value in fill.items() if peer is not resource]
         if not peers:
             lag[resource] = 0.0
             continue
 
         lag[resource] = sum(
-            0.0
-            if fill[resource] >= peer_fill
-            else 1.0 - fill[resource] / peer_fill
+            0.0 if fill[resource] >= peer_fill else 1.0 - fill[resource] / peer_fill
             for peer_fill in peers
         ) / len(peers)
 
@@ -312,12 +298,10 @@ def rank_expeditions(
         exp_id = exp_data["id"]
         efficiency = efficiencies[exp_id]
         completion_utility = sum(
-            state.headroom[resource] * efficiency[resource]
-            for resource in state.active
+            state.headroom[resource] * efficiency[resource] for resource in state.active
         )
         balance_utility = sum(
-            state.lag[resource] * efficiency[resource]
-            for resource in state.active
+            state.lag[resource] * efficiency[resource] for resource in state.active
         )
 
         if state.all_zero:
