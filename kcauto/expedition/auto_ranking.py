@@ -169,32 +169,30 @@ def _get_resource_state(current, desire):
         for resource in active
     }
     headroom = {resource: 1.0 - fill[resource] for resource in active}
-    # R_r = GM(x_s, s != r, x_s > 0)
-    # lag_r = max(0, 1 - x_r / R_r)
+    # d(r,s) = 0                              if x_s == 0
+    #          max(0, 1 - x_r / x_s)          otherwise
+    # lag_r = mean_s d(r,s), s != r
     #
-    # Ignore zero-valued peers when building the peer reference so a
-    # partial-zero boundary does not erase relative balance information
-    # among the remaining positive resources.
-    positive_fill = {
-        resource: value for resource, value in fill.items() if value > 0
-    }
+    # Compare each resource directly with every active peer instead of first
+    # collapsing the peer set into one reference value. A zero-valued peer
+    # contributes no lag, while a zero resource lags each positive peer
+    # maximally. This keeps relative-balance pressure well-defined across
+    # zero boundaries without an arbitrary epsilon.
     lag = {}
     for resource in active:
         peers = [
-            value
-            for peer, value in positive_fill.items()
-            if peer != resource
+            value for peer, value in fill.items() if peer != resource
         ]
         if not peers:
             lag[resource] = 0.0
-        elif fill[resource] == 0:
-            # A zero resource lags any positive peer maximally.
-            lag[resource] = 1.0
-        else:
-            peer_reference = _geometric_mean(peers)
-            lag[resource] = max(
-                0.0, 1.0 - fill[resource] / peer_reference
-            )
+            continue
+
+        lag[resource] = sum(
+            0.0
+            if peer_fill == 0
+            else max(0.0, 1.0 - fill[resource] / peer_fill)
+            for peer_fill in peers
+        ) / len(peers)
 
     return _ResourceState(
         active=active,
@@ -215,7 +213,9 @@ def rank_expeditions(expeditions, current, desire):
         Score_e = F * U_e + (1 - F) * B_e
 
     H_r = 1 - x_r is the remaining-target weight for resource r.
-    lag_r is the relative-balance weight for a resource behind its peers.
+    lag_r is the mean pairwise relative-balance weight for a resource behind
+    its peers. A zero-valued peer contributes no lag; a zero resource lags
+    each positive peer maximally.
     F = GM(x_r) is overall fill: low F emphasizes balance, while high F
     emphasizes finishing the remaining configured targets.
 
