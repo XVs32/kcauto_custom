@@ -132,9 +132,10 @@ class FleetSwitcherCore(object):
             except EquipmentRequirementError as error:
                 Log.log_warn(str(error))
             except EquipmentAllocationFailure as failure:
+                equipment = Equipment(model_id=failure.requirement.model_id)
                 Log.log_warn(
                     f"{preset_name}: insufficient usable equipment for model "
-                    f"{failure.requirement.model_id}"
+                    f"{failure.requirement.model_id} ({equipment.name}) "
                 )
 
     def _get_next_preset_id(self, context):
