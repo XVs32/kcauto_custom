@@ -267,7 +267,10 @@ class Kca(object):
             ImageMatch.click_callback = clt.click_tracker.track_click
 
         # define click and hover method overrides as needed
-        if cfg.config.general.interaction_mode in (InteractionModeEnum.CHROME_DRIVER, InteractionModeEnum.POI):
+        if cfg.config.general.interaction_mode in (
+            InteractionModeEnum.CHROME_DRIVER,
+            InteractionModeEnum.POI,
+        ):
             ImageMatch.override_click_method = self._override_click_method
             ImageMatch.override_hover_method = self._override_hover_method
             ImageMatch.override_scroll_method = self._override_scroll_method
@@ -872,12 +875,18 @@ class Kca(object):
 
     def _poi_click_method(self, r, x, y):
         """Dispatch a logical game click through the POI plugin."""
-        self.poi_client.click(x - (self.game_x or 0), y - (self.game_y or 0))
+        logical_x = x - (self.game_x or 0)
+        logical_y = y - (self.game_y or 0)
+        self.poi_client.hover(logical_x, logical_y)
+        self.sleep()
+        self.poi_client.click(logical_x, logical_y)
+        self.sleep()
         r._captured = None
 
     def _poi_hover_method(self, r, x, y):
         """Dispatch a logical game hover through the POI plugin."""
         self.poi_client.hover(x - (self.game_x or 0), y - (self.game_y or 0))
+        self.sleep()
 
     def _poi_scroll_method(self, r, x, y, direction, amount=1):
         """Dispatch logical game wheel input through the POI plugin."""
@@ -893,6 +902,8 @@ class Kca(object):
 
         logical_x = x - (self.game_x or 0)
         logical_y = y - (self.game_y or 0)
+        self.poi_client.hover(logical_x, logical_y)
+        self.sleep()
         for _ in range(amount):
             self.poi_client.scroll(logical_x, logical_y, delta_y)
             self.sleep()
@@ -904,12 +915,17 @@ class Kca(object):
         start_y = randint(r_a.y + pad_a[1], r_a.y + r_a.h + pad_a[3])
         end_x = randint(r_b.x + pad_b[0], r_b.x + r_b.w + pad_b[2])
         end_y = randint(r_b.y + pad_b[1], r_b.y + r_b.h + pad_b[3])
+        logical_start_x = start_x - (self.game_x or 0)
+        logical_start_y = start_y - (self.game_y or 0)
+        self.poi_client.hover(logical_start_x, logical_start_y)
+        self.sleep()
         self.poi_client.drag(
-            start_x - (self.game_x or 0),
-            start_y - (self.game_y or 0),
+            logical_start_x,
+            logical_start_y,
             end_x - (self.game_x or 0),
             end_y - (self.game_y or 0),
         )
+        self.sleep()
         r_a._captured = None
         r_b._captured = None
 
@@ -1315,7 +1331,7 @@ class Kca(object):
                 expression=js_code, returnByValue=True
             )
 
-            Log.log_debug_2(f'response: {response}')
+            Log.log_debug_2(f"response: {response}")
 
             if isinstance(response, (list, tuple)) and len(response) > 0:
                 resp_dict = response[0]
