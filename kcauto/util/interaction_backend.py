@@ -11,6 +11,7 @@ from random import randint
 from kca_enums.interaction_modes import InteractionModeEnum
 from kca_enums.scroll_directions import ScrollDirectionEnum
 from util.logger import Log
+import args.args_core as arg
 from util.poi_client import PoiClientError
 
 
@@ -46,6 +47,30 @@ class InteractionBackend:
 
     def click(self, region, pad=(0, 0, 0, 0)):
         if self.mode is InteractionModeEnum.DIRECT_CONTROL:
+            # Preserve the original direct-control click-region diagnostics.
+            corners = [
+                region.x + pad[0],
+                region.y + pad[1],
+                region.x + region.w + pad[2],
+                region.y + region.h + pad[3],
+            ]
+            debug_output = (
+                arg.args.parsed_args is not None
+                and arg.args.parsed_args.debug_output
+            )
+            if debug_output:
+                # Visit the four corners before drawing, matching the old
+                # pyvisauto debug behavior.
+                region.hover(corners[0], corners[1])
+                self.owner.sleep(0.1)
+                region.hover(corners[2], corners[1])
+                self.owner.sleep(0.1)
+                region.hover(corners[0], corners[3])
+                self.owner.sleep(0.1)
+                region.hover(corners[2], corners[3])
+                self.owner.sleep(0.1)
+
+            self.owner._draw_debug_visualization(corners, debug_output)
             region.click(pad=pad)
         elif self.mode is InteractionModeEnum.CHROME_DRIVER:
             self.owner._chrome_driver_click_method(region, pad)
