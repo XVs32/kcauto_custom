@@ -174,7 +174,9 @@ class ExpeditionCore(CoreBase):
                 noro6.get_fleet(fleet_id)
 
                 for ship_id in range(1, noro6.get_ship_count() + 1):
-                    ship_ids.add(noro6.get_ship(ship_id)["un"])
+                    production_id = noro6.get_ship(ship_id).get("un")
+                    if production_id is not None:
+                        ship_ids.add(production_id)
 
         return ship_ids
 
