@@ -11,6 +11,7 @@ import util.kca as kca_u
 from util.timer import Timer
 from kca_enums.expeditions import ExpeditionEnum
 from kca_enums.kcsapi_paths import KCSAPIEnum
+from kca_enums.resources import ResourceEnum
 from kca_enums.scroll_directions import ScrollDirectionEnum
 from expedition.auto_ranking import rank_expeditions
 from util.core_base import CoreBase
@@ -151,20 +152,20 @@ class ExpeditionCore(CoreBase):
                 if exp_data["id"] not in excluded_ids
             ]
             current = {
-                "fuel": sts.stats.rsc.fuel,
-                "ammo": sts.stats.rsc.ammo,
-                "steel": sts.stats.rsc.steel,
-                "bauxite": sts.stats.rsc.bauxite,
-                "bucket": sts.stats.rsc.bucket,
-                "devmat": sts.stats.rsc.dev_mat,
+                ResourceEnum.FUEL: sts.stats.rsc.fuel,
+                ResourceEnum.AMMO: sts.stats.rsc.ammo,
+                ResourceEnum.STEEL: sts.stats.rsc.steel,
+                ResourceEnum.BAUXITE: sts.stats.rsc.bauxite,
+                ResourceEnum.BUCKET: sts.stats.rsc.bucket,
+                ResourceEnum.DEVMAT: sts.stats.rsc.dev_mat,
             }
             desire = {
-                "fuel": cfg.config.expedition.desire_oil,
-                "ammo": cfg.config.expedition.desire_ammo,
-                "steel": cfg.config.expedition.desire_steel,
-                "bauxite": cfg.config.expedition.desire_bauxite,
-                "bucket": cfg.config.expedition.desire_bucket,
-                "devmat": cfg.config.expedition.desire_devmat,
+                ResourceEnum.FUEL: cfg.config.expedition.desire_oil,
+                ResourceEnum.AMMO: cfg.config.expedition.desire_ammo,
+                ResourceEnum.STEEL: cfg.config.expedition.desire_steel,
+                ResourceEnum.BAUXITE: cfg.config.expedition.desire_bauxite,
+                ResourceEnum.BUCKET: cfg.config.expedition.desire_bucket,
+                ResourceEnum.DEVMAT: cfg.config.expedition.desire_devmat,
             }
 
             ranked = rank_expeditions(candidates, current, desire)

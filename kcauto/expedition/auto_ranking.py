@@ -2,17 +2,15 @@ import math
 import re
 from dataclasses import dataclass
 
+from kca_enums.resources import ResourceEnum
 from kca_enums.ship_types import ShipTypeEnum
-
-
-RESOURCE_NAMES = ("fuel", "ammo", "steel", "bauxite", "bucket", "devmat")
 
 
 @dataclass(frozen=True)
 class _ResourceState:
-    active: tuple[str, ...]
-    headroom: dict[str, float]
-    lag: dict[str, float]
+    active: tuple[ResourceEnum, ...]
+    headroom: dict[ResourceEnum, float]
+    lag: dict[ResourceEnum, float]
     overall_fill: float
 
     @property
@@ -51,8 +49,8 @@ def _geometric_mean(values):
     return math.exp(sum(math.log(value) for value in values) / len(values))
 
 
-def _get_item_expected_count(exp_data, item_name):
-    if exp_data["item"] != item_name:
+def _get_item_expected_count(exp_data, resource):
+    if exp_data["item"] != resource.value:
         return 0.0
 
     # Normal random item rewards use their expected value. Great-Success-only
@@ -66,12 +64,18 @@ def _get_gross_rates(exp_data):
         raise ValueError(f"Invalid expedition duration: {duration}")
 
     return {
-        "fuel": exp_data["fuel"] / duration,
-        "ammo": exp_data["ammo"] / duration,
-        "steel": exp_data["steel"] / duration,
-        "bauxite": exp_data["baux"] / duration,
-        "bucket": _get_item_expected_count(exp_data, "bucket") / duration,
-        "devmat": _get_item_expected_count(exp_data, "devmat") / duration,
+        ResourceEnum.FUEL: exp_data["fuel"] / duration,
+        ResourceEnum.AMMO: exp_data["ammo"] / duration,
+        ResourceEnum.STEEL: exp_data["steel"] / duration,
+        ResourceEnum.BAUXITE: exp_data["baux"] / duration,
+        ResourceEnum.BUCKET: _get_item_expected_count(
+            exp_data, ResourceEnum.BUCKET
+        )
+        / duration,
+        ResourceEnum.DEVMAT: _get_item_expected_count(
+            exp_data, ResourceEnum.DEVMAT
+        )
+        / duration,
     }
 
 
@@ -127,15 +131,15 @@ def _get_efficiencies(expeditions):
         exp_id = exp_data["id"]
         rates = _get_gross_rates(exp_data)
         fuel_cost_rate, ammo_cost_rate = _get_reference_consumption_rates(exp_data)
-        rates["fuel"] -= fuel_cost_rate
-        rates["ammo"] -= ammo_cost_rate
+        rates[ResourceEnum.FUEL] -= fuel_cost_rate
+        rates[ResourceEnum.AMMO] -= ammo_cost_rate
         net_rates[exp_id] = rates
 
     best_net_rates = {
         resource: max(
             (rates[resource] for rates in net_rates.values()), default=0.0
         )
-        for resource in RESOURCE_NAMES
+        for resource in ResourceEnum
     }
 
     # E[e,r] = netRate[e,r] / bestNetRate[r]
@@ -149,7 +153,7 @@ def _get_efficiencies(expeditions):
                 if best_net_rates[resource] > 0
                 else 0.0
             )
-            for resource in RESOURCE_NAMES
+            for resource in ResourceEnum
         }
         for exp_id, rates in net_rates.items()
     }
@@ -157,7 +161,7 @@ def _get_efficiencies(expeditions):
 
 def _get_resource_state(current, desire):
     active = tuple(
-        resource for resource in RESOURCE_NAMES if desire[resource] > 0
+        resource for resource in ResourceEnum if desire[resource] > 0
     )
     if not active:
         raise ValueError("At least one expedition resource desire must be positive")
@@ -181,7 +185,7 @@ def _get_resource_state(current, desire):
     lag = {}
     for resource in active:
         peers = [
-            value for peer, value in fill.items() if peer != resource
+            value for peer, value in fill.items() if peer is not resource
         ]
         if not peers:
             lag[resource] = 0.0
