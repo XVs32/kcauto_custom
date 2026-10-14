@@ -207,15 +207,13 @@ def _get_resource_state(
         for resource in active
     }
     headroom = {resource: 1.0 - fill[resource] for resource in active}
-    # d(r,s) = 0                              if x_s == 0
-    #          max(0, 1 - x_r / x_s)          otherwise
+    # d(r,s) = 0 if x_r >= x_s else 1 - x_r / x_s
     # lag_r = mean_s d(r,s), s != r
     #
     # Compare each resource directly with every active peer instead of first
-    # collapsing the peer set into one reference value. A zero-valued peer
-    # contributes no lag, while a zero resource lags each positive peer
-    # maximally. This keeps relative-balance pressure well-defined across
-    # zero boundaries without an arbitrary epsilon.
+    # collapsing the peer set into one reference value. Only a richer peer
+    # contributes lag, which naturally handles equal and zero-valued peers
+    # without a separate zero branch or an arbitrary epsilon.
     lag = {}
     for resource in active:
         peers = [
@@ -227,8 +225,8 @@ def _get_resource_state(
 
         lag[resource] = sum(
             0.0
-            if peer_fill == 0
-            else max(0.0, 1.0 - fill[resource] / peer_fill)
+            if fill[resource] >= peer_fill
+            else 1.0 - fill[resource] / peer_fill
             for peer_fill in peers
         ) / len(peers)
 
