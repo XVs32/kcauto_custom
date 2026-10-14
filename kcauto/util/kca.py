@@ -39,6 +39,7 @@ from util.exceptions import ChromeCrashException
 from util.logger import Log
 from util.poi_client import PoiClient, PoiClientError
 from util import poi_plugins
+from util.interaction_backend import InteractionBackend
 
 import asyncio
 from pyppeteer import connect
@@ -77,6 +78,7 @@ class Kca(object):
         return coordinate_system.coor.game_y
 
     def __init__(self):
+        self.interaction = InteractionBackend(self)
         Log.log_debug_1("Kca module initialized.")
 
     def hook_chrome(self):
@@ -461,12 +463,7 @@ class Kca(object):
         self.sleep()
 
         r = coordinate_system.coor.get_region(region)
-        if cfg.config.general.interaction_mode is InteractionModeEnum.DIRECT_CONTROL:
-            r.hover()
-        elif cfg.config.general.interaction_mode is InteractionModeEnum.CHROME_DRIVER:
-            self._chrome_driver_hover_method(r)
-        elif cfg.config.general.interaction_mode is InteractionModeEnum.POI:
-            r.hover()
+        self.interaction.hover(r)
 
         self.sleep()
 
@@ -486,32 +483,7 @@ class Kca(object):
         self.sleep()
 
         r = coordinate_system.coor.get_region(region)
-        if cfg.config.general.interaction_mode is InteractionModeEnum.DIRECT_CONTROL:
-            corners = [
-                r.x + pad[0],
-                r.y + pad[1],
-                r.x + r.w + pad[2],
-                r.y + r.h + pad[3],
-            ]
-            if arg.args.parsed_args.debug_output:
-                # Visit corners first
-                r.hover(corners[0], corners[1])
-                self.sleep(0.1)
-                r.hover(corners[2], corners[1])
-                self.sleep(0.1)
-                r.hover(corners[0], corners[3])
-                self.sleep(0.1)
-                r.hover(corners[2], corners[3])
-                self.sleep(0.1)
-
-                # Draw debug with corners
-            self._draw_debug_visualization(corners, arg.args.parsed_args.debug_output)
-
-            r.click(pad=pad)
-        elif cfg.config.general.interaction_mode is InteractionModeEnum.CHROME_DRIVER:
-            self._chrome_driver_click_method(r, pad)
-        elif cfg.config.general.interaction_mode is InteractionModeEnum.POI:
-            r.click(pad=pad)
+        self.interaction.click(r, pad)
 
         self.sleep()
 
@@ -535,37 +507,7 @@ class Kca(object):
         self.sleep()
 
         r = coordinate_system.coor.get_region(region)
-        if cfg.config.general.interaction_mode is InteractionModeEnum.DIRECT_CONTROL:
-            corners = [
-                r.x + pad[0],
-                r.y + pad[1],
-                r.x + r.w + pad[2],
-                r.y + r.h + pad[3],
-            ]
-            if arg.args.parsed_args.debug_output:
-                # Visit corners first
-                r.hover(corners[0], corners[1])
-                self.sleep(0.1)
-                r.hover(corners[2], corners[1])
-                self.sleep(0.1)
-                r.hover(corners[0], corners[3])
-                self.sleep(0.1)
-                r.hover(corners[2], corners[3])
-                self.sleep(0.1)
-
-                # Draw debug with corners
-            self._draw_debug_visualization(
-                corners,
-                arg.args.parsed_args.debug_output,
-                border_color=(0, 0, 255),
-                action=ActionEnum.SCROLL,
-            )
-
-            r.scroll(pad=pad, direction=direction, amount=amount)
-        elif cfg.config.general.interaction_mode is InteractionModeEnum.CHROME_DRIVER:
-            self._chrome_driver_scroll_method(r, pad, direction, amount)
-        elif cfg.config.general.interaction_mode is InteractionModeEnum.POI:
-            r.scroll(pad=pad, direction=direction, amount=amount)
+        self.interaction.scroll(r, pad, direction, amount)
 
         self.sleep()
 
@@ -633,15 +575,7 @@ class Kca(object):
 
         r_a = coordinate_system.coor.get_region(start_region)
         r_b = coordinate_system.coor.get_region(end_region)
-        if cfg.config.general.interaction_mode is InteractionModeEnum.DIRECT_CONTROL:
-            r_a.hover()
-            self.sleep()
-            r_b.drag(pad=pad)
-
-        elif cfg.config.general.interaction_mode is InteractionModeEnum.CHROME_DRIVER:
-            self._chrome_driver_drag_method(r_a, pad, r_b, pad)
-        elif cfg.config.general.interaction_mode is InteractionModeEnum.POI:
-            self._poi_drag_method(r_a, pad, r_b, pad)
+        self.interaction.drag(r_a, r_b, pad)
 
         self.sleep()
 
@@ -1383,8 +1317,7 @@ class Kca(object):
 
     def close(self):
         """Release POI client and webhook resources during shutdown."""
-        if self.poi_client is not None:
-            self.poi_client.close()
+        self.interaction.close()
         api_listener.api_listener.stop()
 
 
