@@ -1,129 +1,202 @@
-"""Unified input/capture backend for kcauto interaction modes.
+"""Single entry point for every input/capture operation in kcauto.
 
-The backend owns mode-specific dispatch while Kca remains the public API.
-Coordinates passed to these methods are the existing whole-screen Region
-coordinates used by coordinate_system.coor.
+Callers (Kca, Region/Match from pyvisauto, coordinate_system) always talk to
+InteractionBackend. The backend validates arguments, picks the click point and
+fires callbacks - all in GAME coordinates - and then hands the work to exactly
+one InteractionDriver chosen by the configured interaction mode.
+
+Coordinate rule: everything above the driver layer is game space ((0, 0) is the
+top-left of the game frame), except regions flagged ``screen_space`` (full
+monitor searches), which are desktop pixels. Each driver converts those to what
+its transport needs:
+
+    DirectControlDriver  game -> desktop pixels (mss / pyautogui)
+    ChromeCdpDriver      game -> browser viewport (CDP); capture uses desktop
+    PoiDriver            game as-is (POI frame is the game)
 """
+
 from __future__ import annotations
 
+from abc import ABC, abstractmethod
 from random import randint
 
 from kca_enums.interaction_modes import InteractionModeEnum
 from kca_enums.scroll_directions import ScrollDirectionEnum
-from util.logger import Log
-import args.args_core as arg
-from util.poi_client import PoiClientError
+from util.pyvisauto import ImageMatch
 
 
-class InteractionBackend:
-    """Adapter that routes common interaction operations to one provider."""
+class InteractionDriver(ABC):
+    """One concrete way of seeing and touching the game.
+
+    All point arguments are game coordinates (or desktop coordinates when
+    ``region.screen_space`` is True). Converting them is the driver's job.
+    """
+
+    name = "interaction"
 
     def __init__(self, owner):
         self.owner = owner
 
+    # -- lifecycle ---------------------------------------------------------
+    @abstractmethod
+    def connect(self):
+        """Establish hooks/connections and prepare Region defaults."""
+
+    def health_check(self) -> bool:
+        """Return False when the connection is stale and needs connect()."""
+        return True
+
+    def close(self):
+        pass
+
+    # -- locating the game -------------------------------------------------
+    @abstractmethod
+    def full_region(self):
+        """Region that find_kancolle searches for the UI reference point."""
+
+    @abstractmethod
+    def resolve_game_origin(self, ref_match) -> tuple[int, int]:
+        """Game origin in this driver's 'game_x/game_y' terms."""
+
+    def on_game_located(self):
+        """Called after coor.game_x/game_y are up to date."""
+
+    # -- io ----------------------------------------------------------------
+    @abstractmethod
+    def capture(self, region):
+        """Return a PIL image of region."""
+
+    @abstractmethod
+    def hover(self, region, x, y): ...
+
+    @abstractmethod
+    def click(self, region, x, y, pad): ...
+
+    @abstractmethod
+    def scroll(self, region, x, y, pad, direction, amount): ...
+
+    @abstractmethod
+    def drag(self, start, start_pt, end, end_pt, pad): ...
+
+    # -- shared helpers ----------------------------------------------------
+    @staticmethod
+    def wheel_delta(direction):
+        if direction is ScrollDirectionEnum.UP:
+            return -120
+        if direction is ScrollDirectionEnum.DOWN:
+            return 120
+        raise ValueError(f"Unsupported scroll direction: {direction}")
+
+    @staticmethod
+    def corners(region, pad):
+        return [
+            region.x + pad[0],
+            region.y + pad[1],
+            region.x + region.w + pad[2],
+            region.y + region.h + pad[3],
+        ]
+
+
+class InteractionBackend:
+    """The only object that exposes capture/hover/click/scroll/drag."""
+
+    def __init__(self, owner):
+        self.owner = owner
+        self._drivers: dict[InteractionModeEnum, InteractionDriver] = {}
+        # (region, x, y) callbacks, e.g. the click tracker.
+        self.click_callback = None
+        self.hover_callback = None
+        # pyvisauto's Region/Match delegate to us, so code that calls
+        # region.click() directly goes through the same entry.
+        ImageMatch.backend = self
+
+    # -- driver selection --------------------------------------------------
     @property
     def mode(self):
         # Read config at call time so changing the configured mode does not
         # leave a stale backend selected.
         import config.config_core as cfg
+
         return cfg.config.general.interaction_mode
 
-    def capture(self, region):
-        if self.mode is InteractionModeEnum.POI:
-            return self.owner._poi_capture_method(region)
-        # Direct control and CDP continue using pyvisauto's configured capture.
-        return None
+    @property
+    def driver(self) -> InteractionDriver:
+        mode = self.mode
+        driver = self._drivers.get(mode)
+        if driver is None:
+            driver = self._create_driver(mode)
+            self._drivers[mode] = driver
+        return driver
 
-    def hover(self, region):
-        if self.mode is InteractionModeEnum.DIRECT_CONTROL:
-            region.hover()
-        elif self.mode is InteractionModeEnum.CHROME_DRIVER:
-            self.owner._chrome_driver_hover_method(region)
-        elif self.mode is InteractionModeEnum.POI:
-            self.owner._poi_hover_method(region, region.x + region.w // 2,
-                                         region.y + region.h // 2)
-        else:
-            raise ValueError(f"Unsupported interaction mode: {self.mode}")
+    def _create_driver(self, mode):
+        from util import interaction_drivers as drivers
 
-    def click(self, region, pad=(0, 0, 0, 0)):
-        if self.mode is InteractionModeEnum.DIRECT_CONTROL:
-            # Preserve the original direct-control click-region diagnostics.
-            corners = [
-                region.x + pad[0],
-                region.y + pad[1],
-                region.x + region.w + pad[2],
-                region.y + region.h + pad[3],
-            ]
-            debug_output = (
-                arg.args.parsed_args is not None
-                and arg.args.parsed_args.debug_output
-            )
-            if debug_output:
-                # Visit the four corners before drawing, matching the old
-                # pyvisauto debug behavior.
-                region.hover(corners[0], corners[1])
-                self.owner.sleep(0.1)
-                region.hover(corners[2], corners[1])
-                self.owner.sleep(0.1)
-                region.hover(corners[0], corners[3])
-                self.owner.sleep(0.1)
-                region.hover(corners[2], corners[3])
-                self.owner.sleep(0.1)
+        if mode is InteractionModeEnum.DIRECT_CONTROL:
+            return drivers.DirectControlDriver(self.owner)
+        if mode is InteractionModeEnum.CHROME_DRIVER:
+            return drivers.ChromeCdpDriver(self.owner)
+        if mode is InteractionModeEnum.POI:
+            return drivers.PoiDriver(self.owner)
+        raise ValueError(f"Unsupported interaction mode: {mode}")
 
-            self.owner._draw_debug_visualization(corners, debug_output)
-            region.click(pad=pad)
-        elif self.mode is InteractionModeEnum.CHROME_DRIVER:
-            self.owner._chrome_driver_click_method(region, pad)
-        elif self.mode is InteractionModeEnum.POI:
-            x = randint(region.x + pad[0], region.x + region.w + pad[2])
-            y = randint(region.y + pad[1], region.y + region.h + pad[3])
-            self.owner._poi_click_method(region, x, y)
-        else:
-            raise ValueError(f"Unsupported interaction mode: {self.mode}")
-
-    def scroll(self, region, pad, direction, amount=1):
-        if amount < 1:
-            raise ValueError(f"Unsupported scroll amount: {amount}")
-        if self.mode is InteractionModeEnum.DIRECT_CONTROL:
-            region.scroll(pad=pad, direction=direction, amount=amount)
-        elif self.mode is InteractionModeEnum.CHROME_DRIVER:
-            self.owner._chrome_driver_scroll_method(region, pad, direction, amount)
-        elif self.mode is InteractionModeEnum.POI:
-            x = randint(region.x + pad[0], region.x + region.w + pad[2])
-            y = randint(region.y + pad[1], region.y + region.h + pad[3])
-            self.owner._poi_scroll_method(region, x, y, direction, amount)
-        else:
-            raise ValueError(f"Unsupported interaction mode: {self.mode}")
-
-    def drag(self, start, end, pad=(0, 0, 0, 0)):
-        if self.mode is InteractionModeEnum.DIRECT_CONTROL:
-            start.hover()
-            end.drag(pad=pad)
-        elif self.mode is InteractionModeEnum.CHROME_DRIVER:
-            self.owner._chrome_driver_drag_method(start, pad, end, pad)
-        elif self.mode is InteractionModeEnum.POI:
-            self.owner._poi_drag_method(start, pad, end, pad)
-        else:
-            raise ValueError(f"Unsupported interaction mode: {self.mode}")
+    # -- lifecycle ---------------------------------------------------------
+    def connect(self):
+        return self.driver.connect()
 
     def health_check(self):
-        if self.mode is InteractionModeEnum.POI:
-            if self.owner.poi_client is None or not self.owner.poi_client.health_check():
-                raise PoiClientError("POI health check failed")
-            return True
-        hook = self.owner.api_hook
-        if hook is None:
-            return False
-        for event in hook.pop_messages():
-            method = event.get("method")
-            if method in ("Inspector.detached", "Page.frameDetached"):
-                return False
-            if method == "Inspector.targetCrashed":
-                from util.exceptions import ChromeCrashException
-                raise ChromeCrashException
-        return True
+        return self.driver.health_check()
 
     def close(self):
-        if self.owner.poi_client is not None:
-            self.owner.poi_client.close()
-            self.owner.poi_client = None
+        for driver in self._drivers.values():
+            driver.close()
+
+    # -- locating the game -------------------------------------------------
+    def full_region(self):
+        return self.driver.full_region()
+
+    def resolve_game_origin(self, ref_match):
+        return self.driver.resolve_game_origin(ref_match)
+
+    def on_game_located(self):
+        self.driver.on_game_located()
+
+    # -- io entries --------------------------------------------------------
+    def capture(self, region):
+        return self.driver.capture(region)
+
+    def hover(self, region, x=None, y=None):
+        if x is None or y is None:
+            x, y = self._pick_point(region)
+        self.driver.hover(region, x, y)
+        if self.hover_callback:
+            self.hover_callback(region, x, y)
+
+    def click(self, region, pad=(0, 0, 0, 0)):
+        x, y = self._pick_point(region, pad)
+        self.driver.click(region, x, y, pad)
+        if self.click_callback:
+            self.click_callback(region, x, y)
+
+    def scroll(self, region, pad=(0, 0, 0, 0), direction=None, amount=1):
+        if amount < 1:
+            raise ValueError(f"Unsupported scroll amount: {amount}")
+        if direction not in (ScrollDirectionEnum.UP, ScrollDirectionEnum.DOWN):
+            raise ValueError(f"Unsupported scroll direction: {direction}")
+        x, y = self._pick_point(region, pad)
+        self.driver.scroll(region, x, y, pad, direction, amount)
+
+    def drag(self, start, end, pad=(0, 0, 0, 0)):
+        start_pt = self._pick_point(start, pad)
+        end_pt = self._pick_point(end, pad)
+        self.driver.drag(start, start_pt, end, end_pt, pad)
+
+    @staticmethod
+    def _pick_point(region, pad=(0, 0, 0, 0)):
+        """Random point inside region, in the region's own coordinate space.
+
+        pad is an (x1, y1, x2, y2) offset applied to the top-left and
+        bottom-right corners respectively.
+        """
+        x = randint(region.x + pad[0], region.x + region.w + pad[2])
+        y = randint(region.y + pad[1], region.y + region.h + pad[3])
+        return x, y

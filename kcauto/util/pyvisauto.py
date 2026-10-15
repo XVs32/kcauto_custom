@@ -1,17 +1,10 @@
 import mss
-from PIL import Image
 import cv2
 import numpy as np
-import pyautogui
 from abc import ABC
 from datetime import datetime
 from random import randint
 from time import sleep
-from kca_enums.scroll_directions import ScrollDirectionEnum
-
-
-# disable pyautogui failsafe when mouse moves to corner of screen
-pyautogui.FAILSAFE = False
 
 
 class ImageMatch(ABC):
@@ -26,24 +19,11 @@ class ImageMatch(ABC):
     # time in seconds to wait between searching for an asset in the wait() and
     # wait_vanish methods().
     SCAN_RATE = 0.05
-    # assign the method for overriding the hover methods to this class
-    # variable. Should accept the parameters (region, x, y)
-    override_hover_method = None
-    # assign the callback method for hovers to this class variable. Should
-    # accept the parameters (region, x, y)
-    hover_callback = None
-    # assign the method for overriding the click methods to this class
-    # variable. Should accept the parameters (region, x, y, pad)
-    override_click_method = None
-    # assign the method for overriding the scroll methods to this class
-    # variable. Should accept the parameters (region, x, y, pad, direction, amount)
-    override_scroll_method = None
-    # assign the method for overriding screenshot capture to this class
-    # variable. Should accept the region and return a PIL.Image.
-    override_capture_method = None
-    # assign the callback method for click to this class variable. Should
-    # accept the parameters (region, x, y)
-    click_callback = None
+    # Single input/capture entry point. util.interaction_backend.InteractionBackend
+    # registers itself here; every capture/hover/click/scroll below delegates to
+    # it, and the backend dispatches per interaction mode and converts
+    # coordinates inside each driver.
+    backend = None
 
     _captured = None
 
@@ -51,32 +31,27 @@ class ImageMatch(ABC):
     y = 0
     w = 0
     h = 0
+    # False: x/y are game coordinates. True: x/y are desktop coordinates,
+    # used by a full-monitor region and matches found inside one.
+    screen_space = False
+
+    def _tag_match(self, match):
+        match.screen_space = getattr(self, "screen_space", False)
+        return match
 
     def capture(self):
-        """Private method for capturing the defined region using MSS.
+        """Capture this region through the interaction backend.
 
-        Returns:
-            PIL.Image: object representing captured region.
+        x/y/w/h are game coordinates (or desktop coordinates when
+        screen_space is True); the backend driver converts as needed.
         """
-        if ImageMatch.override_capture_method:
-            return ImageMatch.override_capture_method(self)
+        return self._require_backend().capture(self)
 
-        with mss.mss() as sct:
-            # Ensure all coordinates are integers and not None
-            # MSS uses {'top': y, 'left': x, 'width': w, 'height': h}
-            region = {
-                "top": int(self.y),
-                "left": int(self.x),
-                "width": int(self.w),
-                "height": int(self.h),
-            }
-
-            screenshot = sct.grab(region)
-
-            # Convert MSS screenshot to PIL Image
-            return Image.frombytes(
-                "RGB", screenshot.size, screenshot.bgra, "raw", "BGRX"
-            )
+    @classmethod
+    def _require_backend(cls):
+        if cls.backend is None:
+            raise RuntimeError("No interaction backend registered with pyvisauto.")
+        return cls.backend
 
     def _match_template(self, target, template=None, cached=False):
         """Private method for finding matches from either the target asset
@@ -143,13 +118,15 @@ class ImageMatch(ABC):
         min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(match)
         if max_val < similarity:
             raise FindFailed(f"{target} not found in {self}!")
-        return Match(
-            target,
-            self.x + max_loc[0],
-            self.y + max_loc[1],
-            len(template[0]),
-            len(template),
-            max_val,
+        return self._tag_match(
+            Match(
+                target,
+                self.x + max_loc[0],
+                self.y + max_loc[1],
+                len(template[0]),
+                len(template),
+                max_val,
+            )
         )
 
     def find_all(self, target, similarity, cached=False):
@@ -173,13 +150,15 @@ class ImageMatch(ABC):
         match_list = []
         for match in zip(*matches_filtered[::-1]):
             match_list.append(
-                Match(
-                    target,
-                    self.x + match[0],
-                    self.y + match[1],
-                    len(template[0]),
-                    len(template),
-                    matches[match[1]][match[0]],
+                self._tag_match(
+                    Match(
+                        target,
+                        self.x + match[0],
+                        self.y + match[1],
+                        len(template[0]),
+                        len(template),
+                        matches[match[1]][match[0]],
+                    )
                 )
             )
         return match_list
@@ -261,77 +240,31 @@ class ImageMatch(ABC):
         )
 
     def hover(self, x=None, y=None):
-        """Method to hover over a random point within the region. If an
-        override_hover_method exists, it will be used instead of the default
-        pyautogui moveTo method. If a hover_callback is specified, it will be
-        called after the hover action.
-        """
-
-        if x is None or y is None:
-            x = randint(self.x, self.x + self.w)
-            y = randint(self.y, self.y + self.h)
-
-        if self.override_hover_method:
-            self.override_hover_method(self, x, y)
-        else:
-            pyautogui.moveTo(x, y, self.MOUSE_MOVE_SPEED)
-
-        if self.hover_callback:
-            self.hover_callback(self, x, y)
+        """Hover over (x, y), or a random point within the region."""
+        self._require_backend().hover(self, x, y)
 
     def click(self, pad=(0, 0, 0, 0)):
-        """Method to click a random point within the region. If an
-        override_click_method exists, it will be used instead of the default
-        pyautogui moveTo and click methods. If a click_callback is specified,
-        it will be called after the click action.
+        """Click a random point within the region.
 
         Args:
-            pad (tuple, optional): Tuple specifying the offset of
-                click area. The order is (x1, y1, x2, y2)
+            pad (tuple, optional): offset of click area, (x1, y1, x2, y2).
                 Defaults to (0, 0, 0, 0).
         """
-        x = randint(self.x + pad[0], self.x + self.w + pad[2])
-        y = randint(self.y + pad[1], self.y + self.h + pad[3])
-
-        if self.override_click_method:
-            self.override_click_method(self, x, y, pad)
-        else:
-            pyautogui.moveTo(x, y, self.MOUSE_MOVE_SPEED)
-            pyautogui.click()
-
-        if self.click_callback:
-            self.click_callback(self, x, y)
+        self._require_backend().click(self, pad)
 
     def scroll(self, pad=(0, 0, 0, 0), *, direction, amount=1):
-        """Method to scroll at a random point within the region. If an
-        override_scroll_method exists, it will be used instead of the default
-        pyautogui moveTo and scroll methods.
+        """Scroll at a random point within the region.
 
         Args:
-            pad (tuple, optional): Tuple specifying the offset of
-                scroll area. The order is (x1, y1, x2, y2)
-                Defaults to (0, 0, 0, 0).
+            pad (tuple, optional): offset of scroll area, (x1, y1, x2, y2).
             direction (ScrollDirectionEnum): Scroll direction.
             amount (int, optional): Number of scroll steps to perform.
         """
-        x = randint(self.x + pad[0], self.x + self.w + pad[2])
-        y = randint(self.y + pad[1], self.y + self.h + pad[3])
+        self._require_backend().scroll(self, pad, direction, amount)
 
-        if self.override_scroll_method:
-            self.override_scroll_method(self, x, y, pad, direction, amount)
-            return
-
-        pyautogui.moveTo(x, y, self.MOUSE_MOVE_SPEED)
-
-        if amount < 1:
-            raise ValueError(f"Unsupported scroll amount: {amount}")
-
-        if direction is ScrollDirectionEnum.UP:
-            pyautogui.scroll(amount)
-        elif direction is ScrollDirectionEnum.DOWN:
-            pyautogui.scroll(-amount)
-        else:
-            raise ValueError(f"Unsupported scroll direction: {direction}")
+    def drag(self, end, pad=(0, 0, 0, 0)):
+        """Press at a random point here, release at a random point in end."""
+        self._require_backend().drag(self, end, pad)
 
     def save_screenshot(self, filename):
         """Method for saving a screenshot of the region to a file.
@@ -367,7 +300,13 @@ class Region(ImageMatch):
                 specified.
         """
         self.MOUSE_MOVE_SPEED = Region.MOUSE_MOVE_SPEED
-        if x is None and y is None and w is None and h is None and Region.default_bounds is not None:
+        if (
+            x is None
+            and y is None
+            and w is None
+            and h is None
+            and Region.default_bounds is not None
+        ):
             self.x, self.y, self.w, self.h = Region.default_bounds
         elif x is None and y is None and w is None and h is None:
             with mss.mss() as sct:
@@ -376,6 +315,8 @@ class Region(ImageMatch):
             self.y = screen["top"]
             self.w = screen["width"]
             self.h = screen["height"]
+            # Full-monitor coordinates are desktop pixels, not game pixels.
+            self.screen_space = True
         else:
             if x is None or y is None or w is None or h is None:
                 raise ValueError("Parameters must be all or nothing.")
