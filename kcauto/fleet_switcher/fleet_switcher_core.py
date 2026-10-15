@@ -270,7 +270,6 @@ class FleetSwitcherCore(object):
             return True
 
         Log.log_msg("Unloading target fleets before custom switch.")
-        self.goto()
 
         for fleet_id, target_fleet in targets:
             if self._is_custom_fleet_loaded(fleet_id, target_fleet):
