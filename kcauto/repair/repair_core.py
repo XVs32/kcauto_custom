@@ -219,9 +219,7 @@ class RepairCore(object):
     def _check_repair_sort(self):
         if not kca_u.kca.exists("upper_right", "repair|repairlist_icon.png"):
             Log.log_msg("Changing repair list sort.")
-            sort_button = Region(
-                kca_u.kca.game_x + 1125, kca_u.kca.game_y + 155, 58, 26
-            )
+            sort_button = Region(1125, 155, 58, 26)
             while not kca_u.kca.exists("upper_right", "repair|repairlist_icon.png"):
                 sort_button.click()
 
@@ -237,9 +235,7 @@ class RepairCore(object):
                 nav.navigate_list.OP_MODE_REPAIR,
             )
             self.current_repair_list_page = page
-        repair_list_region = Region(
-            kca_u.kca.game_x + 596, kca_u.kca.game_y + 187 + (idx % 10 * 48), 500, 31
-        )
+        repair_list_region = Region(596, 187 + (idx % 10 * 48), 500, 31)
         kca_u.kca.click(repair_list_region)
         kca_u.kca.r["top"].hover()
         kca_u.kca.wait("right", "repair|repair_confirm_1.png")

@@ -43,9 +43,7 @@ class MapNode(object):
         return (self.x, self.y)
 
     def select(self):
-        kca_u.kca.click(
-            Region(kca_u.kca.game_x + self.x - 3, kca_u.kca.game_y + self.y - 3, 7, 7)
-        )
+        kca_u.kca.click(Region(self.x - 3, self.y - 3, 7, 7))
 
     def __str__(self):
         return self.name
