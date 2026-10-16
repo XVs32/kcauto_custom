@@ -718,9 +718,7 @@ class FleetSwitcherCore(object):
                 self._scroll_preset_list(idx_offset)
 
             kca_u.kca.r["top"].hover()
-            preset_idx_region = Region(
-                kca_u.kca.game_x + 410, kca_u.kca.game_y + 275 + (list_idx * 76), 70, 45
-            )
+            preset_idx_region = Region(410, 275 + (list_idx * 76), 70, 45)
             kca_u.kca.click_existing(
                 preset_idx_region, "fleetswitcher|fleetswitch_button.png"
             )
@@ -747,7 +745,6 @@ class FleetSwitcherCore(object):
             return True
 
         Log.log_msg("Unloading target fleets before custom switch.")
-        self.goto()
 
         for fleet_id, target_fleet in targets:
             if self._is_custom_fleet_loaded(fleet_id, target_fleet):
@@ -1274,7 +1271,7 @@ def click_ship_in_equipment_page(ship_position):
     Log.log_debug_1(f"Selecting the #{ship_position + 1} ship")
 
     if ship_position + 1 == 7:
-        next_region = Region(kca_u.kca.game_x + 262, kca_u.kca.game_y + 676, 32, 25)
+        next_region = Region(262, 676, 32, 25)
         kca_u.kca.click(next_region)
         kca_u.kca.click("ship_" + str(6))
     else:

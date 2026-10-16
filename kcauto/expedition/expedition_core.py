@@ -908,9 +908,7 @@ class ExpeditionCore(CoreBase):
         true_index = index - offset
         if not 0 <= true_index < self.NUM_VISIBLE_EXPEDITONS:
             raise ValueError(f"Bad index {true_index}")
-        expedition_list_region = Region(
-            kca_u.kca.game_x + 190, kca_u.kca.game_y + 244 + (true_index * 45), 520, 35
-        )
+        expedition_list_region = Region(190, 244 + (true_index * 45), 520, 35)
         kca_u.kca.click(expedition_list_region)
         kca_u.kca.r["top"].hover()
         kca_u.kca.sleep(0.5)
