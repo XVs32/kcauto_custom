@@ -104,16 +104,6 @@ class Fleet(object):
         return ret
 
     @property
-    def equipment_ids(self) -> list[int]:
-
-        ret = []
-
-        for ship in self.ships:
-            ret += ship.equipment_ids
-
-        return ret
-
-    @property
     def return_time(self):
         return self._return_time
 

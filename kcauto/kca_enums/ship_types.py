@@ -39,7 +39,3 @@ class ShipTypeEnum(EnumBase):
     @property
     def id(self):
         return self.value
-
-    @property
-    def count(self):
-        return 23
