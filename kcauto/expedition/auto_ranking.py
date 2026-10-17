@@ -279,18 +279,6 @@ def rank_expeditions(
     U_e measures target-completion utility and B_e measures relative-balance
     utility.
 
-    Score simplification
-    --------------------
-    Expanding the original score:
-
-        Score_e = F * sum_r(H_r * E[e,r]) + (1 - F) * sum_r(L_r * E[e,r])
-        Score_e = sum_r((F * H_r + (1 - F) * L_r) * E[e,r])
-
-    Since H_r = 1 - x_r, each resource has one state-dependent weight:
-
-        W_r = F * (1 - x_r) + (1 - F) * L_r
-        Score_e = sum_r(W_r * E[e,r])
-
     Zero boundaries
     ---------------
     Geometric mean becomes zero when any active resource is zero. At
