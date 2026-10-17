@@ -154,15 +154,15 @@ class ShipSwitcherCore(object):
         Log.log_debug_1(f"Selecting switch button for slot {slot_id}.")
 
         if slot_id == 7:
-            next_region = Region(kca_u.kca.game_x + 668, kca_u.kca.game_y + 650, 32, 32)
+            next_region = Region(668, 650, 32, 32)
             kca_u.kca.click(next_region)
             slot_id = 5
 
         zero_idx = slot_id - 1
 
         slot_button_region = Region(
-            kca_u.kca.game_x + 550 + ((zero_idx % 2) * 513),
-            kca_u.kca.game_y + 295 + ((zero_idx // 2) * 168),
+            550 + ((zero_idx % 2) * 513),
+            295 + ((zero_idx // 2) * 168),
             125,
             55,
         )
@@ -179,9 +179,7 @@ class ShipSwitcherCore(object):
         return True
 
     def _select_remove_button(self):
-        slot_button_region = Region(
-            kca_u.kca.game_x + 1100, kca_u.kca.game_y + 650, 100, 50
-        )
+        slot_button_region = Region(1100, 650, 100, 50)
         kca_u.kca.click_existing(
             slot_button_region, "shipswitcher|shiplist_shipremove_button.png"
         )
@@ -236,8 +234,8 @@ class ShipSwitcherCore(object):
             offset_mode = nav.navigate_list.OP_MODE_SHIPCOMP
 
             row_region = Region(
-                kca_u.kca.game_x + 590,
-                kca_u.kca.game_y + 225 + (row_idx % 10 * 43),
+                590,
+                225 + (row_idx % 10 * 43),
                 435,
                 34,
             )
@@ -253,8 +251,8 @@ class ShipSwitcherCore(object):
             offset_mode = nav.navigate_list.OP_MODE_EQUIPMENT
 
             row_region = Region(
-                kca_u.kca.game_x + 590,
-                kca_u.kca.game_y + 195 + 5 + (row_idx % 10 * 45),
+                590,
+                195 + 5 + (row_idx % 10 * 45),
                 435,
                 34,
             )
@@ -274,8 +272,8 @@ class ShipSwitcherCore(object):
             offset_mode = nav.navigate_list.OP_MODE_EQUIPMENT
 
             row_region = Region(
-                kca_u.kca.game_x + 590,
-                kca_u.kca.game_y + 195 + 5 + (row_idx % 10 * 45),
+                590,
+                195 + 5 + (row_idx % 10 * 45),
                 435,
                 34,
             )
@@ -292,8 +290,8 @@ class ShipSwitcherCore(object):
             offset_mode = nav.navigate_list.OP_MODE_EQUIPMENT_SHIP
 
             row_region = Region(
-                kca_u.kca.game_x + 187,
-                kca_u.kca.game_y + 201 + (row_idx % 10 * 45),
+                187,
+                201 + (row_idx % 10 * 45),
                 260,
                 37,
             )

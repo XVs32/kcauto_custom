@@ -12,6 +12,7 @@ REQUIRED_POI_PLUGINS: Dict[str, str] = {
         "interaction service"
     ),
     "poi-plugin-noro6-exporter": "exports ships and equipment to Noro6",
+    "poi-plugin-interaction": "provides the POI interaction service",
 }
 
 # The interaction service was added in this version. Older releases only
@@ -44,7 +45,6 @@ def find_poi_plugins_dir() -> Optional[Path]:
             Path.home() / ".config" / "poi" / "plugins",
             Path.home() / ".poi" / "plugins",
         ]
-
     for candidate in candidates:
         if (candidate / "node_modules").is_dir():
             return candidate
@@ -57,7 +57,6 @@ def get_installed_plugins(plugins_dir: Path) -> Dict[str, str]:
     node_modules = plugins_dir / "node_modules"
     if not node_modules.is_dir():
         return installed
-
     for entry in node_modules.iterdir():
         if not entry.is_dir():
             continue
@@ -105,15 +104,12 @@ def check_required_plugins(
         plugins_dir = find_poi_plugins_dir()
     if plugins_dir is None:
         return []
-
     installed = get_installed_plugins(plugins_dir)
     problems = []
-
     for name in REQUIRED_POI_PLUGINS:
         if name not in installed:
             problems.append((name, "not installed"))
             continue
-
         minimum = MIN_PLUGIN_VERSIONS.get(name)
         found = _parse_version(installed[name])
         if minimum is not None and (found is None or found < minimum):
@@ -125,7 +121,6 @@ def check_required_plugins(
                     f"{pretty_minimum} or newer is required",
                 )
             )
-
     return problems
 
 
@@ -151,12 +146,10 @@ def check_and_prompt() -> bool:
             "Could not locate the POI plugin directory. Skipping POI plugin check."
         )
         return True
-
     problems = check_required_plugins(plugins_dir)
     if not problems:
         Log.log_debug_1(f"POI plugins OK in {plugins_dir}.")
         return True
-
     Log.log_error(
         "POI plugins required by kcauto are missing or outdated. Install "
         "them, then restart POI:"

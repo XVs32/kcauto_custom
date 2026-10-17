@@ -511,9 +511,7 @@ class QuestCore(CoreBase):
         )
         self.cur_page = math.ceil((idx + 1) / 5)
 
-        quest_list_region = Region(
-            kca_u.kca.game_x + 230, kca_u.kca.game_y + 173 + ((idx % 5) * 102), 830, 30
-        )
+        quest_list_region = Region(230, 173 + ((idx % 5) * 102), 830, 30)
         quest_list_region.click()
 
     def _untrack_quest(self, quest: Quest):

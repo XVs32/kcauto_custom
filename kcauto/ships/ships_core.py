@@ -103,26 +103,6 @@ class ShipsCore(object):
     def create_ship(self, static_data, local_data=Ship.EMPTY_LOCAL_DATA):
         return Ship(static_data, local_data)
 
-    def get_ship_from_noro6_ship(self, noro_ship):
-        """
-        method to find the most match ship in ship_pool from noro6 ship info
-        input: noro6 ship info
-        output: kcauto ship obj
-        """
-
-        ret = self.get_ship_from_production_id(noro_ship.get("un", 0))
-
-        if ret is None:
-            static_data = self.get_ship_static_data(None, api_id=noro_ship["i"])
-
-            ship_name = static_data["api_name"] if static_data else "Unknown"
-
-            Log.log_error(
-                f"Ship {ship_name} #{noro_ship.get('i', 'Unknown')} not found in ship pool, exiting..."
-            )
-
-        return ret
-
     def is_same_ship(self, ship1: Ship, ship2: Ship):
         if ship1 is None or ship2 is None:
             return False
