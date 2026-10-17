@@ -81,12 +81,20 @@ def _get_item_expected_count(
     return exp_data["itemCount"] * 0.5
 
 
-def _get_gross_rates(
-    exp_data: _ExpeditionData,
-) -> dict[ResourceEnum, float]:
+def _get_effective_duration(exp_data: _ExpeditionData, pooling_interval: int) -> int:
     duration = exp_data["time"]
     if duration <= 0:
         raise ValueError(f"Invalid expedition duration: {duration}")
+    if pooling_interval <= 0:
+        raise ValueError(f"Invalid expedition pooling interval: {pooling_interval}")
+    return math.ceil(duration / pooling_interval) * pooling_interval
+
+
+def _get_gross_rates(
+    exp_data: _ExpeditionData,
+    pooling_interval: int = 1,
+) -> dict[ResourceEnum, float]:
+    duration = _get_effective_duration(exp_data, pooling_interval)
 
     return {
         ResourceEnum.FUEL: exp_data["fuel"] / duration,
@@ -102,10 +110,9 @@ def _get_gross_rates(
 
 def _get_reference_consumption_rates(
     exp_data: _ExpeditionData,
+    pooling_interval: int = 1,
 ) -> tuple[float, float]:
-    duration = exp_data["time"]
-    if duration <= 0:
-        raise ValueError(f"Invalid expedition duration: {duration}")
+    duration = _get_effective_duration(exp_data, pooling_interval)
 
     fuel_ratio = exp_data["fuelConsum"] / 10
     ammo_ratio = exp_data["ammoConsum"] / 10
@@ -150,12 +157,15 @@ def _get_reference_consumption_rates(
 
 def _get_efficiencies(
     expeditions: Iterable[_ExpeditionData],
+    pooling_interval: int = 1,
 ) -> dict[int, dict[ResourceEnum, float]]:
     net_rates = {}
     for exp_data in expeditions:
         exp_id = exp_data["id"]
-        rates = _get_gross_rates(exp_data)
-        fuel_cost_rate, ammo_cost_rate = _get_reference_consumption_rates(exp_data)
+        rates = _get_gross_rates(exp_data, pooling_interval)
+        fuel_cost_rate, ammo_cost_rate = _get_reference_consumption_rates(
+            exp_data, pooling_interval
+        )
         rates[ResourceEnum.FUEL] -= fuel_cost_rate
         rates[ResourceEnum.AMMO] -= ammo_cost_rate
         net_rates[exp_id] = rates
@@ -229,6 +239,7 @@ def rank_expeditions(
     expeditions: Iterable[_ExpeditionData],
     current: Mapping[ResourceEnum, float],
     desire: Mapping[ResourceEnum, float],
+    pooling_interval: int = 1,
 ) -> list[_RankingRow]:
     """Rank a pre-filtered auto-expedition candidate pool.
 
@@ -250,13 +261,14 @@ def rank_expeditions(
     ---------------------
     For expedition e and resource r:
 
+        effectiveDuration[e] = ceil(actualDuration[e] / poolingInterval) * poolingInterval
         E[e,r] = netRate[e,r] / bestNetRate[r]
 
-    Fuel and Ammo net rates subtract the reference fleet running cost. Normal
-    random item rewards use expected value. bestNetRate is taken over the
-    pre-filtered candidate pool.
+    Both rewards and one-time reference fleet Fuel/Ammo costs use the same
+    effective duration (in minutes). Normal random item rewards use expected
+    value. bestNetRate is taken over the pre-filtered candidate pool.
 
-    Utilities and original score
+    Utilities and score
     ----------------------------
     For expedition e:
 
@@ -290,7 +302,7 @@ def rank_expeditions(
     if not expeditions:
         return []
 
-    efficiencies = _get_efficiencies(expeditions)
+    efficiencies = _get_efficiencies(expeditions, pooling_interval)
     state = _get_resource_state(current, desire)
     rows = []
 

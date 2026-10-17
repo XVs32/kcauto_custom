@@ -14,6 +14,7 @@ from kca_enums.kcsapi_paths import KCSAPIEnum
 from kca_enums.resources import ResourceEnum
 from kca_enums.scroll_directions import ScrollDirectionEnum
 from expedition.auto_ranking import rank_expeditions
+from constants import PASSIVE_TIME_INTERVAL, OVERNIGHT_TIME_INTERVAL
 from util.core_base import CoreBase
 from util.logger import Log
 from util.json_data import JsonData
@@ -168,7 +169,19 @@ class ExpeditionCore(CoreBase):
                 ResourceEnum.DEVMAT: cfg.config.expedition.desire_devmat,
             }
 
-            ranked = rank_expeditions(candidates, current, desire)
+            configured = cfg.config.expedition.all_expeditions
+            if ExpeditionEnum.AUTO in configured:
+                pooling_interval = 1 if com.combat.enabled else PASSIVE_TIME_INTERVAL
+            elif ExpeditionEnum.ACTIVE in configured:
+                pooling_interval = 1
+            elif ExpeditionEnum.PASSIVE in configured:
+                pooling_interval = PASSIVE_TIME_INTERVAL
+            else:
+                pooling_interval = OVERNIGHT_TIME_INTERVAL
+
+            ranked = rank_expeditions(
+                candidates, current, desire, pooling_interval=pooling_interval
+            )
             self.exp_rank = [
                 {
                     self.EXP_ENUM: ExpeditionEnum(row["id"]),
