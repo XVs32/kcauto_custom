@@ -3187,5 +3187,108 @@
         }
       ]
     }
+  },
+  "2610C1": {
+    "id": 359,
+    "type": "weekly",
+    "intervals": [
+      0,
+      5,
+      0
+    ]
+  },
+  "2610B2": {
+    "id": 985,
+    "type": "weekly",
+    "map_context": [
+      {
+        "name": "B-1-2-E",
+        "min_rank": "S"
+      },
+      {
+        "name": "B-1-5-J",
+        "min_rank": "S"
+      },
+      {
+        "name": "B-2-2-K",
+        "min_rank": "S"
+      },
+      {
+        "name": "B-2-3-N",
+        "min_rank": "S"
+      }
+    ],
+    "recommended_map": [
+      "2610B2-1-2",
+      "2610B2-1-5",
+      "2610B2-2-2",
+      "2610B2-2-3"
+    ]
+  },
+  "2610B4": {
+    "id": 987,
+    "type": "monthly",
+    "map_context": [
+      {
+        "name": "B-4-2-L",
+        "min_rank": "S"
+      },
+      {
+        "name": "B-4-3-N",
+        "min_rank": "S"
+      },
+      {
+        "name": "B-4-4-K",
+        "min_rank": "S"
+      }
+    ],
+    "recommended_map": [
+      "2610B4-4-2",
+      "2610B4-4-3",
+      "2610B4-4-4"
+    ]
+  },
+  "2610B6": {
+    "id": 1039,
+    "type": "weekly",
+    "map_context": [
+      {
+        "name": "B-1-5-J",
+        "min_rank": "S"
+      },
+      {
+        "name": "B-1-4-L",
+        "min_rank": "S"
+      },
+      {
+        "name": "B-1-2-E",
+        "min_rank": "S"
+      }
+    ],
+    "recommended_map": [
+      "2610B6-1-5",
+      "2610B6-1-4",
+      "2610B6-1-2"
+    ]
+  },
+  "2610B7": {
+    "id": 1040,
+    "type": "monthly",
+    "map_context": [
+      {
+        "name": "B-2-1-H",
+        "min_rank": "S"
+      },
+      {
+        "name": "B-2-2-K",
+        "min_rank": "S"
+      }
+    ],
+    "recommended_map": [
+      "2610B7-2-1",
+      "2610B7-2-1",
+      "2610B7-2-2",
+      "2610B7-2-2"
+    ]
   }
 }
