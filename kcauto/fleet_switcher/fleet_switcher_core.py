@@ -130,7 +130,7 @@ class FleetSwitcherCore(object):
             except flt.Noro6MaterializationFailure as failure:
                 Log.log_warn(str(failure))
             except EquipmentRequirementError as error:
-                Log.log_warn(str(error))
+                Log.log_warn(f"{preset_name}: {str(error)}")
             except EquipmentAllocationFailure as failure:
                 equipment = Equipment(model_id=failure.requirement.model_id)
                 Log.log_warn(
@@ -309,7 +309,7 @@ class FleetSwitcherCore(object):
 
                 if len(target_ship.equipments) > active_ship.slot_num:
                     raise EquipmentRequirementError(
-                        f"Target config for {target_ship.production_id}/{target_ship.name_jp} "
+                        f"{target_ship.production_id}/{target_ship.name_jp} "
                         f"uses {len(target_ship.equipments)} normal slots, but the ship "
                         f"currently has {active_ship.slot_num}."
                     )
@@ -340,7 +340,7 @@ class FleetSwitcherCore(object):
                 if target_ship.slot_ex is not None and target_ship.slot_ex.model_id > 0:
                     if active_ship.slot_ex is None:
                         raise EquipmentRequirementError(
-                            f"Target config for {target_ship.production_id}/{target_ship.name_jp} "
+                            f"{target_ship.production_id}/{target_ship.name_jp} "
                             "uses slot_ex, but the ship does not currently have one."
                         )
                     requirements.append(
