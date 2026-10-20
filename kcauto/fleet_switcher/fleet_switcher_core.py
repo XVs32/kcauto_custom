@@ -129,6 +129,8 @@ class FleetSwitcherCore(object):
                 )
             except flt.Noro6MaterializationFailure as failure:
                 Log.log_warn(str(failure))
+            except ValueError as failure:
+                Log.log_warn(f"Noro6 preset {preset_name}: {failure}")
             except EquipmentRequirementError as error:
                 Log.log_warn(f"{preset_name}: {str(error)}")
             except EquipmentAllocationFailure as failure:

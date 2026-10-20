@@ -241,6 +241,7 @@ class FleetCore(object):
                         Equipment(
                             model_id=noro6_equipment["i"],
                             stars=noro6_equipment["r"],
+                            ace=Noro6.proficiency_to_ace(noro6_equipment),
                         )
                     )
 
@@ -254,6 +255,7 @@ class FleetCore(object):
                     ship.slot_ex = Equipment(
                         model_id=reinforce_equipment["i"],
                         stars=reinforce_equipment["r"],
+                        ace=Noro6.proficiency_to_ace(reinforce_equipment),
                     )
                 elif reinforce_equipment["i"] == 0:
                     if active_ship.slot_ex is not None:
@@ -288,6 +290,10 @@ class FleetCore(object):
             except Noro6MaterializationFailure as failure:
                 if warn:
                     Log.log_error(str(failure))
+                return None
+            except ValueError as failure:
+                if warn:
+                    Log.log_error(f"Noro6 preset {preset_name}: {failure}")
                 return None
 
         if warn:
