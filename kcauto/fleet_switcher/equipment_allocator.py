@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from collections import Counter, defaultdict
 from dataclasses import dataclass, field
 from enum import Enum
 from types import MappingProxyType
@@ -198,21 +197,6 @@ class EquipmentAllocator:
         movable_equipments: list[MovableEquipment],
         reinforcement_eligible_ids: dict[int, set[int]],
     ) -> EquipmentAllocationResult:
-        requirement_counts = Counter(
-            requirement.model_id for requirement in requirements
-        )
-
-        available_equipment_ids = defaultdict(set)
-        for movable_equipment in movable_equipments:
-            equipment = movable_equipment.equipment
-            available_equipment_ids[equipment.model_id].add(equipment.production_id)
-
-        for requirement in requirements:
-            if requirement_counts[requirement.model_id] > len(
-                available_equipment_ids[requirement.model_id]
-            ):
-                raise EquipmentAllocationFailure(requirement)
-
         assignments: dict[EquipmentSlotRef, Equipment] = {}
         assigned_equipment_ids: set[int] = set()
 
