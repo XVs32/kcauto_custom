@@ -210,6 +210,29 @@ class EquipmentAllocator:
             ):
                 raise EquipmentAllocationFailure(requirement)
 
+        reinforcement_counts: dict[int, list[tuple[int, EquipmentRequirement]]] = (
+            defaultdict(list)
+        )
+        for requirement in requirements:
+            if not requirement.slot_ref.slot.is_reinforcement:
+                continue
+
+            eligible_count = len(
+                available_equipment_ids[requirement.model_id]
+                & reinforcement_eligible_ids[requirement.slot_ref.ship_id]
+            )
+            reinforcement_counts[requirement.model_id].append(
+                (eligible_count, requirement)
+            )
+
+        for model_counts in reinforcement_counts.values():
+            model_counts.sort(key=lambda item: item[0])
+            for required_count, (eligible_count, requirement) in enumerate(
+                model_counts, start=1
+            ):
+                if eligible_count < required_count:
+                    raise EquipmentAllocationFailure(requirement)
+
         assignments: dict[EquipmentSlotRef, Equipment] = {}
         assigned_equipment_ids: set[int] = set()
 
