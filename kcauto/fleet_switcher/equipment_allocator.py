@@ -199,7 +199,7 @@ class EquipmentAllocator:
             requirement.model_id for requirement in requirements
         )
 
-        available_equipment_ids = defaultdict(set)
+        available_equipment_ids: dict[int, set[int]] = defaultdict(set)
         for movable_equipment in movable_equipments:
             equipment = movable_equipment.equipment
             available_equipment_ids[equipment.model_id].add(equipment.production_id)
