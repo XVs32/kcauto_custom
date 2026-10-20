@@ -256,8 +256,13 @@ class EquipmentAllocator:
                 selected_equipment=assignments[requirement.slot_ref],
             )
             for requirement in requirements
-            if requirement.star_preference is EquipmentStarPreference.CLOSEST
-            and assignments[requirement.slot_ref].stars != requirement.stars
+            if (
+                (
+                    requirement.star_preference is EquipmentStarPreference.CLOSEST
+                    and assignments[requirement.slot_ref].stars != requirement.stars
+                )
+                or assignments[requirement.slot_ref].ace < requirement.ace
+            )
         )
         return EquipmentAllocationResult(
             plan=plan,

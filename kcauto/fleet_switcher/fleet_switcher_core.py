@@ -427,9 +427,11 @@ class FleetSwitcherCore(object):
             )
             requested_equipment = Equipment(model_id=requirement.model_id)
             Log.log_warn(
-                f"Using {selected_equipment.name} {selected_equipment.stars}★ "
+                f"Using {selected_equipment.name} {selected_equipment.stars}★"
+                f"{f' (proficiency {selected_equipment.ace})' if requirement.ace or selected_equipment.ace else ''} "
                 f"({selected_equipment.production_id}) instead of requested "
-                f"{requested_equipment.name} {requirement.stars}★ "
+                f"{requested_equipment.name} {requirement.stars}★"
+                f"{f' (proficiency {requirement.ace})' if requirement.ace or selected_equipment.ace else ''} "
                 f"(model {requirement.model_id}) for "
                 f"{active_ship.name_jp} {requirement.slot_ref.slot.display_name}."
             )
