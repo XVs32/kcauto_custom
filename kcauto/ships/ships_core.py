@@ -2,7 +2,7 @@ from ships.ship import Ship
 from util.json_data import JsonData
 from util.logger import Log
 from util.wctf import WhoCallsTheFleetData
-
+from constants import ENEMY_SHIP_API_ID_START
 
 class ShipsCore(object):
     max_ship_count = 0
@@ -30,14 +30,20 @@ class ShipsCore(object):
         self._update_ship_family_ids()
 
     def _update_ship_family_ids(self):
-        family_ids = {ship["api_id"]: ship["api_id"] for ship in self.ship_library}
+        # exclude enemy ship
+        ships_by_id = {
+            ship["api_id"]: ship
+            for ship in self.ship_library
+            if ship["api_id"] < ENEMY_SHIP_API_ID_START
+        }
+        family_ids = {ship_id: ship_id for ship_id in ships_by_id}
 
         def find_family_id(ship_id):
             if family_ids[ship_id] != ship_id:
                 family_ids[ship_id] = find_family_id(family_ids[ship_id])
             return family_ids[ship_id]
 
-        for ship in self.ship_library:
+        for ship in ships_by_id.values():
             after_ship_id = int(ship.get("api_aftershipid") or 0)
             if after_ship_id not in family_ids:
                 continue
@@ -55,7 +61,6 @@ class ShipsCore(object):
             ship_id: find_family_id(ship_id) for ship_id in family_ids
         }
 
-        ships_by_id = {ship["api_id"]: ship for ship in self.ship_library}
         Log.log_debug_1("Updated ship family ID mappings:")
         for ship_id, family_id in sorted(self.ship_family_ids.items()):
             ship_name = ships_by_id[ship_id].get("api_name", "Unknown")
