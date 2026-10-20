@@ -44,7 +44,12 @@ class ShipsCore(object):
 
             source_family_id = find_family_id(ship["api_id"])
             target_family_id = find_family_id(after_ship_id)
-            family_ids[target_family_id] = source_family_id
+            if source_family_id != target_family_id:
+                # The smallest model ID is a stable family ID, not necessarily the
+                # unremodeled (original) ship model.
+                family_ids[max(source_family_id, target_family_id)] = min(
+                    source_family_id, target_family_id
+                )
 
         self.ship_family_ids = {
             ship_id: find_family_id(ship_id) for ship_id in family_ids
