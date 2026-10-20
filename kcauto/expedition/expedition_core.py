@@ -15,12 +15,14 @@ import fleet.fleet_core as flt
 from fleet.fleet import Fleet
 from fleet.noro6 import Noro6
 import random
+import repair.repair_core as rep
 import resupply.resupply_core as res
 import stats.stats_core as sts
 import ships.ships_core as shp
 import ships.equipment_core as equ
 import util.kca as kca_u
 from util.timer import Timer
+from kca_enums.damage_states import DamageStateEnum
 from kca_enums.expeditions import ExpeditionEnum
 from kca_enums.kcsapi_paths import KCSAPIEnum
 from kca_enums.fleet import FleetEnum
@@ -152,6 +154,10 @@ class ExpeditionCore(CoreBase):
 
             # if this ship is not locked, do not add to exp pool
             if ship.locked == False:
+                continue
+            if ship.damage is DamageStateEnum.HEAVY:
+                continue
+            if ship.production_id in rep.repair.ships_under_repair:
                 continue
 
             exp_ship_pool[ship.ship_type].append(ship)
@@ -312,6 +318,7 @@ class ExpeditionCore(CoreBase):
         assign_fleet = Fleet(MORK_FLEET_ID, FleetEnum.EXPEDITION_PRESET, False)
 
         flag_ship = True
+        assigned_ship_family_ids = set()
         pool_level_reverse = False
 
         for ship_enum in fleet_list:
@@ -331,6 +338,9 @@ class ExpeditionCore(CoreBase):
             ship = None
 
             for ship in ship_pool[ship_enum]:
+                ship_family_id = shp.ships.get_ship_family_id(ship.api_id)
+                if ship_family_id in assigned_ship_family_ids:
+                    continue
                 if flag_ship == True and ship.level < req_lv_flag:
                     continue
                 # Check if the ship could load LC first
@@ -363,6 +373,7 @@ class ExpeditionCore(CoreBase):
                             if temp_ship.slot_ex != None:
                                 temp_ship.slot_ex = Equipment()
                             assign_fleet.add_ship(temp_ship)
+                            assigned_ship_family_ids.add(ship_family_id)
                             ship_pool[ship_enum].remove(ship)
                             Log.log_debug_1(
                                 f"expedition_core: assign ship {ship} for {fleet_list}"
@@ -378,6 +389,9 @@ class ExpeditionCore(CoreBase):
                 continue
 
             for ship in ship_pool[ship_enum]:
+                ship_family_id = shp.ships.get_ship_family_id(ship.api_id)
+                if ship_family_id in assigned_ship_family_ids:
+                    continue
                 if flag_ship == True and ship.level < req_lv_flag:
                     continue
                 # Check if the ship could load drum, if she can't load LC
@@ -412,6 +426,7 @@ class ExpeditionCore(CoreBase):
                             if temp_ship.slot_ex != None:
                                 temp_ship.slot_ex = Equipment()
                             assign_fleet.add_ship(temp_ship)
+                            assigned_ship_family_ids.add(ship_family_id)
                             ship_pool[ship_enum].remove(ship)
                             Log.log_debug_1(
                                 f"expedition_core: assign ship {ship} for {fleet_list}"
@@ -428,6 +443,9 @@ class ExpeditionCore(CoreBase):
 
             # sadly in this case, no ship can load LC or drum, at least now we try to load whatever ship we can find
             for ship in ship_pool[ship_enum]:
+                ship_family_id = shp.ships.get_ship_family_id(ship.api_id)
+                if ship_family_id in assigned_ship_family_ids:
+                    continue
                 if flag_ship == True and ship.level < req_lv_flag:
                     continue
 
@@ -436,6 +454,7 @@ class ExpeditionCore(CoreBase):
                 if temp_ship.slot_ex != None:
                     temp_ship.slot_ex = Equipment()
                 assign_fleet.add_ship(temp_ship)
+                assigned_ship_family_ids.add(ship_family_id)
                 ship_pool[ship_enum].remove(ship)
                 Log.log_debug_1(f"expedition_core: assign ship {ship} for {fleet_list}")
                 has_match_ship = True

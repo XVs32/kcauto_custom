@@ -2,12 +2,14 @@ from ships.ship import Ship
 from util.json_data import JsonData
 from util.logger import Log
 from util.wctf import WhoCallsTheFleetData
+from constants import ENEMY_SHIP_API_ID_START
 
 
 class ShipsCore(object):
     max_ship_count = 0
     ship_pool: dict[int, Ship] = {}
     ship_library = []
+    ship_family_ids: dict[int, int] = {}
     name_db = {}
 
     def __init__(self):
@@ -23,9 +25,54 @@ class ShipsCore(object):
                 self.get_ship_static_data(ship["api_sortno"]), ship
             )
 
-    def update_ship_library(self, data):
+    def update_ship_library(self, data: list[dict]) -> None:
         Log.log_debug_1("Updating ship library data.")
         self.ship_library = data
+        self._update_ship_family_ids()
+
+    def _update_ship_family_ids(self) -> None:
+        # exclude enemy ship
+        ships_by_id = {
+            ship["api_id"]: ship
+            for ship in self.ship_library
+            if ship["api_id"] < ENEMY_SHIP_API_ID_START
+        }
+        family_ids = {ship_id: ship_id for ship_id in ships_by_id}
+
+        def find_family_id(ship_id: int) -> int:
+            if family_ids[ship_id] != ship_id:
+                family_ids[ship_id] = find_family_id(family_ids[ship_id])
+            return family_ids[ship_id]
+
+        for ship in ships_by_id.values():
+            after_ship_id = int(ship.get("api_aftershipid") or 0)
+            if after_ship_id not in family_ids:
+                continue
+
+            source_family_id = find_family_id(ship["api_id"])
+            target_family_id = find_family_id(after_ship_id)
+            if source_family_id != target_family_id:
+                # The smallest model ID is a stable family ID, not necessarily the
+                # unremodeled (original) ship model.
+                family_ids[max(source_family_id, target_family_id)] = min(
+                    source_family_id, target_family_id
+                )
+
+        self.ship_family_ids = {
+            ship_id: find_family_id(ship_id) for ship_id in family_ids
+        }
+
+        Log.log_debug_1("Updated ship family ID mappings:")
+        for ship_id, family_id in sorted(self.ship_family_ids.items()):
+            ship_name = ships_by_id[ship_id].get("api_name", "Unknown")
+            family_name = ships_by_id[family_id].get("api_name", "Unknown")
+            Log.log_debug_1(
+                f"Ship {ship_name} (model ID: {ship_id}) -> "
+                f"Family {family_name} (model ID: {family_id})"
+            )
+
+    def get_ship_family_id(self, api_id: int) -> int:
+        return self.ship_family_ids.get(api_id, api_id)
 
     def is_ship_pool_full(self, is_event=False):
         """check if ship pool is full
