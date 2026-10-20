@@ -212,27 +212,24 @@ class EquipmentAllocator:
                 raise EquipmentAllocationFailure(requirement)
 
         # Check reinforcement equipment quantities.
-        reinforcement_counts: dict[int, list[tuple[int, EquipmentRequirement]]] = (
-            defaultdict(list)
-        )
+        restricted_counts: Counter[int] = Counter()
+
         for requirement in requirements:
             if not requirement.slot_ref.slot.is_reinforcement:
                 continue
 
+            model_id = requirement.model_id
             eligible_count = len(
-                available_equipment_ids[requirement.model_id]
+                available_equipment_ids[model_id]
                 & reinforcement_eligible_ids[requirement.slot_ref.ship_id]
             )
-            reinforcement_counts[requirement.model_id].append(
-                (eligible_count, requirement)
-            )
 
-        for model_counts in reinforcement_counts.values():
-            model_counts.sort(key=lambda item: item[0])
-            for required_count, (eligible_count, requirement) in enumerate(
-                model_counts, start=1
-            ):
-                if eligible_count < required_count:
+            if not eligible_count:
+                raise EquipmentAllocationFailure(requirement)
+
+            if eligible_count < len(available_equipment_ids[model_id]):
+                restricted_counts[model_id] += 1
+                if restricted_counts[model_id] > eligible_count:
                     raise EquipmentAllocationFailure(requirement)
 
         # Allocate equipment using recursive search.
