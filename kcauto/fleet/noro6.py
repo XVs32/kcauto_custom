@@ -224,8 +224,6 @@ class Noro6(object):
 
         if "r" not in self.item:
             self.item["r"] = 0
-        if "l" not in self.item:
-            self.item["l"] = 0
 
         return self.item
 
@@ -247,8 +245,6 @@ class Noro6(object):
 
         if "r" not in self.item:
             self.item["r"] = 0
-        if "l" not in self.item:
-            self.item["l"] = 0
         return self.item
 
     def get_fleet_count(self):
@@ -307,3 +303,26 @@ class Noro6(object):
         Log.log_debug_1(f"fleet: {self.fleet}") if self.fleet is not None else None
         Log.log_debug_1(f"ship: {self.ship}") if self.ship is not None else None
         Log.log_debug_1(f"item: {self.item}") if self.item is not None else None
+
+    @staticmethod
+    def proficiency_to_ace(item: dict) -> int:
+        """Convert Noro6 internal proficiency (0-120) to api_alv (0-7).
+
+        Noro6 omits the field for zero proficiency.
+        """
+        proficiency = item.get("l", 0)
+        if type(proficiency) is not int or not 0 <= proficiency <= 120:
+            raise ValueError(f"Invalid Noro6 equipment proficiency: {proficiency!r}")
+
+        for threshold, ace in (
+            (100, 7),
+            (85, 6),
+            (70, 5),
+            (55, 4),
+            (40, 3),
+            (25, 2),
+            (10, 1),
+        ):
+            if proficiency >= threshold:
+                return ace
+        return 0
