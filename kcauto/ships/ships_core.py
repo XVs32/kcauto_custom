@@ -8,6 +8,7 @@ class ShipsCore(object):
     max_ship_count = 0
     ship_pool: dict[int, Ship] = {}
     ship_library = []
+    ship_family_ids: dict[int, int] = {}
     name_db = {}
 
     def __init__(self):
@@ -26,6 +27,31 @@ class ShipsCore(object):
     def update_ship_library(self, data):
         Log.log_debug_1("Updating ship library data.")
         self.ship_library = data
+        self._update_ship_family_ids()
+
+    def _update_ship_family_ids(self):
+        family_ids = {ship["api_id"]: ship["api_id"] for ship in self.ship_library}
+
+        def find_family_id(ship_id):
+            if family_ids[ship_id] != ship_id:
+                family_ids[ship_id] = find_family_id(family_ids[ship_id])
+            return family_ids[ship_id]
+
+        for ship in self.ship_library:
+            after_ship_id = int(ship.get("api_aftershipid") or 0)
+            if after_ship_id not in family_ids:
+                continue
+
+            source_family_id = find_family_id(ship["api_id"])
+            target_family_id = find_family_id(after_ship_id)
+            family_ids[target_family_id] = source_family_id
+
+        self.ship_family_ids = {
+            ship_id: find_family_id(ship_id) for ship_id in family_ids
+        }
+
+    def get_ship_family_id(self, api_id):
+        return self.ship_family_ids.get(api_id, api_id)
 
     def is_ship_pool_full(self, is_event=False):
         """check if ship pool is full
