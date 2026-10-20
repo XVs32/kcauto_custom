@@ -195,6 +195,7 @@ class EquipmentAllocator:
         movable_equipments: list[MovableEquipment],
         reinforcement_eligible_ids: dict[int, set[int]],
     ) -> EquipmentAllocationResult:
+        # Check overall equipment quantities.
         requirement_counts = Counter(
             requirement.model_id for requirement in requirements
         )
@@ -210,6 +211,7 @@ class EquipmentAllocator:
             ):
                 raise EquipmentAllocationFailure(requirement)
 
+        # Check reinforcement equipment quantities.
         reinforcement_counts: dict[int, list[tuple[int, EquipmentRequirement]]] = (
             defaultdict(list)
         )
@@ -233,6 +235,7 @@ class EquipmentAllocator:
                 if eligible_count < required_count:
                     raise EquipmentAllocationFailure(requirement)
 
+        # Allocate equipment using recursive search.
         assignments: dict[EquipmentSlotRef, Equipment] = {}
         assigned_equipment_ids: set[int] = set()
 
