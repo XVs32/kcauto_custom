@@ -4,6 +4,7 @@ from util.logger import Log
 from util.wctf import WhoCallsTheFleetData
 from constants import ENEMY_SHIP_API_ID_START
 
+
 class ShipsCore(object):
     max_ship_count = 0
     ship_pool: dict[int, Ship] = {}
@@ -24,12 +25,12 @@ class ShipsCore(object):
                 self.get_ship_static_data(ship["api_sortno"]), ship
             )
 
-    def update_ship_library(self, data):
+    def update_ship_library(self, data: list[dict]) -> None:
         Log.log_debug_1("Updating ship library data.")
         self.ship_library = data
         self._update_ship_family_ids()
 
-    def _update_ship_family_ids(self):
+    def _update_ship_family_ids(self) -> None:
         # exclude enemy ship
         ships_by_id = {
             ship["api_id"]: ship
@@ -38,7 +39,7 @@ class ShipsCore(object):
         }
         family_ids = {ship_id: ship_id for ship_id in ships_by_id}
 
-        def find_family_id(ship_id):
+        def find_family_id(ship_id: int) -> int:
             if family_ids[ship_id] != ship_id:
                 family_ids[ship_id] = find_family_id(family_ids[ship_id])
             return family_ids[ship_id]
@@ -70,7 +71,7 @@ class ShipsCore(object):
                 f"Family {family_name} (model ID: {family_id})"
             )
 
-    def get_ship_family_id(self, api_id):
+    def get_ship_family_id(self, api_id: int) -> int:
         return self.ship_family_ids.get(api_id, api_id)
 
     def is_ship_pool_full(self, is_event=False):
