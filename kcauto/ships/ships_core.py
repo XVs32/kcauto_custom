@@ -50,6 +50,16 @@ class ShipsCore(object):
             ship_id: find_family_id(ship_id) for ship_id in family_ids
         }
 
+        ships_by_id = {ship["api_id"]: ship for ship in self.ship_library}
+        Log.log_debug_1("Updated ship family ID mappings:")
+        for ship_id, family_id in sorted(self.ship_family_ids.items()):
+            ship_name = ships_by_id[ship_id].get("api_name", "Unknown")
+            family_name = ships_by_id[family_id].get("api_name", "Unknown")
+            Log.log_debug_1(
+                f"Ship {ship_name} (model ID: {ship_id}) -> "
+                f"Family {family_name} (model ID: {family_id})"
+            )
+
     def get_ship_family_id(self, api_id):
         return self.ship_family_ids.get(api_id, api_id)
 
