@@ -161,7 +161,7 @@ class CombatCore(CoreBase):
                     self.available_maps[map_enum.world_and_map]["gauge_num"] = (
                         map_data["api_gauge_num"]
                         if "api_required_defeat_count" in map_data
-                        else 0
+                        else self.last_gauge(map_enum)
                     )
 
             else:
@@ -179,6 +179,19 @@ class CombatCore(CoreBase):
                     ),
                     "gauge_num": map_data["api_gauge_num"],
                 }
+
+    def last_gauge(self, enum: MapEnum):
+
+        if enum.world_and_map_enum == MapEnum.W5_6 :
+            return 3
+        elif enum.world_and_map_enum == MapEnum.W7_2 :
+            return 2
+        elif enum.world_and_map_enum == MapEnum.W7_3 :
+            return 2
+        elif enum.world_and_map_enum == MapEnum.W7_5 :
+            return 3
+        else:
+            return 0
 
     def should_and_able_to_sortie(self, ignore_supply=False):
         """
