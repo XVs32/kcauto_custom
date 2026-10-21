@@ -311,6 +311,8 @@ class ApiWrapper(object):
             return self._process_free_equipment_data(data)
         elif request_url is KCSAPIEnum.MAP_INFO_JSON:
             return self._process_map_info_json(data)
+        elif request_url is KCSAPIEnum.DEVELOP_EQUIPMENT:
+            return self._process_develop_equipment_data(data)
 
         return None
 
@@ -694,6 +696,24 @@ class ApiWrapper(object):
         filename = os.path.basename(data.get("url"))
         Log.log_debug_1(f"map info json received: {filename}")
         com.combat.gimmick_startup_judge(filename)
+
+        return
+
+    def _process_develop_equipment_data(self, data):
+        """
+        method to add develop equipment to pool
+
+        Args:
+            data (dict): the data of develop equipment, typically from "api_req_kousaku/get_material"
+        """
+        for raw_equipment in data["api_get_items"]:
+            if raw_equipment["api_slotitem_id"] != 0:
+                equ.equipment.add_equipment_to_pool(
+                    Equipment(
+                        model_id=raw_equipment["api_slotitem_id"],
+                        production_id=raw_equipment["api_id"],
+                    )
+                )
 
         return
 
