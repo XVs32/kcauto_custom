@@ -203,6 +203,7 @@ class EquipmentAllocator:
             equipment = movable_equipment.equipment
             available_equipment_ids[equipment.model_id].add(equipment.production_id)
 
+        # Restricted reinforcement requirements for the same model share the same eligible pool.
         restricted_counts: Counter[int] = Counter()
         for requirement in requirements:
             model_id = requirement.model_id
@@ -223,6 +224,7 @@ class EquipmentAllocator:
             if not eligible_count:
                 raise EquipmentAllocationFailure(requirement)
 
+            # Count requirements that can only use a subset of available equipment.
             if eligible_count < len(available_ids):
                 restricted_counts[model_id] += 1
                 if restricted_counts[model_id] > eligible_count:
