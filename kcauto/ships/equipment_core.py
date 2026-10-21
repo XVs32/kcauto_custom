@@ -89,6 +89,12 @@ class EquipmentCore(object):
         self.equipment_pool[self.ID].append(equipment)
 
     def add_develop_equipment_to_pool(self, data):
+        """
+        method to add develop equipment to pool
+
+        Args:
+            data (dict): the data of develop equipment, typically from "api_req_kousaku/get_material"
+        """
         for raw_equipment in data["api_get_items"]:
             if raw_equipment["api_slotitem_id"] != 0:
                 self.add_equipment_to_pool(
