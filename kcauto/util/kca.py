@@ -2,7 +2,6 @@ import cv2
 import numpy as np
 import os
 import glob
-import PyChromeDevTools
 from datetime import datetime, timedelta
 from util.pyvisauto import Region, FindFailed, ImageMatch
 from random import randint, uniform
@@ -36,6 +35,8 @@ import util.coordinate_system as coordinate_system
 import util.click_tracker as clt
 from util.exceptions import ChromeCrashException
 from util.logger import Log
+from util.poi_client import PoiClientError
+from util.interaction_backend import InteractionBackend
 
 import asyncio
 from pyppeteer import connect
@@ -45,9 +46,6 @@ class Kca(object):
     """Primary kcauto utility class."""
 
     ASSETS_FOLDER = "assets"
-    api_hook = None
-    poi_hook = None
-
     html = None
 
     screenshot_log = [None, None, None, None, None]
@@ -72,78 +70,47 @@ class Kca(object):
     def game_y(self):
         return coordinate_system.coor.game_y
 
+    # CDP / POI handles live in the active driver; these stay for callers that
+    # still read them off kca.
+    @property
+    def api_hook(self):
+        return getattr(self.interaction.driver, "api_hook", None)
+
+    @property
+    def poi_hook(self):
+        return getattr(self.interaction.driver, "poi_hook", None)
+
+    @property
+    def poi_client(self):
+        return getattr(self.interaction.driver, "poi_client", None)
+
     def __init__(self):
+        self.interaction = InteractionBackend(self)
         Log.log_debug_1("Kca module initialized.")
 
     def hook_chrome(self):
-        """Method that initializes the necessary hooks to Chrome using
-        PyChromeDevTools. The visual hook connects to the tab that actually
-        contains the Kancolle HTML5 canvas, while the api hook connects to the
-        tab that interacts with the Kancolle backend. The former is used for
-        detecting refreshes and when using the Chrome driver interaction mode,
-        while the latter is used for reading all API interactions.
+        """Connect the active interaction driver (Chrome CDP hooks for direct
+        control / Chrome driver, the loopback service for POI)."""
+        return self.interaction.connect()
 
-        Args:
-
-        Raises:
-            Exception: could not find Kancolle tabs in Chrome.
-        """
-        Log.log_msg("Hooking into Chrome.")
-        self.cdt_init(target="api")
-        self.cdt_init(target="poi")
-        api_listener.api_listener.set_port(cfg.config.general.poi_api_port)
-        api_listener.api_listener.start()
-
-        api_tab = None
-        api_tab_id = None
-        poi_tab = None
-        poi_tab_id = None
-        for n, tab in enumerate(self.api_hook.tabs):
-            if API_URL in tab["url"]:
-                api_tab = n
-                api_tab_id = tab["id"]
-            if tab["url"].endswith(POI_URL_POSTFIX):
-                poi_tab = n
-                poi_tab_id = tab["id"]
-
-        self.poi_hook.connect_targetID(poi_tab_id)
-        Log.log_debug_1(f"Connected to poi tab ({poi_tab}:{poi_tab_id})")
-
-        if api_tab_id is None or api_tab_id is None:
-            Log.log_error(
-                "No Kantai Collection tab found in Chrome. Shutting down kcauto."
-            )
-            raise Exception("No running Kantai Collection tab found in Chrome.")
-
-        self.api_hook.connect_targetID(api_tab_id)
-        self.api_hook.Page.enable()
-        self.api_hook.Network.enable()
-        Log.log_debug_1(f"Connected to API tab ({api_tab}:{api_tab_id})")
-        Log.log_success("Connected to Chrome")
-
-        coordinate_system.coor.find_game_window_offset()
+    # Kept as an alias for older call sites.
+    hook_poi = hook_chrome
 
     def hook_health_check(self):
-        """Method that runs through the different events reported to the api
-        and visual hooks to ascertain whether or not the tab has crashed or
-        was refreshed.
+        """Ask the active driver whether its connection is still alive and
+        reconnect when it is stale.
 
         Raises:
             ChromeCrashException: Chrome tab crash was detected.
         """
-        api_events = self.api_hook.pop_messages()
-        for event in api_events:
-            if event["method"] == "Inspector.detached":
-                Log.log_warn("Chrome API hook is stale. Reconnecting.")
-                self.hook_chrome()
-                return
-            if event["method"] == "Page.frameDetached":
-                Log.log_warn("Chrome visual hook is stale. Reconnecting.")
-                self.hook_chrome()
-                return
-            if event["method"] == "Inspector.targetCrashed":
-                Log.log_warn("Chrome crash detected.")
-                raise ChromeCrashException
+        driver = self.interaction.driver
+        try:
+            healthy = self.interaction.health_check()
+        except (OSError, PoiClientError):
+            healthy = False
+        if not healthy:
+            Log.log_warn(f"{driver.name} hook is stale. Reconnecting.")
+            self.hook_chrome()
 
     def find_kancolle(self):
         """Method that finds the Kancolle game on-screen and determine the UI
@@ -152,13 +119,16 @@ class Kca(object):
         it will first look for the last found UI. Generates or modifies
         pre-defined regions accordingly.
 
+        Where the game origin lives (desktop offset, browser viewport, or the
+        POI frame) is decided by the interaction driver, not here.
+
         Raises:
             FindFailed: could not find the game on-screen.
         """
         Log.log_msg("Finding kancolle.")
         ref_r = None
         attempt = 0
-        whole_screen_region = Region()
+        whole_screen_region = self.interaction.full_region()
 
         # look for last-seen UI, if set
         if self.last_ui:
@@ -207,33 +177,29 @@ class Kca(object):
                 Log.log_error("Could not find Kancolle reference point.")
                 raise FindFailed()
 
-        new_game_x = ref_r.x + coordinate_system.coor.KC_REF_OFFSET[0]
-        new_game_y = ref_r.y + coordinate_system.coor.KC_REF_OFFSET[1]
+        new_game_x, new_game_y = self.interaction.resolve_game_origin(ref_r)
         Log.log_debug_1(f"Game X:{new_game_x}, Y:{new_game_y}")
 
-        # define click callback as needed
+        # click tracking is attached to the single backend entry
         if not arg.args.parsed_args.no_click_track:
-            ImageMatch.click_callback = clt.click_tracker.track_click
-
-        # define click and hover method overrides as needed
-        if cfg.config.general.interaction_mode is InteractionModeEnum.CHROME_DRIVER:
-            ImageMatch.override_click_method = self._override_click_method
-            ImageMatch.override_hover_method = self._override_hover_method
-            ImageMatch.override_scroll_method = self._override_scroll_method
+            self.interaction.click_callback = clt.click_tracker.track_click
 
         if (
             new_game_x != coordinate_system.coor.game_x
             or new_game_y != coordinate_system.coor.game_y
         ):
-            if not coordinate_system.coor.game_x or coordinate_system.coor.game_y:
+            if (
+                coordinate_system.coor.game_x is None
+                or coordinate_system.coor.game_y is None
+            ):
                 Log.log_success("Game found. Initializing regions.")
             else:
-                Log.log_msg("Game has moved. Shifting regions.")
+                Log.log_msg("Game has moved.")
             coordinate_system.coor.game_x = new_game_x
             coordinate_system.coor.game_y = new_game_y
             coordinate_system.coor._update_regions()
 
-        coordinate_system.coor.find_game_window_offset()
+        self.interaction.on_game_located()
 
         return True
 
@@ -403,10 +369,7 @@ class Kca(object):
         self.sleep()
 
         r = coordinate_system.coor.get_region(region)
-        if cfg.config.general.interaction_mode is InteractionModeEnum.DIRECT_CONTROL:
-            r.hover()
-        elif cfg.config.general.interaction_mode is InteractionModeEnum.CHROME_DRIVER:
-            self._chrome_driver_hover_method(r)
+        self.interaction.hover(r)
 
         self.sleep()
 
@@ -426,30 +389,7 @@ class Kca(object):
         self.sleep()
 
         r = coordinate_system.coor.get_region(region)
-        if cfg.config.general.interaction_mode is InteractionModeEnum.DIRECT_CONTROL:
-            corners = [
-                r.x + pad[0],
-                r.y + pad[1],
-                r.x + r.w + pad[2],
-                r.y + r.h + pad[3],
-            ]
-            if arg.args.parsed_args.debug_output:
-                # Visit corners first
-                r.hover(corners[0], corners[1])
-                self.sleep(0.1)
-                r.hover(corners[2], corners[1])
-                self.sleep(0.1)
-                r.hover(corners[0], corners[3])
-                self.sleep(0.1)
-                r.hover(corners[2], corners[3])
-                self.sleep(0.1)
-
-                # Draw debug with corners
-            self._draw_debug_visualization(corners, arg.args.parsed_args.debug_output)
-
-            r.click(pad=pad)
-        elif cfg.config.general.interaction_mode is InteractionModeEnum.CHROME_DRIVER:
-            self._chrome_driver_click_method(r, pad)
+        self.interaction.click(r, pad)
 
         self.sleep()
 
@@ -473,35 +413,7 @@ class Kca(object):
         self.sleep()
 
         r = coordinate_system.coor.get_region(region)
-        if cfg.config.general.interaction_mode is InteractionModeEnum.DIRECT_CONTROL:
-            corners = [
-                r.x + pad[0],
-                r.y + pad[1],
-                r.x + r.w + pad[2],
-                r.y + r.h + pad[3],
-            ]
-            if arg.args.parsed_args.debug_output:
-                # Visit corners first
-                r.hover(corners[0], corners[1])
-                self.sleep(0.1)
-                r.hover(corners[2], corners[1])
-                self.sleep(0.1)
-                r.hover(corners[0], corners[3])
-                self.sleep(0.1)
-                r.hover(corners[2], corners[3])
-                self.sleep(0.1)
-
-                # Draw debug with corners
-            self._draw_debug_visualization(
-                corners,
-                arg.args.parsed_args.debug_output,
-                border_color=(0, 0, 255),
-                action=ActionEnum.SCROLL,
-            )
-
-            r.scroll(pad=pad, direction=direction, amount=amount)
-        elif cfg.config.general.interaction_mode is InteractionModeEnum.CHROME_DRIVER:
-            self._chrome_driver_scroll_method(r, pad, direction, amount)
+        self.interaction.scroll(r, pad, direction, amount)
 
         self.sleep()
 
@@ -569,13 +481,7 @@ class Kca(object):
 
         r_a = coordinate_system.coor.get_region(start_region)
         r_b = coordinate_system.coor.get_region(end_region)
-        if cfg.config.general.interaction_mode is InteractionModeEnum.DIRECT_CONTROL:
-            r_a.hover()
-            self.sleep()
-            r_b.drag(pad=pad)
-
-        elif cfg.config.general.interaction_mode is InteractionModeEnum.CHROME_DRIVER:
-            self._chrome_driver_drag_method(r_a, pad, r_b, pad)
+        self.interaction.drag(r_a, r_b, pad)
 
         self.sleep()
 
@@ -600,24 +506,14 @@ class Kca(object):
             or coordinate_system.coor.game_y is None
         ):
             return
-        screen = Region(
-            coordinate_system.coor.game_x, coordinate_system.coor.game_y, GAME_W, GAME_H
-        )
+        screen = Region(0, 0, GAME_W, GAME_H)
         screen = screen.capture()
         screen = cv2.cvtColor(np.array(screen), cv2.COLOR_RGB2BGR)
 
-        src = Region()
-        src.x = corners[0]
-        src.y = corners[1]
-        src.w = corners[2] - corners[0]
-        src.h = corners[3] - corners[1]
-
-        dst = coordinate_system.coor.convert(src, coordinate_system.coor.WHOLE_TO_GAME)
-
         cv2.rectangle(
             screen,
-            (int(dst.x), int(dst.y)),  # Top-left point
-            (int(dst.x + dst.w), int(dst.y + dst.h)),  # Bottom-right point
+            (int(corners[0]), int(corners[1])),
+            (int(corners[2]), int(corners[3])),
             border_color,
             2,
         )
@@ -744,239 +640,6 @@ class Kca(object):
         display_text = ", ".join([str(i) for i in raw_list])
         display_text = " and".join(display_text.rsplit(",", 1))
         return display_text
-
-    def _override_hover_method(self, r, x, y):
-        """Hover method override used when using Chrome Driver interaction
-        mode.
-        Args:
-            r (Region, Match): Region/Match region to click
-            x (int): x-coordinate of click generated by pyvisauto
-            y (int): y-coordinate of click generated by pyvisauto
-        """
-        self._chrome_driver_hover_method(r)
-
-    def _override_click_method(self, r, x, y, pad):
-        """Click method override used when using Chrome Driver interaction
-        mode.
-
-        Args:
-            r (Region, Match): Region/Match region to click
-            x (int): x-coordinate of click generated by pyvisauto
-            y (int): y-coordinate of click generated by pyvisauto
-            pad (tuple): padding parameter used to modify click coordinate
-        """
-        self._chrome_driver_click_method(r, pad)
-
-    def _override_scroll_method(self, r, x, y, pad, direction, amount):
-        """Scroll method override used when using Chrome Driver interaction
-        mode.
-
-        Args:
-            r (Region, Match): Region/Match region to scroll
-            x (int): x-coordinate of scroll generated by pyvisauto
-            y (int): y-coordinate of scroll generated by pyvisauto
-            pad (tuple): padding parameter used to modify scroll coordinate
-            direction (ScrollDirectionEnum): Scroll direction.
-            amount (int): Number of scroll steps to perform.
-        """
-        self._chrome_driver_scroll_method(r, pad, direction, amount)
-
-    def _chrome_driver_click_method(self, r, pad):
-        """Click method used in Chrome Driver interaction mode.
-
-        Args:
-            r (Region, Match): Region/Match region to click
-            pad (tuple): padding parameter used to modify click coordinate
-        """
-
-        offset_x = randint(pad[0], r.w + pad[2])
-        offset_y = randint(pad[1], r.h + pad[3])
-
-        dst = Region()
-        dst = coordinate_system.coor.convert(
-            r, coordinate_system.coor.WHOLE_TO_VIEWPORT
-        )
-
-        # Draw debug visualization
-
-        corners = [
-            r.x + pad[0],  # Top-left corner
-            r.y + pad[1],
-            r.x + r.w + pad[2],
-            r.y + r.h + pad[3],
-        ]
-
-        self._draw_debug_visualization(corners, arg.args.parsed_args.debug_output)
-
-        self.api_hook.Input.dispatchMouseEvent(
-            type="mouseMoved", x=dst.x + offset_x, y=dst.y + offset_y
-        )
-        self.sleep()
-        self.api_hook.Input.dispatchMouseEvent(
-            type="mousePressed",
-            x=dst.x + offset_x,
-            y=dst.y + offset_y,
-            clickCount=1,
-            button="left",
-        )
-        self.sleep(0.1, 0.2)
-        self.api_hook.Input.dispatchMouseEvent(
-            type="mouseReleased",
-            x=dst.x + offset_x,
-            y=dst.y + offset_y,
-            clickCount=1,
-            button="left",
-        )
-        self.sleep()
-
-    def _chrome_driver_scroll_method(self, r, pad, direction, amount=1):
-        """Scroll method used in Chrome Driver interaction mode.
-
-        Args:
-            r (Region, Match): Region/Match region to scroll
-            pad (tuple): padding parameter used to modify scroll coordinate
-            direction (ScrollDirectionEnum): Scroll direction.
-            amount (int, optional): Number of scroll steps to perform.
-        """
-
-        offset_x = randint(pad[0], r.w + pad[2])
-        offset_y = randint(pad[1], r.h + pad[3])
-
-        dst = Region()
-        dst = coordinate_system.coor.convert(
-            r, coordinate_system.coor.WHOLE_TO_VIEWPORT
-        )
-
-        # Draw debug visualization
-
-        corners = [
-            r.x + pad[0],  # Top-left corner
-            r.y + pad[1],
-            r.x + r.w + pad[2],
-            r.y + r.h + pad[3],
-        ]
-
-        self._draw_debug_visualization(
-            corners,
-            arg.args.parsed_args.debug_output,
-            border_color=(0, 0, 255),
-            action=ActionEnum.SCROLL,
-        )
-
-        self.api_hook.Input.dispatchMouseEvent(
-            type="mouseMoved", x=dst.x + offset_x, y=dst.y + offset_y
-        )
-        self.sleep()
-
-        if amount < 1:
-            raise ValueError(f"Unsupported scroll amount: {amount}")
-
-        if direction is ScrollDirectionEnum.UP:
-            delta_y = -120
-        elif direction is ScrollDirectionEnum.DOWN:
-            delta_y = 120
-        else:
-            raise ValueError(f"Unsupported scroll direction: {direction}")
-
-        for _ in range(amount):
-            self.api_hook.Input.dispatchMouseEvent(
-                type="mouseWheel",
-                x=dst.x + offset_x,
-                y=dst.y + offset_y,
-                deltaX=0,
-                deltaY=delta_y,
-            )
-            self.sleep()
-
-    def _chrome_driver_drag_method(self, r_a, pad_a, r_b, pad_b):
-        """Click method used in Chrome Driver interaction mode.
-
-        Args:
-            r (Region, Match): Region/Match region to click
-            pad (tuple): padding parameter used to modify click coordinate
-        """
-
-        dst_a = Region()
-        dst_a = coordinate_system.coor.convert(
-            r_a, coordinate_system.coor.WHOLE_TO_VIEWPORT
-        )
-
-        offset_x = randint(-pad_a[3], r_a.w + pad_a[1])
-        offset_y = randint(-pad_a[0], r_a.h + pad_a[2])
-
-        self.api_hook.Input.dispatchMouseEvent(
-            type="mouseMoved", x=dst_a.x + offset_x, y=dst_a.y + offset_y
-        )
-        self.sleep()
-        self.api_hook.Input.dispatchMouseEvent(
-            type="mousePressed",
-            x=dst_a.x + offset_x,
-            y=dst_a.y + offset_y,
-            clickCount=1,
-            button="left",
-        )
-        self.sleep()
-
-        dst_b = Region()
-        dst_b = coordinate_system.coor.convert(
-            r_b, coordinate_system.coor.WHOLE_TO_VIEWPORT
-        )
-
-        offset_x = randint(-pad_b[3], r_b.w + pad_b[1])
-        offset_y = randint(-pad_b[0], r_b.h + pad_b[2])
-
-        self.api_hook.Input.dispatchMouseEvent(
-            type="mouseMoved", x=dst_b.x + offset_x, y=dst_b.y + offset_y
-        )
-        self.sleep()
-        self.api_hook.Input.dispatchMouseEvent(
-            type="mouseReleased",
-            x=dst_b.x + offset_x,
-            y=dst_b.y + offset_y,
-            clickCount=1,
-            button="left",
-        )
-        self.sleep()
-
-    def _chrome_driver_hover_method(self, r):
-        """hover method used in Chrome Driver interaction mode.
-
-        Args:
-            r (Region, Match): Region/Match region to hover
-        """
-
-        dst = Region()
-        dst = coordinate_system.coor.convert(
-            r, coordinate_system.coor.WHOLE_TO_VIEWPORT
-        )
-
-        offset_x = randint(0, r.w)
-        offset_y = randint(0, r.h)
-
-        self.api_hook.Input.dispatchMouseEvent(
-            type="mouseMoved", x=dst.x + offset_x, y=dst.y + offset_y
-        )
-
-    def cdt_init(self, host="localhost", target="api"):
-        """method to hook this python program to chrome browser, cdt stands for ChromeDevTools
-
-        Args:
-            host (str, optional): Chrome dev protocol server address. Defaults
-                to "localhost".
-            target (str, optional): Hook target. Defaults to "api".
-        """
-
-        port = cfg.config.general.chrome_dev_port
-        chrome = PyChromeDevTools.ChromeInterface(host="localhost", port=port)
-        if target == "api":
-            self.api_hook = PyChromeDevTools.ChromeInterface(host=host, port=port)
-            coordinate_system.coor.api_hook = self.api_hook
-        elif target == "poi":
-            self.poi_hook = PyChromeDevTools.ChromeInterface(host=host, port=port)
-        else:
-            raise ValueError("Hook target must be either api or poi.")
-
-        return
 
     def get_quest_count(self, target_quest: Quest) -> dict[MapEnum, int] | None:
         """method to get the remaining action needed for the specified quest.
@@ -1135,6 +798,13 @@ class Kca(object):
 
         Log.log_debug_1("get poi quests stats...")
 
+        if cfg.config.general.interaction_mode is InteractionModeEnum.POI:
+            try:
+                return self.poi_client.get_quest_stats()
+            except PoiClientError as e:
+                Log.log_error(f"Failed to get poi quests stats: {str(e)}")
+                return {}
+
         js_code = """
         (() => {
             const diagnostics = () => {
@@ -1177,7 +847,7 @@ class Kca(object):
                 expression=js_code, returnByValue=True
             )
 
-            Log.log_debug_2(f'response: {response}')
+            Log.log_debug_2(f"response: {response}")
 
             if isinstance(response, (list, tuple)) and len(response) > 0:
                 resp_dict = response[0]
@@ -1226,6 +896,11 @@ class Kca(object):
                 Log.log_msg(dialog)
             Log.log_warn("Press Enter to continue")
             input()
+
+    def close(self):
+        """Release POI client and webhook resources during shutdown."""
+        self.interaction.close()
+        api_listener.api_listener.stop()
 
 
 kca = Kca()
