@@ -195,39 +195,35 @@ class EquipmentAllocator:
         movable_equipments: list[MovableEquipment],
         reinforcement_eligible_ids: dict[int, set[int]],
     ) -> EquipmentAllocationResult:
-        # Check overall equipment quantities.
         requirement_counts = Counter(
             requirement.model_id for requirement in requirements
         )
-
         available_equipment_ids: dict[int, set[int]] = defaultdict(set)
         for movable_equipment in movable_equipments:
             equipment = movable_equipment.equipment
             available_equipment_ids[equipment.model_id].add(equipment.production_id)
 
+        restricted_counts: Counter[int] = Counter()
         for requirement in requirements:
-            if requirement_counts[requirement.model_id] > len(
-                available_equipment_ids[requirement.model_id]
-            ):
+            model_id = requirement.model_id
+            available_ids = available_equipment_ids[model_id]
+
+            # Check overall equipment quantities.
+            if requirement_counts[model_id] > len(available_ids):
                 raise EquipmentAllocationFailure(requirement)
 
-        # Check reinforcement equipment quantities.
-        restricted_counts: Counter[int] = Counter()
-
-        for requirement in requirements:
+            # Check reinforcement equipment quantities.
             if not requirement.slot_ref.slot.is_reinforcement:
                 continue
 
-            model_id = requirement.model_id
             eligible_count = len(
-                available_equipment_ids[model_id]
-                & reinforcement_eligible_ids[requirement.slot_ref.ship_id]
+                available_ids & reinforcement_eligible_ids[requirement.slot_ref.ship_id]
             )
 
             if not eligible_count:
                 raise EquipmentAllocationFailure(requirement)
 
-            if eligible_count < len(available_equipment_ids[model_id]):
+            if eligible_count < len(available_ids):
                 restricted_counts[model_id] += 1
                 if restricted_counts[model_id] > eligible_count:
                     raise EquipmentAllocationFailure(requirement)
