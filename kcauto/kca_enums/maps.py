@@ -33,7 +33,7 @@ class MapEnum(EnumBase):
     @property
     def world_and_map_enum(self):
         if self.value != "auto":
-            return self.__class__(self.world_and_map)
+            return self.__class__("B-" + self.world_and_map)
         else:
             return self.__class__.auto_map_select
 
