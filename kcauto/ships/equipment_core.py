@@ -85,6 +85,19 @@ class EquipmentCore(object):
             )
         self.equipment_pool[self.ID].append(Equipment())
 
+    def add_equipment_to_pool(self, equipment):
+        self.equipment_pool[self.ID].append(equipment)
+
+    def add_develop_equipment_to_pool(self, data):
+        for raw_equipment in data["api_get_items"]:
+            if raw_equipment["api_slotitem_id"] != 0:
+                self.add_equipment_to_pool(
+                    Equipment(
+                        model_id=raw_equipment["api_slotitem_id"],
+                        production_id=raw_equipment["api_id"],
+                    )
+                )
+
     def goto(self):
         nav.navigate.to("equipment")
         self.current_ship_list_page = 1
