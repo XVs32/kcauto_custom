@@ -1,8 +1,10 @@
 import time
+import api.api_core as api
 import config.config_core as cfg
 import nav.nav as nav
 import util.kca as kca_u
 from util.logger import Log
+from kca_enums.kcsapi_paths import KCSAPIEnum
 
 
 class FactoryCore(object):
@@ -107,6 +109,9 @@ class FactoryCore(object):
 
             kca_u.kca.r["order_confirm_region"].click()
             kca_u.kca.wait("lower_right_corner", "global|next_alt.png", 20)
+
+            api.api.update_from_api({KCSAPIEnum.DEVELOP_EQUIPMENT})
+
             while not kca_u.kca.exists("left", "nav|side_menu_home.png"):
                 Log.log_debug_1("In develop result")
                 kca_u.kca.r["shipgirl"].click()
