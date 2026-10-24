@@ -85,6 +85,9 @@ class EquipmentCore(object):
             )
         self.equipment_pool[self.ID].append(Equipment())
 
+    def add_equipment_to_pool(self, equipment):
+        self.equipment_pool[self.ID].append(equipment)
+
     def goto(self):
         nav.navigate.to("equipment")
         self.current_ship_list_page = 1
