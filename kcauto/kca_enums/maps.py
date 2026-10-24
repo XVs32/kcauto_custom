@@ -29,6 +29,13 @@ class MapEnum(EnumBase):
             return self.value.split("-")[1] + "-" + self.value.split("-")[2]
         else:
             return "auto"
+    
+    @property
+    def world_and_map_enum(self):
+        if self.value != "auto":
+            return self.__class__("B-" + self.world_and_map)
+        else:
+            return self.__class__.auto_map_select
 
     @property
     def world_and_map_and_node(self):
