@@ -4,7 +4,7 @@
 
 ***警告***：`kcauto_custom` は Windows 上でも動作するはずですが、元々 Linux 環境のために開発されたものです。互換性の問題について、修正は保証されません。
 
-**[kcauto_custom](https://github.com/XVs32/kcauto_custom)** は、アーカイブされたプロジェクト [kcauto](https://github.com/perryhuynh/kcauto) をベースに、機能を追加・カスタマイズしたバージョンです。  
+**[kcauto_custom](https://github.com/XVs32/kcauto_custom)** は艦これを自動化するためのツール(BOT)です。 [kcauto](https://github.com/perryhuynh/kcauto) というプロジェクトをベースに、機能を追加・カスタマイズしたバージョンです。  
 **kcauto** と比較して柔軟性は低いですが、自動化能力が強化されています。  
 Python 環境を構築したくないユーザー向けに、実行ファイル (.exe) を提供しています。  
 [Noro6](https://noro6.github.io/kc-web/#/aircalc) で艦隊や装備の構成を作成し、それを `kcauto_custom` で実行できます。  
