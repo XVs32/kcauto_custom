@@ -143,3 +143,198 @@ ConfirmQuit {
     border: round #e5c07b;
     background: #181b21;
 }
+
+/* ---- 編輯器(階段 4)-------------------------------------------------- */
+EditorScreen {
+    background: #0f1115;
+    layout: vertical;
+}
+
+#ed-top {
+    height: 1;
+    background: #181b21;
+}
+
+#ed-body {
+    height: 1fr;
+}
+
+#ed-left {
+    width: 20;
+    height: 100%;
+    border: round #4b5263;
+    border-title-color: #c8ccd4;
+}
+
+#ed-right {
+    width: 1fr;
+    height: 100%;
+    border: round #4b5263;
+}
+
+ModuleList {
+    width: 100%;
+}
+
+FormPane {
+    width: 100%;
+    height: 100%;
+    background: #0f1115;
+}
+
+FieldRow {
+    width: 100%;
+    height: 1;
+}
+
+FieldRow:focus {
+    background: #2a2f3a;
+}
+
+.grp {
+    width: 100%;
+    height: auto;
+    margin-top: 1;
+}
+
+FormPane .grp:first-child {
+    margin-top: 0;
+}
+
+#ed-help {
+    height: auto;
+    min-height: 5;
+    max-height: 9;
+    border: round #4b5263;
+    padding: 0 1;
+}
+
+#ed-hints {
+    height: 1;
+    background: #181b21;
+    padding: 0 1;
+}
+
+/* 視窗太窄(< 72 欄):隱藏左側模組清單,改用 [ ] 或 ← → 切換模組 */
+EditorScreen.narrow #ed-left {
+    display: none;
+}
+
+/* ---- 對話框 ------------------------------------------------------------- */
+Dialog {
+    align: center middle;
+    background: rgba(0, 0, 0, 0.55);
+}
+
+.dlg {
+    width: 64;
+    max-width: 96%;
+    height: auto;
+    max-height: 94%;
+    padding: 1 2;
+    border: round #e5c07b;
+    background: #181b21;
+}
+
+.dlg-wide {
+    width: 88;
+}
+
+.dlg-danger {
+    border: round #e06c75;
+}
+
+.dlg-title {
+    text-style: bold;
+    color: #e8eaed;
+    height: auto;
+}
+
+.dlg-help {
+    color: #9aa0a6;
+    height: auto;
+    margin-bottom: 1;
+}
+
+.dlg-meta {
+    color: #6b7280;
+    height: auto;
+}
+
+.dlg-colhead {
+    color: #6b7280;
+    height: 1;
+}
+
+.dlg-err {
+    color: #e06c75;
+    height: auto;
+    min-height: 1;
+}
+
+.dlg-buttons {
+    height: 1;
+    margin-top: 1;
+}
+
+.action-label {
+    width: auto;
+    height: 1;
+    padding: 0 1;
+    margin-right: 1;
+    background: #2a2f3a;
+    color: #e8eaed;
+}
+
+.action-label:hover {
+    background: #3a4150;
+}
+
+.dlg Input {
+    width: 100%;
+}
+
+PickList {
+    width: 100%;
+    background: #12151a;
+}
+
+PresetGrid {
+    width: 100%;
+    margin: 1 0;
+}
+
+#cells {
+    height: auto;
+}
+
+#cells Input {
+    width: 1fr;
+    margin-right: 1;
+}
+
+CycleBox {
+    width: 1fr;
+    height: 3;
+    margin-right: 1;
+    border: tall #3b4252;
+    background: #12151a;
+}
+
+CycleBox:focus {
+    border: tall #e5c07b;
+}
+
+#recipe {
+    height: auto;
+}
+
+.recipe-col {
+    width: 1fr;
+    height: auto;
+    margin-right: 1;
+}
+
+#json {
+    height: 14;
+}

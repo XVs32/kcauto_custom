@@ -1,7 +1,7 @@
 """kcauto_custom CUI 主程式(btop 風格儀表板)。
 
 階段 3:kcauto 行程控制(套用並重啟、暫停、停止)、日誌、狀態列的行程資訊。
-尚未實作:完整編輯器(階段 4)。
+階段 4:全螢幕編輯器(Enter / 雙擊方框開啟,見 editor/screen.py)。
 
 按鍵
     方向鍵        在方框間移動(日誌方框取得焦點時改為捲動日誌)
@@ -30,6 +30,7 @@ from textual.css.query import NoMatches
 from textual.screen import ModalScreen
 from textual.widgets import Static
 
+from .editor.screen import EditorScreen
 from .layout import (
     ALL_CLASSES, LOG_HIDDEN, LayoutPlan, card_heights, choose_layout,
 )
@@ -146,8 +147,8 @@ class KcautoCui(App):
         self.store.subscribe(self._on_store_change)
         self._on_store_change(None)
         self._apply_layout(self.size.width, self.size.height)
-        self.query_one(f"#{CARDS[0].card_id}", ModuleCard).focus()
-        self.query_one(LogBox).add(
+        self._dash.query_one(f"#{CARDS[0].card_id}", ModuleCard).focus()
+        self._dash.query_one(LogBox).add(
             LOG_SYSTEM, "kcauto 尚未啟動 — 按 a 存檔並啟動(已在執行時為重新啟動)")
         self.set_interval(1.0, self._tick)
         if self.autostart:
@@ -174,7 +175,7 @@ class KcautoCui(App):
         if plan == self.layout_plan:
             return
         self.layout_plan = plan
-        main = self.query_one("#main")
+        main = self._dash.query_one("#main")
         for name in ALL_CLASSES:
             main.set_class(name in plan.classes, name)
         if plan.log != LOG_HIDDEN:
@@ -188,7 +189,7 @@ class KcautoCui(App):
 
     def _query_or_none(self, selector):
         try:
-            return self.query_one(selector)
+            return self._dash.query_one(selector)
         except NoMatches:
             return None
 
@@ -198,13 +199,13 @@ class KcautoCui(App):
     def _on_store_change(self, key: str | None) -> None:
         values = self.store.as_dict()
         if key is None:
-            for card in self.query(ModuleCard):
+            for card in self._dash.query(ModuleCard):
                 card.show(values)
         else:
             spec = CARD_BY_MODULE.get(key.split(".", 1)[0])
             if spec is not None:
-                self.query_one(f"#{spec.card_id}", ModuleCard).show(values)
-        self.query_one(StatusBar).refresh_from(self.store)
+                self._dash.query_one(f"#{spec.card_id}", ModuleCard).show(values)
+        self._dash.query_one(StatusBar).refresh_from(self.store)
         # 方框內容的行數會影響「日誌放下方是否放得下」,內容變動時重新評估
         if self.layout_plan is not None:
             self._apply_layout(self.size.width, self.size.height)
@@ -248,8 +249,19 @@ class KcautoCui(App):
     # ------------------------------------------------------------------ #
     # 動作:方框導覽與編輯
     # ------------------------------------------------------------------ #
+    @property
+    def _dash(self):
+        """儀表板本體(最底層的 screen)。
+
+        App.query 只會搜尋「目前最上層」的 screen;編輯器或對話框開著時,
+        儀表板的元件(日誌、狀態列、方框)必須從最底層 screen 找,
+        否則 kcauto 的輸出會在編輯期間遺失,store 通知也會找不到狀態列。
+        """
+        return self.screen_stack[0]
+
     def _modal_open(self) -> bool:
-        return isinstance(self.screen, ModalScreen)
+        """儀表板之上有任何畫面(對話框或編輯器)時,儀表板的快捷鍵一律停用。"""
+        return len(self.screen_stack) > 1
 
     def _focused_card(self) -> ModuleCard | None:
         focused = self.focused
@@ -261,14 +273,14 @@ class KcautoCui(App):
     def action_focus_card(self, module: str) -> None:
         if self._modal_open():
             return
-        self.query_one(f"#card-{module}", ModuleCard).focus()
+        self._dash.query_one(f"#card-{module}", ModuleCard).focus()
 
     def action_move_focus(self, dx: int, dy: int) -> None:
         if self._modal_open():
             return
         card = self._focused_card()
         if card is None:
-            self.query_one(f"#{self._last_card_id}", ModuleCard).focus()
+            self._dash.query_one(f"#{self._last_card_id}", ModuleCard).focus()
             return
         index = CARDS.index(card.spec)
         columns = self.layout_plan.columns if self.layout_plan else 2
@@ -334,19 +346,19 @@ class KcautoCui(App):
     def action_focus_log(self) -> None:
         if self._modal_open():
             return
-        main = self.query_one("#main")
+        main = self._dash.query_one("#main")
         if self.layout_plan is not None and self.layout_plan.log == LOG_HIDDEN:
             if main.has_class("log-full"):
                 self._leave_log()
             else:
                 self._reveal_log()
         else:
-            self.query_one(LogBox).focus()
+            self._dash.query_one(LogBox).focus()
 
     def action_leave_log(self) -> None:
         if self._modal_open():
             return
-        main = self.query_one("#main")
+        main = self._dash.query_one("#main")
         if main.has_class("log-full") or self._focused_log():
             self._leave_log()
 
@@ -354,10 +366,10 @@ class KcautoCui(App):
         """讓日誌可見並取得焦點(版面放不下時改成全螢幕日誌)。"""
         if self._modal_open():
             return
-        main = self.query_one("#main")
+        main = self._dash.query_one("#main")
         if self.layout_plan is not None and self.layout_plan.log == LOG_HIDDEN:
             main.add_class("log-full")
-        log = self.query_one(LogBox)
+        log = self._dash.query_one(LogBox)
 
         def focus_log() -> None:
             log.sync()
@@ -366,8 +378,8 @@ class KcautoCui(App):
         self.call_after_refresh(focus_log)
 
     def _leave_log(self) -> None:
-        self.query_one("#main").remove_class("log-full")
-        self.query_one(f"#{self._last_card_id}", ModuleCard).focus()
+        self._dash.query_one("#main").remove_class("log-full")
+        self._dash.query_one(f"#{self._last_card_id}", ModuleCard).focus()
         self._sync_log_later()
 
     def _spawn(self, coroutine) -> None:
@@ -429,7 +441,7 @@ class KcautoCui(App):
         self.store.set(spec.enabled_key, (not current) if isinstance(current, bool) else True)
 
     def _edit(self, spec: CardSpec) -> None:
-        self.notify(f"「{spec.label}」的完整編輯器將在階段 4 提供", timeout=3)
+        self.push_screen(EditorScreen(self.store, spec.module, save=self._save))
 
     def _save(self) -> bool:
         try:

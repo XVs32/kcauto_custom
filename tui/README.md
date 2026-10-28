@@ -1,9 +1,9 @@
-# kcauto_custom CUI(重寫版)— 階段 3
+# kcauto_custom CUI(重寫版)— 階段 4
 
 ## 安裝與執行
 
 ```
-pip install textual psutil   # Python 3.11
+pip install "textual>=0.86" psutil   # Python 3.11
 python -m tui                # 請在專案根目錄執行;預設讀 configs/config_cui.json
 python -m tui --config PATH --template PATH --autostart
 ```
@@ -25,7 +25,7 @@ python -m unittest discover -s tests -t . -v
 | 方向鍵 | 在方框間移動(焦點在日誌時改為捲動日誌) |
 | `c e p u s f r h v g` | 直接跳到該方框 |
 | Space / 點右下角 ON·OFF | 切換模組的 `enabled`;**焦點在日誌時改為暫停/繼續 kcauto** |
-| 單擊 / 雙擊·Enter | 聚焦 / 開啟編輯器(階段 4,目前只顯示提示) |
+| 單擊 / 雙擊·Enter | 聚焦 / 開啟全螢幕編輯器 |
 | `a` | **套用**:存檔後(重新)啟動 kcauto。有 error 時不啟動 |
 | `b` | 暫停/繼續 kcauto(任何位置) |
 | `k` | 停止 kcauto(連同子行程) |
@@ -71,3 +71,46 @@ python -m unittest discover -s tests -t . -v
 ```
 --add-data "kcauto/tui/theme.tcss:tui"      # Windows 用分號:  ...theme.tcss;tui
 ```
+
+
+## 編輯器(階段 4)
+
+在儀表板按 Enter 或雙擊方框開啟,直接停在該模組。所有修改立即寫入記憶體並同步到儀表板,
+按 `w` 才會存檔。編輯期間 kcauto 的日誌仍會累積;若它在等待 Enter,請先 Esc 回儀表板。
+
+| 按鍵 | 作用 |
+|---|---|
+| ↑ ↓ / PgUp PgDn / Home End | 在欄位間移動 |
+| ← | 回到左側模組清單(視窗 < 72 欄時,← → 改為切換模組) |
+| `c e p u s f r h v g o` | 跳到該模組(`o` = 未知 key) |
+| `[` `]` | 上一個 / 下一個模組 |
+| Enter / 單擊 | 編輯(依型別開對應的控制項) |
+| Space | 布林切換、enum 循環;其他型別等同 Enter |
+| `+` `-` | 整數微調、enum 循環 |
+| `d` | 還原為預設值 |
+| `z` | 還原為上次存檔的值 |
+| `/` | 搜尋全部欄位(key、標籤、說明) |
+| `w` | 存檔(有 error 時拒絕) |
+| Esc | 離開編輯器 |
+
+欄位列左側:`✖` 錯誤、`⚠` 警告、`!` 高風險;`*` 代表已修改。底部面板顯示 key、說明、型別、預設值、目前值與問題。
+
+### 各型別的控制項
+
+| 欄位 | 控制項 |
+|---|---|
+| bool | Space 直接切換 |
+| enum | 選單(Space 循環);nullable 的有 `null` 選項 |
+| int | 輸入框,↑↓ 微調,即時顯示範圍錯誤;範圍小的欄位在列上畫量表 |
+| `factory.*_secretary` | 輸入框;純數字存成整數,其他存成字串 |
+| `pvp.fleet_preset` | 格子單選:1~15、auto、null、0 |
+| `combat.fleet_presets` | 格子複選(記錄點選順序);若既有值有重複項,改用清單編輯器 |
+| 字串陣列 | 清單編輯器:輸入框可一次貼多個(逗號/空白分隔);↓ 進清單,Enter 修改該項,Delete/x 移除 |
+| `combat.node_selects` / `node_formations` / `node_night_battles` | 兩欄表格(陣型、夜戰用循環選單) |
+| `scheduler.rules` | 五欄表格(extra 可省略),只驗結構 |
+| `*.build_recipe` / `develop_recipe` | 四個數字欄(Tab 換欄) |
+| `quest.quests` | 依前綴分組的勾選清單(需 `data/` 下有檔名含 quest 的 JSON;找不到時退回清單編輯器) |
+| `ship_switcher.slots`、未知 key | JSON 編輯器(Ctrl+S 套用),即時檢查語法 |
+| `combat.push_nodes` | 新增節點時會跳出二次確認(y / n);移除不需確認 |
+
+對話框通用:輸入框內 Enter = 新增/確認該筆,**空白時 Enter = OK**;Esc = 取消。
