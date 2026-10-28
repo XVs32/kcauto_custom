@@ -19,8 +19,8 @@ class Heights(unittest.TestCase):
         heights = card_heights(defaults())
         self.assertEqual(len(heights), len(CARDS))
         self.assertTrue(all(h >= MIN_CARD_HEIGHT for h in heights))
-        # expedition:5 條量表 + 1 行艦隊 + 上下邊框
-        self.assertEqual(heights[1], 8)
+        # expedition:3 行艦隊目的地 + 1 行 preset + 上下邊框
+        self.assertEqual(heights[1], 6)
 
     def test_heights_grow_with_content(self):
         v = defaults()

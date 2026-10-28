@@ -338,3 +338,65 @@ CycleBox:focus {
 #json {
     height: 14;
 }
+
+/* ---- 窄視窗(階段 5~6)---------------------------------------------------- */
+ModuleTabs {
+    display: none;
+    width: 100%;
+    height: 1;
+    background: #181b21;
+}
+
+EditorScreen.narrow ModuleTabs {
+    display: block;
+}
+
+/* < 50 欄:每個欄位兩列(標籤 / 值) */
+EditorScreen.compact FieldRow {
+    height: 2;
+}
+
+EditorScreen.compact .grp {
+    margin-top: 0;
+}
+
+EditorScreen.compact #ed-help {
+    min-height: 4;
+    max-height: 7;
+}
+
+/* 對話框窄版:縮小留白,表格儲存格改直式排列且只佔一列 */
+Dialog.narrow .dlg {
+    width: 100%;
+    max-width: 100%;
+    padding: 0 1;
+}
+
+Dialog.narrow .dlg-help {
+    margin-bottom: 0;
+}
+
+Dialog.narrow #cells {
+    layout: vertical;
+    height: auto;
+}
+
+Dialog.narrow #cells Input {
+    width: 100%;
+    height: 1;
+    border: none;
+    margin: 0;
+    padding: 0 1;
+    background: #242932;
+}
+
+Dialog.narrow #cells CycleBox {
+    width: 100%;
+    height: 1;
+    border: none;
+    margin: 0;
+}
+
+Dialog.narrow .dlg-buttons {
+    margin-top: 0;
+}

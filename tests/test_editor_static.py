@@ -49,7 +49,57 @@ def _all_methods(classes, name, seen=None):
     return out
 
 
+def _snake(name):
+    return re.sub(r"(?<!^)(?=[A-Z])", "_", name).lower()
+
+
+def _custom_messages():
+    """{(Widget, Message): 該訊息在 __init__ 內設定的屬性}。"""
+    out = {}
+    for path in FILES:
+        tree = ast.parse(path.read_text(encoding="utf-8"))
+        for widget in [n for n in ast.walk(tree) if isinstance(n, ast.ClassDef)]:
+            for inner in [n for n in widget.body if isinstance(n, ast.ClassDef)]:
+                attrs = set()
+                for node in ast.walk(inner):
+                    if (isinstance(node, ast.Attribute) and isinstance(node.value, ast.Name)
+                            and node.value.id == "self" and isinstance(node.ctx, ast.Store)):
+                        attrs.add(node.attr)
+                out[(widget.name, inner.name)] = attrs
+    return out
+
+
 class StaticChecks(unittest.TestCase):
+    def test_handlers_only_read_attributes_the_message_defines(self):
+        """曾經 Clicked 設定 .action、處理器卻讀 .command,每個按鈕一點就當機。"""
+        messages = _custom_messages()
+        by_handler = {f"on_{_snake(w)}_{_snake(m)}": (w, m) for (w, m) in messages}
+        common = {"stop", "prevent_default", "control", "message"}
+        checked = 0
+        for path in FILES:
+            tree = ast.parse(path.read_text(encoding="utf-8"))
+            for func in [n for n in ast.walk(tree) if isinstance(n, ast.FunctionDef)]:
+                key = None
+                if func.name in by_handler:
+                    key = by_handler[func.name]
+                for arg in func.args.args:                       # event: Widget.Message
+                    ann = arg.annotation
+                    if (isinstance(ann, ast.Attribute) and isinstance(ann.value, ast.Name)
+                            and (ann.value.id, ann.attr) in messages):
+                        key = (ann.value.id, ann.attr)
+                if key is None:
+                    continue
+                allowed = messages[key] | common
+                for node in ast.walk(func):
+                    if (isinstance(node, ast.Attribute) and isinstance(node.value, ast.Name)
+                            and node.value.id == "event"):
+                        self.assertIn(node.attr, allowed,
+                                      f"{path.name}:{func.name} 讀取 event.{node.attr},"
+                                      f"但 {key[0]}.{key[1]} 只有 {sorted(messages[key])}")
+                        checked += 1
+        self.assertGreater(checked, 15)
+
+
     def test_every_binding_action_has_a_method(self):
         classes = _load()
         checked = 0
@@ -66,7 +116,7 @@ class StaticChecks(unittest.TestCase):
     def test_message_handlers_match_message_classes(self):
         """on_<widget>_<message> 形式的處理器必須對應到實際存在的訊息類別。"""
         widget_msgs = {
-            "pick_list": {"chosen", "toggled", "edge"},
+            "pick_list": {"chosen", "toggled", "edge", "moved"},
             "cycle_box": {"submitted"},
             "preset_grid": {"accepted"},
             "action_label": {"clicked"},
@@ -92,6 +142,50 @@ class StaticChecks(unittest.TestCase):
             for command in used:
                 self.assertIn(f'"{command}"', src.split("def run_command")[-1],
                               f"{cls.name} 未處理按鈕指令 {command}")
+
+    def test_no_attribute_shadows_a_textual_internal(self):
+        """self.<名稱> = … 不可覆蓋 Textual 元件的內建屬性。
+
+        曾經在 EditorScreen 寫 self._nodes = None(DOMNode 用它存子元件),編輯器一開就壞;
+        Widget.visible 是控制可見性的屬性,把它當「顯示幾列」用也會出問題。
+        """
+        reserved = {
+            "_nodes", "_id", "_classes", "_name", "_size", "_parent", "_bindings", "_styles",
+            "visible", "display", "disabled", "loading", "size", "region", "styles", "id",
+            "classes", "name", "parent", "children", "app", "screen", "focused", "tooltip",
+            "expand", "shrink", "border_title", "border_subtitle", "title", "sub_title",
+            "root", "nodes", "rows", "columns", "layout", "offset", "content", "renderable",
+            "_widgets", "_rows", "can_focus", "has_focus", "mouse_hover", "message_queue",
+        }
+        # PickList.rows 是刻意的公開欄位:它不與 Textual 衝突(已在 Textual 實測),明列為例外
+        allowed = {("PickList", "rows")}
+        for path in FILES:
+            tree = ast.parse(path.read_text(encoding="utf-8"))
+            for cls in [n for n in ast.walk(tree) if isinstance(n, ast.ClassDef)]:
+                for node in ast.walk(cls):
+                    if (isinstance(node, ast.Attribute) and isinstance(node.ctx, ast.Store)
+                            and isinstance(node.value, ast.Name) and node.value.id == "self"
+                            and node.attr in reserved and (cls.name, node.attr) not in allowed):
+                        self.fail(f"{path.name}:{cls.name} 設定了 self.{node.attr},"
+                                  f"可能覆蓋 Textual 內建屬性")
+
+    def test_scrolling_containers_do_not_steal_arrow_keys(self):
+        """VerticalScroll 內建 ↑↓ 捲動綁定,會在內容超出畫面時搶走編輯器的上一列/下一列。
+
+        必須寫成類別關鍵字參數 inherit_bindings=False;類別內的同名屬性不會生效。
+        """
+        text = (ROOT / "editor" / "screen.py").read_text(encoding="utf-8")
+        tree = ast.parse(text)
+        checked = 0
+        for cls in [n for n in tree.body if isinstance(n, ast.ClassDef)]:
+            bases = {b.id for b in cls.bases if isinstance(b, ast.Name)}
+            if bases & {"VerticalScroll", "ScrollableContainer", "VerticalGroup"}:
+                kw = {k.arg: k.value for k in cls.keywords}
+                self.assertIn("inherit_bindings", kw,
+                              f"{cls.name} 必須在 class 宣告加 inherit_bindings=False")
+                self.assertIs(kw["inherit_bindings"].value, False)
+                checked += 1
+        self.assertGreaterEqual(checked, 1)
 
     def test_hotkeys_do_not_collide_with_editor_keys(self):
         from tui.editor.model import MODULE_ENTRIES

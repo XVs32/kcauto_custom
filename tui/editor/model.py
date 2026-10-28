@@ -468,66 +468,95 @@ def has_duplicates(items: Sequence[Any]) -> bool:
 # ---------------------------------------------------------------------- #
 # 任務目錄(quest 勾選清單)
 # ---------------------------------------------------------------------- #
-QUEST_ID = re.compile(r"[A-Z][a-z]{0,2}\d{1,3}")
+# 只讀這兩個檔案的「頂層 key」(任務 ID);第一個存在的檔案為準。
+QUEST_FILES = ("data/quests/quests.json", "template/data/quests/quests.json")
 
 
-def _walk_ids(node: Any, out: list[str]) -> None:
-    if isinstance(node, dict):
-        for k, v in node.items():
-            if isinstance(k, str) and QUEST_ID.fullmatch(k) and k not in out:
-                out.append(k)
-            _walk_ids(v, out)
-    elif isinstance(node, list):
-        for v in node:
-            _walk_ids(v, out)
-    elif isinstance(node, str) and QUEST_ID.fullmatch(node) and node not in out:
-        out.append(node)
+@dataclass(frozen=True)
+class QuestInfo:
+    id: str
+    note: str = ""          # 例如 "#201 daily"
 
 
-def load_quest_catalog(root: Path | str = "data") -> list[str]:
-    """掃描 data/ 底下檔名含 quest 的 JSON,收集符合任務 ID 格式的名稱。
-
-    找不到或格式不認得時回傳空清單,畫面會退回一般的清單編輯器。
-    """
+def find_quest_file(root: Path | str = ".") -> Optional[Path]:
     base = Path(root)
-    found: list[str] = []
-    if not base.is_dir():
-        return found
-    for path in sorted(base.rglob("*.json")):
-        if "quest" not in path.name.lower() and "quest" not in str(path.parent).lower():
+    for rel in QUEST_FILES:
+        path = base / rel
+        if path.is_file():
+            return path
+    return None
+
+
+def load_quest_catalog(root: Path | str = ".") -> list[QuestInfo]:
+    """依檔案順序回傳 quests.json 內有出現的任務。找不到或格式不對時回傳空清單。"""
+    path = find_quest_file(root)
+    if path is None:
+        return []
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return []
+    if not isinstance(data, dict):
+        return []
+    out: list[QuestInfo] = []
+    for qid, body in data.items():
+        if not isinstance(qid, str) or not isinstance(body, dict):
             continue
-        try:
-            data = json.loads(path.read_text(encoding="utf-8"))
-        except (OSError, ValueError):
-            continue
-        _walk_ids(data, found)
-    return found
+        bits = []
+        if isinstance(body.get("id"), int):
+            bits.append(f"#{body['id']}")
+        if isinstance(body.get("type"), str):
+            bits.append(body["type"])
+        out.append(QuestInfo(qid, " ".join(bits)))
+    return out
+
+
+_CATEGORY = {"A": "composition", "B": "sortie", "C": "exercise", "D": "expedition",
+             "E": "supply/docking", "F": "arsenal", "G": "modernization"}
+_PERIOD = {"d": "daily", "w": "weekly", "m": "monthly", "q": "quarterly", "y": "yearly"}
 
 
 def quest_group(quest_id: str) -> str:
-    m = re.match(r"[A-Z][a-z]{0,2}", quest_id)
-    return m.group(0) if m else "?"
+    """Bd1 → Bd;2610B2 → 2610(活動任務依年月分組);其他 → misc。"""
+    m = re.fullmatch(r"([A-Z][a-z]?)\d+", quest_id)
+    if m:
+        return m.group(1)
+    m = re.fullmatch(r"(\d{4})[A-Z]\d+", quest_id)
+    if m:
+        return m.group(1)
+    return "misc"
 
 
-def group_quests(catalog: Sequence[str], selected: Sequence[Any]) -> list[tuple[str, list[str]]]:
-    """依前綴分組(Bd、Bw、C…);已選但不在目錄的歸到 'other'。"""
+def quest_group_title(group: str) -> str:
+    if group == "other":
+        return "other (not in quests.json)"
+    if group.isdigit():
+        return f"{group} · event"
+    cat = _CATEGORY.get(group[:1])
+    per = _PERIOD.get(group[1:])
+    if cat and per:
+        return f"{group} · {cat} {per}"
+    return group
+
+
+def group_quests(catalog: Sequence[QuestInfo | str],
+                 selected: Sequence[Any]) -> list[tuple[str, list[str]]]:
+    """依前綴分組(保持檔案順序);已選但不在目錄的歸到 'other',避免被悄悄丟掉。"""
+    ids = [c.id if isinstance(c, QuestInfo) else str(c) for c in catalog]
     groups: dict[str, list[str]] = {}
-    known = set(catalog)
-    for q in catalog:
-        groups.setdefault(quest_group(q), []).append(q)
-    extra = [str(s) for s in selected if str(s) not in known]
-    result = [(g, sorted(ids, key=_natural)) for g, ids in groups.items()]
+    for qid in ids:
+        groups.setdefault(quest_group(qid), []).append(qid)
+    known = set(ids)
+    extra = [str(x) for x in selected if str(x) not in known]
+    result = list(groups.items())
     if extra:
         result.append(("other", extra))
     return result
 
 
-def _natural(text: str) -> tuple:
-    return tuple(int(p) if p.isdigit() else p for p in re.split(r"(\d+)", text))
-
-
 def merge_selection(old: Sequence[Any], chosen: Iterable[str]) -> list[Any]:
     """勾選結果 → 清單:保留原本的順序,新勾的接在後面。"""
+    chosen = list(chosen)
     chosen_set = set(chosen)
     out = [x for x in old if str(x) in chosen_set]
     have = {str(x) for x in out}
@@ -552,11 +581,192 @@ def parse_json(text: str, *, want_object: bool = False) -> Any:
     return value
 
 
+# 資源配色(對應遊戲內的圖示色)與配方的 2×2 排版:上 燃料/鋼材,下 彈藥/鋁土。
+# 設定檔內的順序是 [燃料, 彈藥, 鋼材, 鋁土],排版只影響畫面,不影響存檔順序。
+RESOURCES: tuple[tuple[str, str, int, int], ...] = (
+    # (名稱, 顏色, 排, 欄)
+    ("fuel", "#7fc36b", 0, 0),
+    ("ammo", "#b8935a", 1, 0),
+    ("steel", "#9aa5b1", 0, 1),
+    ("bauxite", "#e0793b", 1, 1),
+)
+
+
+# ---------------------------------------------------------------------- #
+# 數字:滾輪(逐位數)與小範圍直接調整
+# ---------------------------------------------------------------------- #
+SMALL_INT_SPAN = 8          # max-min ≤ 8(最多 9 個等級)視為「等級」型欄位
+DEFAULT_PLACES = 4          # 沒有上限的數字,滾輪至少幾位
+
+
+def is_small_int(field: Optional[Field]) -> bool:
+    return (field is not None and field.kind is Kind.INT
+            and field.min is not None and field.max is not None
+            and field.max - field.min <= SMALL_INT_SPAN)
+
+
+def adjustable(field: Optional[Field]) -> bool:
+    """可以直接用 ← → 調整的欄位:開關、enum、只有幾個等級的整數。"""
+    if field is None:
+        return False
+    return field.kind in (Kind.BOOL, Kind.ENUM) or is_small_int(field)
+
+
+def adjust_value(field: Field, value: Any, direction: int) -> Any:
+    """← → 的結果;沒有變化時回傳原值。整數不循環(到頭就停),enum 循環。"""
+    if field.kind is Kind.BOOL:
+        return direction > 0
+    if field.kind is Kind.ENUM:
+        return cycle_choice([v for _, v in enum_options(field)], value, direction)
+    new = step_int(field, value, direction)
+    return value if new is None else new
+
+
+def int_options(field: Field) -> list[tuple[str, Any]]:
+    return [(str(n), n) for n in range(field.min, field.max + 1)]
+
+
+def number_layout(lo: Optional[int], hi: Optional[int], value: Any,
+                  min_places: int = 1) -> tuple[bool, int]:
+    """(是否有正負號輪, 位數)。有上限就用上限的位數;沒有上限至少 DEFAULT_PLACES 位。"""
+    signed = lo is not None and lo < 0
+    nums = [abs(v) for v in (lo, hi) if isinstance(v, int)]
+    if isinstance(value, int) and not isinstance(value, bool):
+        nums.append(abs(value))
+    longest = max((len(str(n)) for n in nums), default=1)
+    if hi is None:
+        longest = max(longest, DEFAULT_PLACES)
+    return signed, max(longest, min_places)
+
+
+def digits_of(value: int, places: int) -> list[int]:
+    return [int(c) for c in str(abs(value)).zfill(places)[-places:]]
+
+
+def number_from(negative: bool, digits: Sequence[int]) -> int:
+    n = int("".join(str(d) for d in digits) or "0")
+    return -n if negative else n
+
+
+def clamp_number(value: int, lo: Optional[int], hi: Optional[int]) -> int:
+    if lo is not None:
+        value = max(value, lo)
+    if hi is not None:
+        value = min(value, hi)
+    return value
+
+
+# ---------------------------------------------------------------------- #
+# 出擊海域
+# ---------------------------------------------------------------------- #
+MAP_COUNTS = {"1": 6, "2": 5, "3": 5, "4": 5, "5": 5, "6": 5, "7": 4}
+EVENT_MAPS = 9
+WORLDS = ("auto", "1", "2", "3", "4", "5", "6", "7", "E")
+_MAP_RE = re.compile(r"([A-Za-z0-9]+)-(\d+)(?:-([A-Za-z0-9]+))?")
+NO_NODE = "—"                       # 節點滾輪的「不指定」
+NodeIndex = Mapping[tuple[str, int], Sequence[str]]
+
+
+def parse_map(value: Any) -> Optional[tuple[str, Optional[int], str]]:
+    """'3-5' → ('3', 5, '');'2-2-A' → ('2', 2, 'A');'auto' → ('auto', None, '');不符 → None。"""
+    if value == "auto":
+        return "auto", None, ""
+    if isinstance(value, str):
+        m = _MAP_RE.fullmatch(value)
+        if m:
+            return m.group(1), int(m.group(2)), m.group(3) or ""
+    return None
+
+
+def world_items(current: Optional[str] = None) -> list[str]:
+    items = list(WORLDS)
+    if current and current not in items:
+        items.append(current)
+    return items
+
+
+def map_number_items(world: str, current: Optional[int] = None) -> list[str]:
+    if world == "auto":
+        return ["—"]
+    count = MAP_COUNTS.get(world, EVENT_MAPS)
+    if current is not None:
+        count = max(count, current)
+    return [str(n) for n in range(1, count + 1)]
+
+
+def map_node_items(nodes: Optional[NodeIndex], world: str, number: str,
+                   current: str = "") -> list[str]:
+    """節點滾輪:「—」(不指定)+ noro6 內有指定該節點預設的節點。
+
+    目前值若不在 noro6 內(預設被刪、檔案讀不到)也保留,避免打開就被悄悄改掉。
+    """
+    items = [NO_NODE]
+    if world != "auto" and number.isdigit() and nodes:
+        items += [n for n in nodes.get((world, int(number)), ()) if n not in items]
+    if current and current not in items:
+        items.append(current)
+    return items
+
+
+def build_map(world: str, number: str, node: str = "") -> str:
+    if world == "auto":
+        return "auto"
+    return f"{world}-{number}" + (f"-{node}" if node and node != NO_NODE else "")
+
+
+# ---------------------------------------------------------------------- #
+# 遠征:一次設定 2、3、4 艦隊
+# ---------------------------------------------------------------------- #
+EXPEDITION_FLEET_KEYS = ("expedition.fleet_2", "expedition.fleet_3", "expedition.fleet_4")
+BULK_EXPEDITION = "@expedition.all_fleets"      # 虛擬列,不對應任何設定 key
+
+# (顯示名稱, 寫進每個艦隊的清單)。要增加預設就在這裡加一行。
+EXPEDITION_PRESETS: tuple[tuple[str, list[str]], ...] = (
+    ("auto", ["auto"]),
+    ("overnight", ["overnight"]),
+)
+CUSTOM = "__custom__"
+CLEAR = "__clear__"
+
+
+def expedition_bulk_options() -> list[tuple[str, Any]]:
+    opts: list[tuple[str, Any]] = [(name, name) for name, _ in EXPEDITION_PRESETS]
+    opts.append(("custom list…   (same destinations for fleets 2/3/4)", CUSTOM))
+    opts.append(("clear all   (no expedition)", CLEAR))
+    return opts
+
+
+def expedition_preset_items(name: str) -> list[str]:
+    for n, items in EXPEDITION_PRESETS:
+        if n == name:
+            return list(items)
+    return []
+
+
+def expedition_common(values: Mapping[str, Any]) -> Optional[str]:
+    """三個艦隊的設定一致時,回傳對應的預設名稱;否則 None。"""
+    lists = [values.get(k) for k in EXPEDITION_FLEET_KEYS]
+    if not all(isinstance(x, list) for x in lists) or any(x != lists[0] for x in lists):
+        return None
+    for name, items in EXPEDITION_PRESETS:
+        if lists[0] == items:
+            return name
+    return None
+
+
+def bulk_summary(values: Mapping[str, Any]) -> str:
+    lists = [values.get(k) for k in EXPEDITION_FLEET_KEYS]
+    if all(isinstance(x, list) for x in lists) and all(x == lists[0] for x in lists):
+        return "all: " + (", ".join(str(i) for i in lists[0]) if lists[0] else "(none)")
+    return "(differs per fleet)"
+
+
 # ---------------------------------------------------------------------- #
 # 控制項分派:這個欄位按 Enter 要開哪種對話框
 # ---------------------------------------------------------------------- #
 def editor_for(field: Optional[Field], value: Any = None) -> str:
-    """回傳 'bool'|'choice'|'text'|'preset'|'preset_list'|'recipe'|'table'|'quest'|'list'|'json'。"""
+    """回傳:bool | choice | choice_int | wheel | map | text | preset | preset_list |
+    tokens | recipe | table | quest | list | tree | json。"""
     if field is None:
         return "json"
     k = field.kind
@@ -564,20 +774,26 @@ def editor_for(field: Optional[Field], value: Any = None) -> str:
         return "bool"
     if k is Kind.ENUM:
         return "choice"
-    if k in (Kind.INT, Kind.INT_STR, Kind.STR):
+    if k is Kind.INT:
+        return "choice_int" if is_small_int(field) else "wheel"
+    if k in (Kind.INT_STR,):
         return "text"
+    if k is Kind.STR:
+        return "map" if field.key == "combat.sortie_map" else "text"
     if k is Kind.PRESET:
         return "preset"
     if k is Kind.RECIPE:
         return "recipe"
     if k is Kind.OBJECT:
-        return "json"
+        return "tree"
     if field.key in TABLES:
         return "table"
     if field.key == "quest.quests":
         return "quest"
     if field.key == "combat.fleet_presets":
         return "preset_list"
+    if field.key == "combat.lbas_groups":
+        return "tokens"
     return "list"
 
 

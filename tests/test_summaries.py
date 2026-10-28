@@ -101,13 +101,20 @@ class Summaries(unittest.TestCase):
         push = [(t, s) for t, s in lines if "push" in t]
         self.assertEqual(push, [("⚠ push D,Z", "bold red")])
 
-    def test_expedition(self):
-        text = self.text("expedition", **{"expedition.desire_oil": 300000,
-                                          "expedition.fleet_2": ["auto"]})
-        self.assertIn("oil", text)
-        self.assertIn("300k", text)
-        self.assertIn("F2 auto", text)
-        self.assertIn("3k", text)
+    def test_expedition_shows_destinations_and_preset_only(self):
+        text = self.text("expedition", **{
+            "expedition.fleet_2": ["auto"], "expedition.fleet_3": [5, 21],
+            "expedition.fleet_4": [], "expedition.fleet_preset": "auto",
+            "expedition.desire_oil": 300000})
+        self.assertIn("fleet 2  auto", text)
+        self.assertIn("fleet 3  5,21", text)
+        self.assertIn("fleet 4  -", text)
+        self.assertIn("preset   auto", text)
+        self.assertNotIn("oil", text)            # 資源目標量不再顯示
+        self.assertNotIn("300k", text)
+
+    def test_expedition_without_preset(self):
+        self.assertIn("preset   -", self.text("expedition"))
 
     def test_pvp_unset_preset(self):
         self.assertIn("preset -", self.text("pvp"))

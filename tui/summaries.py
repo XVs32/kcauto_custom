@@ -67,24 +67,13 @@ def _combat(v: Mapping[str, Any]) -> list[Line]:
     return lines
 
 
-_RESOURCES = (
-    ("oil", "expedition.desire_oil", 350000),
-    ("ammo", "expedition.desire_ammo", 350000),
-    ("steel", "expedition.desire_steel", 350000),
-    ("baux", "expedition.desire_bauxite", 350000),
-    ("bkt", "expedition.desire_bucket", 3000),
-)
-
-
 def _expedition(v: Mapping[str, Any]) -> list[Line]:
-    lines: list[Line] = []
-    for name, key, maximum in _RESOURCES:
-        value = v[key]
-        lines.append((f"{name:<5} {meter(value, maximum)} {fmt_amount(value):>5}", "cyan"))
-    fleets = " ".join(
-        f"F{n} {_join(v[f'expedition.fleet_{n}'])}" for n in (2, 3, 4)
-    )
-    lines.append((_truncate(fleets, 30), ""))
+    """只顯示各艦隊的目的地與 fleet preset(資源目標量請進編輯器看)。"""
+    lines: list[Line] = [
+        (f"fleet {n}  {_join(v[f'expedition.fleet_{n}'])}", "cyan") for n in (2, 3, 4)
+    ]
+    preset = v["expedition.fleet_preset"]
+    lines.append((f"preset   {preset if preset else '-'}", ""))
     return lines
 
 

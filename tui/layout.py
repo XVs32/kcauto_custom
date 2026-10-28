@@ -71,3 +71,24 @@ def choose_layout(width: int, height: int, heights: Sequence[int]) -> LayoutPlan
     columns = max(1, min((width - SCROLLBAR_WIDTH) // CARD_MIN_WIDTH, MAX_COLUMNS))
     needed = CHROME_ROWS + grid_height(heights, columns) + LOG_MIN_HEIGHT
     return LayoutPlan(columns, LOG_BOTTOM if needed <= height else LOG_HIDDEN)
+
+
+def fit_segments(lengths: Sequence[tuple[str, int]], drop_order: Sequence[str],
+                 width: int) -> set[str]:
+    """一行放不下時,依 ``drop_order`` 由前往後丟掉次要的片段,回傳「要保留」的名稱。
+
+    ``lengths`` 是 (名稱, 顯示寬度),不在 ``drop_order`` 內的片段永遠保留。
+    ``width`` <= 0(尚未量測)時全部保留。
+    """
+    kept = {name for name, _ in lengths}
+    if width <= 0:
+        return kept
+    size = dict(lengths)
+    total = sum(size.values())
+    for name in drop_order:
+        if total <= width:
+            break
+        if name in kept:
+            kept.discard(name)
+            total -= size[name]
+    return kept

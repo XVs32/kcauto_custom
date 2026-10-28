@@ -26,22 +26,21 @@ from textual.widgets import Static
 
 from ..modules import CARD_BY_MODULE
 from ..schema import SCHEMA, Field, Kind, fields_of, groups_of
+from ..layout import fit_segments
 from ..store import ConfigStore
 from . import model as M
+from . import narrow as N
+from . import noro6
 from .dialogs import (
-    ChoiceDialog, DangerDialog, JsonDialog, ListDialog, Picked, PresetDialog,
-    QuestDialog, RecipeDialog, SearchDialog, TableDialog, TextDialog,
+    ChoiceDialog, DangerDialog, JsonDialog, ListDialog, MapDialog, NumberDialog,
+    NumSpec, Picked, PresetDialog, QuestDialog, SearchDialog, TableDialog, TextDialog, TreeDialog,
 )
 
 FLAG_MARK = {"error": ("✖", "bold #e06c75"), "danger": ("!", "bold #c678dd"),
              "warning": ("⚠", "#e5c07b"), "": (" ", "")}
-NARROW_WIDTH = 72
+NARROW_WIDTH = N.NARROW_WIDTH
 
-HINTS = (
-    ("↑↓", "move"), ("enter", "edit"), ("space", "toggle"), ("+/-", "adjust"),
-    ("d", "default"), ("z", "undo"), ("/", "search"), ("[ ]", "module"),
-    ("w", "save"), ("esc", "back"),
-)
+HINTS = N.EDITOR_HINTS
 
 
 # ---------------------------------------------------------------------- #
@@ -133,6 +132,44 @@ class ModuleList(Widget, can_focus=True):
         return text
 
 
+class ModuleTabs(Widget):
+    """窄視窗時取代左側模組清單的一列式切換器:‹ 上一個  [ 目前 ]  下一個 ›。
+
+    點左三分之一 = 上一個模組,右三分之一 = 下一個;鍵盤用 [ ] 或模組快捷鍵。
+    """
+
+    class Step(Message):
+        def __init__(self, delta: int) -> None:
+            super().__init__()
+            self.delta = delta
+
+    ROLE_STYLE = {"arrow": "bold #e5c07b", "side": "#6b7280", "gap": "",
+                  "pos": "#6b7280"}
+
+    def __init__(self, **kwargs) -> None:
+        super().__init__(**kwargs)
+        self.index = 0
+
+    def on_click(self, event: events.Click) -> None:
+        event.stop()
+        delta = N.tabs_step(event.x, max(self.size.width, 1))
+        if delta:
+            self.post_message(self.Step(delta))
+
+    def render(self) -> Text:
+        width = max(self.size.width, 20)
+        labels = [e.label for e in M.MODULE_ENTRIES]
+        segments = N.tabs_layout(labels, self.index, width)
+        total = sum(M.cell_len(t) for t, _ in segments)
+        color = M.MODULE_ENTRIES[self.index].color
+        text = Text(no_wrap=True, overflow="ellipsis")
+        text.append(" " * max(0, (width - total) // 2))
+        for piece, role in segments:
+            style = f"bold {color}" if role == "current" else self.ROLE_STYLE[role]
+            text.append(piece, style=style)
+        return text
+
+
 def _split_hotkey(label: str, hotkey: str) -> tuple[str, str, str]:
     index = label.lower().find(hotkey.lower())
     if index < 0:
@@ -172,22 +209,53 @@ class FieldRow(Widget, can_focus=True):
         value = self.store.get(self.key) if self.key in self.store else None
         flag = M.row_flag(self.store.issues_for(self.key))
         changed = self.store.is_changed(self.key)
+        compact = self.size.height >= 2
 
-        label_w = max(12, min(30, width * 2 // 5))
-        value_w = max(4, width - label_w - 5)
+        label_w, value_w = N.row_columns(width, compact)
         label = field.label if field else self.key
         dim = bool(field and field.advanced)
+        shown = M.format_value(field, value, value_w) if field else M.format_raw(value, value_w)
 
         mark, mark_style = FLAG_MARK[flag]
         text = Text(no_wrap=True, overflow="ellipsis")
         text.append(mark, style=mark_style)
         text.append("*" if changed else " ", style="bold #e5c07b")
         text.append(" ")
-        text.append(M.pad_cells(label, label_w), style="#6b7280" if dim else "")
-        text.append("  ")
-        shown = M.format_value(field, value, value_w) if field else M.format_raw(value, value_w)
+        if compact:                                   # 窄:標籤一列、值一列
+            text.append(M.clip_cells(label, label_w), style="#6b7280" if dim else "")
+            text.append("\n   ")
+        else:
+            text.append(M.pad_cells(label, label_w), style="#6b7280" if dim else "")
+            text.append("  ")
         text.append(shown, style=_value_style(value, flag, changed))
         return text
+
+
+class BulkRow(FieldRow):
+    """遠征的「一次設定 2/3/4 艦隊」虛擬列;不對應任何設定 key。"""
+
+    def __init__(self, store: ConfigStore) -> None:
+        super().__init__(store, M.BULK_EXPEDITION)
+
+    def render(self) -> Text:
+        width = max(self.size.width, 24)
+        compact = self.size.height >= 2
+        label_w, value_w = N.row_columns(width, compact)
+        text = Text(no_wrap=True, overflow="ellipsis")
+        text.append("   ")
+        if compact:
+            text.append(M.clip_cells("All fleets 2/3/4  ▸", label_w), style="bold #56b6c2")
+            text.append("\n   ")
+        else:
+            text.append(M.pad_cells("All fleets 2/3/4  ▸", label_w), style="bold #56b6c2")
+            text.append("  ")
+        text.append(M.clip_cells(M.bulk_summary(self.store.as_dict()), value_w),
+                    style="#c8ccd4")
+        return text
+
+
+def _is_int(value: Any) -> bool:
+    return isinstance(value, int) and not isinstance(value, bool)
 
 
 def _value_style(value: Any, flag: str, changed: bool) -> str:
@@ -200,8 +268,18 @@ def _value_style(value: Any, flag: str, changed: bool) -> str:
     return "#e5c07b" if changed else "#c8ccd4"
 
 
-class FormPane(VerticalScroll, can_focus=False):
-    """一個模組的表單(依 group 分區)。所有模組的 pane 同時存在,只顯示被選的那個。"""
+class FormPane(VerticalScroll, can_focus=False, inherit_bindings=False):
+    """一個模組的表單(依 group 分區)。所有模組的 pane 同時存在,只顯示被選的那個。
+
+    VerticalScroll 內建 ↑ ↓ PgUp PgDn Home End 的「捲動畫面」綁定。這些綁定在
+    元件鏈上比 EditorScreen 的「上一列 / 下一列」更靠前,內容一超出畫面高度
+    (捲動條出現)就會搶走按鍵,變成整個面板在捲動而不是游標在移動。
+    因此不繼承內建綁定;游標移動由 EditorScreen 負責,焦點列會自動捲進可視範圍。
+    滑鼠滾輪不受影響。
+
+    注意:一定要用「類別宣告的關鍵字參數」inherit_bindings=False。在類別內寫
+    ``inherit_bindings = False`` 只是普通屬性,Textual 不會理它。
+    """
 
     def __init__(self, store: ConfigStore, module: str, **kwargs) -> None:
         super().__init__(**kwargs)
@@ -221,6 +299,8 @@ class FormPane(VerticalScroll, can_focus=False):
         for group in groups_of(self.module):
             yield Static(Text(f"── {M.group_title(group)} ──", style="bold #7f848e"),
                          classes="grp")
+            if self.module == "expedition" and group == "fleets":
+                yield BulkRow(self.store)
             for field in fields_of(self.module):
                 if field.group == group:
                     yield FieldRow(self.store, field.key)
@@ -254,18 +334,20 @@ class EditorScreen(Screen):
 
     def __init__(self, store: ConfigStore, module: str, *,
                  save: Callable[[], bool] | None = None,
-                 data_dir: str = "data") -> None:
+                 root: str = ".") -> None:
         super().__init__()
         self.store = store
         self.save_callback = save
-        self.data_dir = data_dir
-        self._catalog: Optional[list[str]] = None
+        self.project_root = root                      # 專案根目錄(找 data/quests/quests.json 用)
+        self._catalog: Optional[list[M.QuestInfo]] = None
+        self._noro6_cache: Optional[M.NodeIndex] = None
         names = [e.module for e in M.MODULE_ENTRIES]
         self.index = names.index(module) if module in names else 0
 
     # ------------------------------------------------------------------ #
     def compose(self) -> ComposeResult:
         yield Static(id="ed-top")
+        yield ModuleTabs(id="ed-tabs")
         with Horizontal(id="ed-body"):
             with Vertical(id="ed-left"):
                 yield ModuleList(self.store, id="ed-modules")
@@ -275,20 +357,25 @@ class EditorScreen(Screen):
                     pane.display = False
                     yield pane
         yield Static(id="ed-help")
-        yield Static(self._hints(), id="ed-hints")
+        yield Static(self._hints(0), id="ed-hints")
 
     @staticmethod
-    def _hints() -> Text:
+    def _hints(width: int) -> Text:
+        """底部提示;窄視窗丟掉次要的,保留 enter / search / save / back。"""
+        lengths = [(desc, len(key) + len(desc) + 3) for key, desc in HINTS]
+        kept = fit_segments(lengths, N.EDITOR_HINT_DROP, width - 1 if width else 0)
         text = Text(no_wrap=True, overflow="ellipsis")
         for key, desc in HINTS:
-            text.append(key, style="bold #e5c07b")
-            text.append(f" {desc}  ", style="#9aa0a6")
+            if desc in kept:
+                text.append(key, style="bold #e5c07b")
+                text.append(f" {desc}  ", style="#9aa0a6")
         return text
 
     def on_mount(self) -> None:
         self.query_one("#ed-left").border_title = "modules"
         self.store.subscribe(self._on_store_change)
-        self.set_class(self.size.width < NARROW_WIDTH, "narrow")
+        self.set_class(self.size.width < N.NARROW_WIDTH, "narrow")
+        self.set_class(self.size.width < N.COMPACT_WIDTH, "compact")
         self._show_module(self.index)
         self.call_after_refresh(self._focus_first_row)
 
@@ -296,7 +383,11 @@ class EditorScreen(Screen):
         self.store.unsubscribe(self._on_store_change)
 
     def on_resize(self, event: events.Resize) -> None:
-        self.set_class(event.size.width < NARROW_WIDTH, "narrow")
+        width = event.size.width
+        self.set_class(width < N.NARROW_WIDTH, "narrow")
+        self.set_class(width < N.COMPACT_WIDTH, "compact")
+        self.query_one("#ed-hints", Static).update(self._hints(width))
+        self._refresh_top()
 
     # ------------------------------------------------------------------ #
     # 模組切換
@@ -308,7 +399,7 @@ class EditorScreen(Screen):
     def _pane(self, module: str) -> FormPane:
         return self.query_one(f"#pane-{module}", FormPane)
 
-    def _rows(self) -> list[FieldRow]:
+    def _field_rows(self) -> list[FieldRow]:
         return list(self._pane(self.entry.module).query(FieldRow))
 
     def _show_module(self, index: int) -> None:
@@ -322,12 +413,15 @@ class EditorScreen(Screen):
         modules = self.query_one(ModuleList)
         modules.index = index
         modules.refresh()
+        tabs = self.query_one(ModuleTabs)
+        tabs.index = index
+        tabs.refresh()
         self._refresh_top()
-        rows = self._rows()
+        rows = self._field_rows()
         self._update_help(rows[0] if rows else None)
 
     def _focus_first_row(self) -> None:
-        rows = self._rows()
+        rows = self._field_rows()
         if rows:
             rows[0].focus()
             self._pane(self.entry.module).scroll_home(animate=False)
@@ -335,6 +429,10 @@ class EditorScreen(Screen):
     @on(ModuleList.Selected)
     def _module_selected(self, event: ModuleList.Selected) -> None:
         self._show_module(event.index)
+
+    @on(ModuleTabs.Step)
+    def _tabs_step(self, event: ModuleTabs.Step) -> None:
+        self.action_module(event.delta)
 
     @on(ModuleList.EnterForm)
     def _module_enter(self) -> None:
@@ -352,6 +450,10 @@ class EditorScreen(Screen):
             self._focus_first_row()
 
     def action_horizontal(self, direction: int) -> None:
+        row = self._current_row()
+        if row is not None and M.adjustable(row.field):
+            self.action_adjust(direction)          # 開關 / enum / 只有幾級的整數:← → 直接調整
+            return
         if self.has_class("narrow"):
             self.action_module(direction)
         elif direction < 0:
@@ -361,7 +463,7 @@ class EditorScreen(Screen):
     # 列移動
     # ------------------------------------------------------------------ #
     def action_row(self, delta: int) -> None:
-        rows = self._rows()
+        rows = self._field_rows()
         if not rows:
             return
         focused = self.focused
@@ -384,17 +486,28 @@ class EditorScreen(Screen):
         errors = sum(1 for i in issues if i.level == "error")
         warnings = sum(1 for i in issues if i.level != "error")
         n = len(self.store.changed_keys())
-        text = Text(no_wrap=True, overflow="ellipsis")
-        text.append(" Editor ", style="bold #0f1115 on #e5c07b")
-        text.append(f"  {self.store.path.name}", style="bold")
+
+        parts: list[tuple[str, Text]] = []
+
+        def seg(name: str, piece: str, style: str) -> None:
+            parts.append((name, Text(piece, style=style, no_wrap=True)))
+
+        seg("badge", " Editor ", "bold #0f1115 on #e5c07b")
+        seg("file", f"  {self.store.path.name}", "bold")
         if n:
-            text.append(f"  {n} modified*", style="bold #e5c07b")
+            seg("dirty", f"  {n} modified*", "bold #e5c07b")
         else:
-            text.append("  saved", style="#6b7280")
+            seg("dirty", "  saved", "#6b7280")
         if errors:
-            text.append(f"  ✖ {errors}", style="bold #e06c75")
+            seg("errors", f"  ✖ {errors}", "bold #e06c75")
         if warnings:
-            text.append(f"  ⚠ {warnings}", style="#e5c07b")
+            seg("warnings", f"  ⚠ {warnings}", "#e5c07b")
+
+        kept = fit_segments([(k, t.cell_len) for k, t in parts], N.TOP_DROP, self.size.width)
+        text = Text(no_wrap=True, overflow="ellipsis")
+        for name, piece in parts:
+            if name in kept:
+                text.append_text(piece)
         self.query_one("#ed-top", Static).update(text)
 
     def _update_help(self, row: Optional[FieldRow]) -> None:
@@ -406,7 +519,12 @@ class EditorScreen(Screen):
         issues = self.store.issues_for(key)
         changed = self.store.is_changed(key)
         text = Text()
-        if row.field is None:
+        if isinstance(row, BulkRow):
+            text.append("All fleets 2/3/4\n", style="bold")
+            text.append("Set the expedition destinations of fleets 2, 3 and 4 in one go "
+                        "(auto, overnight, a custom list, or clear).\n", style="#9aa0a6")
+            text.append("now: " + M.bulk_summary(self.store.as_dict()), style="#9aa0a6")
+        elif row.field is None:
             text.append(key + "\n", style="bold")
             text.append("Unknown key — kept as-is when saving. Enter edits it as JSON.\n",
                         style="#9aa0a6")
@@ -421,7 +539,7 @@ class EditorScreen(Screen):
         panel.update(text)
 
     def _on_store_change(self, key: Optional[str]) -> None:
-        for row in self._rows():
+        for row in self._field_rows():
             row.refresh()
         self.query_one(ModuleList).refresh()
         self._refresh_top()
@@ -449,6 +567,9 @@ class EditorScreen(Screen):
         row = self._current_row()
         if row is None:
             return
+        if isinstance(row, BulkRow):
+            self._open_bulk()
+            return
         field, value = row.field, self.store.get(row.key)
         kind = M.editor_for(field, value)
         if kind == "bool":
@@ -460,23 +581,22 @@ class EditorScreen(Screen):
             self._open_editor(row)
 
     def action_adjust(self, delta: int) -> None:
+        """+ / - / ← →:整數 ±1(到頭就停)、enum 循環、開關。"""
         row = self._current_row()
-        if row is None or row.field is None:
+        if row is None or row.field is None or isinstance(row, BulkRow):
             return
         value = self.store.get(row.key)
-        if row.field.kind is Kind.INT:
-            new = M.step_int(row.field, value, delta)
-            if new is not None:
-                self._commit(row.key, new)
-        elif row.field.kind is Kind.ENUM:
-            options = [v for _, v in M.enum_options(row.field)]
-            self._commit(row.key, M.cycle_choice(options, value, delta))
-        elif row.field.kind is Kind.BOOL:
-            self._commit(row.key, delta > 0)
+        if row.field.kind not in (Kind.INT, Kind.ENUM, Kind.BOOL):
+            return
+        self._commit(row.key, M.adjust_value(row.field, value, delta))
 
     def action_reset_default(self) -> None:
         row = self._current_row()
         if row is None:
+            return
+        if isinstance(row, BulkRow):
+            for key in M.EXPEDITION_FLEET_KEYS:
+                self.store.reset_key(key)
             return
         if row.field is None:
             self.app.notify("Unknown keys have no default", timeout=2)
@@ -485,7 +605,10 @@ class EditorScreen(Screen):
 
     def action_undo(self) -> None:
         row = self._current_row()
-        if row is not None:
+        if isinstance(row, BulkRow):
+            for key in M.EXPEDITION_FLEET_KEYS:
+                self.store.revert_key(key)
+        elif row is not None:
             self.store.revert_key(row.key)
 
     def action_save(self) -> None:
@@ -511,7 +634,7 @@ class EditorScreen(Screen):
         self._show_module(names.index(module))
 
         def focus_row() -> None:
-            for row in self._rows():
+            for row in self._field_rows():
                 if row.key == key:
                     row.focus()
                     return
@@ -519,41 +642,101 @@ class EditorScreen(Screen):
         self.call_after_refresh(focus_row)
 
     # ------------------------------------------------------------------ #
-    def _quest_catalog(self) -> list[str]:
+    def _noro6_nodes(self) -> M.NodeIndex:
+        """noro6 內有指定目標節點的出擊預設;解壓縮要一點時間,只讀一次。"""
+        if self._noro6_cache is None:
+            self._noro6_cache = noro6.load_sortie_nodes(self.project_root)
+        return self._noro6_cache
+
+    def _quest_catalog(self) -> list[M.QuestInfo]:
         if self._catalog is None:
-            self._catalog = M.load_quest_catalog(self.data_dir)
+            self._catalog = M.load_quest_catalog(self.project_root)
         return self._catalog
 
     def _open_editor(self, row: FieldRow, *, click: bool = False) -> None:
+        if isinstance(row, BulkRow):
+            self._open_bulk()
+            return
         key, field = row.key, row.field
         value = self.store.get(key)
         kind = M.editor_for(field, value)
         push = self.app.push_screen
         done = partial(self._dialog_done, key)
+        is_list = isinstance(value, list)
 
         if kind == "bool":
             self._commit(key, not value if isinstance(value, bool) else True)
         elif kind == "choice":
             push(ChoiceDialog(field.label, field.help, M.enum_options(field), value), done)
-        elif kind == "text":
+        elif kind == "choice_int" and _is_int(value):
+            push(ChoiceDialog(field.label, field.help, M.int_options(field), value), done)
+        elif kind == "wheel" and _is_int(value):
+            spec = NumSpec(field.label, value, field.min, field.max)
+            push(NumberDialog(field, field.label, [spec], as_list=False), done)
+        elif kind == "map":
+            push(MapDialog(field, value, self._noro6_nodes()), done)
+        elif kind == "recipe" and is_list and len(value) == 4 and all(_is_int(v) for v in value):
+            # 配置:上 fuel / steel,下 ammo / bauxite;順序仍是設定檔的 [fuel, ammo, steel, bauxite]
+            specs = [NumSpec(name, v, field.min, field.max, min_places=3,
+                             color=color, row=row, col=col)
+                     for (name, color, row, col), v in zip(M.RESOURCES, value)]
+            push(NumberDialog(field, field.label, specs, as_list=True), done)
+        elif kind == "text" and not isinstance(value, (dict, list)):
             push(TextDialog(field, value), done)
         elif kind == "preset":
             push(PresetDialog(field, value, multi=False), done)
-        elif kind == "recipe":
-            push(RecipeDialog(field, value), done)
-        elif kind == "table" and isinstance(value, list):
+        elif kind == "table" and is_list:
             push(TableDialog(field, value), done)
-        elif kind == "quest" and isinstance(value, list) and self._quest_catalog():
+        elif kind == "quest" and is_list and self._quest_catalog():
             push(QuestDialog(field, value, self._quest_catalog()), done)
-        elif kind == "preset_list" and isinstance(value, list) and not M.has_duplicates(value):
+        elif kind == "preset_list" and is_list and not M.has_duplicates(value):
             push(PresetDialog(field, value, multi=True), done)
-        elif kind in ("list", "quest", "preset_list", "table") and isinstance(value, list):
+        elif kind == "tokens" and is_list and not M.has_duplicates(value):
+            push(PresetDialog(field, value, multi=True, tokens=("1", "2", "3"),
+                              hint="Space toggles a group · Enter = OK"), done)
+        elif kind in ("list", "quest", "preset_list", "tokens", "table") and is_list:
             push(ListDialog(field, value), done)
+        elif kind == "tree" and isinstance(value, dict):
+            push(TreeDialog(field.label, field.help, value, field=field), done)
+        elif field is None and isinstance(value, (dict, list)):
+            push(TreeDialog(key, "Unknown key — kept as-is when saving.", value), done)
         else:                                       # json / 型別已損壞的值
             title = field.label if field else key
             help_text = field.help if field else "Unknown key — edit as JSON."
             want_object = bool(field and field.kind is Kind.OBJECT)
             push(JsonDialog(title, help_text, value, want_object=want_object), done)
+
+    # --- 遠征:一次設定 2/3/4 艦隊 ----------------------------------------- #
+    def _open_bulk(self) -> None:
+        current = M.expedition_common(self.store.as_dict())
+        self.app.push_screen(
+            ChoiceDialog("All fleets 2 / 3 / 4",
+                         "Set the expedition destinations of all three fleets at once.",
+                         M.expedition_bulk_options(), current),
+            self._bulk_chosen)
+
+    def _bulk_chosen(self, result: Optional[Picked]) -> None:
+        if result is None:
+            return
+        choice = result.value
+        if choice == M.CUSTOM:
+            first = self.store.get(M.EXPEDITION_FLEET_KEYS[0])
+            same = all(self.store.get(k) == first for k in M.EXPEDITION_FLEET_KEYS)
+            items = first if same and isinstance(first, list) else []
+            field = SCHEMA[M.EXPEDITION_FLEET_KEYS[0]]
+            self.app.push_screen(ListDialog(field, items), self._bulk_custom)
+        elif choice == M.CLEAR:
+            self._apply_bulk([])
+        else:
+            self._apply_bulk(M.expedition_preset_items(choice))
+
+    def _bulk_custom(self, result: Optional[Picked]) -> None:
+        if result is not None:
+            self._apply_bulk(result.value)
+
+    def _apply_bulk(self, items: list) -> None:
+        for key in M.EXPEDITION_FLEET_KEYS:
+            self.store.set(key, list(items))
 
     def _dialog_done(self, key: str, result: Optional[Picked]) -> None:
         if result is not None:

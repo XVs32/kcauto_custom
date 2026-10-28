@@ -226,9 +226,10 @@ _FIELDS: tuple[Field, ...] = (
     # ------------------------------- combat ------------------------------ #
     _bool("combat.enabled", False, "啟用出擊", "是否啟用出擊模組。"),
     Field("combat.sortie_map", Kind.STR, "1-1", "出擊海域",
-          "地圖編號,例如 1-1、3-5、6-4、E-1;填 auto 自動選擇海域。",
-          pattern=r"auto|[A-Za-z0-9]+-\d+",
-          pattern_hint="格式應為 1-1、E-1 這類編號,或 auto"),
+          "地圖編號,例如 1-1、3-5、6-4、E-1;後面可再接目標節點,例如 2-2-A、7-2-G"
+          "(需要 noro6 內有對應的預設);填 auto 自動選擇海域。",
+          pattern=r"auto|[A-Za-z0-9]+-\d+(-[A-Za-z0-9]+)?",
+          pattern_hint="格式應為 1-1、E-1、2-2-A 這類編號,或 auto"),
     _enum("combat.fleet_mode", "standard", "艦隊模式",
           "standard 單一艦隊;strike 遊擊部隊(使用第 3 艦隊);"
           "tcf 輸送護衛;ctf 機動部隊;stf 水上打擊部隊。", FLEET_MODES),
