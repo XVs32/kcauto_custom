@@ -539,7 +539,7 @@ class Kcauto(object):
         retry_times = 2
 
         for i in range(retry_times):
-            if fsw.fleet_switcher.switch_fleet(context):
+            if not fsw.fleet_switcher.switch_fleet(context):
                 Log.log_error(f"Failed to switch ships for {context}.")
                 return -1
 
