@@ -1,0 +1,134 @@
+/* kcauto_custom CUI — btop 風格主題(階段 2)
+   只使用 hex 色與長期穩定的屬性,避免依賴特定 Textual 版本的設計變數。 */
+
+Screen {
+    background: #0f1115;
+    color: #c8ccd4;
+}
+
+/* ---- 頂部狀態列 / 底部提示列 ------------------------------------------ */
+#status {
+    dock: top;
+    height: 1;
+    background: #181b21;
+    padding: 0 0;
+}
+
+#hints {
+    dock: bottom;
+    height: 1;
+    background: #181b21;
+    padding: 0 1;
+}
+
+/* ---- 主區域(響應式)---------------------------------------------------
+   版面由 app.py 依終端機大小在 #main 上加 class:
+     cols-1 ~ cols-4          方框欄數
+     log-right / log-bottom / log-hidden   日誌位置
+   規則與數值定義在 layout.py:方框最小寬度 34、捲軸 2、日誌最小寬度 40、
+   日誌最小高度 8。右側模式的 #cards 寬度 = 欄數 × 34 + 2。 */
+
+#main {
+    height: 1fr;
+}
+
+#cards {
+    grid-size: 2;
+    grid-rows: auto;
+    grid-gutter: 0;
+    overflow-y: auto;
+}
+
+#log-box {
+    border: round #4b5263;
+    border-title-color: #c8ccd4;
+    padding: 0 1;
+}
+
+#main.cols-1 #cards { grid-size: 1; }
+#main.cols-2 #cards { grid-size: 2; }
+#main.cols-3 #cards { grid-size: 3; }
+#main.cols-4 #cards { grid-size: 4; }
+
+/* 日誌在右側:方框區固定寬度,日誌吃掉剩下的寬度 */
+#main.log-right { layout: horizontal; }
+#main.log-right #cards { height: 1fr; }
+#main.log-right.cols-2 #cards { width: 70; }
+#main.log-right.cols-3 #cards { width: 104; }
+#main.log-right.cols-4 #cards { width: 138; }
+#main.log-right #log-box { width: 1fr; height: 1fr; }
+
+/* 日誌在下方:方框區依內容自動高度,日誌吃掉剩下的高度 */
+#main.log-bottom { layout: vertical; }
+#main.log-bottom #cards { width: 100%; height: auto; }
+#main.log-bottom #log-box { width: 100%; height: 1fr; min-height: 8; }
+
+/* 兩者都放不下:隱藏日誌 */
+#main.log-hidden { layout: vertical; }
+#main.log-hidden #cards { width: 100%; height: 1fr; }
+#main.log-hidden #log-box { display: none; }
+
+/* ---- 模組方框 ---------------------------------------------------------- */
+ModuleCard {
+    width: 100%;
+    height: auto;
+    min-height: 4;
+    padding: 0 1;
+    border: round #4b5263;
+}
+
+ModuleCard:focus {
+    background: #151922;
+}
+
+ModuleCard.off {
+    color: #6b7280;
+}
+
+/* 每個模組一個強調色:邊框、標題、開關;聚焦時邊框加粗 */
+ModuleCard.mod-combat          { border: round #e06c75; border-title-color: #e06c75; border-subtitle-color: #e06c75; }
+ModuleCard.mod-expedition      { border: round #56b6c2; border-title-color: #56b6c2; border-subtitle-color: #56b6c2; }
+ModuleCard.mod-pvp             { border: round #98c379; border-title-color: #98c379; border-subtitle-color: #98c379; }
+ModuleCard.mod-quest           { border: round #e5c07b; border-title-color: #e5c07b; border-subtitle-color: #e5c07b; }
+ModuleCard.mod-scheduler       { border: round #c678dd; border-title-color: #c678dd; border-subtitle-color: #c678dd; }
+ModuleCard.mod-factory         { border: round #d19a66; border-title-color: #d19a66; border-subtitle-color: #d19a66; }
+ModuleCard.mod-passive_repair  { border: round #61afef; border-title-color: #61afef; border-subtitle-color: #61afef; }
+ModuleCard.mod-ship_switcher   { border: round #7fbbb3; border-title-color: #7fbbb3; border-subtitle-color: #7fbbb3; }
+ModuleCard.mod-event_reset     { border: round #f4a6c0; border-title-color: #f4a6c0; border-subtitle-color: #f4a6c0; }
+ModuleCard.mod-general         { border: round #abb2bf; border-title-color: #abb2bf; border-subtitle-color: #abb2bf; }
+
+ModuleCard.mod-combat:focus          { border: heavy #e06c75; }
+ModuleCard.mod-expedition:focus      { border: heavy #56b6c2; }
+ModuleCard.mod-pvp:focus             { border: heavy #98c379; }
+ModuleCard.mod-quest:focus           { border: heavy #e5c07b; }
+ModuleCard.mod-scheduler:focus       { border: heavy #c678dd; }
+ModuleCard.mod-factory:focus         { border: heavy #d19a66; }
+ModuleCard.mod-passive_repair:focus  { border: heavy #61afef; }
+ModuleCard.mod-ship_switcher:focus   { border: heavy #7fbbb3; }
+ModuleCard.mod-event_reset:focus     { border: heavy #f4a6c0; }
+ModuleCard.mod-general:focus         { border: heavy #abb2bf; }
+
+/* 停用的模組:邊框也變暗(放在最後以覆蓋強調色) */
+ModuleCard.off {
+    border: round #3b4252;
+    border-title-color: #6b7280;
+    border-subtitle-color: #6b7280;
+}
+
+ModuleCard.off:focus {
+    border: heavy #6b7280;
+}
+
+/* ---- 離開確認 ---------------------------------------------------------- */
+ConfirmQuit {
+    align: center middle;
+    background: rgba(0, 0, 0, 0.55);
+}
+
+#quit-dialog {
+    width: 40;
+    height: auto;
+    padding: 1 2;
+    border: round #e5c07b;
+    background: #181b21;
+}
