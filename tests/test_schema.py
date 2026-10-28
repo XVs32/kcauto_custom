@@ -214,3 +214,18 @@ class SchedulerRules(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class SecretaryIntOrStrTest(unittest.TestCase):
+    def test_accepts_int_and_str(self):
+        from tui.schema.fields import SCHEMA as F
+        for key in ("factory.build_secretary", "factory.develop_secretary"):
+            f = F[key]
+            self.assertEqual(f.validate(1234), [])
+            self.assertEqual(f.validate("1234"), [])
+            self.assertEqual(f.validate("Akagi"), [])
+            self.assertTrue(f.validate(-1))
+            self.assertTrue(f.validate(""))
+            self.assertTrue(f.validate(1.5))
+            self.assertTrue(f.validate(True))
+            self.assertTrue(f.validate(None))

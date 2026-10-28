@@ -23,6 +23,7 @@ class Kind(str, Enum):
     BOOL = "bool"        # 開關
     ENUM = "enum"        # 單選(可 nullable)
     INT = "int"          # 帶範圍整數
+    INT_STR = "int_str"  # 整數或字串(例如秘書艦 ID,兩種寫法皆可)
     STR = "str"          # 字串(可帶 pattern)
     LIST = "list"        # 字串/整數陣列
     PRESET = "preset"    # 1~15、"auto" 或 None(艦隊 preset)
@@ -112,6 +113,18 @@ class Field:
             return [f"不可大於 {self.max}"]
         return []
 
+    def _check_int_str(self, value: Any) -> list[str]:
+        if _is_int(value):
+            return self._range_errors(value)
+        if isinstance(value, str):
+            text = value.strip()
+            if not text:
+                return ["不可為空字串"]
+            if re.fullmatch(r"-?\d+", text):   # "1234" 視同整數,套用範圍
+                return self._range_errors(int(text))
+            return []
+        return ["必須是整數或字串"]
+
     def _check_str(self, value: Any) -> list[str]:
         if not isinstance(value, str):
             return ["必須是字串"]
@@ -173,6 +186,10 @@ def _bool(key, default, label, help, **kw):
 
 def _int(key, default, label, help, **kw):
     return Field(key, Kind.INT, default, label, help, **kw)
+
+
+def _int_str(key, default, label, help, **kw):
+    return Field(key, Kind.INT_STR, default, label, help, **kw)
 
 
 def _enum(key, default, label, help, choices, **kw):
@@ -321,12 +338,12 @@ _FIELDS: tuple[Field, ...] = (
     Field("factory.build_recipe", Kind.RECIPE, [30, 30, 30, 30], "建造配方",
           "建造艦娘的資源配方 [燃料, 彈藥, 鋼材, 鋁土]。",
           group="build", min=0),
-    _int("factory.build_secretary", 1234, "建造旗艦(秘書艦)",
+    _int_str("factory.build_secretary", 1234, "建造旗艦(秘書艦)",
          "建造時使用的秘書艦 ID。", group="build", min=0),
     Field("factory.develop_recipe", Kind.RECIPE, [10, 10, 10, 10], "開發配方",
           "開發裝備的資源配方 [燃料, 彈藥, 鋼材, 鋁土]。",
           group="develop", min=0),
-    _int("factory.develop_secretary", 1234, "開發旗艦(秘書艦)",
+    _int_str("factory.develop_secretary", 1234, "開發旗艦(秘書艦)",
          "開發時使用的秘書艦 ID。", group="develop", min=0),
 
     # ----------------------------- scheduler ----------------------------- #

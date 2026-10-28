@@ -136,6 +136,13 @@ class CssStaysInSync(unittest.TestCase):
         for name in ("log-right", "log-bottom", "log-hidden"):
             self.assertIn(f"#main.{name}", CSS)
 
+    def test_fullscreen_log_rules_come_after_hidden_rules(self):
+        # 同樣的選擇器權重下,後面的規則勝出;全螢幕日誌必須覆蓋 log-hidden 的 display: none
+        hidden = CSS.index("#main.log-hidden #log-box")
+        full = CSS.index("#main.log-full #log-box")
+        self.assertGreater(full, hidden)
+        self.assertIn("#main.log-full #cards { display: none; }", CSS)
+
     def test_summary_lines_fit_in_a_card(self):
         # 方框內寬 = 34 − 邊框 2 − padding 2;有捲軸時再少 1(格寬 33)
         self.assertLessEqual(LINE_MAX + 4 + 1, CARD_MIN_WIDTH)

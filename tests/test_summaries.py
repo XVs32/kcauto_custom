@@ -16,7 +16,7 @@ class CardMetadata(unittest.TestCase):
             self.assertIn(card.hotkey, card.label.lower())
 
     def test_hotkeys_do_not_clash_with_app_keys(self):
-        reserved = set("qwal?")  # quit, save, apply, log, help
+        reserved = set("qwabkl?")  # quit, save, apply, pause(break), stop(kill), log, help
         self.assertFalse(reserved & {c.hotkey for c in CARDS})
 
     def test_only_general_is_not_toggleable(self):

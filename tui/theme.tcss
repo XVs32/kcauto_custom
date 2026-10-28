@@ -42,7 +42,13 @@ Screen {
 #log-box {
     border: round #4b5263;
     border-title-color: #c8ccd4;
+    background: #0f1115;
+    color: #c8ccd4;
     padding: 0 1;
+}
+
+#log-box:focus {
+    border: heavy #c8ccd4;
 }
 
 #main.cols-1 #cards { grid-size: 1; }
@@ -67,6 +73,11 @@ Screen {
 #main.log-hidden { layout: vertical; }
 #main.log-hidden #cards { width: 100%; height: 1fr; }
 #main.log-hidden #log-box { display: none; }
+
+/* 全螢幕日誌:日誌被隱藏時按 l 進入(必須放在 log-hidden 規則之後以覆蓋它) */
+#main.log-full { layout: vertical; }
+#main.log-full #cards { display: none; }
+#main.log-full #log-box { display: block; width: 100%; height: 1fr; }
 
 /* ---- 模組方框 ---------------------------------------------------------- */
 ModuleCard {
