@@ -400,3 +400,8 @@ Dialog.narrow #cells CycleBox {
 Dialog.narrow .dlg-buttons {
     margin-top: 0;
 }
+
+/* 正在調整數值的那一列(第二層編輯) */
+FieldRow.editing {
+    background: #3a4150;
+}

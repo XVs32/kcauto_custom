@@ -97,9 +97,24 @@ def type_label(field: Field) -> str:
     return k.value
 
 
+DISABLE = "disable"
+# 這幾個「艦隊 preset」欄位:空清單 / null / 0 都表示不使用,一律顯示成 disable
+DISABLE_KEYS = ("combat.fleet_presets", "pvp.fleet_preset", "expedition.fleet_preset")
+
+
+def is_disabled_preset(field: Field, value: Any) -> bool:
+    if field.key not in DISABLE_KEYS:
+        return False
+    if value is None or value == []:
+        return True
+    return isinstance(value, int) and not isinstance(value, bool) and value == 0
+
+
 def format_value(field: Field, value: Any, width: int = 40) -> str:
     """單行摘要;不合法或型別不符的值也要能顯示(編輯器會用紅字標示)。"""
-    if value is None:
+    if is_disabled_preset(field, value):
+        text = DISABLE
+    elif value is None:
         text = "null"
     elif isinstance(value, bool):
         text = "on" if value else "off"
@@ -289,10 +304,10 @@ def cycle_choice(options: Sequence[Any], current: Any, step: int = 1) -> Any:
 
 
 def enum_options(field: Field) -> list[tuple[str, Any]]:
-    """(顯示文字, 值)。nullable 時最前面加 null。"""
+    """(顯示文字, 值)。nullable 時「停用」(null)放第一項,接著才是各選項(例如 disable、auto)。"""
     opts: list[tuple[str, Any]] = []
     if field.nullable:
-        opts.append(("null  (disabled)", None))
+        opts.append((DISABLE, None))
     opts.extend((c, c) for c in field.choices)
     return opts
 
@@ -450,6 +465,33 @@ def preset_value(tokens: Sequence[str], like: Sequence[Any] = ()) -> list[Any]:
     for t in tokens:
         out.append(int(t) if t.isdigit() and not use_str else t)
     return out
+
+
+def preset_wheel_tokens(field: Field) -> list[str]:
+    """滾輪的項目:disable 第一,auto 第二,接著 1~15。"""
+    return [DISABLE, "auto", *PRESET_NUMBERS]
+
+
+def preset_wheel_current(field: Field, value: Any) -> str:
+    """目前值對應的滾輪項目;空清單 / null / 0 = disable;對不上時也回到 disable。"""
+    if is_disabled_preset(field, value):
+        return DISABLE
+    token = str(value[0]) if isinstance(value, list) else str(value)
+    return token if token in preset_wheel_tokens(field) else DISABLE
+
+
+def preset_wheel_result(field: Field, token: str, like: Any = None) -> Any:
+    """滾輪結果 → 欄位值。清單欄位固定只寫一個元素(數字沿用既有型別);
+    disable:清單欄位 = [];pvp = null(原本是 0 就維持 0,不悄悄改掉)。"""
+    if field.kind is Kind.LIST:
+        if token == DISABLE:
+            return []
+        return preset_value([token], like if isinstance(like, list) else [])
+    if token == DISABLE:
+        if isinstance(like, int) and not isinstance(like, bool) and like == 0:
+            return 0
+        return None if field.nullable else 0
+    return preset_single_value(token)
 
 
 def preset_single_value(token: str) -> Any:
@@ -612,14 +654,33 @@ def adjustable(field: Optional[Field]) -> bool:
     return field.kind in (Kind.BOOL, Kind.ENUM) or is_small_int(field)
 
 
-def adjust_value(field: Field, value: Any, direction: int) -> Any:
-    """← → 的結果;沒有變化時回傳原值。整數不循環(到頭就停),enum 循環。"""
+def adjust_value(field: Field, value: Any, direction: int, *, wrap: bool = False) -> Any:
+    """← → 的結果;沒有變化時回傳原值。
+
+    開關:→ = on、← = off。enum 循環。整數預設到頭就停;``wrap=True``(Enter / Space
+    「往下一個」)時到頭會繞回另一端。
+    """
     if field.kind is Kind.BOOL:
-        return direction > 0
+        return (not value) if wrap else direction > 0
     if field.kind is Kind.ENUM:
         return cycle_choice([v for _, v in enum_options(field)], value, direction)
     new = step_int(field, value, direction)
+    if new is None and wrap and field.kind is Kind.INT and _is_plain_int(value):
+        new = field.min if direction > 0 else field.max
+        if new is None or new == value:
+            new = None
     return value if new is None else new
+
+
+def _is_plain_int(value: Any) -> bool:
+    return isinstance(value, int) and not isinstance(value, bool)
+
+
+def can_adjust(field: Field, value: Any, direction: int) -> bool:
+    """該方向還能不能再調(用來把到頭的箭頭顯示成暗色)。"""
+    if field.kind is Kind.ENUM:
+        return True
+    return adjust_value(field, value, direction) != value
 
 
 def int_options(field: Field) -> list[tuple[str, Any]]:
@@ -765,7 +826,7 @@ def bulk_summary(values: Mapping[str, Any]) -> str:
 # 控制項分派:這個欄位按 Enter 要開哪種對話框
 # ---------------------------------------------------------------------- #
 def editor_for(field: Optional[Field], value: Any = None) -> str:
-    """回傳:bool | choice | choice_int | wheel | map | text | preset | preset_list |
+    """回傳:bool | choice | choice_int | wheel | map | text | preset_wheel |
     tokens | recipe | table | quest | list | tree | json。"""
     if field is None:
         return "json"
@@ -781,7 +842,7 @@ def editor_for(field: Optional[Field], value: Any = None) -> str:
     if k is Kind.STR:
         return "map" if field.key == "combat.sortie_map" else "text"
     if k is Kind.PRESET:
-        return "preset"
+        return "preset_wheel"
     if k is Kind.RECIPE:
         return "recipe"
     if k is Kind.OBJECT:
@@ -791,7 +852,7 @@ def editor_for(field: Optional[Field], value: Any = None) -> str:
     if field.key == "quest.quests":
         return "quest"
     if field.key == "combat.fleet_presets":
-        return "preset_list"
+        return "preset_wheel"
     if field.key == "combat.lbas_groups":
         return "tokens"
     return "list"

@@ -41,16 +41,20 @@ class EditorTests(_AppTestBase):
             await pilot.pause()
             self.assertEqual(len(app.screen_stack), 2)       # q 不會離開程式
 
-    async def test_space_toggles_bool_and_dashboard_follows(self):
+    async def test_enter_then_arrows_toggle_bool_and_dashboard_follows(self):
         app = self.make_app()
         async with app.run_test(size=BIG) as pilot:
             screen = await self.open_editor(pilot)
             await pilot.pause()
             self.assertEqual(screen.focused.key, "combat.enabled")
-            await pilot.press("space")
-            self.assertTrue(self.store.get("combat.enabled"))
-            await pilot.press("space")
+            await pilot.press("enter")                       # 進入編輯:還沒改值
             self.assertFalse(self.store.get("combat.enabled"))
+            await pilot.press("right")
+            self.assertTrue(self.store.get("combat.enabled"))
+            await pilot.press("enter")                       # 確定,回到列表
+            self.assertIsNone(screen._edit_row)
+            await pilot.press("down", "up")                  # 回到列表後 ↑↓ 又能移動
+            self.assertEqual(screen.focused.key, "combat.enabled")
 
     async def test_module_hotkeys_and_brackets(self):
         app = self.make_app()
@@ -75,14 +79,17 @@ class EditorTests(_AppTestBase):
             await pilot.press("up")
             self.assertEqual(screen.focused.key, first)
 
-    async def test_plus_minus_adjust_int(self):
+    async def test_plus_minus_only_work_while_editing(self):
+        self.store.set("combat.retreat_limit", 2)
         app = self.make_app()
         async with app.run_test(size=BIG) as pilot:
-            screen = await self.open_editor(pilot, "g")
-            await pilot.press("down", "plus")                # jst_offset
-            self.assertEqual(self.store.get("general.jst_offset"), 1)
-            await pilot.press("minus", "minus")
-            self.assertEqual(self.store.get("general.jst_offset"), -1)
+            screen = await self.open_editor(pilot)
+            next(r for r in screen._field_rows() if r.key == "combat.retreat_limit").focus()
+            await pilot.press("plus")
+            self.assertEqual(self.store.get("combat.retreat_limit"), 2)       # 列表層:不動
+            await pilot.press("enter", "plus", "plus", "minus")
+            self.assertEqual(self.store.get("combat.retreat_limit"), 3)
+            await pilot.press("enter")
 
     async def test_default_and_undo_keys(self):
         self.store.set("combat.retreat_limit", 2)
@@ -90,10 +97,9 @@ class EditorTests(_AppTestBase):
         app = self.make_app()
         async with app.run_test(size=BIG) as pilot:
             screen = await self.open_editor(pilot)
-            screen.query_one("#pane-combat").query("FieldRow")  # 已建立
             target = next(r for r in screen._field_rows() if r.key == "combat.retreat_limit")
             target.focus()
-            await pilot.press("plus")
+            await pilot.press("enter", "right", "enter")      # 2 → 3
             self.assertEqual(self.store.get("combat.retreat_limit"), 3)
             await pilot.press("z")
             self.assertEqual(self.store.get("combat.retreat_limit"), 2)
@@ -184,8 +190,9 @@ class EditorTests(_AppTestBase):
             await pilot.pause()
             self.assertEqual(self.store.get("combat.push_nodes"), ["a"])
 
-    async def test_recipe_wheels(self):
+    async def test_recipe_two_levels(self):
         from tui.editor.dialogs import NumberDialog
+        from tui.editor.widgets import WheelPicker
         app = self.make_app()
         async with app.run_test(size=BIG) as pilot:
             screen = await self.open_editor(pilot, "f")
@@ -193,10 +200,35 @@ class EditorTests(_AppTestBase):
             await pilot.press("enter")
             await pilot.pause()
             self.assertIsInstance(app.screen, NumberDialog)
-            await pilot.press("right", "right", "down")      # 燃料 0030 → 十位 +1(↓ = 下一個值)
-            await pilot.press("enter")
+            picker = app.screen.query_one(WheelPicker)
+            self.assertEqual(picker.level, "group")                  # 第一層:選資源
+            await pilot.press("down")                                # 移到 ammo
+            self.assertEqual(picker.level, "group")
+            await pilot.press("up", "enter")                         # 回 fuel,進入第二層
+            self.assertEqual(picker.level, "digit")
+            await pilot.press("right", "right", "down", "enter")     # 十位 +1 → 確定,回第一層
+            self.assertEqual(picker.level, "group")
+            await pilot.press("down", "down", "enter")               # 移到 OK → 確定整個對話框
             await pilot.pause()
             self.assertEqual(self.store.get("factory.build_recipe"), [40, 30, 30, 30])
+
+    async def test_recipe_escape_undoes_one_resource_then_cancels(self):
+        from tui.editor.widgets import WheelPicker
+        app = self.make_app()
+        async with app.run_test(size=BIG) as pilot:
+            screen = await self.open_editor(pilot, "f")
+            next(r for r in screen._field_rows() if r.key == "factory.build_recipe").focus()
+            await pilot.press("enter")
+            await pilot.pause()
+            picker = app.screen.query_one(WheelPicker)
+            await pilot.press("enter", "down", "escape")             # fuel:改了再 Esc → 還原、回第一層
+            self.assertEqual(picker.level, "group")
+            self.assertEqual("".join(picker.values()[:4]), "0030")
+            self.assertEqual(len(app.screen_stack), 3)               # 對話框還在
+            await pilot.press("escape")                              # 第一層 Esc → 取消對話框
+            await pilot.pause()
+            self.assertEqual(len(app.screen_stack), 2)
+            self.assertEqual(self.store.get("factory.build_recipe"), [30, 30, 30, 30])
 
     async def test_sortie_map_wheel(self):
         from tui.editor.dialogs import MapDialog
@@ -281,29 +313,44 @@ class EditorTests(_AppTestBase):
             await pilot.pause()
             self.assertEqual(self.store.get("general.jst_offset"), 20)
 
-    async def test_left_right_adjust_level_fields(self):
+    async def test_edit_level_adjusts_with_left_right_and_escape_restores(self):
+        self.store.set("combat.retreat_limit", 2)
         app = self.make_app()
         async with app.run_test(size=BIG) as pilot:
             screen = await self.open_editor(pilot)
-            next(r for r in screen._field_rows() if r.key == "combat.retreat_limit").focus()
+            row = next(r for r in screen._field_rows() if r.key == "combat.retreat_limit")
+            row.focus()
+            await pilot.press("enter")
+            self.assertTrue(row.in_edit)
             await pilot.press("left")
-            self.assertEqual(self.store.get("combat.retreat_limit"), 3)
-            await pilot.press("right", "right")
-            self.assertEqual(self.store.get("combat.retreat_limit"), 4)     # 到頭不循環
+            self.assertEqual(self.store.get("combat.retreat_limit"), 1)
+            await pilot.press("right", "right", "right", "right")
+            self.assertEqual(self.store.get("combat.retreat_limit"), 4)       # 到頭不循環
+            await pilot.press("down", "c", "w")                                # 編輯中其他鍵無效
+            self.assertIs(screen.focused, row)
+            self.assertEqual(screen.entry.module, "combat")
+            await pilot.press("escape")                                        # 還原成進入前的 2
+            self.assertEqual(self.store.get("combat.retreat_limit"), 2)
+            self.assertFalse(row.in_edit)
+            self.assertEqual(len(app.screen_stack), 2)                         # 仍在編輯器
             next(r for r in screen._field_rows() if r.key == "combat.enabled").focus()
-            await pilot.press("right")
+            await pilot.press("enter", "right")
             self.assertTrue(self.store.get("combat.enabled"))
             await pilot.press("left")
             self.assertFalse(self.store.get("combat.enabled"))
+            await pilot.press("enter")
 
-    async def test_left_on_wide_field_goes_to_module_list(self):
+    async def test_left_on_the_list_goes_to_module_list_for_every_kind_of_row(self):
         from tui.editor.screen import ModuleList
         app = self.make_app()
         async with app.run_test(size=BIG) as pilot:
             screen = await self.open_editor(pilot)
-            next(r for r in screen._field_rows() if r.key == "combat.sortie_map").focus()
-            await pilot.press("left")
-            self.assertIsInstance(screen.focused, ModuleList)
+            for key in ("combat.sortie_map", "combat.retreat_limit", "combat.enabled"):
+                next(r for r in screen._field_rows() if r.key == key).focus()
+                before = self.store.get(key)
+                await pilot.press("left")
+                self.assertIsInstance(screen.focused, ModuleList, key)
+                self.assertEqual(self.store.get(key), before, key)           # ← 不再改值
 
     async def test_expedition_bulk_row(self):
         app = self.make_app()
@@ -345,16 +392,135 @@ class EditorTests(_AppTestBase):
             await pilot.pause()
             self.assertEqual(self.store.get("quest.quests"), ["Bd1"])
 
-    async def test_preset_grid_multi_keeps_pick_order(self):
+    async def test_fleet_preset_is_a_single_value_wheel(self):
+        from tui.editor.dialogs import PresetWheelDialog
+        from tui.editor.widgets import WheelPicker
         app = self.make_app()
         async with app.run_test(size=BIG) as pilot:
             screen = await self.open_editor(pilot)
             next(r for r in screen._field_rows() if r.key == "combat.fleet_presets").focus()
             await pilot.press("enter")
             await pilot.pause()
-            await pilot.press("right", "space", "left", "space", "enter")   # 先 2 再 1
+            self.assertIsInstance(app.screen, PresetWheelDialog)
+            picker = app.screen.query_one(WheelPicker)
+            self.assertEqual(picker.wheels[0].items[:3], ["disable", "auto", "1"])
+            self.assertEqual(picker.values(), ["disable"])            # 預設 [] → disable
+            await pilot.press("down", "down", "down", "enter")        # disable → auto → 1 → 2
             await pilot.pause()
-            self.assertEqual(self.store.get("combat.fleet_presets"), [2, 1])
+            self.assertEqual(self.store.get("combat.fleet_presets"), [2])
+
+    async def test_fleet_preset_auto_and_pvp(self):
+        app = self.make_app()
+        async with app.run_test(size=BIG) as pilot:
+            screen = await self.open_editor(pilot)
+            next(r for r in screen._field_rows() if r.key == "combat.fleet_presets").focus()
+            await pilot.press("enter")
+            await pilot.pause()
+            await pilot.press("down", "enter")                       # disable 的下一項 = auto
+            await pilot.pause()
+            self.assertEqual(self.store.get("combat.fleet_presets"), ["auto"])
+            next(r for r in screen._field_rows() if r.key == "combat.fleet_presets").focus()
+            await pilot.press("enter")
+            await pilot.pause()
+            await pilot.press("up", "enter")                         # 回到 disable
+            await pilot.pause()
+            self.assertEqual(self.store.get("combat.fleet_presets"), [])
+            await pilot.press("escape")
+            await pilot.pause()
+            screen = await self.open_editor(pilot, "p")
+            next(r for r in screen._field_rows() if r.key == "pvp.fleet_preset").focus()
+            await pilot.press("enter")
+            await pilot.pause()
+            await pilot.press("down", "enter")
+            await pilot.pause()
+            self.assertEqual(self.store.get("pvp.fleet_preset"), "auto")
+
+    async def test_enter_never_opens_a_dialog_for_adjustable_rows(self):
+        app = self.make_app()
+        async with app.run_test(size=BIG) as pilot:
+            screen = await self.open_editor(pilot)
+            for key in ("combat.fleet_mode", "combat.retreat_limit", "combat.enabled"):
+                before = self.store.get(key)
+                next(r for r in screen._field_rows() if r.key == key).focus()
+                await pilot.press("enter")
+                await pilot.pause()
+                self.assertEqual(len(app.screen_stack), 2, key)       # 沒有跳出任何對話框
+                self.assertEqual(self.store.get(key), before, key)    # 進入編輯不會改值
+                await pilot.press("space")                            # 編輯中空白鍵 = 下一個值
+                self.assertNotEqual(self.store.get(key), before, key)
+                await pilot.press("enter")                            # 確定
+                self.assertIsNone(screen._edit_row)
+
+    async def test_click_selects_then_enters_then_arrows_adjust(self):
+        self.store.set("combat.retreat_limit", 2)
+        app = self.make_app()
+        async with app.run_test(size=BIG) as pilot:
+            screen = await self.open_editor(pilot)
+            screen._field_rows()[0].focus()
+            await pilot.pause()
+            row = next(r for r in screen._field_rows() if r.key == "combat.retreat_limit")
+            region = row.region
+            where = (region.x + 3 + 14 + 2, region.y)
+            await pilot.click(offset=where)                           # 1) 只選取
+            await pilot.pause()
+            self.assertIs(screen.focused, row)
+            self.assertFalse(row.in_edit)
+            self.assertEqual(self.store.get("combat.retreat_limit"), 2)
+            self.assertEqual(len(app.screen_stack), 2)                # 沒跳選單
+            await pilot.click(offset=where)                           # 2) 再點一次 → 進入編輯
+            await pilot.pause()
+            self.assertTrue(row.in_edit)
+            self.assertTrue(row._arrows_drawn)
+            _, (l0, l1), (r0, r1) = row._zones                        # 3) 點箭頭才改值
+            await pilot.click(offset=(region.x + r0 + 1, region.y))
+            await pilot.pause()
+            self.assertEqual(self.store.get("combat.retreat_limit"), 3)
+            await pilot.click(offset=(region.x + l0 + 1, region.y))
+            await pilot.click(offset=(region.x + l0 + 1, region.y))
+            await pilot.pause()
+            self.assertEqual(self.store.get("combat.retreat_limit"), 1)
+            await pilot.press("enter")
+            self.assertFalse(row.in_edit)
+
+    async def test_clicking_another_row_confirms_the_edit(self):
+        self.store.set("combat.retreat_limit", 2)
+        app = self.make_app()
+        async with app.run_test(size=BIG) as pilot:
+            screen = await self.open_editor(pilot)
+            row = next(r for r in screen._field_rows() if r.key == "combat.retreat_limit")
+            row.focus()
+            await pilot.press("enter", "right")
+            other = next(r for r in screen._field_rows() if r.key == "combat.sortie_map")
+            await pilot.click(offset=(other.region.x + 20, other.region.y))
+            await pilot.pause()
+            self.assertFalse(row.in_edit)
+            self.assertEqual(self.store.get("combat.retreat_limit"), 3)       # 保留修改
+
+    async def test_clicking_a_wide_field_still_opens_its_editor(self):
+        from tui.editor.dialogs import MapDialog
+        app = self.make_app()
+        async with app.run_test(size=BIG) as pilot:
+            screen = await self.open_editor(pilot)
+            row = next(r for r in screen._field_rows() if r.key == "combat.sortie_map")
+            await pilot.click(offset=(row.region.x + 20, row.region.y))
+            await pilot.pause()
+            self.assertIsInstance(app.screen, MapDialog)
+
+    async def test_recipe_dialog_tab_walks_resources_then_buttons(self):
+        from tui.editor.widgets import WheelPicker
+        app = self.make_app()
+        async with app.run_test(size=BIG) as pilot:
+            screen = await self.open_editor(pilot, "f")
+            next(r for r in screen._field_rows() if r.key == "factory.build_recipe").focus()
+            await pilot.press("enter")
+            await pilot.pause()
+            picker = app.screen.query_one(WheelPicker)
+            seen = []
+            for _ in range(6):
+                kind, value = picker._current_target()
+                seen.append(picker.wheels[value].label if kind == "group" else value)
+                await pilot.press("tab")
+            self.assertEqual(seen, ["fuel", "steel", "ammo", "bauxite", "OK", "Cancel"])
 
     async def test_table_dialog_adds_node_select(self):
         app = self.make_app()
@@ -518,7 +684,7 @@ class EditorTests(_AppTestBase):
         app = self.make_app()
         async with app.run_test(size=BIG) as pilot:
             await self.open_editor(pilot)
-            await pilot.press("space", "w")
+            await pilot.press("enter", "right", "enter", "w")        # 進入、改成 on、確定、存檔
             await pilot.pause()
         self.assertTrue(self.path.exists())
 
@@ -538,10 +704,11 @@ class EditorTests(_AppTestBase):
             screen = await self.open_editor(pilot)
             await pilot.pause()
             self.assertTrue(screen.has_class("narrow"))
-            # 焦點在「開關」上時 → 會調整開關;要在不可調整的欄位上 → 才是切換模組
-            next(r for r in screen._field_rows() if r.key == "combat.sortie_map").focus()
+            # 第一層(列表)← → 一律是導覽:窄視窗 = 切換模組,不會改到開關的值
+            next(r for r in screen._field_rows() if r.key == "combat.enabled").focus()
             await pilot.press("right")
             self.assertEqual(screen.entry.module, "expedition")
+            self.assertFalse(self.store.get("combat.enabled"))
 
 
 if __name__ == "__main__":

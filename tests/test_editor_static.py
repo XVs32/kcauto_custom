@@ -135,7 +135,7 @@ class StaticChecks(unittest.TestCase):
         tree = ast.parse(text)
         for cls in [n for n in tree.body if isinstance(n, ast.ClassDef)]:
             src = ast.get_source_segment(text, cls)
-            used = set(re.findall(r'\("[^"]+", "(\w+)"\)', src))
+            used = set(re.findall(r'\("[A-Z][^"]*", "([a-z_]+)"\)', src))
             used -= {"cancel"}
             if not used:
                 continue
@@ -168,6 +168,15 @@ class StaticChecks(unittest.TestCase):
                             and node.attr in reserved and (cls.name, node.attr) not in allowed):
                         self.fail(f"{path.name}:{cls.name} 設定了 self.{node.attr},"
                                   f"可能覆蓋 Textual 內建屬性")
+
+    def test_widget_visible_property_is_never_used_for_our_own_state(self):
+        """Widget.visible 控制可見性,不能拿來存「顯示幾列」之類的東西(讀取也不行)。"""
+        for path in FILES:
+            tree = ast.parse(path.read_text(encoding="utf-8"))
+            for node in ast.walk(tree):
+                if (isinstance(node, ast.Attribute) and isinstance(node.value, ast.Name)
+                        and node.value.id == "self" and node.attr == "visible"):
+                    self.fail(f"{path.name}:{node.lineno} 使用了 self.visible")
 
     def test_scrolling_containers_do_not_steal_arrow_keys(self):
         """VerticalScroll 內建 ↑↓ 捲動綁定,會在內容超出畫面時搶走編輯器的上一列/下一列。

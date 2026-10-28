@@ -22,6 +22,9 @@ EDITOR_HINTS: tuple[tuple[str, str], ...] = (
     ("w", "save"), ("esc", "back"),
 )
 # 一行放不下時依序丟掉(用說明文字當名稱);save / back 永遠保留
+# 編輯某個調整型欄位(第二層)時的提示
+EDIT_HINTS: tuple[tuple[str, str], ...] = (("←→", "change"), ("enter", "confirm"), ("esc", "cancel"))
+EDIT_HINT_DROP = ("change",)
 EDITOR_HINT_DROP = ("module", "undo", "default", "toggle", "adjust", "move", "search", "edit")
 TOP_DROP = ("badge", "file")
 
@@ -66,5 +69,36 @@ def tabs_step(x: int, width: int) -> int:
     if x < third:
         return -1
     if x >= width - third:
+        return 1
+    return 0
+
+
+# ---------------------------------------------------------------------- #
+# 欄位列上的 ‹ › 箭頭(開關 / enum / 少數等級的整數)
+# ---------------------------------------------------------------------- #
+ARROW_SLOT = 2           # 箭頭加空白佔用的寬度;沒聚焦時保留空白,值的位置不會跳動
+
+
+def arrow_zones(label_w: int, shown_w: int, compact: bool) -> tuple[int, tuple[int, int], tuple[int, int]]:
+    """回傳 (所在列, 左箭頭可點範圍, 右箭頭可點範圍),範圍含頭尾,座標為列內 x。
+
+    列的排版:旗標 1 + 修改標記 1 + 空白 1,標籤佔 label_w,再空 2 格才是值
+    (緊湊模式的值在第二列,縮排 3 格)。值前面是「‹ 」,後面是「 ›」。
+    每個箭頭的可點範圍是 3 格寬(含旁邊一格),方便滑鼠點中。
+    """
+    x0 = 3 if compact else 3 + label_w + 2
+    left = x0
+    right = x0 + ARROW_SLOT + shown_w + 1
+    return (1 if compact else 0), (left - 1, left + 1), (right - 1, right + 1)
+
+
+def arrow_hit(zones: tuple[int, tuple[int, int], tuple[int, int]], x: int, y: int) -> int:
+    """點擊位置 → -1(左箭頭)/ +1(右箭頭)/ 0(都不是)。"""
+    line, (l0, l1), (r0, r1) = zones
+    if y != line:
+        return 0
+    if l0 <= x <= l1:
+        return -1
+    if r0 <= x <= r1:
         return 1
     return 0

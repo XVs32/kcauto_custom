@@ -16,7 +16,7 @@ try:
         from tui.editor import model as M
         from tui.editor.dialogs import (
             ChoiceDialog, DangerDialog, JsonDialog, ListDialog, MapDialog, NewItemDialog,
-            NumberDialog, NumSpec, Picked, PresetDialog, QuestDialog, SearchDialog,
+            NumberDialog, NumSpec, Picked, PresetDialog, PresetWheelDialog, QuestDialog, SearchDialog,
             TableDialog, TextDialog, TreeDialog, ValueDialog,
         )
         from tui.editor import tree as TR
@@ -37,6 +37,19 @@ def click(dialog, command):
     label = next(w for w in dialog._all
                  if isinstance(w, ActionLabel) and w.command == command)
     label.on_click(Message())
+    pump(dialog)
+
+
+def pick_ok(dialog):
+    """分組模式:第一層用方向鍵移到下方的 OK 格,按 Enter。"""
+    picker = dialog.query_one(WheelPicker)
+    while picker.level != "group":
+        picker.action_accept()
+    for _ in range(len(picker._targets())):
+        picker.action_scroll(1)                          # ↓ 到最下面一列(OK / Cancel)
+    while picker.gpos[1] > 0:
+        picker.action_column(-1)
+    picker.action_accept()
     pump(dialog)
 
 
@@ -215,7 +228,7 @@ class ButtonTests(unittest.TestCase):
         f = SCHEMA["expedition.fleet_preset"]
         d = mount(ChoiceDialog("t", "h", M.enum_options(f), None))
         lst = d.query_one(PickList)
-        self.assertEqual(lst.cursor, 0)
+        self.assertEqual(lst.cursor, 0)                      # null(disable)排第一
         lst.action_choose()
         pump(d)
         self.assertEqual(d.dismissed, Picked(None))
@@ -322,11 +335,16 @@ class WheelTests(unittest.TestCase):
         d = mount(NumberDialog(f, f.label, specs, as_list=True))
         picker = d.query_one(WheelPicker)
         self.assertEqual(len(picker.wheels), 16)         # 沒有上限:每個數字 4 位
-        picker.col = 4                                   # ammo 第 1 位(每個數字 4 位)
-        picker.action_scroll(1)
+        self.assertTrue(picker.grouped)
+        picker.action_accept()                           # 第一層:進入 fuel
+        picker.col = 0
+        picker.action_scroll(1)                          # fuel 千位 +1
         pump(d)
-        click(d, "ok")
-        self.assertEqual(d.dismissed, Picked([30, 1030, 30, 30]))
+        picker.action_accept()                           # 確定,回第一層
+        pump(d)
+        self.assertEqual(picker.level, "group")
+        pick_ok(d)
+        self.assertEqual(d.dismissed, Picked([1030, 30, 30, 30]))
 
     def test_enter_on_picker_accepts(self):
         d, picker = self.number("combat.repair_bucket_threshold", 500, 0, None)
@@ -481,6 +499,15 @@ class RecipeLayoutTests(unittest.TestCase):
                  for (n, c, r, k), v in zip(M.RESOURCES, values)]
         return mount(NumberDialog(f, f.label, specs, as_list=True))
 
+    def goto(self, picker, label):
+        """第一層:把游標移到指定資源。"""
+        for r, row in enumerate(picker._targets()):
+            for c, (kind, value) in enumerate(row):
+                if kind == "group" and picker.wheels[value].label == label:
+                    picker.gpos = (r, c)
+                    return
+        raise AssertionError(label)
+
     def test_two_by_two_layout_and_order(self):
         d = self.open()
         picker = d.query_one(WheelPicker)
@@ -493,49 +520,219 @@ class RecipeLayoutTests(unittest.TestCase):
 
     def test_saved_order_is_still_fuel_ammo_steel_bauxite(self):
         d = self.open((10, 20, 30, 40))
-        click(d, "ok")
+        pick_ok(d)
         self.assertEqual(d.dismissed, Picked([10, 20, 30, 40]))
 
-    def test_scrolling_the_right_resource(self):
-        d = self.open((10, 20, 30, 40))
-        picker = d.query_one(WheelPicker)
-        starts = {picker.wheels[i].label: i for i in range(len(picker.wheels))
-                  if picker.wheels[i].label}
-        picker.col = starts["steel"] + 3                 # 鋼材最後一位(每個數字 4 位)
-        picker.action_scroll(1)
-        pump(d)
-        picker.col = starts["bauxite"] + 3
-        picker.action_scroll(-1)
-        pump(d)
-        click(d, "ok")
-        self.assertEqual(d.dismissed, Picked([10, 20, 31, 49]))
-
-    def test_tab_jumps_between_resources(self):
+    # --- 第一層:選資源 ---------------------------------------------------- #
+    def test_level_one_arrows_move_between_resources(self):
         d = self.open()
         picker = d.query_one(WheelPicker)
-        order = []
-        for _ in range(4):
-            order.append(picker.wheels[picker._group_starts()[
-                max(i for i, s in enumerate(picker._group_starts()) if s <= picker.col)]].label)
-            picker.action_group(1)
-        self.assertEqual(order, ["fuel", "steel", "ammo", "bauxite"])
-        picker.action_group(1)                           # 到底不再前進
-        self.assertEqual(picker.wheels[picker.col].label, "bauxite")
-        picker.action_group(-1)
-        self.assertEqual(picker.wheels[picker.col].label, "ammo")
+        self.assertEqual(picker.level, "group")
 
+        def at():
+            kind, value = picker._current_target()
+            return picker.wheels[value].label if kind == "group" else value
+        self.assertEqual(at(), "fuel")
+        picker.action_column(1)
+        self.assertEqual(at(), "steel")                   # 同一排:右邊是 steel
+        picker.action_scroll(1)
+        self.assertEqual(at(), "bauxite")                 # 下一排同一欄
+        picker.action_column(-1)
+        self.assertEqual(at(), "ammo")
+        picker.action_scroll(-1)
+        self.assertEqual(at(), "fuel")
+        picker.action_scroll(-1)                          # 到頂不動
+        picker.action_column(-1)                          # 到左邊不動
+        self.assertEqual(at(), "fuel")
+
+    def test_level_one_down_reaches_ok_and_cancel(self):
+        d = self.open()
+        picker = d.query_one(WheelPicker)
+        picker.action_scroll(1)
+        picker.action_scroll(1)
+        self.assertEqual(picker._current_target(), ("action", "OK"))
+        picker.action_column(1)
+        self.assertEqual(picker._current_target(), ("action", "Cancel"))
+        picker.action_column(1)                           # 到底不動
+        self.assertEqual(picker._current_target(), ("action", "Cancel"))
+        picker.action_accept()
+        pump(d)
+        self.assertIsNone(d.dismissed)
+
+    def test_level_one_ignores_scrolling_keys_so_nothing_changes_by_accident(self):
+        d = self.open((10, 20, 30, 40))
+        picker = d.query_one(WheelPicker)
+        picker.action_scroll(5)
+        picker.action_scroll(-5)
+        pump(d)
+        self.assertEqual([picker.values()[i] for i in (0, 1, 2, 3)], list("0010"))
+        pick_ok(d)
+        self.assertEqual(d.dismissed, Picked([10, 20, 30, 40]))
+
+    def test_tab_walks_resources_then_buttons_in_reading_order(self):
+        d = self.open()
+        picker = d.query_one(WheelPicker)
+        seen = []
+        for _ in range(6):
+            kind, value = picker._current_target()
+            seen.append(picker.wheels[value].label if kind == "group" else value)
+            picker.action_group(1)
+        self.assertEqual(seen, ["fuel", "steel", "ammo", "bauxite", "OK", "Cancel"])
+        picker.action_group(1)
+        self.assertEqual(picker._current_target(), ("action", "Cancel"))
+        picker.action_group(-1)
+        self.assertEqual(picker._current_target(), ("action", "OK"))
+
+    # --- 第二層:調數字 ---------------------------------------------------- #
+    def test_enter_goes_into_the_resource_and_back_out(self):
+        d = self.open((10, 20, 30, 40))
+        picker = d.query_one(WheelPicker)
+        self.goto(picker, "steel")
+        picker.action_accept()
+        pump(d)
+        self.assertEqual(picker.level, "digit")
+        self.assertEqual(picker.wheels[picker.col].label, "steel")        # 停在 steel 的第一位
+        self.assertIn("confirm", str(d.query_one("#hint").content))
+        picker.action_column(3)
+        picker.action_scroll(1)                                           # 個位 +1
+        pump(d)
+        picker.action_accept()                                            # 確定 → 回第一層
+        pump(d)
+        self.assertEqual(picker.level, "group")
+        self.assertIn("choose", str(d.query_one("#hint").content))
+        pick_ok(d)
+        self.assertEqual(d.dismissed, Picked([10, 20, 31, 40]))
+
+    def test_digit_level_left_right_stay_inside_the_resource(self):
+        d = self.open()
+        picker = d.query_one(WheelPicker)
+        self.goto(picker, "steel")
+        picker.action_accept()
+        start = picker.col
+        picker.action_column(-1)                          # 不會跑到 fuel
+        self.assertEqual(picker.col, start)
+        for _ in range(10):
+            picker.action_column(1)
+        self.assertEqual(picker.col, start + 3)           # 4 位數的最後一位,不會跑到 ammo
+        self.assertEqual(picker.wheels[picker.col].label, "")
+
+    def test_digit_level_up_down_scroll_and_do_not_leave(self):
+        d = self.open((10, 20, 30, 40))
+        picker = d.query_one(WheelPicker)
+        picker.action_accept()                            # fuel
+        picker.action_column(3)
+        picker.action_scroll(-1)                          # ↑ = 上一個值
+        pump(d)
+        picker.action_scroll(-1)
+        pump(d)
+        self.assertEqual(picker.level, "digit")
+        self.assertEqual(picker.values()[3], "8")         # 0 → 9 → 8(個位數會繞回)
+
+    def test_escape_in_digit_level_undoes_only_that_resource_and_returns(self):
+        d = self.open((10, 20, 30, 40))
+        picker = d.query_one(WheelPicker)
+        self.goto(picker, "fuel")
+        picker.action_accept()
+        picker.action_column(3)
+        picker.action_scroll(2)
+        pump(d)
+        picker.action_accept()                            # fuel 確定 = 12
+        self.goto(picker, "ammo")
+        picker.action_accept()
+        picker.action_column(3)
+        picker.action_scroll(5)
+        pump(d)
+        d.action_cancel()                                 # Esc:ammo 還原並回第一層
+        pump(d)
+        self.assertEqual(picker.level, "group")
+        self.assertEqual(d.dismissed, "UNSET")            # 對話框還在
+        self.assertIn("choose", str(d.query_one("#hint").content))
+        pick_ok(d)
+        self.assertEqual(d.dismissed, Picked([12, 20, 30, 40]))
+
+    def test_escape_on_level_one_cancels_the_dialog(self):
+        d = self.open()
+        d.action_cancel()
+        self.assertIsNone(d.dismissed)
+
+    def test_clamping_still_works_inside_a_resource(self):
+        f = SCHEMA["factory.build_recipe"]
+        specs = [NumSpec(n, v, 0, 300, min_places=3, row=r, col=k)
+                 for (n, c, r, k), v in zip(M.RESOURCES, (299, 0, 0, 0))]
+        d = mount(NumberDialog(f, f.label, specs, as_list=True))
+        picker = d.query_one(WheelPicker)
+        picker.action_accept()
+        picker.action_scroll(1)                           # 百位 2 → 3:399 → 收斂 300
+        pump(d)
+        self.assertEqual("".join(picker.values()[:3]), "300")
+
+    # --- 滑鼠 ------------------------------------------------------------- #
+    def test_clicking_a_digit_enters_that_resource_and_scrolls(self):
+        d = self.open((10, 20, 30, 40))
+        picker = d.query_one(WheelPicker)
+        ammo = next(i for i, w in enumerate(picker.wheels) if w.label == "ammo")
+        x = picker._starts()[ammo] + 6                    # ammo 的個位數
+        y = 7 + 1 + 2 + 1                                 # 第二排:標題列 7、中心 10、下一項 11
+        picker.on_click(MouseEvent(x, y))
+        pump(d)
+        self.assertEqual(picker.level, "digit")
+        self.assertEqual(picker.col, ammo + 3)
+        self.assertEqual(picker.values()[ammo + 3], "1")  # 個位 0 → 1
+
+    def test_clicking_another_resource_confirms_the_first_and_switches(self):
+        d = self.open((10, 20, 30, 40))
+        picker = d.query_one(WheelPicker)
+        fuel = 0
+        steel = next(i for i, w in enumerate(picker.wheels) if w.label == "steel")
+        picker.on_click(MouseEvent(picker._starts()[fuel] + 6, 1 + 2 + 1))      # fuel 個位 +1
+        pump(d)
+        picker.on_click(MouseEvent(picker._starts()[steel] + 6, 1 + 2))         # steel 個位(中心列)
+        pump(d)
+        self.assertEqual(picker.wheels[picker.col].label, "")
+        self.assertEqual(picker._group_of(picker.col), steel)
+        pick_ok(d)
+        self.assertEqual(d.dismissed, Picked([11, 20, 30, 40]))
+
+    def test_clicking_ok_and_cancel_cells(self):
+        d = self.open((10, 20, 30, 40))
+        picker = d.query_one(WheelPicker)
+        y = picker._action_line()
+        (_, ok0, _), (_, c0, _) = picker._action_cells()
+        picker.on_click(MouseEvent(c0 + 1, y))
+        pump(d)
+        self.assertIsNone(d.dismissed)
+        d = self.open((10, 20, 30, 40))
+        picker = d.query_one(WheelPicker)
+        picker.on_click(MouseEvent(ok0 + 1, y))
+        pump(d)
+        self.assertEqual(d.dismissed, Picked([10, 20, 30, 40]))
+
+    def test_mouse_wheel_needs_the_resource_to_be_entered_first(self):
+        d = self.open((10, 20, 30, 40))
+        picker = d.query_one(WheelPicker)
+        picker.on_mouse_scroll_down(MouseEvent(picker._starts()[0] + 6, 3))
+        pump(d)
+        self.assertEqual(picker.values()[3], "0")         # 第一層:滑鼠滾輪不動作
+        picker.action_accept()
+        picker.on_mouse_scroll_down(MouseEvent(picker._starts()[0] + 6, 3))
+        pump(d)
+        self.assertEqual(picker.values()[3], "1")
+
+    # --- 排版 ------------------------------------------------------------- #
     def test_render_height_and_click_hits_right_block(self):
         d = self.open((10, 20, 30, 40))
         picker = d.query_one(WheelPicker)
         text = str(picker.render()).split("\n")
-        self.assertEqual(len(text), 2 * (5 + 1) + 1)
-        self.assertEqual(picker.styles.height, 13)
+        self.assertEqual(len(text), 2 * (5 + 1) + 1 + 2)           # 兩排 + 分隔線 + 規線 + OK 列
+        self.assertEqual(picker.styles.height, 15)
         starts = picker._starts()
         ammo = next(i for i, w in enumerate(picker.wheels) if w.label == "ammo")
-        # 第二排:標題列在 y=7,中心列 y=7+1+2=10;點中心下一列 → 該滾輪 +1
-        idx, offset = picker._locate(starts[ammo] + 3 * 0, 7 + 1 + 2 + 1)
+        idx, offset = picker._locate(starts[ammo], 7 + 1 + 2 + 1)
         self.assertEqual((idx, offset), (ammo, 1))
         self.assertEqual(picker._locate(0, 6), (-1, 0))          # 兩排之間的空行
+        self.assertIn("[ OK ]", text[-1])
+        self.assertIn("[ Cancel ]", text[-1])
+        self.assertEqual(set(text[-2]), {"─"})
 
     def test_short_terminal_shrinks_to_three_rows(self):
         from types import SimpleNamespace
@@ -543,10 +740,21 @@ class RecipeLayoutTests(unittest.TestCase):
         picker = d.query_one(WheelPicker)
         d.on_resize(SimpleNamespace(size=SimpleNamespace(width=120, height=24)))
         self.assertEqual(picker.rows_shown, 3)
-        self.assertEqual(picker.styles.height, 9)
+        self.assertEqual(picker.styles.height, 11)
         d.on_resize(SimpleNamespace(size=SimpleNamespace(width=120, height=50)))
         self.assertEqual(picker.rows_shown, 5)
-        self.assertEqual(len(str(picker.render()).split("\n")), 13)
+        self.assertEqual(len(str(picker.render()).split("\n")), 15)
+
+    def test_no_separate_button_row_in_grouped_mode(self):
+        d = self.open()
+        self.assertFalse([w for w in d._all if isinstance(w, ActionLabel)])
+
+    def test_single_number_dialogs_keep_the_button_row(self):
+        d = mount(NumberDialog(SCHEMA["general.chrome_dev_port"], "port",
+                               [NumSpec("port", 9222, 0, 65535)], as_list=False))
+        picker = d.query_one(WheelPicker)
+        self.assertFalse(picker.grouped)
+        self.assertTrue([w for w in d._all if isinstance(w, ActionLabel)])
 
 
 @unittest.skipUnless(USING_STUB, "已安裝 textual:改跑 test_editor_ui")
@@ -1095,6 +1303,521 @@ class NarrowLayoutTests(unittest.TestCase):
             d.set_class = lambda on, name, seen=seen: seen.append(on)
             d.on_resize(SimpleNamespace(size=SimpleNamespace(width=50, height=30)))
             self.assertEqual(seen, [True])
+
+
+class MouseEvent(Message if USING_STUB else object):
+    """測試用的滑鼠事件(只有座標)。"""
+    def __init__(self, x=0, y=0):
+        super().__init__()
+        self.x, self.y = x, y
+
+    def prevent_default(self):
+        pass
+
+
+@unittest.skipUnless(USING_STUB, "已安裝 textual:改跑 test_editor_ui")
+class ArrowRowTests(unittest.TestCase):
+    """調整型欄位:Enter 進入編輯後才顯示 ‹ ›;第一次點擊只選取,再點一次才進入編輯。"""
+
+    def setUp(self):
+        import tempfile
+        from pathlib import Path
+        self._tmp = tempfile.TemporaryDirectory()
+        self.store = ConfigStore(Path(self._tmp.name) / "c.json")
+        self.store.set("combat.retreat_limit", 2)
+
+    def tearDown(self):
+        self._tmp.cleanup()
+
+    def row(self, key="combat.retreat_limit", editing=False, focused=False, width=80, height=1):
+        row = FieldRow(self.store, key)
+        row.size.width, row.size.height = width, height
+        row.in_edit = editing
+        row.has_focus = focused
+        return row
+
+    def line0(self, row):
+        return str(row.render()).split("\n")[0]
+
+    def test_arrows_only_while_editing(self):
+        self.assertNotIn("‹", self.line0(self.row(focused=True)))          # 只是選取:沒有箭頭
+        text = self.line0(self.row(editing=True, focused=True))
+        self.assertIn("‹", text)
+        self.assertIn("›", text)
+
+    def test_value_does_not_jump_when_editing_starts(self):
+        a = self.line0(self.row(focused=True))
+        b = self.line0(self.row(editing=True, focused=True))
+        self.assertEqual(a.index("2"), b.index("2"))
+
+    def test_not_adjustable_rows_never_show_arrows(self):
+        for key in ("combat.sortie_map", "general.jst_offset", "combat.fleet_presets"):
+            self.assertNotIn("‹", self.line0(self.row(key, editing=True, focused=True)))
+
+    def test_every_adjustable_field_shows_arrows_when_editing_and_fits(self):
+        for key, f in SCHEMA.items():
+            if M.adjustable(f):
+                for width, height in ((80, 1), (40, 2)):
+                    row = self.row(key, editing=True, focused=True, width=width, height=height)
+                    for line in str(row.render()).split("\n"):
+                        self.assertLessEqual(M.cell_len(line), width, key)
+                    self.assertIn("‹", str(row.render()), key)
+
+    def test_arrow_zones_match_the_drawn_glyphs(self):
+        for height, width in ((1, 80), (2, 40)):
+            row = self.row(editing=True, focused=True, width=width, height=height)
+            lines = str(row.render()).split("\n")
+            y = height - 1
+            line = lines[y]
+            left_x = M.cell_len(line[:line.index("‹")])
+            right_x = M.cell_len(line[:line.index("›")])
+            line_no, (l0, l1), (r0, r1) = row._zones
+            self.assertEqual(line_no, y)
+            self.assertTrue(l0 <= left_x <= l1, (left_x, l0, l1))
+            self.assertTrue(r0 <= right_x <= r1, (right_x, r0, r1))
+
+    def click(self, row, x, y=0):
+        row.posted.clear()
+        row.on_mouse_down(MouseEvent(x, y))
+        row.on_click(MouseEvent(x, y))
+        return [type(m).__name__ for m in row.posted
+                if type(m).__name__ in ("Adjust", "Activated", "EnterEdit")], \
+               [getattr(m, "delta", None) for m in row.posted if type(m).__name__ == "Adjust"]
+
+    def test_first_click_only_selects(self):
+        row = self.row(focused=False)
+        row.render()                                      # 還沒選取
+        row.has_focus = True                              # 按下時焦點已經先設好了
+        names, _ = self.click(row, 40)
+        self.assertEqual(names, [])
+        self.assertIs(stub.STATE.focused, row)
+
+    def test_clicking_a_selected_row_enters_editing(self):
+        row = self.row(focused=True)
+        row.render()                                      # 已經以選取的樣子畫在畫面上
+        names, _ = self.click(row, 40)
+        self.assertEqual(names, ["EnterEdit"])
+
+    def test_clicking_arrows_only_works_while_editing(self):
+        row = self.row(editing=True, focused=True)
+        row.render()
+        _, (l0, l1), (r0, r1) = row._zones
+        self.assertEqual(self.click(row, r0 + 1)[1], [1])
+        self.assertEqual(self.click(row, l0 + 1)[1], [-1])
+
+    def test_clicking_the_value_or_label_while_editing_changes_nothing(self):
+        row = self.row(editing=True, focused=True)
+        row.render()
+        _, (l0, l1), (r0, r1) = row._zones
+        for x, y in (((l1 + r0) // 2, 0), (5, 0), (r0 + 1, 1)):
+            self.assertEqual(self.click(row, x)[0] if y == 0 else self.click(row, x, y)[0], [])
+
+    def test_arrow_position_is_inert_when_the_arrows_were_not_visible(self):
+        row = self.row(editing=True, focused=True)
+        row.render()
+        _, _, (r0, _) = row._zones
+        row._arrows_drawn = False                         # 按下當時畫面上沒有箭頭
+        row.on_mouse_down(MouseEvent(r0 + 1, 0))
+        row.on_click(MouseEvent(r0 + 1, 0))
+        self.assertEqual([m for m in row.posted if type(m).__name__ == "Adjust"], [])
+
+    def test_clicking_a_non_adjustable_row_opens_its_editor(self):
+        row = self.row("combat.sortie_map", focused=True)
+        self.assertEqual(self.click(row, 40)[0], ["Activated"])
+
+    def test_compact_rows_use_the_second_line(self):
+        row = self.row(editing=True, focused=True, width=40, height=2)
+        row.render()
+        _, (l0, l1), (r0, r1) = row._zones
+        self.assertEqual(self.click(row, r0 + 1, y=0)[1], [])         # 標籤那一列不算
+        self.assertEqual(self.click(row, r0 + 1, y=1)[1], [1])
+
+
+class FakeScreenApp(FakeApp if USING_STUB else object):
+    def __init__(self):
+        super().__init__()
+        self.popped = 0
+
+    def pop_screen(self):
+        self.popped += 1
+
+
+@unittest.skipUnless(USING_STUB, "已安裝 textual:改跑 test_editor_ui")
+class EditModeTests(unittest.TestCase):
+    """兩層操作:列表(↑↓ 在欄位間跳)→ Enter 進入 → ← → 改值 → Enter 確定回列表。"""
+
+    def setUp(self):
+        import tempfile
+        from pathlib import Path
+        self._tmp = tempfile.TemporaryDirectory()
+        self.store = ConfigStore(Path(self._tmp.name) / "c.json")
+        self.saved = []
+        self.screen = EditorScreen(self.store, "combat", save=lambda: self.saved.append(1) or True)
+        self.screen.app = FakeScreenApp()
+        self.hints = Static()
+        self.screen._by_id["ed-hints"] = self.hints
+        self.screen._by_id["ed-top"] = Static()
+        self.screen._by_id["ed-help"] = Static()
+        self.row = FieldRow(self.store, "combat.retreat_limit")
+        self.store.set("combat.retreat_limit", 2)
+        self.store.save()
+
+    def tearDown(self):
+        self._tmp.cleanup()
+
+    def enter_on(self, key):
+        row = FieldRow(self.store, key)
+        self.screen._open_editor(row)
+        return row
+
+    def hint_text(self):
+        return str(self.hints.content)
+
+    # --- 進入 / 確定 / 取消 ------------------------------------------------ #
+    def test_enter_starts_editing_without_changing_anything(self):
+        row = self.enter_on("combat.retreat_limit")
+        self.assertIs(self.screen._edit_row.key, row.key) if False else None
+        self.assertEqual(self.screen._edit_row.key, "combat.retreat_limit")
+        self.assertTrue(self.screen._edit_row.in_edit)
+        self.assertEqual(self.store.get("combat.retreat_limit"), 2)
+        self.assertEqual(self.screen.app.pushed, [])                 # 沒有任何對話框
+
+    def test_left_right_change_the_value_only_while_editing(self):
+        self.screen.action_adjust(1)                                 # 沒在編輯:不動
+        self.assertEqual(self.store.get("combat.retreat_limit"), 2)
+        self.enter_on("combat.retreat_limit")
+        self.screen.action_horizontal(1)
+        self.screen.action_horizontal(1)
+        self.assertEqual(self.store.get("combat.retreat_limit"), 4)
+        self.screen.action_horizontal(1)                             # 到頭不繞回
+        self.assertEqual(self.store.get("combat.retreat_limit"), 4)
+        self.screen.action_horizontal(-1)
+        self.assertEqual(self.store.get("combat.retreat_limit"), 3)
+
+    def test_enter_confirms_and_returns_to_the_list(self):
+        self.enter_on("combat.retreat_limit")
+        self.screen.action_horizontal(-1)
+        self.screen.action_edit()
+        self.assertIsNone(self.screen._edit_row)
+        self.assertEqual(self.store.get("combat.retreat_limit"), 1)
+        self.assertEqual(self.screen.app.popped, 0)                  # 沒有離開編輯器
+
+    def test_escape_restores_the_value_and_returns_to_the_list(self):
+        self.enter_on("combat.retreat_limit")
+        self.screen.action_horizontal(1)
+        self.screen.action_horizontal(1)
+        self.assertEqual(self.store.get("combat.retreat_limit"), 4)
+        self.screen.action_close()
+        self.assertEqual(self.store.get("combat.retreat_limit"), 2)
+        self.assertIsNone(self.screen._edit_row)
+        self.assertEqual(self.screen.app.popped, 0)                  # Esc 只是回到列表
+
+    def test_escape_on_the_list_closes_the_editor(self):
+        self.screen.action_close()
+        self.assertEqual(self.screen.app.popped, 1)
+
+    def test_a_full_edit_cycle_for_each_kind(self):
+        for key, steps, expect in (("combat.enabled", [1], True),
+                                   ("combat.fleet_mode", [1], None),
+                                   ("expedition.fleet_preset", [1], "auto")):
+            before = self.store.get(key)
+            self.enter_on(key)
+            for d in steps:
+                self.screen.action_horizontal(d)
+            self.screen.action_edit()
+            after = self.store.get(key)
+            if expect is not None:
+                self.assertEqual(after, expect, key)
+            else:
+                self.assertNotEqual(after, before, key)
+            self.assertIsNone(self.screen._edit_row)
+
+    def test_bool_arrows_set_off_and_on(self):
+        self.enter_on("combat.enabled")
+        self.screen.action_horizontal(1)
+        self.assertIs(self.store.get("combat.enabled"), True)
+        self.screen.action_horizontal(-1)
+        self.assertIs(self.store.get("combat.enabled"), False)
+
+    def test_disable_comes_first_for_the_expedition_preset(self):
+        self.store.set("expedition.fleet_preset", None)
+        self.enter_on("expedition.fleet_preset")
+        self.screen.action_horizontal(1)
+        self.assertEqual(self.store.get("expedition.fleet_preset"), "auto")
+        self.screen.action_horizontal(1)
+        self.assertIsNone(self.store.get("expedition.fleet_preset"))         # 循環回 disable
+
+    def test_space_inside_editing_cycles_with_wrap(self):
+        self.store.set("combat.retreat_limit", 4)
+        self.enter_on("combat.retreat_limit")
+        self.screen.action_quick()
+        self.assertEqual(self.store.get("combat.retreat_limit"), 0)
+
+    def test_space_on_the_list_enters_like_enter(self):
+        stub.STATE.focused = FieldRow(self.store, "combat.enabled")
+        self.screen.action_quick()
+        self.assertEqual(self.screen._edit_row.key, "combat.enabled")
+        self.assertEqual(self.store.get("combat.enabled"), False)            # 進入不會改值
+
+    # --- 編輯中其他按鍵暫時失效 -------------------------------------------- #
+    def test_other_keys_are_ignored_while_editing(self):
+        self.enter_on("combat.retreat_limit")
+        stub.STATE.focused = self.screen._edit_row
+        self.screen.action_row(1)                                    # ↑↓ 不移動
+        self.screen.action_goto_module("expedition")                 # 模組快捷鍵
+        self.screen.action_module(1)
+        self.screen.action_reset_default()
+        self.screen.action_undo()
+        self.screen.action_save()
+        self.screen.action_search()
+        self.assertEqual(self.screen.index, 0)
+        self.assertEqual(self.saved, [])
+        self.assertEqual(self.screen.app.pushed, [])
+        self.assertEqual(self.store.get("combat.retreat_limit"), 2)
+        self.assertIsNotNone(self.screen._edit_row)
+
+    def test_keys_work_again_after_confirming(self):
+        self.enter_on("combat.retreat_limit")
+        self.screen.action_edit()
+        stub.STATE.focused = FieldRow(self.store, "combat.retreat_limit")
+        self.store.set("combat.retreat_limit", 4)
+        self.screen.action_reset_default()
+        self.assertEqual(self.store.get("combat.retreat_limit"), 4)          # 預設值就是 4
+        self.screen.action_save()
+        self.assertEqual(self.saved, [1])
+
+    def test_left_and_right_navigate_again_on_the_list(self):
+        """第一層:← → 回到模組導覽(窄視窗切換模組),不會改值。"""
+        self.store.set("combat.retreat_limit", 2)
+        stub.STATE.focused = FieldRow(self.store, "combat.retreat_limit")
+        moved = []
+        self.screen.has_class = lambda name: True
+        self.screen.action_module = lambda d: moved.append(d)
+        self.screen.action_horizontal(1)
+        self.assertEqual(moved, [1])
+        self.assertEqual(self.store.get("combat.retreat_limit"), 2)
+
+    def test_moving_focus_elsewhere_confirms_the_edit(self):
+        self.enter_on("combat.retreat_limit")
+        self.screen.action_horizontal(1)
+        self.screen._focus_changed(Msg(widget=FieldRow(self.store, "combat.fleet_mode")))
+        self.assertIsNone(self.screen._edit_row)
+        self.assertEqual(self.store.get("combat.retreat_limit"), 3)          # 保留
+
+    def test_focus_events_from_the_edited_row_itself_keep_editing(self):
+        self.enter_on("combat.retreat_limit")
+        self.screen._focus_changed(Msg(widget=self.screen._edit_row))
+        self.assertIsNotNone(self.screen._edit_row)
+
+    def test_clicking_a_selected_row_enters_editing(self):
+        row = FieldRow(self.store, "combat.retreat_limit")
+        self.screen._row_enter_edit(FieldRow.EnterEdit(row))
+        self.assertIs(self.screen._edit_row, row)
+        self.screen._row_enter_edit(FieldRow.EnterEdit(FieldRow(self.store, "combat.enabled")))
+        self.assertIs(self.screen._edit_row, row)                            # 編輯中不被搶走
+
+    def test_arrow_clicks_adjust_the_edited_row(self):
+        row = self.enter_on("combat.retreat_limit")
+        edited = self.screen._edit_row
+        self.screen._row_adjust(FieldRow.Adjust(edited, 1))
+        self.assertEqual(self.store.get("combat.retreat_limit"), 3)
+
+    def test_non_adjustable_and_bulk_rows_do_not_enter_editing(self):
+        for key in ("general.jst_offset", "combat.sortie_map"):
+            self.screen._begin_edit(FieldRow(self.store, key))
+            self.assertIsNone(self.screen._edit_row)
+        self.screen._begin_edit(BulkRow(self.store))
+        self.assertIsNone(self.screen._edit_row)
+
+    def test_non_adjustable_rows_still_open_their_editors_on_enter(self):
+        for key, kind in (("combat.sortie_map", MapDialog), ("combat.fleet_presets", PresetWheelDialog),
+                          ("pvp.fleet_preset", PresetWheelDialog), ("general.jst_offset", NumberDialog)):
+            self.screen.app.pushed.clear()
+            self.enter_on(key)
+            self.assertIsInstance(self.screen.app.pushed[-1][0], kind, key)
+            self.assertIsNone(self.screen._edit_row)
+
+    # --- 提示列 ------------------------------------------------------------ #
+    def test_hints_follow_the_level(self):
+        self.screen._refresh_hints()
+        self.assertIn("move", self.hint_text())
+        self.enter_on("combat.retreat_limit")
+        text = self.hint_text()
+        for word in ("change", "confirm", "cancel"):
+            self.assertIn(word, text)
+        self.assertNotIn("move", text)
+        self.screen.action_edit()
+        self.assertIn("move", self.hint_text())
+
+    def test_edit_hints_fit_narrow_terminals(self):
+        text = str(EditorScreen._hints(30, True))
+        self.assertLessEqual(M.cell_len(text.rstrip()), 30)
+        self.assertIn("confirm", text)
+
+
+class Msg(Message if USING_STUB else object):
+    def __init__(self, **kw):
+        super().__init__()
+        self.__dict__.update(kw)
+
+
+@unittest.skipUnless(USING_STUB, "已安裝 textual:改跑 test_editor_ui")
+class PresetWheelDialogTests(unittest.TestCase):
+    LIST = SCHEMA["combat.fleet_presets"]
+    PVP = SCHEMA["pvp.fleet_preset"]
+
+    def open(self, field, value):
+        d = mount(PresetWheelDialog(field, value))
+        return d, d.query_one(WheelPicker)
+
+    def test_disable_is_first_auto_is_second(self):
+        d, picker = self.open(self.LIST, [3])
+        self.assertEqual(picker.wheels[0].items[:3], ["disable", "auto", "1"])
+        self.assertEqual(picker.values(), ["3"])
+
+    def test_empty_list_starts_on_disable(self):
+        d, picker = self.open(self.LIST, [])
+        self.assertEqual(picker.values(), ["disable"])
+        click(d, "ok")
+        self.assertEqual(d.dismissed, Picked([]))
+
+    def test_writes_exactly_one_element(self):
+        d, picker = self.open(self.LIST, [3])
+        picker.action_scroll(4)                                   # 3 → 7
+        pump(d)
+        click(d, "ok")
+        self.assertEqual(d.dismissed, Picked([7]))
+
+    def test_auto_is_one_step_below_disable(self):
+        d, picker = self.open(self.LIST, [])
+        picker.action_scroll(1)
+        pump(d)
+        self.assertEqual(picker.values(), ["auto"])
+        picker.action_accept()
+        pump(d)
+        self.assertEqual(d.dismissed, Picked(["auto"]))
+
+    def test_stops_at_both_ends(self):
+        d, picker = self.open(self.LIST, [15])
+        picker.action_scroll(1)
+        pump(d)
+        self.assertEqual(picker.values(), ["15"])                 # 最後一項,不繞回
+        picker.action_scroll(-99)
+        pump(d)
+        self.assertEqual(picker.values(), ["disable"])
+
+    def test_existing_multiple_values_are_flagged(self):
+        d, picker = self.open(self.LIST, [3, 5])
+        self.assertEqual(picker.values(), ["3"])
+        self.assertIn("only one", str(d.query_one("#note").content))
+        click(d, "ok")
+        self.assertEqual(d.dismissed, Picked([3]))                # 截成一個
+
+    def test_preview_follows_the_wheel(self):
+        d, picker = self.open(self.LIST, [3])
+        picker.action_scroll(1)
+        pump(d)
+        self.assertIn("4", str(d.query_one("#preview").content))
+        picker.action_scroll(-99)
+        pump(d)
+        self.assertIn("disable", str(d.query_one("#preview").content))
+
+    def test_pvp_values(self):
+        for value, token, expected in ((None, "disable", None), (0, "disable", 0),
+                                       ("auto", "auto", "auto"), (7, "7", 7)):
+            d, picker = self.open(self.PVP, value)
+            self.assertEqual(picker.values(), [token])
+            click(d, "ok")
+            self.assertEqual(d.dismissed, Picked(expected), value)
+
+    def test_cancel(self):
+        d, _ = self.open(self.LIST, [3])
+        click(d, "cancel")
+        self.assertIsNone(d.dismissed)
+
+    def test_short_terminal_shrinks_the_wheel(self):
+        from types import SimpleNamespace
+        d, picker = self.open(self.LIST, [3])
+        d.on_resize(SimpleNamespace(size=SimpleNamespace(width=120, height=18)))
+        self.assertEqual(picker.rows_shown, 3)
+        d.on_resize(SimpleNamespace(size=SimpleNamespace(width=120, height=40)))
+        self.assertEqual(picker.rows_shown, 5)
+
+
+@unittest.skipUnless(USING_STUB, "已安裝 textual:改跑 test_editor_ui")
+class TightWheelLayoutTests(unittest.TestCase):
+    def recipe(self):
+        f = SCHEMA["factory.build_recipe"]
+        specs = [NumSpec(n, v, 0, None, min_places=3, color=c, row=r, col=k)
+                 for (n, c, r, k), v in zip(M.RESOURCES, (30, 31, 32, 33))]
+        d = mount(NumberDialog(f, f.label, specs, as_list=True))
+        return d, d.query_one(WheelPicker)
+
+    def test_digits_are_narrow_and_adjacent(self):
+        d, picker = self.recipe()
+        widths = picker._widths()
+        self.assertTrue(all(w == 2 for w in widths))
+        starts = picker._starts()
+        first_group = [i for i, w in enumerate(picker.wheels) if w.row == 0][:4]
+        self.assertEqual([starts[i] for i in first_group], [0, 2, 4, 6])
+
+    def test_whole_picker_is_much_narrower_than_before(self):
+        d, picker = self.recipe()
+        widest = max(M.cell_len(line) for line in str(picker.render()).split("\n"))
+        self.assertLessEqual(widest, 22)                           # 原本約 32 欄
+
+    def test_groups_are_separated_by_a_divider_and_rows_by_a_rule(self):
+        d, picker = self.recipe()
+        lines = str(picker.render()).split("\n")
+        self.assertEqual(len(lines), 15)                          # 含下方分隔線與 OK / Cancel 列
+        for i in (0, 1, 2, 3, 4, 5, 7, 8, 9, 10, 11, 12):
+            self.assertIn("│", lines[i], i)                       # 每一列(含標題)左右組之間都有分隔線
+        self.assertEqual(set(lines[6]), {"─"})                    # 兩排之間整行分隔線
+        self.assertGreaterEqual(len(lines[6]), 20)
+
+    def test_divider_sits_between_the_two_groups(self):
+        d, picker = self.recipe()
+        line = str(picker.render()).split("\n")[3]
+        left, right = line.split("│")
+        self.assertEqual(left.replace(" ", "")[-3:], "030")        # 燃料 0030 的最後三位
+        self.assertTrue(right.replace(" ", "").startswith("0032"))  # 鋼材 0032
+
+    def test_labels_are_centered_over_their_own_group(self):
+        d, picker = self.recipe()
+        label = str(picker.render()).split("\n")[0]
+        left, right = label.split("│")
+        self.assertIn("fuel", left)
+        self.assertIn("steel", right)
+        self.assertNotIn("steel", left)
+
+    def test_click_still_hits_the_right_digit(self):
+        d, picker = self.recipe()
+        steel_first = next(i for i, w in enumerate(picker.wheels) if w.label == "steel")
+        x = picker._starts()[steel_first] + 1
+        idx, offset = picker._locate(x, 1 + 2 + 1)                # 第一排中心的下一列
+        self.assertEqual((idx, offset), (steel_first, 1))
+        self.assertEqual(picker._locate(picker._starts()[steel_first] - 2, 3)[0], -1)   # 分隔線上
+
+    def test_single_number_dialogs_are_tight_too(self):
+        d = mount(NumberDialog(SCHEMA["general.chrome_dev_port"], "port",
+                               [NumSpec("port", 9222, 0, 65535)], as_list=False))
+        picker = d.query_one(WheelPicker)
+        self.assertTrue(all(w.tight and (w.gap == 0 or i == 0)
+                            for i, w in enumerate(picker.wheels)))
+
+    def test_signed_numbers_keep_working(self):
+        d = mount(NumberDialog(SCHEMA["general.jst_offset"], "jst",
+                               [NumSpec("jst", -5, -20, 20)], as_list=False))
+        picker = d.query_one(WheelPicker)
+        self.assertEqual(picker.values(), ["-", "0", "5"])
+        click(d, "ok")
+        self.assertEqual(d.dismissed, Picked(-5))
+
+    def test_map_dialog_keeps_wider_wheels(self):
+        d = mount(MapDialog(SCHEMA["combat.sortie_map"], "2-2"))
+        picker = d.query_one(WheelPicker)
+        self.assertFalse(any(w.tight for w in picker.wheels))
+        self.assertEqual([w.gap for w in picker.wheels[1:]], [2, 2])
 
 
 @unittest.skipUnless(USING_STUB, "已安裝 textual:改跑 test_editor_ui")

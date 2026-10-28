@@ -33,7 +33,7 @@ from . import narrow as N
 from . import noro6
 from .dialogs import (
     ChoiceDialog, DangerDialog, JsonDialog, ListDialog, MapDialog, NumberDialog,
-    NumSpec, Picked, PresetDialog, QuestDialog, SearchDialog, TableDialog, TextDialog, TreeDialog,
+    NumSpec, Picked, PresetDialog, PresetWheelDialog, QuestDialog, SearchDialog, TableDialog, TextDialog, TreeDialog,
 )
 
 FLAG_MARK = {"error": ("✖", "bold #e06c75"), "danger": ("!", "bold #c678dd"),
@@ -182,19 +182,58 @@ class FieldRow(Widget, can_focus=True):
     """表單中的一列:旗標、修改標記、標籤、值。單擊即編輯。"""
 
     class Activated(Message):
+        """點擊不可調整的欄位 → 開編輯器。"""
+
         def __init__(self, row: "FieldRow") -> None:
             super().__init__()
             self.row = row
+
+    class EnterEdit(Message):
+        """在已選取的調整型欄位上再點一次 → 進入編輯(等同 Enter)。"""
+
+        def __init__(self, row: "FieldRow") -> None:
+            super().__init__()
+            self.row = row
+
+    class Adjust(Message):
+        """編輯中點擊 ‹ › 箭頭:delta = -1 / +1。"""
+
+        def __init__(self, row: "FieldRow", delta: int) -> None:
+            super().__init__()
+            self.row = row
+            self.delta = delta
 
     def __init__(self, store: ConfigStore, key: str) -> None:
         super().__init__()
         self.store = store
         self.key = key
         self.field: Optional[Field] = SCHEMA.get(key)
+        self.in_edit = False            # 第二層:正在調這一列的值(才會畫 ‹ ›)
+        self._zones = None              # 目前畫在畫面上的箭頭可點範圍(沒畫就是 None)
+        self._arrows_drawn = False
+        self._focus_drawn = False
+        self._arrows_at_down = False
+        self._focused_at_down = False
+
+    def on_mouse_down(self, event: events.MouseDown) -> None:
+        # 焦點在滑鼠按下「之前」就已經設定好了,所以改記錄「按下當時畫面上的樣子」:
+        # 當時還沒被選取 → 這次點擊只是選取;當時已選取 → 才算「進入編輯」。
+        self._arrows_at_down = self._arrows_drawn
+        self._focused_at_down = self._focus_drawn
 
     def on_click(self, event: events.Click) -> None:
         event.stop()
         self.focus()
+        if M.adjustable(self.field):
+            if self.in_edit:
+                if self._arrows_at_down and self._zones is not None:
+                    hit = N.arrow_hit(self._zones, event.x, event.y)
+                    if hit:
+                        self.post_message(self.Adjust(self, hit))
+                return
+            if self._focused_at_down:
+                self.post_message(self.EnterEdit(self))
+            return                      # 第一次點只是選取:不改值、不跳選單
         self.post_message(self.Activated(self))
 
     def on_focus(self) -> None:
@@ -214,6 +253,10 @@ class FieldRow(Widget, can_focus=True):
         label_w, value_w = N.row_columns(width, compact)
         label = field.label if field else self.key
         dim = bool(field and field.advanced)
+        adjustable = M.adjustable(field)
+        arrows = adjustable and self.in_edit
+        if adjustable:                                  # 兩側各留一個箭頭的位置
+            value_w = max(4, value_w - 2 * N.ARROW_SLOT)
         shown = M.format_value(field, value, value_w) if field else M.format_raw(value, value_w)
 
         mark, mark_style = FLAG_MARK[flag]
@@ -227,8 +270,22 @@ class FieldRow(Widget, can_focus=True):
         else:
             text.append(M.pad_cells(label, label_w), style="#6b7280" if dim else "")
             text.append("  ")
-        text.append(shown, style=_value_style(value, flag, changed))
+        if adjustable:
+            text.append("‹ " if arrows else "  ", style=_arrow_style(field, value, -1, arrows))
+        text.append(shown, style=("bold " if arrows else "") + _value_style(value, flag, changed))
+        if arrows:
+            text.append(" ›", style=_arrow_style(field, value, 1, True))
+        self._arrows_drawn = arrows
+        self._focus_drawn = self.has_focus
+        self._zones = N.arrow_zones(label_w, M.cell_len(shown), compact) if arrows else None
         return text
+
+
+def _arrow_style(field: Field, value: Any, direction: int, shown: bool) -> str:
+    """能再往該方向調整的箭頭是亮黃色,已到頭的是暗色。"""
+    if not shown:
+        return ""
+    return "bold #e5c07b" if M.can_adjust(field, value, direction) else "#4b5263"
 
 
 class BulkRow(FieldRow):
@@ -340,6 +397,8 @@ class EditorScreen(Screen):
         self.save_callback = save
         self.project_root = root                      # 專案根目錄(找 data/quests/quests.json 用)
         self._catalog: Optional[list[M.QuestInfo]] = None
+        self._edit_row: Optional[FieldRow] = None      # 第二層:正在調整的那一列
+        self._edit_before: Any = None                  # 進入編輯前的值,Esc 用來還原
         self._noro6_cache: Optional[M.NodeIndex] = None
         names = [e.module for e in M.MODULE_ENTRIES]
         self.index = names.index(module) if module in names else 0
@@ -360,12 +419,15 @@ class EditorScreen(Screen):
         yield Static(self._hints(0), id="ed-hints")
 
     @staticmethod
-    def _hints(width: int) -> Text:
-        """底部提示;窄視窗丟掉次要的,保留 enter / search / save / back。"""
-        lengths = [(desc, len(key) + len(desc) + 3) for key, desc in HINTS]
-        kept = fit_segments(lengths, N.EDITOR_HINT_DROP, width - 1 if width else 0)
+    def _hints(width: int, editing: bool = False) -> Text:
+        """底部提示;窄視窗丟掉次要的,保留 enter / search / save / back。
+        編輯某一列(第二層)時只顯示 ←→ 改值、Enter 確定、Esc 取消。"""
+        hints = N.EDIT_HINTS if editing else HINTS
+        lengths = [(desc, len(key) + len(desc) + 3) for key, desc in hints]
+        kept = fit_segments(lengths, N.EDIT_HINT_DROP if editing else N.EDITOR_HINT_DROP,
+                            width - 1 if width else 0)
         text = Text(no_wrap=True, overflow="ellipsis")
-        for key, desc in HINTS:
+        for key, desc in hints:
             if desc in kept:
                 text.append(key, style="bold #e5c07b")
                 text.append(f" {desc}  ", style="#9aa0a6")
@@ -386,7 +448,7 @@ class EditorScreen(Screen):
         width = event.size.width
         self.set_class(width < N.NARROW_WIDTH, "narrow")
         self.set_class(width < N.COMPACT_WIDTH, "compact")
-        self.query_one("#ed-hints", Static).update(self._hints(width))
+        self._refresh_hints()
         self._refresh_top()
 
     # ------------------------------------------------------------------ #
@@ -439,20 +501,23 @@ class EditorScreen(Screen):
         self._focus_first_row()
 
     def action_goto_module(self, module: str) -> None:
+        if self._edit_row is not None:
+            return                                  # 編輯中先 Enter 確定或 Esc 取消
         names = [e.module for e in M.MODULE_ENTRIES]
         self._show_module(names.index(module))
         self._focus_first_row()
 
     def action_module(self, delta: int) -> None:
+        if self._edit_row is not None:
+            return
         new = (self.index + delta) % len(M.MODULE_ENTRIES)
         self._show_module(new)
         if isinstance(self.focused, FieldRow):
             self._focus_first_row()
 
     def action_horizontal(self, direction: int) -> None:
-        row = self._current_row()
-        if row is not None and M.adjustable(row.field):
-            self.action_adjust(direction)          # 開關 / enum / 只有幾級的整數:← → 直接調整
+        if self._edit_row is not None:              # 第二層:← → 改這一列的值
+            self._adjust_row(self._edit_row, direction)
             return
         if self.has_class("narrow"):
             self.action_module(direction)
@@ -463,6 +528,8 @@ class EditorScreen(Screen):
     # 列移動
     # ------------------------------------------------------------------ #
     def action_row(self, delta: int) -> None:
+        if self._edit_row is not None:
+            return                                  # 第二層:↑ ↓ 不移動,免得不小心離開
         rows = self._field_rows()
         if not rows:
             return
@@ -475,12 +542,18 @@ class EditorScreen(Screen):
 
     @on(events.DescendantFocus)
     def _focus_changed(self, event: events.DescendantFocus) -> None:
+        if self._edit_row is not None and event.widget is not self._edit_row:
+            self._end_edit(confirm=True)                 # 點到別處 = 確定並離開編輯
         if isinstance(event.widget, FieldRow):
             self._update_help(event.widget)
 
     # ------------------------------------------------------------------ #
     # 上下方資訊列
     # ------------------------------------------------------------------ #
+    def _refresh_hints(self) -> None:
+        self.query_one("#ed-hints", Static).update(
+            self._hints(self.size.width, self._edit_row is not None))
+
     def _refresh_top(self) -> None:
         issues = self.store.issues()
         errors = sum(1 for i in issues if i.level == "error")
@@ -554,6 +627,10 @@ class EditorScreen(Screen):
         return self.focused if isinstance(self.focused, FieldRow) else None
 
     def action_edit(self) -> None:
+        """Enter:第二層 = 確定並回到列表;第一層 = 進入這一列(調整型 → 編輯,其他 → 開對話框)。"""
+        if self._edit_row is not None:
+            self._end_edit(confirm=True)
+            return
         row = self._current_row()
         if row is not None:
             self._open_editor(row)
@@ -562,37 +639,61 @@ class EditorScreen(Screen):
     def _row_activated(self, event: FieldRow.Activated) -> None:
         self._open_editor(event.row, click=True)
 
+    @on(FieldRow.EnterEdit)
+    def _row_enter_edit(self, event: FieldRow.EnterEdit) -> None:
+        if self._edit_row is None:
+            self._begin_edit(event.row)
+
     def action_quick(self) -> None:
-        """空白鍵:布林切換、enum 循環;其他型別等同 Enter。"""
-        row = self._current_row()
-        if row is None:
+        """空白鍵:第一層 = 同 Enter;第二層 = 換下一個值(到頭繞回)。"""
+        if self._edit_row is not None:
+            self._adjust_row(self._edit_row, 1, wrap=True)
             return
-        if isinstance(row, BulkRow):
-            self._open_bulk()
-            return
-        field, value = row.field, self.store.get(row.key)
-        kind = M.editor_for(field, value)
-        if kind == "bool":
-            self._commit(row.key, not value if isinstance(value, bool) else True)
-        elif kind == "choice" and field is not None:
-            options = [v for _, v in M.enum_options(field)]
-            self._commit(row.key, M.cycle_choice(options, value))
-        else:
-            self._open_editor(row)
+        self.action_edit()
 
     def action_adjust(self, delta: int) -> None:
-        """+ / - / ← →:整數 ±1(到頭就停)、enum 循環、開關。"""
-        row = self._current_row()
-        if row is None or row.field is None or isinstance(row, BulkRow):
+        """+ / -:只在編輯中有效(整數 ±1、enum 循環、開關)。"""
+        if self._edit_row is not None:
+            self._adjust_row(self._edit_row, delta)
+
+    # --- 第二層編輯:開關 / enum / 少數等級的整數 ------------------------------ #
+    def _begin_edit(self, row: FieldRow) -> None:
+        if row.field is None or not M.adjustable(row.field) or isinstance(row, BulkRow):
             return
-        value = self.store.get(row.key)
+        self._edit_row = row
+        self._edit_before = self.store.get(row.key)
+        row.in_edit = True
+        row.set_class(True, "editing")
+        row.refresh()
+        self._refresh_hints()
+
+    def _end_edit(self, *, confirm: bool) -> None:
+        row = self._edit_row
+        if row is None:
+            return
+        self._edit_row = None
+        if not confirm:
+            self.store.set(row.key, self._edit_before)      # Esc:還原成進入前的值
+        row.in_edit = False
+        row.set_class(False, "editing")
+        row.refresh()
+        self._refresh_hints()
+
+    def _adjust_row(self, row: FieldRow, delta: int, *, wrap: bool = False) -> None:
+        if row.field is None or isinstance(row, BulkRow):
+            return
         if row.field.kind not in (Kind.INT, Kind.ENUM, Kind.BOOL):
             return
-        self._commit(row.key, M.adjust_value(row.field, value, delta))
+        value = self.store.get(row.key)
+        self._commit(row.key, M.adjust_value(row.field, value, delta, wrap=wrap))
+
+    @on(FieldRow.Adjust)
+    def _row_adjust(self, event: FieldRow.Adjust) -> None:
+        self._adjust_row(event.row, event.delta)
 
     def action_reset_default(self) -> None:
         row = self._current_row()
-        if row is None:
+        if row is None or self._edit_row is not None:
             return
         if isinstance(row, BulkRow):
             for key in M.EXPEDITION_FLEET_KEYS:
@@ -605,6 +706,8 @@ class EditorScreen(Screen):
 
     def action_undo(self) -> None:
         row = self._current_row()
+        if self._edit_row is not None:
+            return
         if isinstance(row, BulkRow):
             for key in M.EXPEDITION_FLEET_KEYS:
                 self.store.revert_key(key)
@@ -612,14 +715,22 @@ class EditorScreen(Screen):
             self.store.revert_key(row.key)
 
     def action_save(self) -> None:
+        if self._edit_row is not None:
+            return
         if self.save_callback is not None:
             self.save_callback()
         self._refresh_top()
 
     def action_close(self) -> None:
+        """Esc:第二層 = 放棄這次修改回到列表;第一層 = 離開編輯器。"""
+        if self._edit_row is not None:
+            self._end_edit(confirm=False)
+            return
         self.app.pop_screen()
 
     def action_search(self) -> None:
+        if self._edit_row is not None:
+            return
         self.app.push_screen(SearchDialog(M.unknown_keys(self.store.as_dict())),
                              self._search_done)
 
@@ -664,12 +775,10 @@ class EditorScreen(Screen):
         done = partial(self._dialog_done, key)
         is_list = isinstance(value, list)
 
-        if kind == "bool":
-            self._commit(key, not value if isinstance(value, bool) else True)
-        elif kind == "choice":
-            push(ChoiceDialog(field.label, field.help, M.enum_options(field), value), done)
-        elif kind == "choice_int" and _is_int(value):
-            push(ChoiceDialog(field.label, field.help, M.int_options(field), value), done)
+        if kind in ("bool", "choice") or (kind == "choice_int" and _is_int(value)):
+            # 開關 / enum / 少數等級的整數:不跳選單。Enter 進入編輯(第二層),
+            # ← → 改值,Enter 確定、Esc 還原,再回到列表(第一層)
+            self._begin_edit(row)
         elif kind == "wheel" and _is_int(value):
             spec = NumSpec(field.label, value, field.min, field.max)
             push(NumberDialog(field, field.label, [spec], as_list=False), done)
@@ -683,18 +792,16 @@ class EditorScreen(Screen):
             push(NumberDialog(field, field.label, specs, as_list=True), done)
         elif kind == "text" and not isinstance(value, (dict, list)):
             push(TextDialog(field, value), done)
-        elif kind == "preset":
-            push(PresetDialog(field, value, multi=False), done)
+        elif kind == "preset_wheel" and (field.kind is Kind.PRESET or is_list):
+            push(PresetWheelDialog(field, value), done)
         elif kind == "table" and is_list:
             push(TableDialog(field, value), done)
         elif kind == "quest" and is_list and self._quest_catalog():
             push(QuestDialog(field, value, self._quest_catalog()), done)
-        elif kind == "preset_list" and is_list and not M.has_duplicates(value):
-            push(PresetDialog(field, value, multi=True), done)
         elif kind == "tokens" and is_list and not M.has_duplicates(value):
             push(PresetDialog(field, value, multi=True, tokens=("1", "2", "3"),
                               hint="Space toggles a group · Enter = OK"), done)
-        elif kind in ("list", "quest", "preset_list", "tokens", "table") and is_list:
+        elif kind in ("list", "quest", "tokens", "table") and is_list:
             push(ListDialog(field, value), done)
         elif kind == "tree" and isinstance(value, dict):
             push(TreeDialog(field.label, field.help, value, field=field), done)

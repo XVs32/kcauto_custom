@@ -580,7 +580,10 @@ class NumberDialog(Dialog):
     單一數字回傳 int;多個數字(配方)回傳 list[int]。
     """
 
-    HINT = "← →  digit    ↑ ↓  scroll    Tab  next number    Enter  OK    Esc  cancel"
+    HINT = "← →  digit    ↑ ↓  scroll    Enter  OK    Esc  cancel"
+    # 多個數字(配方)分兩層:先選資源,Enter 進去再調數字
+    HINT_GROUP = "↑ ↓ ← →  choose    Enter  edit this one    Tab  next    Esc  cancel"
+    HINT_DIGIT = "← →  digit    ↑ ↓  scroll    Enter  confirm    Esc  undo this one"
     OVERHEAD = 16            # 滾輪以外的元件佔用的列數(含邊框)
 
     def __init__(self, field: Field, title: str, specs: Sequence[NumSpec], *,
@@ -603,32 +606,58 @@ class NumberDialog(Dialog):
             start = len(wheels)
             value = M.clamp_number(spec.value, spec.lo, spec.hi)
             span = places + (1 if signed else 0)
-            gap = spec.col > 0
-            common = dict(span=span, row=spec.row, color=spec.color)
+            group_gap = 5 if spec.col > 0 else 0         # 右邊那組與左邊那組之間留寬並畫分隔線
+            common = dict(span=span, row=spec.row, color=spec.color, tight=True)
             if signed:
                 wheels.append(Wheel(["+", "-"], 1 if value < 0 else 0, label=spec.label,
-                                    gap_before=gap, **common))
+                                    gap=group_gap, divider=group_gap > 0, **common))
             for pos, d in enumerate(M.digits_of(value, places)):
                 first = pos == 0 and not signed
                 wheels.append(Wheel([str(n) for n in range(10)], d,
                                     label=spec.label if first else "",
-                                    gap_before=gap and first, **common))
+                                    gap=group_gap if first else 0,
+                                    divider=first and group_gap > 0, **common))
             self.groups[gi] = (start, signed, places)
         f = self.field
         with Vertical(classes="dlg dlg-wide"):
             yield from self.header(self.title_text, f.help)
             yield _static(f"{f.key}   {M.type_label(f)}   default "
                           f"{M.format_value(f, f.default, 30)}", classes="dlg-meta")
-            yield WheelPicker(wheels, id="wheels")
+            yield WheelPicker(wheels, id="wheels", grouped=self.grouped,
+                              buttons=("OK", "Cancel") if self.grouped else ())
             yield _static("", classes="dlg-preview", id="preview")
             yield _static("", classes="dlg-err", id="err")
-            yield _static(self.HINT, classes="dlg-meta")
-            yield self.buttons(("OK", "ok"), ("Cancel", "cancel"))
+            yield _static(self.HINT_GROUP if self.grouped else self.HINT,
+                          classes="dlg-meta", id="hint")
+            if not self.grouped:                    # 分組模式的 OK / Cancel 在滾輪下方,可用方向鍵選
+                yield self.buttons(("OK", "ok"), ("Cancel", "cancel"))
+
+    @property
+    def grouped(self) -> bool:
+        return self.as_list and len(self.specs) > 1
 
     def on_resize(self, event) -> None:
         Dialog.on_resize(self, event)
         picker = self.query_one(WheelPicker)
         picker.set_visible(5 if event.size.height - self.OVERHEAD >= picker.height_for(5) else 3)
+
+    def action_cancel(self) -> None:
+        """Esc:在第二層(調數字)= 放棄這一組的修改、回到選資源;在第一層 = 取消整個對話框。"""
+        picker = self.query_one(WheelPicker)
+        if picker.in_digits:
+            picker.leave_digits(revert=True)
+            self._update_preview()
+            return
+        super().action_cancel()
+
+    def on_wheel_picker_level_changed(self, event: WheelPicker.LevelChanged) -> None:
+        event.stop()
+        self.query_one("#hint", Static).update(
+            Text(self.HINT_DIGIT if event.level == "digit" else self.HINT_GROUP, style=DIM))
+
+    def on_wheel_picker_cancelled(self, event: WheelPicker.Cancelled) -> None:
+        event.stop()
+        self.dismiss(None)
 
     def on_mount(self) -> None:
         self.query_one(WheelPicker).focus()
@@ -707,6 +736,81 @@ class NumberDialog(Dialog):
             super().run_command(command)
 
 
+class PresetWheelDialog(Dialog):
+    """艦隊 preset:單一值的滾動式列表(auto 在第一項,接著 1~15)。
+
+    清單欄位(combat.fleet_presets)固定只寫一個元素;結尾的 none = 空清單。
+    pvp 的結尾是 0(未指定)與 null。
+    """
+
+    HINT = "↑ ↓  scroll    Enter  OK    Esc  cancel"
+
+    def __init__(self, field: Field, value: Any) -> None:
+        super().__init__()
+        self.field = field
+        self.value = value
+
+    def compose(self) -> ComposeResult:
+        f = self.field
+        tokens = M.preset_wheel_tokens(f)
+        current = M.preset_wheel_current(f, self.value)
+        with Vertical(classes="dlg"):
+            yield from self.header(f.label, f.help)
+            yield WheelPicker([Wheel(tokens, tokens.index(current), label="preset", wrap=False)],
+                              id="wheels")
+            yield _static("", classes="dlg-preview", id="preview")
+            yield _static("", classes="dlg-meta", id="note")
+            yield _static("", classes="dlg-err", id="err")
+            yield _static(self.HINT, classes="dlg-meta")
+            yield self.buttons(("OK", "ok"), ("Cancel", "cancel"))
+
+    def on_resize(self, event) -> None:
+        Dialog.on_resize(self, event)
+        picker = self.query_one(WheelPicker)
+        picker.set_visible(5 if event.size.height - 15 >= picker.height_for(5) else 3)
+
+    def on_mount(self) -> None:
+        self.query_one(WheelPicker).focus()
+        self._update_preview()
+        if isinstance(self.value, list) and len(self.value) > 1:
+            shown = ", ".join(str(v) for v in self.value)
+            self.query_one("#note", Static).update(Text(
+                f"Currently {len(self.value)} presets ({shown}); only one can be kept.",
+                style="#e5c07b"))
+
+    def _token(self) -> str:
+        return self.query_one(WheelPicker).values()[0]
+
+    def _result(self) -> Any:
+        return M.preset_wheel_result(self.field, self._token(), self.value)
+
+    def on_wheel_picker_changed(self, event: WheelPicker.Changed) -> None:
+        event.stop()
+        self._update_preview()
+
+    def _update_preview(self) -> None:
+        shown = M.format_value(self.field, self._result(), 30)
+        self.query_one("#preview", Static).update(Text("= " + shown, style="bold #e5c07b"))
+
+    def on_wheel_picker_accepted(self, event: WheelPicker.Accepted) -> None:
+        event.stop()
+        self._finish()
+
+    def _finish(self) -> None:
+        value = self._result()
+        errors = self.field.validate(value)
+        if errors:
+            self.show_error(errors[0])
+            return
+        self.accept(value)
+
+    def run_command(self, command: str) -> None:
+        if command == "ok":
+            self._finish()
+        else:
+            super().run_command(command)
+
+
 class MapDialog(Dialog):
     """出擊海域:世界 / 海域編號 / 目標節點三個滾輪(auto 時後兩者無效)。
 
@@ -735,8 +839,8 @@ class MapDialog(Dialog):
         wheels = [
             Wheel(worlds, worlds.index(self.world), label="world", wrap=False),
             Wheel(numbers, min(number_index, len(numbers) - 1), label="map",
-                  wrap=False, gap_before=True),
-            Wheel(node_items, node_index, label="node", wrap=False, gap_before=True),
+                  wrap=False, gap=2),
+            Wheel(node_items, node_index, label="node", wrap=False, gap=2),
         ]
         with Vertical(classes="dlg"):
             yield from self.header(f.label, f.help)

@@ -85,6 +85,31 @@ class TabsTests(unittest.TestCase):
         self.assertEqual(N.tabs_step(0, 1), -1)                      # 極窄也不除以零
 
 
+class ArrowTests(unittest.TestCase):
+    def test_zones_follow_the_value_position(self):
+        line, left, right = N.arrow_zones(20, 4, False)
+        self.assertEqual(line, 0)
+        x0 = 3 + 20 + 2
+        self.assertEqual(left, (x0 - 1, x0 + 1))
+        self.assertEqual(right, (x0 + 2 + 4 + 1 - 1, x0 + 2 + 4 + 1 + 1))
+
+    def test_compact_uses_the_second_line(self):
+        line, left, right = N.arrow_zones(37, 3, True)
+        self.assertEqual(line, 1)
+        self.assertEqual(left, (2, 4))
+
+    def test_hit_testing(self):
+        zones = N.arrow_zones(20, 4, False)
+        x0 = 25
+        self.assertEqual(N.arrow_hit(zones, x0, 0), -1)
+        self.assertEqual(N.arrow_hit(zones, x0 - 1, 0), -1)
+        self.assertEqual(N.arrow_hit(zones, x0 + 1, 0), -1)
+        self.assertEqual(N.arrow_hit(zones, x0 + 2 + 4 + 1, 0), 1)
+        self.assertEqual(N.arrow_hit(zones, x0 + 4, 0), 0)            # 值的中間不算
+        self.assertEqual(N.arrow_hit(zones, x0, 1), 0)                # 錯的那一列
+        self.assertEqual(N.arrow_hit(zones, 3, 0), 0)                 # 標籤上
+
+
 class HintTests(unittest.TestCase):
     def test_essentials_survive_the_narrowest_bar(self):
         descs = {d for _, d in N.EDITOR_HINTS}

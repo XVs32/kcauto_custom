@@ -38,7 +38,7 @@ class FormatTests(unittest.TestCase):
         f = SCHEMA["combat.enabled"]
         self.assertEqual(M.format_value(f, True), "on")
         self.assertEqual(M.format_value(f, False), "off")
-        self.assertEqual(M.format_value(SCHEMA["pvp.fleet_preset"], None), "null")
+        self.assertEqual(M.format_value(SCHEMA["pvp.fleet_preset"], None), "disable")
 
     def test_list_summary(self):
         f = SCHEMA["combat.retreat_points"]
@@ -85,8 +85,8 @@ class ModuleTests(unittest.TestCase):
     def test_every_field_has_an_editor(self):
         for f in SCHEMA.values():
             self.assertIn(M.editor_for(f), {
-                "bool", "choice", "choice_int", "wheel", "map", "text", "preset",
-                "preset_list", "tokens", "recipe", "table", "quest", "list", "tree", "json"})
+                "bool", "choice", "choice_int", "wheel", "map", "text", "preset_wheel",
+                "tokens", "recipe", "table", "quest", "list", "tree", "json"})
         self.assertEqual(M.editor_for(None), "json")
         self.assertEqual(M.editor_for(SCHEMA["quest.quests"]), "quest")
         self.assertEqual(M.editor_for(SCHEMA["scheduler.rules"]), "table")
@@ -189,7 +189,8 @@ class ParseTests(unittest.TestCase):
 
     def test_enum_options_nullable(self):
         opts = M.enum_options(SCHEMA["expedition.fleet_preset"])
-        self.assertEqual([v for _, v in opts], [None, "auto"])
+        self.assertEqual([v for _, v in opts], [None, "auto"])      # disable 第一,auto 第二
+        self.assertEqual(opts[0][0], "disable")
         self.assertEqual([v for _, v in M.enum_options(SCHEMA["combat.fleet_mode"])][0], "standard")
 
 
@@ -442,6 +443,89 @@ class WheelModelTests(unittest.TestCase):
         self.assertEqual(M.adjust_value(mode, "standard", -1), mode.choices[-1])
         self.assertEqual(M.int_options(f)[0], ("0", 0))
         self.assertEqual(len(M.int_options(f)), 5)
+
+
+class AdjustTests(unittest.TestCase):
+    def test_enter_style_wrap_on_ints_and_bools(self):
+        f = SCHEMA["combat.retreat_limit"]
+        self.assertEqual(M.adjust_value(f, 4, 1, wrap=True), 0)       # 到頭繞回
+        self.assertEqual(M.adjust_value(f, 0, -1, wrap=True), 4)
+        self.assertEqual(M.adjust_value(f, 2, 1, wrap=True), 3)
+        self.assertEqual(M.adjust_value(f, 4, 1), 4)                  # ← → 不繞
+        b = SCHEMA["combat.enabled"]
+        self.assertEqual(M.adjust_value(b, True, 1, wrap=True), False)  # Enter = 反轉
+        self.assertEqual(M.adjust_value(b, False, 1, wrap=True), True)
+        self.assertEqual(M.adjust_value(b, True, 1), True)            # → 永遠是 on
+        self.assertEqual(M.adjust_value(b, True, -1), False)
+
+    def test_wrap_ignores_garbage_values(self):
+        f = SCHEMA["combat.retreat_limit"]
+        for junk in ("x", None, True, 2.5):
+            self.assertEqual(M.adjust_value(f, junk, 1, wrap=True), junk)
+
+    def test_can_adjust(self):
+        f = SCHEMA["combat.retreat_limit"]
+        self.assertFalse(M.can_adjust(f, 4, 1))
+        self.assertTrue(M.can_adjust(f, 4, -1))
+        self.assertFalse(M.can_adjust(f, 0, -1))
+        b = SCHEMA["combat.enabled"]
+        self.assertFalse(M.can_adjust(b, True, 1))
+        self.assertTrue(M.can_adjust(b, True, -1))
+        self.assertTrue(M.can_adjust(SCHEMA["combat.fleet_mode"], "standard", 1))
+
+
+class PresetWheelModelTests(unittest.TestCase):
+    LIST = SCHEMA["combat.fleet_presets"]
+    PVP = SCHEMA["pvp.fleet_preset"]
+
+    def test_disable_first_then_auto(self):
+        for f in (self.LIST, self.PVP):
+            tokens = M.preset_wheel_tokens(f)
+            self.assertEqual(tokens[:2], ["disable", "auto"])
+            self.assertEqual(tokens[2:], [str(n) for n in range(1, 16)])
+            self.assertEqual(len(tokens), 17)
+
+    def test_current_selection(self):
+        self.assertEqual(M.preset_wheel_current(self.LIST, []), "disable")
+        self.assertEqual(M.preset_wheel_current(self.LIST, [3]), "3")
+        self.assertEqual(M.preset_wheel_current(self.LIST, ["auto"]), "auto")
+        self.assertEqual(M.preset_wheel_current(self.LIST, [7, 9]), "7")     # 多個:取第一個
+        self.assertEqual(M.preset_wheel_current(self.LIST, "junk"), "disable")
+        self.assertEqual(M.preset_wheel_current(self.PVP, None), "disable")
+        self.assertEqual(M.preset_wheel_current(self.PVP, 0), "disable")     # 0 也是不使用
+        self.assertEqual(M.preset_wheel_current(self.PVP, "auto"), "auto")
+        self.assertEqual(M.preset_wheel_current(self.PVP, 99), "disable")    # 對不上 → disable
+
+    def test_list_field_always_gets_exactly_one_element(self):
+        for token in M.preset_wheel_tokens(self.LIST):
+            value = M.preset_wheel_result(self.LIST, token, [1, 2])
+            self.assertLessEqual(len(value), 1, token)
+            self.assertEqual(self.LIST.validate(value), [], token)
+        self.assertEqual(M.preset_wheel_result(self.LIST, "disable"), [])
+        self.assertEqual(M.preset_wheel_result(self.LIST, "auto"), ["auto"])
+        self.assertEqual(M.preset_wheel_result(self.LIST, "7", []), [7])
+        self.assertEqual(M.preset_wheel_result(self.LIST, "7", ["1"]), ["7"])   # 沿用字串型別
+
+    def test_pvp_results_are_valid(self):
+        for token in M.preset_wheel_tokens(self.PVP):
+            self.assertEqual(self.PVP.validate(M.preset_wheel_result(self.PVP, token)), [], token)
+        self.assertIsNone(M.preset_wheel_result(self.PVP, "disable", None))
+        self.assertEqual(M.preset_wheel_result(self.PVP, "disable", 0), 0)    # 原本是 0 就維持 0
+
+    def test_every_disabled_spelling_displays_as_disable(self):
+        for f, values in ((self.LIST, [[], None]), (self.PVP, [None, 0]),
+                          (SCHEMA["expedition.fleet_preset"], [None])):
+            for v in values:
+                self.assertEqual(M.format_value(f, v), "disable", (f.key, v))
+        self.assertEqual(M.format_value(self.LIST, [7]), "7")
+        self.assertEqual(M.format_value(self.PVP, "auto"), "auto")
+        self.assertEqual(M.format_value(SCHEMA["combat.retreat_points"], []), "(empty)")  # 其他欄位不受影響
+
+    def test_expedition_preset_is_an_enum_with_disable_first(self):
+        f = SCHEMA["expedition.fleet_preset"]
+        self.assertEqual(M.editor_for(f), "choice")                 # enum:選取後用 ← → 調整
+        self.assertTrue(M.adjustable(f))
+        self.assertEqual([v for _, v in M.enum_options(f)], [None, "auto"])
 
 
 class ExpeditionBulkTests(unittest.TestCase):
