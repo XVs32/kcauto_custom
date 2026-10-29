@@ -48,9 +48,6 @@ class EquipmentCore(object):
             self.reinforce_special = JsonData.load_json(
                 "data|temp|reinforce_special.json"
             )
-            self.equipment_special = JsonData.load_json(
-                "data|temp|equipment_ship_special.json"
-            )
         except FileNotFoundError as e:
             Log.log_error(
                 "Reinforce equipment data not found, please start kcauto from splash screen"
@@ -62,6 +59,16 @@ class EquipmentCore(object):
         except FileNotFoundError as e:
             Log.log_error(
                 "Ship type data not found, please start kcauto from splash screen"
+            )
+            Log.log_error(e)
+
+        try:
+            self.update_equipment_special(
+                JsonData.load_json("data|temp|equipment_ship_special.json")
+            )
+        except FileNotFoundError as e:
+            Log.log_error(
+                "Equipment ship special data not found, please start kcauto from splash screen"
             )
             Log.log_error(e)
 
@@ -78,6 +85,9 @@ class EquipmentCore(object):
     def update_ship_type_static(self, ship_type_data):
         # Ship type IDs start at 1, so keep index 0 as a placeholder.
         self.ship_type_static = ["dummy", *ship_type_data]
+
+    def update_equipment_special(self, equipment_special_data):
+        self.equipment_special = equipment_special_data
 
     def update_equipment_pool(self, equipment_data):
         self.equipment_pool[self.ID] = []
