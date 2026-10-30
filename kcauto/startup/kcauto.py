@@ -20,6 +20,8 @@ import util.kca as kca_u
 from fleet.noro6 import Noro6
 from kca_enums.expeditions import ExpeditionEnum
 from kca_enums.sorite_rank import SortieRankEnum
+from kca_enums.quest_state import QuestStateEnum
+from kca_enums.quest_progress_flag import QuestProgressFlagEnum
 from util.logger import Log
 from kca_enums.maps import MapEnum
 from quest.quest import Quest
@@ -39,6 +41,7 @@ class Kcauto(object):
 
     def __init__(self):
         atexit.register(kca_u.kca.save_screenshots)
+        atexit.register(kca_u.kca.close)
         kca_u.kca.hook_chrome()
 
     def start_kancolle(self):
@@ -110,7 +113,7 @@ class Kcauto(object):
                     f"Expedition rank: {[expedition[exp.expedition.EXP_ENUM].display_name for expedition in exp.expedition.exp_rank]}"
                 )
 
-                if not flt.fleets.assign_exp_ship():
+                if not exp.expedition.assign_exp_ship():
                     exp.expedition.enabled = False
                     Log.log_error(
                         f"Failed to assign ships for self-balance expedition. Disabling expedition module."
@@ -145,71 +148,49 @@ class Kcauto(object):
 
         anything_is_done = False
 
-        """@todo: check equipment pool fix 
-        """
-        quest_configs = [
-            {
-                "id": "Fd1",
-                "type": "develop",
-                "count": 1,
-                "is_full": lambda: (
-                    False
-                ),  # @todo check equipment pool full, disabled due to api returning wrong data, did affect KC3 too
-            },
-            {
-                "id": "Fd3",
-                "type": "develop",
-                "count": 3,
-                "is_full": lambda: (
-                    False
-                ),  # @todo check equipment pool full, disabled due to api returning wrong data, did affect KC3 too
-            },
-            {
-                "id": "Fd2",
-                "type": "build",
-                "count": 1,
-                "is_full": shp.ships.is_ship_pool_full,
-            },
-            {
-                "id": "Fd4",
-                "type": "build",
-                "count": 3,
-                "is_full": shp.ships.is_ship_pool_full,
-            },
-        ]
+        for i in qst.quest.next_check_intervals:
+            if qst.quest.next_check_intervals[i].category.is_factory():
+                # be careful action_count is not int, but dict[int, int]
+                action_count = kca_u.kca.get_quest_count(
+                    target_quest=qst.quest.next_check_intervals[i]
+                )
+                quest_type = next(iter(action_count))
 
-        for cfg in quest_configs:
-            if (
-                qst.quest.is_tracking_quest(Quest(name=cfg["id"]))
-                and not cfg["is_full"]()
-            ):
-                anything_is_done = True
-
-                if cfg["type"] == "develop":
-                    self._run_fleetswitch_logic("factory_develop")
-
+                if quest_type == fty.factory.CONSTRUCTION:
+                    if shp.ships.is_ship_pool_full():
+                        break
+                    anything_is_done = True
                     fty.factory.goto()
-                    if fty.factory.develop_logic(cfg["count"]) == True:
-                        nav.navigate.to("home")
-                else:
-                    self._run_fleetswitch_logic("factory_build")
-
-                    fty.factory.goto()
-
                     if not fty.factory.any_build_slot_available():
                         fty.factory.set_timer()
-                        return
+                        break
 
-                    success = fty.factory.build_logic(cfg["count"])
+                    self._run_fleetswitch_logic("factory_build")
+                    fty.factory.goto()
 
-                    if cfg["id"] == "Fd4":
-                        nav.navigate.to("home")
+                    success = fty.factory.build_logic(
+                        action_count[fty.factory.CONSTRUCTION]
+                    )
+
+                    if success == False:
                         fty.factory.set_timer()
-                    elif success:
-                        nav.navigate.to("home")
-                    else:
-                        fty.factory.set_timer()
 
+                elif quest_type == fty.factory.DEVELOPMENT:
+                    # @TODO: check for equipment capacity, broken due to kancolle api returning wrong info
+
+                    self._run_fleetswitch_logic("factory_develop")
+                    fty.factory.goto()
+
+                    success = fty.factory.develop_logic(
+                        action_count[fty.factory.DEVELOPMENT]
+                    )
+
+                    if success == True:
+                        anything_is_done = True
+
+                break
+
+        nav.navigate.to("home")
         if anything_is_done == False:
             """Daily factory process done, disable from now"""
             fty.factory.enabled = False
@@ -229,7 +210,11 @@ class Kcauto(object):
                     CONTEXT_AUTO_PVP, fast_check=False, back_to_home=False, force=True
                 )
 
-            self._run_fleetswitch_logic("pvp")
+            if self._run_fleetswitch_logic("pvp") != 0:
+                pvp.pvp.enabled = False
+                Log.log_error("Failed to configure PvP fleet. Disabling PvP module.")
+                return False
+
             self.run_repair_logic()
 
             self.run_quest_logic(CONTEXT_PVP, back_to_home=True)
@@ -339,6 +324,11 @@ class Kcauto(object):
                 Log.log_error(f"stage: {current_stage}")
                 cfg.config.combat._sortie_map = current_stage
 
+        com.combat.goto()
+        com.combat.check_clear_stop()
+        if not com.combat.enabled:
+            return False
+
         # update map_data for combat module
         com.combat.load_map_data(cfg.config.combat.sortie_map)
 
@@ -399,9 +389,12 @@ class Kcauto(object):
                     f"{cfg.config.combat.sortie_map.value} combat config not found, use default combat config instead."
                 )
 
-        port_api_update = False
-        if self._run_fleetswitch_logic("combat") == 0:
-            port_api_update = True
+        if self._run_fleetswitch_logic("combat") != 0:
+            com.combat.enabled = False
+            Log.log_error("Failed to configure sortie fleet. Disabling combat module.")
+            return False
+
+        port_api_update = True
 
         kca_u.kca.pause_if_configured("Combat fleetswitch dryrun enabled.")
 
@@ -543,10 +536,26 @@ class Kcauto(object):
 
     def _run_fleetswitch_logic(self, context):
 
-        if not fsw.fleet_switcher.switch_fleet(context):
-            Log.log_error(f"Failed to switch ships for {context}.")
-            return -1
-        self.handle_back_to_home(True)
+        retry_times = 2
+
+        for i in range(retry_times):
+            if not fsw.fleet_switcher.switch_fleet(context):
+                Log.log_error(f"Failed to switch ships for {context}.")
+                return -1
+
+            self.handle_back_to_home(True)
+
+            if fsw.fleet_switcher.verify_equipment_plan():
+                break
+
+            Log.log_error(f"Failed to verify fleet equipment for {context}.")
+            if i == 0:
+                Log.log_msg(f"Re-executing fleet equipment switching for {context}...")
+            else:
+                Log.log_warn(
+                    f"Failed to verify fleet equipment for {context}, will go for it anyway."
+                )
+
         return 0
 
     def run_shipswitch_logic(self, back_to_home=False):
@@ -573,6 +582,8 @@ class Kcauto(object):
             sts.stats.quest.times_checked += 1
             self.handle_back_to_home(back_to_home)
             sts.stats.set_print_loop_end_stats()
+            return True
+        return False
 
     def handle_back_to_home(self, back_to_home):
         if back_to_home:

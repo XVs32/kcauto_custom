@@ -11,8 +11,13 @@ AUTO_PRESET = 0
 
 OTHER_FLEET_ID = 999
 
+EXPEDITION_LANDING_CRAFT_MODEL_ID = 68
+EXPEDITION_DRUM_MODEL_ID = 75
+
 PASSIVE_TIME_INTERVAL = 180
 OVERNIGHT_TIME_INTERVAL = 600
+
+ENEMY_SHIP_API_ID_START = 1501
 
 # game window dimensions
 GAME_W = 1200
@@ -30,8 +35,10 @@ CONTEXT_AUTO_PVP = 8
 
 # chrome hook url targets
 DEFAULT_CHROME_DEV_PORT = 9222
-VISUAL_URL = "https://play.games.dmm.com/game/kancolle"
-API_URL = "kcs2/index.php"
+DEFAULT_POI_API_PORT = 9223
+DEFAULT_POI_CONTROL_PORT = 38591
+API_URL = "https://play.games.dmm.com/game/kancolle"
+POI_URL_POSTFIX = "resources/app.asar/index.html"
 
 # similarity presets
 EXACT = 0.994

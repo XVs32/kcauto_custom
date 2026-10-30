@@ -2,6 +2,17 @@
   "combat.node_selects": [
     "A1>A2"
   ],
+  "combat.node_formations": [
+    "C2:line_ahead"
+  ],
+  "combat.lbas_groups": [
+    1,
+    2
+  ],
+  "combat.lbas_group_1_nodes": [
+    "C2",
+    "C2"
+  ],
   "combat.node_night_battles": [
     "C2:True"
   ]

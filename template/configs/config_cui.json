@@ -39,6 +39,7 @@
   "expedition.desire_bauxite": 350000,
   "expedition.desire_steel": 350000,
   "expedition.desire_bucket": 3000,
+  "expedition.desire_devmat": 3000,
   "factory.build_recipe": [
     30,
     30,
@@ -55,6 +56,8 @@
   "factory.develop_secretary": 1234,
   "factory.enabled": false,
   "general.chrome_dev_port": 9222,
+  "general.poi_api_port": 9223,
+  "general.poi_control_port": 38591,
   "general.interaction_mode": "chrome_driver",
   "general.jst_offset": 0,
   "general.paused": false,

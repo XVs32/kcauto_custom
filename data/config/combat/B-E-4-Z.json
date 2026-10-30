@@ -1,0 +1,23 @@
+{
+  "combat.fleet_mode": "ctf",
+  "combat.node_formations": [
+    "Z:combined_fleet_2"
+  ],
+  "combat.node_selects": [
+    "P>P1",
+    "T>T1"
+  ],
+  "combat.lbas_groups": [
+    1,
+    2,
+    3
+  ],
+  "combat.lbas_group_1_nodes": [
+    "Z",
+    "Z"
+  ],
+  "combat.lbas_group_2_nodes": [
+    "Z",
+    "Z"
+  ]
+}

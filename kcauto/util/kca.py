@@ -2,8 +2,6 @@ import cv2
 import numpy as np
 import os
 import glob
-from pyquery import PyQuery
-import PyChromeDevTools
 from datetime import datetime, timedelta
 from util.pyvisauto import Region, FindFailed, ImageMatch
 from random import randint, uniform
@@ -11,16 +9,18 @@ from time import sleep
 
 from quest.quest import Quest
 import api.api_core as api
+import api.api_listener as api_listener
 import args.args_core as arg
 import config.config_core as cfg
+import factory.factory_core as fty
 import ships.ships_core as shp
-from util.json_data import JsonData
 import stats.stats_core as sts
+from util.json_data import JsonData
 from constants import (
     GAME_W,
     GAME_H,
-    VISUAL_URL,
     API_URL,
+    POI_URL_POSTFIX,
     EXACT,
     DEFAULT,
     SLEEP_MODIFIER,
@@ -35,6 +35,8 @@ import util.coordinate_system as coordinate_system
 import util.click_tracker as clt
 from util.exceptions import ChromeCrashException
 from util.logger import Log
+from util.poi_client import PoiClientError
+from util.interaction_backend import InteractionBackend
 
 import asyncio
 from pyppeteer import connect
@@ -44,14 +46,7 @@ class Kca(object):
     """Primary kcauto utility class."""
 
     ASSETS_FOLDER = "assets"
-    visual_tab_id = None
-    visual_hook = None
-    api_hook = None
-    kc3_hook = None
-
-    # See https://github.com/XVs32/kcauto_custom/issues/239 for coord system info
     html = None
-    kc3_id = None
 
     screenshot_log = [None, None, None, None, None]
 
@@ -75,88 +70,47 @@ class Kca(object):
     def game_y(self):
         return coordinate_system.coor.game_y
 
+    # CDP / POI handles live in the active driver; these stay for callers that
+    # still read them off kca.
+    @property
+    def api_hook(self):
+        return getattr(self.interaction.driver, "api_hook", None)
+
+    @property
+    def poi_hook(self):
+        return getattr(self.interaction.driver, "poi_hook", None)
+
+    @property
+    def poi_client(self):
+        return getattr(self.interaction.driver, "poi_client", None)
+
     def __init__(self):
-        if self.kc3_id == None:
-            try:
-                data = JsonData.load_json("data|config|kc3_id.json")
-                self.kc3_id = data.get("id", "hkgmldnainaglpjngpajnnjfhpdjkohh")
-            except FileNotFoundError:
-                Log.log_warn("kc3_id.json not found, using default KC3 id.")
-                self.kc3_id = "hkgmldnainaglpjngpajnnjfhpdjkohh"
+        self.interaction = InteractionBackend(self)
         Log.log_debug_1("Kca module initialized.")
 
     def hook_chrome(self):
-        """Method that initializes the necessary hooks to Chrome using
-        PyChromeDevTools. The visual hook connects to the tab that actually
-        contains the Kancolle HTML5 canvas, while the api hook connects to the
-        tab that interacts with the Kancolle backend. The former is used for
-        detecting refreshes and when using the Chrome driver interaction mode,
-        while the latter is used for reading all API interactions.
+        """Connect the active interaction driver (Chrome CDP hooks for direct
+        control / Chrome driver, the loopback service for POI)."""
+        return self.interaction.connect()
 
-        Args:
-
-        Raises:
-            Exception: could not find Kancolle tabs in Chrome.
-        """
-        Log.log_msg("Hooking into Chrome.")
-        self.cdt_init(target="api")
-        self.cdt_init(target="visual")
-
-        visual_tab = None
-        visual_tab_id = None
-        api_tab = None
-        api_tab_id = None
-        for n, tab in enumerate(self.visual_hook.tabs):
-            if VISUAL_URL == tab["url"]:
-                visual_tab = n
-                visual_tab_id = tab["id"]
-                self.visual_tab_id = visual_tab_id
-            if API_URL in tab["url"]:
-                api_tab = n
-                api_tab_id = tab["id"]
-
-        if visual_tab_id is None or api_tab_id is None:
-            Log.log_error(
-                "No Kantai Collection tab found in Chrome. Shutting down kcauto."
-            )
-            raise Exception("No running Kantai Collection tab found in Chrome.")
-
-        self.visual_hook.connect_targetID(visual_tab_id)
-
-        Log.log_debug_1(f"Connected to visual tab ({visual_tab}:{visual_tab_id})")
-        self.visual_hook.Page.enable()
-
-        self.api_hook.connect_targetID(api_tab_id)
-        self.api_hook.Network.enable()
-        Log.log_debug_1(f"Connected to API tab ({api_tab}:{api_tab_id})")
-        Log.log_success("Connected to Chrome")
-
-        coordinate_system.coor.find_game_window_offset()
+    # Kept as an alias for older call sites.
+    hook_poi = hook_chrome
 
     def hook_health_check(self):
-        """Method that runs through the different events reported to the api
-        and visual hooks to ascertain whether or not the tab has crashed or
-        was refreshed.
+        """Ask the active driver whether its connection is still alive and
+        reconnect when it is stale.
 
         Raises:
             ChromeCrashException: Chrome tab crash was detected.
         """
-        api_events = self.api_hook.pop_messages()
-        visual_events = self.visual_hook.pop_messages()
-        for event in api_events:
-            if event["method"] == "Inspector.detached":
-                Log.log_warn("Chrome API hook is stale. Reconnecting.")
-                self.hook_chrome()
-                return
-        visual_events = self.visual_hook.pop_messages()
-        for event in visual_events:
-            if event["method"] == "Page.frameDetached":
-                Log.log_warn("Chrome visual hook is stale. Reconnecting.")
-                self.hook_chrome()
-                return
-            if event["method"] == "Inspector.targetCrashed":
-                Log.log_warn("Chrome crash detected.")
-                raise ChromeCrashException
+        driver = self.interaction.driver
+        try:
+            healthy = self.interaction.health_check()
+        except (OSError, PoiClientError):
+            healthy = False
+        if not healthy:
+            Log.log_warn(f"{driver.name} hook is stale. Reconnecting.")
+            self.hook_chrome()
 
     def find_kancolle(self):
         """Method that finds the Kancolle game on-screen and determine the UI
@@ -165,13 +119,16 @@ class Kca(object):
         it will first look for the last found UI. Generates or modifies
         pre-defined regions accordingly.
 
+        Where the game origin lives (desktop offset, browser viewport, or the
+        POI frame) is decided by the interaction driver, not here.
+
         Raises:
             FindFailed: could not find the game on-screen.
         """
         Log.log_msg("Finding kancolle.")
         ref_r = None
         attempt = 0
-        whole_screen_region = Region()
+        whole_screen_region = self.interaction.full_region()
 
         # look for last-seen UI, if set
         if self.last_ui:
@@ -220,33 +177,29 @@ class Kca(object):
                 Log.log_error("Could not find Kancolle reference point.")
                 raise FindFailed()
 
-        new_game_x = ref_r.x + coordinate_system.coor.KC_REF_OFFSET[0]
-        new_game_y = ref_r.y + coordinate_system.coor.KC_REF_OFFSET[1]
+        new_game_x, new_game_y = self.interaction.resolve_game_origin(ref_r)
         Log.log_debug_1(f"Game X:{new_game_x}, Y:{new_game_y}")
 
-        # define click callback as needed
+        # click tracking is attached to the single backend entry
         if not arg.args.parsed_args.no_click_track:
-            ImageMatch.click_callback = clt.click_tracker.track_click
-
-        # define click and hover method overrides as needed
-        if cfg.config.general.interaction_mode is InteractionModeEnum.CHROME_DRIVER:
-            ImageMatch.override_click_method = self._override_click_method
-            ImageMatch.override_hover_method = self._override_hover_method
-            ImageMatch.override_scroll_method = self._override_scroll_method
+            self.interaction.click_callback = clt.click_tracker.track_click
 
         if (
             new_game_x != coordinate_system.coor.game_x
             or new_game_y != coordinate_system.coor.game_y
         ):
-            if not coordinate_system.coor.game_x or coordinate_system.coor.game_y:
+            if (
+                coordinate_system.coor.game_x is None
+                or coordinate_system.coor.game_y is None
+            ):
                 Log.log_success("Game found. Initializing regions.")
             else:
-                Log.log_msg("Game has moved. Shifting regions.")
+                Log.log_msg("Game has moved.")
             coordinate_system.coor.game_x = new_game_x
             coordinate_system.coor.game_y = new_game_y
             coordinate_system.coor._update_regions()
 
-        coordinate_system.coor.find_game_window_offset()
+        self.interaction.on_game_located()
 
         return True
 
@@ -416,10 +369,7 @@ class Kca(object):
         self.sleep()
 
         r = coordinate_system.coor.get_region(region)
-        if cfg.config.general.interaction_mode is InteractionModeEnum.DIRECT_CONTROL:
-            r.hover()
-        elif cfg.config.general.interaction_mode is InteractionModeEnum.CHROME_DRIVER:
-            self._chrome_driver_hover_method(r)
+        self.interaction.hover(r)
 
         self.sleep()
 
@@ -439,30 +389,7 @@ class Kca(object):
         self.sleep()
 
         r = coordinate_system.coor.get_region(region)
-        if cfg.config.general.interaction_mode is InteractionModeEnum.DIRECT_CONTROL:
-            corners = [
-                r.x + pad[0],
-                r.y + pad[1],
-                r.x + r.w + pad[2],
-                r.y + r.h + pad[3],
-            ]
-            if arg.args.parsed_args.debug_output:
-                # Visit corners first
-                r.hover(corners[0], corners[1])
-                self.sleep(0.1)
-                r.hover(corners[2], corners[1])
-                self.sleep(0.1)
-                r.hover(corners[0], corners[3])
-                self.sleep(0.1)
-                r.hover(corners[2], corners[3])
-                self.sleep(0.1)
-
-                # Draw debug with corners
-            self._draw_debug_visualization(corners, arg.args.parsed_args.debug_output)
-
-            r.click(pad=pad)
-        elif cfg.config.general.interaction_mode is InteractionModeEnum.CHROME_DRIVER:
-            self._chrome_driver_click_method(r, pad)
+        self.interaction.click(r, pad)
 
         self.sleep()
 
@@ -486,35 +413,7 @@ class Kca(object):
         self.sleep()
 
         r = coordinate_system.coor.get_region(region)
-        if cfg.config.general.interaction_mode is InteractionModeEnum.DIRECT_CONTROL:
-            corners = [
-                r.x + pad[0],
-                r.y + pad[1],
-                r.x + r.w + pad[2],
-                r.y + r.h + pad[3],
-            ]
-            if arg.args.parsed_args.debug_output:
-                # Visit corners first
-                r.hover(corners[0], corners[1])
-                self.sleep(0.1)
-                r.hover(corners[2], corners[1])
-                self.sleep(0.1)
-                r.hover(corners[0], corners[3])
-                self.sleep(0.1)
-                r.hover(corners[2], corners[3])
-                self.sleep(0.1)
-
-                # Draw debug with corners
-            self._draw_debug_visualization(
-                corners,
-                arg.args.parsed_args.debug_output,
-                border_color=(0, 0, 255),
-                action=ActionEnum.SCROLL,
-            )
-
-            r.scroll(pad=pad, direction=direction, amount=amount)
-        elif cfg.config.general.interaction_mode is InteractionModeEnum.CHROME_DRIVER:
-            self._chrome_driver_scroll_method(r, pad, direction, amount)
+        self.interaction.scroll(r, pad, direction, amount)
 
         self.sleep()
 
@@ -582,13 +481,7 @@ class Kca(object):
 
         r_a = coordinate_system.coor.get_region(start_region)
         r_b = coordinate_system.coor.get_region(end_region)
-        if cfg.config.general.interaction_mode is InteractionModeEnum.DIRECT_CONTROL:
-            r_a.hover()
-            self.sleep()
-            r_b.drag(pad=pad)
-
-        elif cfg.config.general.interaction_mode is InteractionModeEnum.CHROME_DRIVER:
-            self._chrome_driver_drag_method(r_a, pad, r_b, pad)
+        self.interaction.drag(r_a, r_b, pad)
 
         self.sleep()
 
@@ -613,24 +506,14 @@ class Kca(object):
             or coordinate_system.coor.game_y is None
         ):
             return
-        screen = Region(
-            coordinate_system.coor.game_x, coordinate_system.coor.game_y, GAME_W, GAME_H
-        )
+        screen = Region(0, 0, GAME_W, GAME_H)
         screen = screen.capture()
         screen = cv2.cvtColor(np.array(screen), cv2.COLOR_RGB2BGR)
 
-        src = Region()
-        src.x = corners[0]
-        src.y = corners[1]
-        src.w = corners[2] - corners[0]
-        src.h = corners[3] - corners[1]
-
-        dst = coordinate_system.coor.convert(src, coordinate_system.coor.WHOLE_TO_GAME)
-
         cv2.rectangle(
             screen,
-            (int(dst.x), int(dst.y)),  # Top-left point
-            (int(dst.x + dst.w), int(dst.y + dst.h)),  # Bottom-right point
+            (int(corners[0]), int(corners[1])),
+            (int(corners[2]), int(corners[3])),
             border_color,
             2,
         )
@@ -758,314 +641,6 @@ class Kca(object):
         display_text = " and".join(display_text.rsplit(",", 1))
         return display_text
 
-    def _override_hover_method(self, r, x, y):
-        """Hover method override used when using Chrome Driver interaction
-        mode.
-        Args:
-            r (Region, Match): Region/Match region to click
-            x (int): x-coordinate of click generated by pyvisauto
-            y (int): y-coordinate of click generated by pyvisauto
-        """
-        self._chrome_driver_hover_method(r)
-
-    def _override_click_method(self, r, x, y, pad):
-        """Click method override used when using Chrome Driver interaction
-        mode.
-
-        Args:
-            r (Region, Match): Region/Match region to click
-            x (int): x-coordinate of click generated by pyvisauto
-            y (int): y-coordinate of click generated by pyvisauto
-            pad (tuple): padding parameter used to modify click coordinate
-        """
-        self._chrome_driver_click_method(r, pad)
-
-    def _override_scroll_method(self, r, x, y, pad, direction, amount):
-        """Scroll method override used when using Chrome Driver interaction
-        mode.
-
-        Args:
-            r (Region, Match): Region/Match region to scroll
-            x (int): x-coordinate of scroll generated by pyvisauto
-            y (int): y-coordinate of scroll generated by pyvisauto
-            pad (tuple): padding parameter used to modify scroll coordinate
-            direction (ScrollDirectionEnum): Scroll direction.
-            amount (int): Number of scroll steps to perform.
-        """
-        self._chrome_driver_scroll_method(r, pad, direction, amount)
-
-    def _chrome_driver_click_method(self, r, pad):
-        """Click method used in Chrome Driver interaction mode.
-
-        Args:
-            r (Region, Match): Region/Match region to click
-            pad (tuple): padding parameter used to modify click coordinate
-        """
-
-        offset_x = randint(pad[0], r.w + pad[2])
-        offset_y = randint(pad[1], r.h + pad[3])
-
-        dst = Region()
-        dst = coordinate_system.coor.convert(
-            r, coordinate_system.coor.WHOLE_TO_VIEWPORT
-        )
-
-        # Draw debug visualization
-
-        corners = [
-            r.x + pad[0],  # Top-left corner
-            r.y + pad[1],
-            r.x + r.w + pad[2],
-            r.y + r.h + pad[3],
-        ]
-
-        self._draw_debug_visualization(corners, arg.args.parsed_args.debug_output)
-
-        # self.visual_hook.Input.synthesizeTapGesture(x= x + offset_x , y=y + offset_y)
-        self.visual_hook.Input.dispatchMouseEvent(
-            type="mouseMoved", x=dst.x + offset_x, y=dst.y + offset_y
-        )
-        self.sleep()
-        self.visual_hook.Input.dispatchMouseEvent(
-            type="mousePressed",
-            x=dst.x + offset_x,
-            y=dst.y + offset_y,
-            clickCount=1,
-            button="left",
-        )
-        self.sleep(0.1, 0.2)
-        self.visual_hook.Input.dispatchMouseEvent(
-            type="mouseReleased",
-            x=dst.x + offset_x,
-            y=dst.y + offset_y,
-            clickCount=1,
-            button="left",
-        )
-        self.sleep()
-
-    def _chrome_driver_scroll_method(self, r, pad, direction, amount=1):
-        """Scroll method used in Chrome Driver interaction mode.
-
-        Args:
-            r (Region, Match): Region/Match region to scroll
-            pad (tuple): padding parameter used to modify scroll coordinate
-            direction (ScrollDirectionEnum): Scroll direction.
-            amount (int, optional): Number of scroll steps to perform.
-        """
-
-        offset_x = randint(pad[0], r.w + pad[2])
-        offset_y = randint(pad[1], r.h + pad[3])
-
-        dst = Region()
-        dst = coordinate_system.coor.convert(
-            r, coordinate_system.coor.WHOLE_TO_VIEWPORT
-        )
-
-        # Draw debug visualization
-
-        corners = [
-            r.x + pad[0],  # Top-left corner
-            r.y + pad[1],
-            r.x + r.w + pad[2],
-            r.y + r.h + pad[3],
-        ]
-
-        self._draw_debug_visualization(
-            corners,
-            arg.args.parsed_args.debug_output,
-            border_color=(0, 0, 255),
-            action=ActionEnum.SCROLL,
-        )
-
-        self.visual_hook.Input.dispatchMouseEvent(
-            type="mouseMoved", x=dst.x + offset_x, y=dst.y + offset_y
-        )
-        self.sleep()
-
-        if amount < 1:
-            raise ValueError(f"Unsupported scroll amount: {amount}")
-
-        if direction is ScrollDirectionEnum.UP:
-            delta_y = -120
-        elif direction is ScrollDirectionEnum.DOWN:
-            delta_y = 120
-        else:
-            raise ValueError(f"Unsupported scroll direction: {direction}")
-
-        for _ in range(amount):
-            self.visual_hook.Input.dispatchMouseEvent(
-                type="mouseWheel",
-                x=dst.x + offset_x,
-                y=dst.y + offset_y,
-                deltaX=0,
-                deltaY=delta_y,
-            )
-            self.sleep()
-
-    def _chrome_driver_drag_method(self, r_a, pad_a, r_b, pad_b):
-        """Click method used in Chrome Driver interaction mode.
-
-        Args:
-            r (Region, Match): Region/Match region to click
-            pad (tuple): padding parameter used to modify click coordinate
-        """
-
-        dst_a = Region()
-        dst_a = coordinate_system.coor.convert(
-            r_a, coordinate_system.coor.WHOLE_TO_VIEWPORT
-        )
-
-        offset_x = randint(-pad_a[3], r_a.w + pad_a[1])
-        offset_y = randint(-pad_a[0], r_a.h + pad_a[2])
-
-        self.visual_hook.Input.dispatchMouseEvent(
-            type="mouseMoved", x=dst_a.x + offset_x, y=dst_a.y + offset_y
-        )
-        self.sleep()
-        self.visual_hook.Input.dispatchMouseEvent(
-            type="mousePressed",
-            x=dst_a.x + offset_x,
-            y=dst_a.y + offset_y,
-            clickCount=1,
-            button="left",
-        )
-        self.sleep()
-
-        dst_b = Region()
-        dst_b = coordinate_system.coor.convert(
-            r_b, coordinate_system.coor.WHOLE_TO_VIEWPORT
-        )
-
-        offset_x = randint(-pad_b[3], r_b.w + pad_b[1])
-        offset_y = randint(-pad_b[0], r_b.h + pad_b[2])
-
-        self.visual_hook.Input.dispatchMouseEvent(
-            type="mouseMoved", x=dst_b.x + offset_x, y=dst_b.y + offset_y
-        )
-        self.sleep()
-        self.visual_hook.Input.dispatchMouseEvent(
-            type="mouseReleased",
-            x=dst_b.x + offset_x,
-            y=dst_b.y + offset_y,
-            clickCount=1,
-            button="left",
-        )
-        self.sleep()
-
-    def _chrome_driver_hover_method(self, r):
-        """hover method used in Chrome Driver interaction mode.
-
-        Args:
-            r (Region, Match): Region/Match region to hover
-        """
-
-        dst = Region()
-        dst = coordinate_system.coor.convert(
-            r, coordinate_system.coor.WHOLE_TO_VIEWPORT
-        )
-
-        offset_x = randint(0, r.w)
-        offset_y = randint(0, r.h)
-
-        self.visual_hook.Input.dispatchMouseEvent(
-            type="mouseMoved", x=dst.x + offset_x, y=dst.y + offset_y
-        )
-
-    def cdt_init(self, host="localhost", target="visual"):
-        """method to hook this python program to chrome browser, cdt stands for ChromeDevTools
-
-        Args:
-            host (str, optional): Chrome dev protocol server address. Defaults
-                to "localhost".
-            port (int, optional): Chrome dev protocol server port. Defaults to
-                9222.
-            api (bool): api hook or not(default True)
-        """
-
-        port = cfg.config.general.chrome_dev_port
-        chrome = PyChromeDevTools.ChromeInterface(host="localhost", port=port)
-        if target == "api":
-            self.api_hook = PyChromeDevTools.ChromeInterface(host=host, port=port)
-        elif target == "visual":
-            self.visual_hook = PyChromeDevTools.ChromeInterface(host=host, port=port)
-            coordinate_system.coor.visual_hook = self.visual_hook
-        elif target == "kc3":
-            self.kc3_hook = PyChromeDevTools.ChromeInterface(host=host, port=port)
-        else:
-            raise ValueError("Hook target must be either api, visual or kc3.")
-
-        return
-
-    async def get_html(self, url):
-
-        port = cfg.config.general.chrome_dev_port
-        # Connect to the Chrome browser
-        browser = await connect(browserURL="http://localhost:" + str(port))
-
-        # Create a new background tab
-        page = await browser.newPage()
-
-        # Navigate the background tab to a desired URL
-        await page.goto(url)
-
-        # Retrieve the HTML content
-        self.html = await page.content()
-        # Log.log_debug(f"kca.html: {self.html}")
-
-        # Close the background tab
-        await page.close()
-
-        # Close the connection to the browser
-        await browser.disconnect()
-
-    def reload_kc3_strategy_page(self, subpage=""):
-        """method to open/refresh the kc3 strategy page in chrome
-
-        Args:
-            subpage (string): The name of sub page to open. (ex. flowchart)
-        """
-        try:
-            asyncio.get_event_loop().run_until_complete(
-                self.get_html(
-                    f"chrome-extension://{self.kc3_id}/pages/strategy/strategy.html{subpage}"
-                )
-            )
-            # Wait for quest panel finish closing
-            self.find_kancolle()
-        except Exception as e:
-            Log.log_warn(f"KC3 strategy page unavailable: {e}")
-            self.html = None
-
-        return
-
-    def get_quest_dom(self):
-        """method to get the raw quest info form KC3.
-
-        Return:
-            raw html text of KC3 quest page
-        """
-
-        import quest.quest_core as qst
-
-        if qst.quest.is_quest_dom_cache_dirty == False:
-            return qst.quest._quest_dom_cache
-
-        self.reload_kc3_strategy_page(subpage="#flowchart")
-
-        if self.html is None:
-            Log.log_warn(
-                "KC3 unavailable; quest DOM cache not updated, falling back to config defaults."
-            )
-            return None
-
-        dom = PyQuery(self.html, parser="html")
-
-        qst.quest._quest_dom_cache = dom("ul#questBox_rootFlow.questTree")
-        # Log.log_debug(f"kac.quest_tree_dom:{quest_tree_dom}")
-        qst.quest.is_quest_dom_cache_dirty = False
-
-        return qst.quest._quest_dom_cache
-
     def get_quest_count(self, target_quest: Quest) -> dict[MapEnum, int] | None:
         """method to get the remaining action needed for the specified quest.
             For example, the remaining sorties needed for quest Bm3 could be {1-4:1, 3-5:0}
@@ -1075,114 +650,221 @@ class Kca(object):
 
         Return:
             dict with key of quest name, and value of remaining actions needed.
-            return None if quest is not combat type, KC3 is unavailable, or quest count cannot be read.
+            return None if quest is not combat type, poi is unavailable, or quest count cannot be read.
         """
 
-        target_quest_name = target_quest.name
+        poi_quest_stats = self.get_poi_quest_stats()
 
-        quest_tree_dom = self.get_quest_dom()
-
-        if quest_tree_dom is None:
+        if not poi_quest_stats:
             Log.log_warn(
-                f"KC3 unavailable; cannot get quest count for {target_quest_name}, using config defaults."
+                f"poi API data unavailable; cannot get quest count for {target_quest.name}."
+            )
+            return None
+        if poi_quest_stats.get("error"):
+            Log.log_warn(
+                f"poi quest stats error; cannot get quest count for "
+                f"{target_quest.name}: {poi_quest_stats.get('error')}"
+            )
+            self._dump_poi_quest_stats_for_debug(poi_quest_stats, target_quest)
+            return None
+
+        quest_id = str(target_quest.quest_id)
+        records = poi_quest_stats.get("records", {})
+
+        if quest_id not in records:
+            Log.log_debug_1(
+                f"Quest {quest_id} ({target_quest.name}) is not currently tracked."
+            )
+            self._dump_poi_quest_stats_for_debug(poi_quest_stats, target_quest)
+            return None
+
+        quest_record = records[quest_id]
+        action = {}
+
+        def get_remaining(obj):
+            if not isinstance(obj, dict):
+                return 0
+            return max(0, obj.get("required", 0) - obj.get("count", 0))
+
+        for key, val in quest_record.items():
+            if key == "id" or not isinstance(
+                val, dict
+            ):  # skip non-quest-requirements keys
+                continue
+
+            remaining = get_remaining(val)
+            if remaining <= 0:
+                continue
+
+            if target_quest.category.is_expedition():
+                import expedition.expedition_core as exp
+
+                exp_name = val.get("description", None)
+
+                if exp_name == None:
+                    continue
+
+                map_enum = exp.expedition.get_exp_enum_from_name(exp_name)
+                if map_enum:
+                    action[map_enum] = remaining
+                else:
+                    continue
+            if target_quest.category.is_factory():
+                if target_quest.is_factroy_development_quest():
+                    action[fty.factory.DEVELOPMENT] = remaining
+                elif target_quest.is_factroy_construction_quest():
+                    action[fty.factory.CONSTRUCTION] = remaining
+                else:
+                    continue
+            else:
+                desc = val.get("description", "")  # fallback for sortie without @
+                if "-" in desc:
+                    try:
+                        raw_num = desc.split(" ")[0]
+                        mapped_enum = self.string_to_mapenum(raw_num)
+                        if mapped_enum:
+                            action[mapped_enum] = remaining
+                    except Exception:
+                        continue
+
+        return action if action else None
+
+    def _dump_poi_quest_stats_for_debug(self, poi_quest_stats, target_quest: Quest):
+        if not (arg.args.parsed_args is not None and arg.args.parsed_args.debug_output):
+            return
+
+        timestamp = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
+        dump_path = (
+            f"debug|poi_quest_records_{target_quest.name}_{target_quest.quest_id}_"
+            f"{timestamp}.json"
+        )
+        try:
+            JsonData.dump_json(poi_quest_stats, dump_path, pretty=True)
+            Log.log_debug_1(
+                "Dumped POI quest stats for quest count debugging to "
+                f"{JsonData.create_path(dump_path)}."
+            )
+        except Exception as e:
+            Log.log_warn(f"Failed to dump POI quest stats for debugging: {e}")
+
+    def string_to_mapenum(self, raw_num: str) -> MapEnum:
+        """Converts raw poi map identifier strings (like '15', '16', '722', '732', '5-4')
+        to the corresponding standardized MapEnum.
+
+        Handles multi-phase map bosses (e.g., 7-2-G, 7-2-M, 7-3-E, 7-3-P).
+        """
+        if not raw_num:
+            return None
+        num = raw_num.strip()
+
+        special_mappings = {
+            "16": MapEnum.W1_6_N,
+            "721": MapEnum.W7_2_G,
+            "722": MapEnum.W7_2_M,
+            "731": MapEnum.W7_3_E,
+            "732": MapEnum.W7_3_P,
+            "7-2-1": MapEnum.W7_2_G,
+            "7-2-2": MapEnum.W7_2_M,
+            "7-3-1": MapEnum.W7_3_E,
+            "7-3-2": MapEnum.W7_3_P,
+        }
+
+        if num in special_mappings:
+            return special_mappings[num]
+
+        if "-" in num:
+            map_str = f"B-{num}"
+
+        elif num.isdigit() and len(num) == 2:
+            map_str = f"B-{num[0]}-{num[1]}"
+
+        else:
+            Log.log_error(
+                f"Unknown map string format found: {map_str} (Original input: {num})"
             )
             return None
 
-        i = 0
-        while True:
-            quest_name = quest_tree_dom("div.questInfo").eq(i)(".questIcon").text()
-            # Log.log_debug(f"quest_name:{quest_name}")
+        try:
+            enum_item = MapEnum(map_str)
+            return enum_item.without_quest_enum
+        except (ValueError, KeyError):
+            Log.log_warn(
+                f"MapEnum not found for map string: {map_str} (Original input: {num})"
+            )
+            return None
 
-            if quest_name == target_quest_name:
-                action_raw = (
-                    quest_tree_dom("div.questInfo").eq(i)(".questCount").attr("title")
-                )
-                Log.log_debug_1(f"action_raw:{action_raw}")
-                if action_raw == None:
-                    return None
-                action_raw_line = action_raw.split("\n")
-                action = {}
+    def get_poi_quest_stats(self):
+        import json
 
-                if quest_name == "Bw1":
-                    action_raw_line[3] = action_raw_line[3].replace(" ", "/")
-                    s_count = int(action_raw_line[3].split("/")[1]) - int(
-                        action_raw_line[3].split("/")[0]
-                    )
-                    action_raw_line[2] = action_raw_line[2].replace(" ", "/")
-                    boss_win_count = int(action_raw_line[2].split("/")[1]) - int(
-                        action_raw_line[2].split("/")[0]
-                    )
-                    action_raw_line[1] = action_raw_line[1].replace(" ", "/")
-                    boss_count = int(action_raw_line[1].split("/")[1]) - int(
-                        action_raw_line[1].split("/")[0]
-                    )
-                    action_raw_line[0] = action_raw_line[0].replace(" ", "/")
-                    sortie_count = int(action_raw_line[0].split("/")[1]) - int(
-                        action_raw_line[0].split("/")[0]
-                    )
+        Log.log_debug_1("get poi quests stats...")
 
-                    if s_count > 0:
-                        action[MapEnum.W1_1] = s_count
-                    elif boss_win_count > 0:
-                        action[MapEnum.W1_5] = boss_win_count
-                    elif boss_count > 0:
-                        action[MapEnum.W1_5] = boss_count
-                    elif sortie_count > 0:
-                        action[MapEnum.W1_1] = sortie_count
+        if cfg.config.general.interaction_mode is InteractionModeEnum.POI:
+            try:
+                return self.poi_client.get_quest_stats()
+            except PoiClientError as e:
+                Log.log_error(f"Failed to get poi quests stats: {str(e)}")
+                return {}
 
-                elif quest_name == "Bq8":
-                    action_raw_line[0] = action_raw_line[0].replace(" ", "/")
-                    s_1_5_count = int(action_raw_line[0].split("/")[1]) - int(
-                        action_raw_line[0].split("/")[0]
-                    )
-                    action_raw_line[1] = action_raw_line[1].replace(" ", "/")
-                    s_7_1_count = int(action_raw_line[1].split("/")[1]) - int(
-                        action_raw_line[1].split("/")[0]
-                    )
-                    action_raw_line[2] = action_raw_line[2].replace(" ", "/")
-                    s_7_2_G_count = int(action_raw_line[2].split("/")[1]) - int(
-                        action_raw_line[2].split("/")[0]
-                    )
-                    action_raw_line[3] = action_raw_line[3].replace(" ", "/")
-                    s_7_2_M_count = int(action_raw_line[3].split("/")[1]) - int(
-                        action_raw_line[3].split("/")[0]
-                    )
+        js_code = """
+        (() => {
+            const diagnostics = () => {
+                const interestingWindowKeys = [
+                    "getStore",
+                    "POI_VERSION"
+                ].filter((key) => key in window);
 
-                    if s_1_5_count > 0:
-                        action[MapEnum.W1_5] = s_1_5_count
-                    elif s_7_1_count > 0:
-                        action[MapEnum.W7_1] = s_7_1_count
-                    elif s_7_2_G_count > 0:
-                        action[MapEnum.W7_2_G] = s_7_2_G_count
-                    elif s_7_2_M_count > 0:
-                        action[MapEnum.W7_2_M] = s_7_2_M_count
+                return {
+                    url: window.location?.href,
+                    title: document?.title,
+                    interestingWindowKeys,
+                    hasGetStore: typeof window.getStore,
+                    hasPoi: typeof window.poi
+                };
+            };
 
-                elif quest_name[0] == "D":
-                    for line in action_raw_line:
-                        line = line.replace(" ", "/")
-                        count = int(line.split("/")[1]) - int(line.split("/")[0])
-                        import expedition.expedition_core as exp
+            try {
+                const store = window.getStore();
+        
+                if (store && store.info && store.info.quests) {
+                    return JSON.stringify(store.info.quests);
+                }
+        
+                return JSON.stringify({
+                    error: "POI quest store not found",
+                    diagnostics: diagnostics()
+                });
+            } catch (e) {
+                return JSON.stringify({
+                    error: e.message,
+                    diagnostics: diagnostics()
+                });
+            }
+        })()
+        """
 
-                        map = exp.expedition.get_exp_enum_from_name(line.split("/")[-1])
-                        if count > 0:
-                            action[map] = count
-                else:
-                    for line in action_raw_line:
-                        line = line.replace(" ", "/")
-                        count = int(line.split("/")[1]) - int(line.split("/")[0])
-                        line = line.replace("]", "[")
-                        map = line.split("[")[1][1:]
-                        if count > 0:
-                            if MapEnum("B-" + map).without_quest_enum == MapEnum.W1_6_N:
-                                # patch to turn B1-6-N from quest to B1-6
-                                action[MapEnum.W1_6] = count
-                            else:
-                                action[MapEnum("B-" + map).without_quest_enum] = count
+        try:
+            response = self.poi_hook.Runtime.evaluate(
+                expression=js_code, returnByValue=True
+            )
 
-                return action
-            elif quest_name == "":
-                return None
-            i = i + 1
+            Log.log_debug_2(f"response: {response}")
+
+            if isinstance(response, (list, tuple)) and len(response) > 0:
+                resp_dict = response[0]
+            else:
+                resp_dict = response
+
+            if resp_dict and "result" in resp_dict and "result" in resp_dict["result"]:
+                raw_json = resp_dict["result"]["result"].get("value", "{}")
+                poi_quests = json.loads(raw_json)
+                return poi_quests
+            else:
+                Log.log_error("Failed to parse CDP response data structure from poi.")
+                return {}
+
+        except Exception as e:
+            Log.log_error(f"Failed to get poi quests stats: {str(e)}")
+            return {}
 
     def save_screenshots(self):
 
@@ -1214,6 +896,11 @@ class Kca(object):
                 Log.log_msg(dialog)
             Log.log_warn("Press Enter to continue")
             input()
+
+    def close(self):
+        """Release POI client and webhook resources during shutdown."""
+        self.interaction.close()
+        api_listener.api_listener.stop()
 
 
 kca = Kca()

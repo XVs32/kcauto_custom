@@ -173,7 +173,9 @@ class QuestCore(CoreBase):
     def quests_str(self):
         return_string = f"Visible quests: pg{self.tot_page}"
         for q in self.current_quest_list:
-            return_string += f", {q.quest_id}:{q.name}:{q.state.name})"
+            return_string += (
+                f", {q.quest_id}:{q.name}:{q.state.name}:{q.progress_flag.name})"
+            )
         return return_string
 
     def _to_tab(self, tab_name):
@@ -509,9 +511,7 @@ class QuestCore(CoreBase):
         )
         self.cur_page = math.ceil((idx + 1) / 5)
 
-        quest_list_region = Region(
-            kca_u.kca.game_x + 230, kca_u.kca.game_y + 173 + ((idx % 5) * 102), 830, 30
-        )
+        quest_list_region = Region(230, 173 + ((idx % 5) * 102), 830, 30)
         quest_list_region.click()
 
     def _untrack_quest(self, quest: Quest):

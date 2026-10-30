@@ -1,5 +1,5 @@
 import numpy as np
-import util.kca as kca_u
+import util.coordinate_system as coordinate_system
 from constants import GAME_W, GAME_H
 
 
@@ -14,9 +14,16 @@ class ClickTracker(object):
             self.click_matrix = np.zeros(shape=(GAME_H, GAME_W))
 
     def track_click(self, r, x, y):
-        game_x = x - kca_u.kca.game_x
-        game_y = y - kca_u.kca.game_y
-        self.click_matrix[game_y][game_x] += 1
+        # (x, y) is a game coordinate, except for screen-space regions
+        # (full-monitor searches such as the splash screen), which carry
+        # desktop pixels and need converting.
+        if getattr(r, "screen_space", False):
+            coor = coordinate_system.coor
+            x, y = coor.convert_point(x, y, coor.WHOLE_TO_GAME)
+
+        x, y = int(x), int(y)
+        if 0 <= x < GAME_W and 0 <= y < GAME_H:
+            self.click_matrix[y][x] += 1
 
     def export(self):
         np.savez("click_matrix", click_matrix=self.click_matrix)

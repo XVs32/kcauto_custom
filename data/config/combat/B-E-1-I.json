@@ -5,6 +5,11 @@
   "combat.lbas_groups": [
     1
   ],
+  "combat.node_formations": [
+    "F:vanguard",
+    "H:vanguard",
+    "Q2:vanguard"
+  ],
   "combat.lbas_group_1_nodes": [
     "I",
     "I"

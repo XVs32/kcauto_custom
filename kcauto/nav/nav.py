@@ -395,8 +395,8 @@ class NavigateList(object):
                 offset_mode and the OFFSET class dictionary
         """
         Log.log_debug_1(f"Changing to page {target} with {mode} offsets.")
-        x_start = kca_u.kca.game_x + cls.REGION[mode][target][0]
-        y_start = kca_u.kca.game_y + cls.REGION[mode][target][1]
+        x_start = cls.REGION[mode][target][0]
+        y_start = cls.REGION[mode][target][1]
 
         if type(target) is str and target.isdigit():
             Region(x_start, y_start, 16, 15).click()

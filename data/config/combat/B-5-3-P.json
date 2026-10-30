@@ -1,0 +1,12 @@
+{
+  "combat.retreat_points": [
+    "P"
+  ],
+  "combat.node_selects": [
+    "O>P"
+  ],
+  "combat.node_formations": [
+    "I:double_line",
+    "P:line_ahead"
+  ]
+}

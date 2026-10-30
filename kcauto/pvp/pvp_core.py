@@ -59,9 +59,7 @@ class PvPCore(CoreBase):
             self._reset_next_pvp_time()
 
     def _conduct_pvp(self, index):
-        pvp_list_region = Region(
-            kca_u.kca.game_x + 280, kca_u.kca.game_y + 268 + (index * 82), 795, 64
-        )
+        pvp_list_region = Region(280, 268 + (index * 82), 795, 64)
         kca_u.kca.click(pvp_list_region)
         api_result = api.api.update_from_api({KCSAPIEnum.PVP_ENEMY_INFO})
         formation, nb = self._get_formation_and_nb(

@@ -3,7 +3,7 @@
     "timestamp": 0,
     "clear_remaining": 1,
     "map_stage_required": 2,
-    "min_rank": "S",
+    "min_rank": null,
     "node_json": "06_info20.json"
   },
   "B-7-5-M": {

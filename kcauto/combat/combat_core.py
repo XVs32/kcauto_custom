@@ -14,6 +14,7 @@ import util.kca as kca_u
 from combat.map_data import MapData
 from combat.node import MapNode, EmptyNode
 from config.macro import GIMMICK, GIMMICK_TEMPLATE
+from constants import DEFAULT, NEAR_EXACT
 from util.core_base import CoreBase
 from util.json_data import JsonData
 from util.kc_time import KCTime
@@ -160,7 +161,7 @@ class CombatCore(CoreBase):
                     self.available_maps[map_enum.world_and_map]["gauge_num"] = (
                         map_data["api_gauge_num"]
                         if "api_required_defeat_count" in map_data
-                        else 0
+                        else self.last_gauge(map_enum)
                     )
 
             else:
@@ -178,6 +179,19 @@ class CombatCore(CoreBase):
                     ),
                     "gauge_num": map_data["api_gauge_num"],
                 }
+
+    def last_gauge(self, enum: MapEnum):
+
+        if enum.world_and_map_enum == MapEnum.W5_6 :
+            return 3
+        elif enum.world_and_map_enum == MapEnum.W7_2 :
+            return 2
+        elif enum.world_and_map_enum == MapEnum.W7_3 :
+            return 2
+        elif enum.world_and_map_enum == MapEnum.W7_5 :
+            return 3
+        else:
+            return 0
 
     def should_and_able_to_sortie(self, ignore_supply=False):
         """
@@ -291,10 +305,6 @@ class CombatCore(CoreBase):
                 self.enabled = False
 
             return False
-        if cfg.config.combat.clear_stop and self._sortie_map_is_cleared:
-            Log.log_msg(f"Map {sortie_map.world_and_map} has been cleared.")
-            self.enabled = False
-            return False
         self._select_world(sortie_map)
         time_to_rest = lbas.lbas.manage_lbas()
         if time_to_rest:
@@ -306,10 +316,9 @@ class CombatCore(CoreBase):
             self.nodes_run = []
             self.combat_nodes_run = []
             self.rescued_ships = []
-            self.map_cleared = False
             sts.stats.combat.combat_sorties += 1
             self._handle_combat(sortie_map)
-            self._check_map_clear()
+            self.check_clear_stop()
             if self.enabled:
                 self.set_next_sortie_time()
             return True
@@ -336,13 +345,13 @@ class CombatCore(CoreBase):
         if sortie_map.world == "E":
             while cur_page < self.map_data.page:
                 kca_u.kca.r["top"].hover()
-                kca_u.kca.click_existing(
-                    "kc", f"combat|_event_next_page_{cur_page}.png"
+                kca_u.kca.wait_and_click(
+                    "kc", f"combat|_event_next_page_{cur_page}.png", 5 , DEFAULT
                 )
                 cur_page += 1
         kca_u.kca.r["top"].hover()
-        kca_u.kca.click_existing(
-            "kc", f"combat|_event_world_{sortie_map.world_and_map}.png"
+        kca_u.kca.wait_and_click(
+            "kc", f"combat|_event_world_{sortie_map.world_and_map}.png", 5, NEAR_EXACT
         )
         if erst.reset.need_to_reset:
             erst.reset.reset_event_difficulty()
@@ -373,11 +382,11 @@ class CombatCore(CoreBase):
             Log.log_warn("Cannot start combat.")
         return False
 
-    def _check_map_clear(self):
-        if self.map_cleared:
-            if cfg.config.combat.clear_stop:
-                Log.log_debug_1("Map has been cleared!")
-                self.enabled = False
+    def check_clear_stop(self):
+        if cfg.config.combat.clear_stop and (self._sortie_map_is_cleared or self.map_cleared):
+            Log.log_msg(f"Map has been cleared.")
+            self.enabled = False
+        self.map_cleared = False
 
     def _handle_combat(self, sortie_map):
 
@@ -480,6 +489,7 @@ class CombatCore(CoreBase):
             elif node_type == self.NODE_TYPE_END:
                 Log.log_debug_1(f"Node type end {self.current_node.name}.")
                 conducting_sortie = False
+
             self.gimmick_judge(node_type=node_type)
 
         self._click_until_port()
@@ -490,22 +500,19 @@ class CombatCore(CoreBase):
     def _click_until_port(self):
 
         while True:
-            api_result = {"mock": "data"}
-            while api_result != {}:
-                api_result = api.api.update_from_api(
-                    {KCSAPIEnum.PORT}
-                    | self.COMBAT_APIS
-                    | self.RESULT_APIS
-                    | self.SHIPDECK_API
-                    | self.EQUIP_API,
-                    process_all=True,
-                )
+            api_result = api.api.update_from_api(
+                {KCSAPIEnum.PORT} | self.EQUIP_API,
+                process_all=True,
+                timeout=5,
+            )
 
-                if KCSAPIEnum.PORT.name not in api_result:
-                    kca_u.kca.r["combat_click"].click()
+            if KCSAPIEnum.PORT.name in api_result:
+                break
 
             if kca_u.kca.exists("left", "nav|home_menu_sortie.png"):
                 break
+
+            kca_u.kca.r["combat_click"].click()
 
     def _cycle_between_nodes(self, sortie_map):
         Log.log_debug_1("Between nodes.")
@@ -520,6 +527,7 @@ class CombatCore(CoreBase):
                     | self.EQUIP_API
                     | self.MAP_API,
                     process_all=False,
+                    needed_all=False,
                     timeout=5,
                 )
 

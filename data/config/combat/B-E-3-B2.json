@@ -3,6 +3,17 @@
   "combat.node_selects": [
     "B>B1"
   ],
+  "combat.node_formations": [
+    "B2:line_abreast"
+  ],
+  "combat.lbas_groups": [
+    1,
+    2
+  ],
+  "combat.lbas_group_1_nodes": [
+    "B2",
+    "B2"
+  ],
   "combat.node_night_battles": [
     "B2:True"
   ]

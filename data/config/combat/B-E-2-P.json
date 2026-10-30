@@ -1,10 +1,14 @@
 {
   "combat.fleet_mode": "strike",
   "combat.lbas_groups": [
-    1
+    1,
+    2
   ],
   "combat.lbas_group_1_nodes": [
     "P",
     "P"
+  ],
+  "combat.node_smoke": [
+    "L"
   ]
 }

@@ -1,11 +1,17 @@
 import time
+import api.api_core as api
 import config.config_core as cfg
 import nav.nav as nav
 import util.kca as kca_u
 from util.logger import Log
+from kca_enums.kcsapi_paths import KCSAPIEnum
 
 
 class FactoryCore(object):
+
+    DEVELOPMENT = 1
+    CONSTRUCTION = 2
+
     enabled = False
     disable_timer = 0
     order_oil_region = {
@@ -103,6 +109,9 @@ class FactoryCore(object):
 
             kca_u.kca.r["order_confirm_region"].click()
             kca_u.kca.wait("lower_right_corner", "global|next_alt.png", 20)
+
+            api.api.update_from_api({KCSAPIEnum.DEVELOP_EQUIPMENT})
+
             while not kca_u.kca.exists("left", "nav|side_menu_home.png"):
                 Log.log_debug_1("In develop result")
                 kca_u.kca.r["shipgirl"].click()
@@ -111,15 +120,32 @@ class FactoryCore(object):
         return True
 
     def any_build_slot_available(self):
-        """return false if both slots are occupied"""
-        if kca_u.kca.exists(
-            "build_slot_1_stat_region", "factory|build_progressing.png"
-        ) and kca_u.kca.exists(
-            "build_slot_2_stat_region", "factory|build_progressing.png"
-        ):
-            return False
-        else:
+        """return false if all slots are occupied"""
+        build_slot_stat_region = {
+            1: "build_slot_1_stat_region",
+            2: "build_slot_2_stat_region",
+            3: "build_slot_3_stat_region",
+            4: "build_slot_4_stat_region",
+        }
+        build_slot_add_dock_region = {
+            3: "build_slot_3_add_dock_region",
+            4: "build_slot_4_add_dock_region",
+        }
+
+        for i in range(1, 5):
+            if kca_u.kca.exists(
+                build_slot_stat_region[i], "factory|build_progressing.png"
+            ):
+                Log.log_debug_1(f"slot {i} in progressing")
+                continue
+            if i in build_slot_add_dock_region and kca_u.kca.exists(
+                build_slot_add_dock_region[i], "factory|add_dock.png"
+            ):
+                Log.log_debug_1(f"slot {i} locked")
+                continue
             return True
+
+        return False
 
     def build(self, oil, ammo, steel, bauxite, count):
         """Place the build order"""
@@ -136,11 +162,18 @@ class FactoryCore(object):
             build_slot_stat = {
                 1: "build_slot_1_stat_region",
                 2: "build_slot_2_stat_region",
+                3: "build_slot_3_stat_region",
+                4: "build_slot_4_stat_region",
             }
-            build_slot = {1: "build_slot_1_region", 2: "build_slot_2_region"}
+            build_slot = {
+                1: "build_slot_1_region",
+                2: "build_slot_2_region",
+                3: "build_slot_3_region",
+                4: "build_slot_4_region",
+            }
 
             """receive if a build is done"""
-            for i in range(1, 3):
+            for i in range(1, 5):
                 if kca_u.kca.exists(build_slot_stat[i], "factory|build_finish.png"):
                     kca_u.kca.r[build_slot[i]].click()
 
@@ -170,7 +203,7 @@ class FactoryCore(object):
                     kca_u.kca.wait("upper_left", "factory|factory_init.png", 20)
 
             """place the order on a empty slot"""
-            for j in range(1, 3):
+            for j in range(1, 5):
                 if kca_u.kca.exists(build_slot_stat[j], "factory|build_idle.png"):
                     """click build slot"""
                     retry = 0

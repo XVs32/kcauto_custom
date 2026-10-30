@@ -1,4 +1,3 @@
-
 import cv2
 import numpy as np
 import time
@@ -13,20 +12,21 @@ from util.pyvisauto import Region, ImageMatch
 from constants import (
     GAME_W,
     GAME_H,
-    VISUAL_URL,
     API_URL,
     EXACT,
     DEFAULT,
     SLEEP_MODIFIER,
 )
 
+
 class CoordinateSystem(object):
     """coordinate system class."""
+
     BROWSER_REF_ENTROPY_THRESHOLD = 0.5
     BROWSER_REF_SIZE = 100
     KC_REF_OFFSET = (-144, 0)
 
-    visual_hook = None
+    api_hook = None
     last_ui = None
 
     viewport_x = None
@@ -42,10 +42,9 @@ class CoordinateSystem(object):
     GAME_TO_WHOLE = 3
     VIEWPORT_TO_GAME = 4
     GAME_TO_VIEWPORT = 5
-    
 
     def __init__(self):
-        pass
+        self._update_regions()
 
     def find_game_window_offset(self):
         """Method that finds the game window offset for chrome driver"""
@@ -141,7 +140,7 @@ class CoordinateSystem(object):
 
         import base64
 
-        screenshot_raw = self.visual_hook.Page.captureScreenshot()
+        screenshot_raw = self.api_hook.Page.captureScreenshot()
 
         if screenshot_raw is None or not screenshot_raw:
             raise ValueError("Failed to capture screenshot from Chrome")
@@ -261,7 +260,6 @@ class CoordinateSystem(object):
         Log.log_msg(f"Saved {saved_count} browser refs to {debug_dir}")
         return debug_dir
 
-
     def _debug_draw_browser_slide_windows(self, screenshot_gray):
         """Draw slide windows and ref regions on the browser screenshot."""
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -319,46 +317,42 @@ class CoordinateSystem(object):
         probabilities = probabilities[probabilities > 0]
         return float(-np.sum(probabilities * np.log2(probabilities)))
 
-
+    def convert_point(self, x, y, mode):
+        """Convert a single point between the whole-screen, browser viewport
+        and game coordinate spaces."""
+        game_x = self.game_x or 0
+        game_y = self.game_y or 0
+        if mode == self.WHOLE_TO_VIEWPORT:
+            return x - self.viewport_x, y - self.viewport_y
+        elif mode == self.VIEWPORT_TO_WHOLE:
+            return x + self.viewport_x, y + self.viewport_y
+        elif mode == self.WHOLE_TO_GAME:
+            return x - game_x, y - game_y
+        elif mode == self.GAME_TO_WHOLE:
+            return x + game_x, y + game_y
+        elif mode == self.VIEWPORT_TO_GAME:
+            return x + self.viewport_x - game_x, y + self.viewport_y - game_y
+        elif mode == self.GAME_TO_VIEWPORT:
+            return x + game_x - self.viewport_x, y + game_y - self.viewport_y
+        raise ValueError("Invalid mode")
 
     def convert(self, src, mode):
         dst = Region()
         dst.w = src.w
         dst.h = src.h
-        if mode == self.WHOLE_TO_VIEWPORT:
-            dst.x = src.x - self.viewport_x
-            dst.y = src.y - self.viewport_y
-            return dst
-        elif mode == self.VIEWPORT_TO_WHOLE:
-            dst.x = src.x + self.viewport_x
-            dst.y = src.y + self.viewport_y
-            return  dst
-        elif mode == self.WHOLE_TO_GAME:
-            dst.x = src.x -  self.game_x
-            dst.y = src.y - self.game_y
-            return dst
-        elif mode == self.GAME_TO_WHOLE:
-            dst.x = src.x + self.game_x
-            dst.y = src.y + self.game_y
-            return dst
-        elif mode == self.VIEWPORT_TO_GAME:
-            dst.x = src.x + self.viewport_x - self.game_x
-            dst.y = src.y + self.viewport_y - self.game_y
-            return dst
-        elif mode == self.GAME_TO_VIEWPORT:
-            dst.x = src.x + self.game_x - self.viewport_x
-            dst.y = src.y + self.game_y - self.viewport_y
-            return dst
-        else:
-            raise ValueError("Invalid mode")
+        dst.x, dst.y = self.convert_point(src.x, src.y, mode)
+        return dst
 
     def _update_regions(self):
-        """Method that generates or updates all pre-defined regions
-        accordingly based on the game's current x and y position.
+        """Build predefined regions in game coordinates.
+
+        x and y are offsets from the game origin. The desktop position of the
+        window stays in game_x/game_y and is applied when capturing or sending
+        input, so moving the window does not rewrite these regions.
         """
         Log.log_debug_1("Updating regions.")
-        x = self.game_x
-        y = self.game_y
+        x = 0
+        y = 0
         w = GAME_W
         h = GAME_H
         hw = w // 2
@@ -420,8 +414,22 @@ class CoordinateSystem(object):
         self._create_or_shift_region(
             "build_slot_2_stat_region", x + 595, y + 305, 150, 60
         )
+        self._create_or_shift_region(
+            "build_slot_3_stat_region", x + 595, y + 430, 150, 60
+        )
+        self._create_or_shift_region(
+            "build_slot_4_stat_region", x + 595, y + 555, 150, 60
+        )
+        self._create_or_shift_region(
+            "build_slot_3_add_dock_region", x + 845, y + 490, 265, 50
+        )
+        self._create_or_shift_region(
+            "build_slot_4_add_dock_region", x + 845, y + 610, 265, 50
+        )
         self._create_or_shift_region("build_slot_1_region", x + 900, y + 260, 60, 15)
         self._create_or_shift_region("build_slot_2_region", x + 900, y + 380, 60, 15)
+        self._create_or_shift_region("build_slot_3_region", x + 900, y + 500, 60, 15)
+        self._create_or_shift_region("build_slot_4_region", x + 900, y + 620, 60, 15)
         self._create_or_shift_region("order_confirm_region", x + 975, y + 635, 200, 50)
         self._create_or_shift_region("use_item_region", x + 635, y + 580, 100, 20)
         self._create_or_shift_region("develop_region", x + 215, y + 480, 200, 50)
@@ -519,5 +527,6 @@ class CoordinateSystem(object):
             return region
         else:
             raise TypeError("Invalid region specified.")
+
 
 coor = CoordinateSystem()

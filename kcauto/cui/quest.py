@@ -81,7 +81,15 @@ def pop_up_menu(stdscr, panel, config):
     global quest_info
     if quest_info == []:
         quest_info = JsonData.load_json("data|quests|kc3_quests_en.json")
-        quest_list = JsonData.load_json("data|quests|quests.json")
+
+        quest_list = JsonData.load_json("template|data|quests|quests.json")
+        try:
+            custom_data = JsonData.load_json("data|quests|quests.json")
+            if custom_data:
+                quest_list.update(custom_data)
+        except FileNotFoundError:
+            # custom quest.json is not a must
+            pass
 
         for quest_name in quest_list:
             context = None

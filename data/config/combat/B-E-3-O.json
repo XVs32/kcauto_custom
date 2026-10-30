@@ -3,6 +3,10 @@
   "combat.node_selects": [
     "H>I"
   ],
+  "combat.node_formations": [
+    "I:combined_fleet_2",
+    "L:combined_fleet_2"
+  ],
   "combat.lbas_groups": [
     1,
     2

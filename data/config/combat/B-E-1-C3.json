@@ -5,5 +5,8 @@
   ],
   "combat.node_night_battles": [
     "C3:True"
+  ],
+  "combat.lbas_groups": [
+    1
   ]
 }

@@ -94,8 +94,7 @@ def getLastEventWorldId(data):
     # get the max world id
     worldIds = list(worldIds)
     worldIds.sort()
-    # return str(worldIds[-1])
-    return str(5)
+    return str(worldIds[-1])
 
 
 def getMapList(data, worldId):
