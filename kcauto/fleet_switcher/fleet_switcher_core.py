@@ -129,6 +129,8 @@ class FleetSwitcherCore(object):
                 )
             except flt.Noro6MaterializationFailure as failure:
                 Log.log_warn(str(failure))
+            except ValueError as failure:
+                Log.log_warn(f"Noro6 preset {preset_name}: {failure}")
             except EquipmentRequirementError as error:
                 Log.log_warn(f"{preset_name}: {str(error)}")
             except EquipmentAllocationFailure as failure:
@@ -425,9 +427,11 @@ class FleetSwitcherCore(object):
             )
             requested_equipment = Equipment(model_id=requirement.model_id)
             Log.log_warn(
-                f"Using {selected_equipment.name} {selected_equipment.stars}★ "
+                f"Using {selected_equipment.name} {selected_equipment.stars}★"
+                f" {Equipment.format_proficiency(selected_equipment.ace)} "
                 f"({selected_equipment.production_id}) instead of requested "
-                f"{requested_equipment.name} {requirement.stars}★ "
+                f"{requested_equipment.name} {requirement.stars}★"
+                f" {Equipment.format_proficiency(requirement.ace)} "
                 f"(model {requirement.model_id}) for "
                 f"{active_ship.name_jp} {requirement.slot_ref.slot.display_name}."
             )
@@ -1165,7 +1169,8 @@ class FleetSwitcherCore(object):
                 if k % 10 == 0:
                     Log.log_debug_1(f"Page {k // 10 + 1}")
                 Log.log_debug_1(
-                    f"{k}: {equipment.name} {equipment.stars} (Production id: {equipment.production_id}, Model id: {equipment.model_id}), category id: {equipment.category}"
+                    f"{k}: {equipment.name} stars: {equipment.stars} ace: {equipment.ace} "
+                    f"(Production id: {equipment.production_id}, Model id: {equipment.model_id}), category id: {equipment.category}"
                 )
 
             for slot in range(fleet.ships[i].equipment_count):
@@ -1200,6 +1205,7 @@ class FleetSwitcherCore(object):
 
                 Log.log_msg(
                     f"Selecting {planned_equipment.name} {planned_equipment.stars} ★"
+                    f" {Equipment.format_proficiency(planned_equipment.ace)} "
                 )
                 ssw.ship_switcher.select_replacement_row(
                     row_idx=row_idx, mode=ssw.ship_switcher.EQUIPMENT_MODE
@@ -1225,7 +1231,8 @@ class FleetSwitcherCore(object):
                     if k % 10 == 0:
                         Log.log_debug_1(f"Page {k // 10 + 1}")
                     Log.log_debug_1(
-                        f"{k}: {equipment.name} {equipment.stars} (Production id: {equipment.production_id}, Model id: {equipment.model_id}), category id: {equipment.category}"
+                        f"{k}: {equipment.name} stars: {equipment.stars} ace: {equipment.ace} "
+                        f"(Production id: {equipment.production_id}, Model id: {equipment.model_id}), category id: {equipment.category}"
                     )
 
                 planned_equipment = self.equipment_plan.equipment_for(
@@ -1247,7 +1254,9 @@ class FleetSwitcherCore(object):
                     return False
 
                 Log.log_msg(
-                    f"Selecting {planned_equipment.name} {planned_equipment.stars} ★ on page {row_idx // 10 + 1} position {(row_idx % 10) + 1}"
+                    f"Selecting {planned_equipment.name} {planned_equipment.stars} ★"
+                    f" {Equipment.format_proficiency(planned_equipment.ace)} "
+                    f"on page {row_idx // 10 + 1} position {(row_idx % 10) + 1}"
                 )
                 ssw.ship_switcher.select_replacement_row(
                     row_idx=row_idx,
