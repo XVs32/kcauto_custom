@@ -129,12 +129,12 @@ For example, `B-1-1` is the config made for `1-1`,
 3. LBAS (Land-Based Air Squadrons) assign is sadly **NOT** supported yet.
 4. If a quest specify config is not found(ex. `By6-1-2`), kcauto_custom would fall back to normal config (ex. `B-1-2`)
 5. Feel free to add your own config (I am sure I've missed quite a few quest related configs)
-6. **If you're too lazy to finish all the configs at once, REMOVE those you didn't setup, or kcauto_custom would get confuse**
+6. **If you're too lazy to finish all the configs at once, put `-bak` as suffix in the unuse configs (ex. `B-1-1-bak`), or kcauto_custom would get confuse**
 
 ---
 
 **There is a template at `configs/noro6/noro6_template` to save you some naming time if you want to finish your setup in once  
-You do have to remove those unuse config if you decide to start from this template**
+You do have to put `-bak` as suffix in the unuse config if you decide to start from this template**
 
 ---
 
