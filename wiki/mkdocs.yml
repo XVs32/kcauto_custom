@@ -37,9 +37,9 @@ plugins:
 nav:
     - "Home": index.md
 
-    - "Ch1: Setup guide": Ch1.md
-    - "Ch2: Beginner user guide": Ch2.md
-    - "Ch3: Gamer User Guides":
+    - "Ch1: Setup Guide": Ch1.md
+    - "Ch2: Beginner User Guide": Ch2.md
+    - "Ch3: Gamer User Guide":
         - "Ch3.1: Sortie": Ch3.1.md
         - "Ch3.2: Expedition": Ch3.2.md
         - "Ch3.3: PvP": Ch3.3.md
