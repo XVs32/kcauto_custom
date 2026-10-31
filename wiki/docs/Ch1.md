@@ -14,7 +14,7 @@ close all of them before re-starting with `remote-debugging` enabled.
     * :x:Kill ALL POI process and retry if you see this:  
 ![debug_port_fail](./assets/debug_port_fail.png)  
 
-* Install plugin `poi-plugin-noro6-exporter` and `poi-plugin-forwarder`  
+* Install plugin `poi-plugin-noro6-exporter`, `poi-plugin-forwarder` and `poi-plugin-interaction`
     * please be noted that Noro6 Exporter does **NOT** export config to original Noro6 site,  
   it export to XVs32's customize version instead  
 (noro6 takes forever to review the pull request so... had no choice but to setup my own)
@@ -22,21 +22,7 @@ close all of them before re-starting with `remote-debugging` enabled.
 ![image](./assets/poi-plugin-tab.png)  
 ![image](./assets/poi-plugin-noro6-exporter.png)  
 ![image](./assets/poi-plugin-forwarder.png)  
-
-* **POI interaction mode (`"general.interaction_mode": "poi"`) users only**:
-  `poi-plugin-forwarder` must be **1.1.0 or newer**, older versions do not
-  include the interaction service and the control port stays closed.
-  kcauto checks the plugins on startup and prints the install commands if
-  one is missing or too old. Install manually from a shell if you prefer:
-
-  ```sh
-  cd "$APPDATA/poi/plugins"     # Linux: ~/.config/poi/plugins
-  npm install "git+https://github.com/pmsleepcheck/poi-plugin-api-forwarder.git#feature/poi-interaction-server" --allow-git=all
-  npm install poi-plugin-noro6-exporter
-  ```
-
-  Restart POI after installing.
-
+![image](./assets/poi-plugin-interaction.png)  
 
 * **For Linux(Ubuntu) users**:  
 Wayland in Ubuntu does not work well with kcauto(and a lot of other stuffs, lol)  
