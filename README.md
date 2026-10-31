@@ -1,6 +1,6 @@
 # kcauto_custom
 
-### ***Latest download(2026/07/27)*** [***here***](https://github.com/XVs32/kcauto_custom/releases/tag/v3.2.0) 
+### ***Latest download(2026/10/30)*** [***here***](https://github.com/XVs32/kcauto_custom/releases/tag/v4.0.0) 
 
 ***Warnning*** : Althought kcauto_custom could theoretically run on Windows, it was originally made for Linux, I might or might not fix any compatibility issues.
 
@@ -49,13 +49,10 @@ This tool is designed to help users automate repetitive tasks such as Expedition
 * Support for 7-4, events
 * Bug fix(Fleet Switcher Module, interaction_mode, quest handling, LBAS Module etc.)
 
-## Wiki page
-### [Setup guide](https://github.com/XVs32/kcauto_custom/wiki/Ch1:-Setup-guide)  
-### [Beginner user guide](https://github.com/XVs32/kcauto_custom/wiki/Ch2:-Beginner-user-guide)  
-### [Gamer user guide ‐‐ Sortie](https://github.com/XVs32/kcauto_custom/wiki/Ch3.1:-Gamer-user-guide-%E2%80%90%E2%80%90-Sortie)  
-### [Gamer user guide ‐‐ Expedition](https://github.com/XVs32/kcauto_custom/wiki/Ch3.2:-Gamer-user-guide-%E2%80%90%E2%80%90-Expedition)  
-
 ---
+
+## [Wiki page](https://xvs32.github.io/kcauto_custom/)
+
 *You will need a github account for the following*
 ### [Wishing pool](https://github.com/XVs32/kcauto_custom/discussions/categories/ideas): Wish/Idea for new functions
 ### [Bug report](https://github.com/XVs32/kcauto_custom/issues): Bro, something goes wrong

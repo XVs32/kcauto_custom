@@ -4,8 +4,8 @@
 
 ***警告***：雖然 `kcauto_custom` 理論上可以在 Windows 上執行，但它昰在 Linux 上設計的。對於相容性問題，作者不保證會修復。
 
-**[kcauto_custom](https://github.com/XVs32/kcauto_custom)** 是一個停更專案 [kcauto](https://github.com/perryhuynh/kcauto) 的調整版本，加入了額外的功能與特性。  
-與 **kcauto** 相比，**kcauto_custom** 設定彈性較低，但日常使用更自動化。  
+**[kcauto_custom](https://github.com/XVs32/kcauto_custom)** 是一個艦C的自動化腳本(BOT)，它是停更專案 [kcauto](https://github.com/perryhuynh/kcauto) 的調整版本，加入了額外的功能與特性。  
+與 **kcauto** 相比，**kcauto_custom** 設定彈性較低，但日常使用的自動化程度更高。  
 面向不想自行建置 Python 環境的使用者，我們也提供執行檔 (.exe)。  
 使用者可以在 [Noro6](https://noro6.github.io/kc-web/#/aircalc) 中配置艦隊與裝備，然後透過 `kcauto_custom` 執行計畫。  
 本工具旨在協助使用者自動化重複性的任務，例如遠征、出擊、演習、維修與補給，進而節省時間並提高效率。
@@ -18,7 +18,7 @@
 
 > `kcauto_custom` 僅供教育用途。使用機器人程式違反遊戲規則，長期使用可能會導致帳號被封禁。`kcauto_custom` 開發者對於使用此工具所導致的任何後果概不負責。後果自負！
 
-> 雖然機率極低，但使用 `kcauto_custom` 進行戰鬥出擊時，仍可能導致艦娘沉沒或裝備遺失。儘管 `kcauto_custom` 在設計上已極力降低此類風險，但開發者對任何艦娘或資源的損失概不負責。
+> 雖然機率極低，但使用 `kcauto_custom` 進行戰鬥出擊時，仍可能導致艦娘沉沒或裝備損失。儘管 `kcauto_custom` 在設計上已極力降低此類風險，但開發者對任何艦娘或資源的損失概不負責。
 
 ### kcauto 原生功能
 

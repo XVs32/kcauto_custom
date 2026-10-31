@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections import Counter, defaultdict
 from dataclasses import dataclass, field
 from enum import Enum
 from types import MappingProxyType
@@ -197,6 +198,42 @@ class EquipmentAllocator:
         movable_equipments: list[MovableEquipment],
         reinforcement_eligible_ids: dict[int, set[int]],
     ) -> EquipmentAllocationResult:
+        requirement_counts = Counter(
+            requirement.model_id for requirement in requirements
+        )
+        available_equipment_ids: dict[int, set[int]] = defaultdict(set)
+        for movable_equipment in movable_equipments:
+            equipment = movable_equipment.equipment
+            available_equipment_ids[equipment.model_id].add(equipment.production_id)
+
+        # Restricted reinforcement requirements for the same model share the same eligible pool.
+        restricted_counts: Counter[int] = Counter()
+        for requirement in requirements:
+            model_id = requirement.model_id
+            available_ids = available_equipment_ids[model_id]
+
+            # Check overall equipment quantities.
+            if requirement_counts[model_id] > len(available_ids):
+                raise EquipmentAllocationFailure(requirement)
+
+            # Check reinforcement equipment quantities.
+            if not requirement.slot_ref.slot.is_reinforcement:
+                continue
+
+            eligible_count = len(
+                available_ids & reinforcement_eligible_ids[requirement.slot_ref.ship_id]
+            )
+
+            if not eligible_count:
+                raise EquipmentAllocationFailure(requirement)
+
+            # Count requirements that can only use a subset of available equipment.
+            if eligible_count < len(available_ids):
+                restricted_counts[model_id] += 1
+                if restricted_counts[model_id] > eligible_count:
+                    raise EquipmentAllocationFailure(requirement)
+
+        # Allocate equipment using recursive search.
         assignments: dict[EquipmentSlotRef, Equipment] = {}
         assigned_equipment_ids: set[int] = set()
 

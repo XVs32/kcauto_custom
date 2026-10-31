@@ -25,9 +25,24 @@ class Quest(object):
 
         if Quest.static_data == {}:
             try:
-                Quest.static_data = JsonData.load_json("data|quests|quests.json")
+                Quest.static_data = JsonData.load_json(
+                    "template|data|quests|quests.json"
+                )
             except FileNotFoundError as e:
-                Log.log_error("Quest data not found, please re-download it from github")
+                Log.log_error(
+                    "Quest template data not found, please re-download it from github, what have you done...?"
+                )
+                Log.log_error(e)
+
+            try:
+                custom_data = JsonData.load_json("data|quests|quests.json")
+                if custom_data:
+                    Quest.static_data.update(custom_data)
+            except FileNotFoundError:
+                # custom quest.json is not a must
+                pass
+            except Exception as e:
+                Log.log_error("Failed to load user quest data")
                 Log.log_error(e)
 
         if api_data is not None:
