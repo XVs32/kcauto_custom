@@ -1,6 +1,6 @@
 # kcauto_custom
 
-### ***Latest download(2026/07/27)*** [***here***](https://github.com/XVs32/kcauto_custom/releases/tag/v3.2.0) 
+### ***Latest download(2026/10/30)*** [***here***](https://github.com/XVs32/kcauto_custom/releases/tag/v4.0.0) 
 
 ***Warnning*** : Althought kcauto_custom could theoretically run on Windows, it was originally made for Linux, I might or might not fix any compatibility issues.
 

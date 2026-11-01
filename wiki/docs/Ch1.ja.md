@@ -13,12 +13,17 @@ _You need to do this no matter what_
     * :x: 以下のような画面が表示された場合は、すべての POI プロセスを終了してやり直してください：  
 ![debug_port_fail](./assets/debug_port_fail.png)  
 
-* プラグイン `poi-plugin-noro6-exporter` と `poi-plugin-forwarder` をインストールします
+* プラグイン `poi-plugin-noro6-exporter`、`poi-plugin-forwarder`、`poi-plugin-interaction` をインストールします
+    * 注意：Noro6 Exporter は**元の** Noro6 サイトには設定をエクスポートしません。  
+      XVs32 のカスタム版にエクスポートします  
 
-<img width="474" height="707" alt="image" src="https://github.com/user-attachments/assets/570ebbfa-ca5f-4082-a340-ebee58ccd6c2" />
+![image](./assets/poi-plugin-tab.png)  
+![image](./assets/poi-plugin-noro6-exporter.png)  
+![image](./assets/poi-plugin-forwarder.png)  
+![image](./assets/poi-plugin-interaction.png)  
 
 * **Linux (Ubuntu) ユーザーへ**：  
-  Ubuntu の Wayland は `kcauto` との相性がよくありません  
+  Ubuntu の Wayland は `kcauto` との相性がよくありません（他のソフトでも同様です、lol）  
   X-windows 環境で Ubuntu を実行することをお勧めします。  
   ![image](https://github.com/user-attachments/assets/696ed225-09da-4254-9a1c-956c4c1f87f9)  
 
@@ -42,7 +47,7 @@ _You need to do this no matter what_
 
 * Windows
     * Powershell で `.\kcauto_cui.exe` を実行することを推奨します
-    * または、`.\kcauto_custom.exe --cfg <設定ファイル名>` を実行して自作の設定ファイルを指定します  
+    * または、`.\bin/kcauto_custom\kcauto_custom.exe --cfg <設定ファイル名>` を実行して自作の設定ファイルを指定します  
       （注：末尾の `.json` は入力不要です）
 * Linux
     * `./kcauto_cui` を実行します
