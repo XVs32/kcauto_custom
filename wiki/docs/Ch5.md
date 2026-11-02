@@ -310,6 +310,12 @@ Controls expedition management and resource gathering.
 - **Default**: 3000
 - **Description**: Target number of repair buckets to maintain.
 
+#### `expedition.desire_devmat`
+- **Type**: integer
+- **Valid Range**: 0-3000
+- **Default**: 3000
+- **Description**: Target number of development materials to maintain.
+
 ### PvP Settings (`pvp.*`)
 
 Controls Player vs Player combat behavior.

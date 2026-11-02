@@ -3,7 +3,7 @@
 # Script #1: Create workspace for kcauto_custom release build
 # Creates kcauto_custom_release folder outside the repo root,
 # clones the repo into kcauto_custom_linux and kcauto_custom_windows,
-# and switches each to the corresponding branch.
+# switches each to the corresponding branch, and merges latest develop.
 #
 # Usage: run from the execution_packer directory
 #   cd tool/execution_packer && bash setup_release.sh
@@ -41,21 +41,23 @@ fi
 echo "Copying kcauto_custom_linux to kcauto_custom_windows..."
 cp -r "$RELEASE_DIR/kcauto_custom_linux" "$RELEASE_DIR/kcauto_custom_windows"
 
-# Switch kcauto_custom_linux to develop_linux branch
-echo "Switching kcauto_custom_linux to branch: develop_linux..."
+# Switch kcauto_custom_linux to develop_linux branch and merge develop
+echo "Switching kcauto_custom_linux to branch: develop_linux and merging origin/develop..."
 cd "$RELEASE_DIR/kcauto_custom_linux" || exit 1
 git checkout develop_linux
+git merge origin/develop --no-edit
 cd - > /dev/null || exit 1
 
-# Switch kcauto_custom_windows to develop_windows branch
-echo "Switching kcauto_custom_windows to branch: develop_windows..."
+# Switch kcauto_custom_windows to develop_windows branch and merge develop
+echo "Switching kcauto_custom_windows to branch: develop_windows and merging origin/develop..."
 cd "$RELEASE_DIR/kcauto_custom_windows" || exit 1
 git checkout develop_windows
+git merge origin/develop --no-edit
 cd - > /dev/null || exit 1
 
 echo ""
 echo "======================================================"
 echo "Workspace Setup Complete!"
-echo " - Linux:   $(realpath "$RELEASE_DIR/kcauto_custom_linux") (branch: develop_linux)"
-echo " - Windows: $(realpath "$RELEASE_DIR/kcauto_custom_windows") (branch: develop_windows)"
+echo " - Linux:   $(realpath "$RELEASE_DIR/kcauto_custom_linux") (branch: develop_linux merged with develop)"
+echo " - Windows: $(realpath "$RELEASE_DIR/kcauto_custom_windows") (branch: develop_windows merged with develop)"
 echo "======================================================"

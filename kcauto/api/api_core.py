@@ -342,9 +342,13 @@ class ApiWrapper(object):
             JsonData.dump_json(equipment_static_data, "data|temp|equipment_static.json")
             Equipment.staic_data_reload()
 
-            JsonData.dump_json(data["api_mst_stype"], "data|temp|ship_type.json")
+            ship_type_data = data["api_mst_stype"]
+            equ.equipment.update_ship_type_static(ship_type_data)
+            JsonData.dump_json(ship_type_data, "data|temp|ship_type.json")
+            equipment_special_data = data["api_mst_equip_ship"]
+            equ.equipment.update_equipment_special(equipment_special_data)
             JsonData.dump_json(
-                data["api_mst_equip_ship"],
+                equipment_special_data,
                 "data|temp|equipment_ship_special.json",
             )
 

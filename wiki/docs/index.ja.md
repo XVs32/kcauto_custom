@@ -1,6 +1,6 @@
 # kcauto_custom
 
-### ***最新ダウンロード (2026/07/27)は*** [***こちら***](https://github.com/XVs32/kcauto_custom/releases/tag/v3.2.0) 
+### ***最新ダウンロード (2026/10/30)は*** [***こちら***](https://github.com/XVs32/kcauto_custom/releases/tag/v4.0.0) 
 
 ***警告***：`kcauto_custom` は Windows 上でも動作するはずですが、元々 Linux 環境のために開発されたものです。互換性の問題について、修正は保証されません。
 
