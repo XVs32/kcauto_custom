@@ -1,12 +1,13 @@
-"""儀表板的響應式版面規劃。純函式,不依賴 Textual,方便測試。
+"""Responsive layout planning for the dashboard. Pure functions, no Textual dependency, easy to test.
 
-規則(由上到下,第一個符合的生效)
-  1. 橫向足夠:日誌放右側,方框欄數依剩餘寬度自動取 2~4 欄。
-  2. 橫向不足、直向足夠:日誌放儀表板下方,方框欄數依寬度取 1~4 欄。
-  3. 兩者都不足:隱藏日誌,方框佔滿(之後可用快捷鍵全螢幕檢視日誌)。
+Rules (top to bottom, the first match wins)
+  1. Enough width: log on the right; cards use "the fewest columns that fit" (1-4), and all spare width goes to the log.
+  2. Not enough width but enough height: log below the dashboard; cards use 1-4 columns depending on width.
+  3. Neither: hide the log and let the cards fill the screen (the log can later be shown full screen with a shortcut).
 
-這些常數要和 ``theme.tcss`` 一致(``tests/test_layout.py`` 會檢查)。
+These constants must match ``theme.tcss`` (``tests/test_layout.py`` checks this).
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -15,15 +16,17 @@ from typing import Sequence
 from .modules import CARDS
 from .summaries import summarize
 
-CARD_MIN_WIDTH = 34      # 單一方框的最小寬度(含邊框與 padding)
-SCROLLBAR_WIDTH = 2      # 方框區垂直捲軸可能佔用的寬度
-LOG_MIN_WIDTH = 40       # 日誌在右側時的最小寬度
-LOG_MIN_HEIGHT = 8       # 日誌在下方時的最小高度(含邊框)
-CHROME_ROWS = 2          # 頂部狀態列 + 底部提示列
-MIN_CARD_HEIGHT = 4      # 方框最小高度,對應 CSS 的 min-height
-BORDER_ROWS = 2          # 方框上下邊框
+CARD_MIN_WIDTH = 34  # minimum width of one card (including border and padding)
+SCROLLBAR_WIDTH = 2  # width the vertical scrollbar of the card area may take
+LOG_MIN_WIDTH = 40  # minimum log width when it is on the right
+LOG_MIN_HEIGHT = 8  # minimum log height when it is below (including border)
+CHROME_ROWS = 2  # top status bar + bottom hint bar
+MIN_CARD_HEIGHT = 4  # minimum card height, matches the CSS min-height
+BORDER_ROWS = 2  # top and bottom card borders
 MAX_COLUMNS = 4
-MIN_RIGHT_COLUMNS = 2    # 日誌放右側時至少要有幾欄,否則改放下方
+MIN_RIGHT_COLUMNS = (
+    1  # minimum number of columns when the log is on the right, otherwise it goes below
+)
 
 LOG_RIGHT = "right"
 LOG_BOTTOM = "bottom"
@@ -46,7 +49,7 @@ class LayoutPlan:
 
 
 def card_heights(values) -> list[int]:
-    """依目前設定值估算每個方框的高度(順序同 ``CARDS``)。"""
+    """Estimate each card's height from the current values (same order as ``CARDS``)."""
     return [
         max(MIN_CARD_HEIGHT, len(summarize(spec.module, values)) + BORDER_ROWS)
         for spec in CARDS
@@ -54,31 +57,44 @@ def card_heights(values) -> list[int]:
 
 
 def grid_height(heights: Sequence[int], columns: int) -> int:
-    """格狀排列的總高度:每一列取該列最高的方框。"""
+    """Total height of the grid: each row takes the height of its tallest card."""
     total = 0
     for start in range(0, len(heights), columns):
-        total += max(heights[start:start + columns])
+        total += max(heights[start : start + columns])
     return total
 
 
 def choose_layout(width: int, height: int, heights: Sequence[int]) -> LayoutPlan:
-    # 1. 日誌在右側
-    right_cols = (width - LOG_MIN_WIDTH - SCROLLBAR_WIDTH) // CARD_MIN_WIDTH
-    if right_cols >= MIN_RIGHT_COLUMNS:
-        return LayoutPlan(min(right_cols, MAX_COLUMNS), LOG_RIGHT)
+    # 1. Log on the right
+    # Pick the fewest columns that let the cards fit the screen height; all spare width goes to the log;
+    # only widen one column at a time if they do not fit (up to where the log still has LOG_MIN_WIDTH).
+    right_max = min(
+        (width - LOG_MIN_WIDTH - SCROLLBAR_WIDTH) // CARD_MIN_WIDTH, MAX_COLUMNS
+    )
+    if right_max >= MIN_RIGHT_COLUMNS:
+        usable = height - CHROME_ROWS
+        for columns in range(MIN_RIGHT_COLUMNS, right_max + 1):
+            if grid_height(heights, columns) <= usable:
+                return LayoutPlan(columns, LOG_RIGHT)
+        if (
+            right_max >= 2
+        ):  # nothing fits: use the most columns (the card area can scroll)
+            return LayoutPlan(right_max, LOG_RIGHT)
+        # only one column of width and the height does not fit either → use the log-below / hidden rules
 
-    # 2/3. 日誌在下方或隱藏:方框用滿整個寬度
+    # 2/3. Log below or hidden: cards use the full width
     columns = max(1, min((width - SCROLLBAR_WIDTH) // CARD_MIN_WIDTH, MAX_COLUMNS))
     needed = CHROME_ROWS + grid_height(heights, columns) + LOG_MIN_HEIGHT
     return LayoutPlan(columns, LOG_BOTTOM if needed <= height else LOG_HIDDEN)
 
 
-def fit_segments(lengths: Sequence[tuple[str, int]], drop_order: Sequence[str],
-                 width: int) -> set[str]:
-    """一行放不下時,依 ``drop_order`` 由前往後丟掉次要的片段,回傳「要保留」的名稱。
+def fit_segments(
+    lengths: Sequence[tuple[str, int]], drop_order: Sequence[str], width: int
+) -> set[str]:
+    """When a line does not fit, drop the less important segments in ``drop_order`` order and return the names to keep.
 
-    ``lengths`` 是 (名稱, 顯示寬度),不在 ``drop_order`` 內的片段永遠保留。
-    ``width`` <= 0(尚未量測)時全部保留。
+    ``lengths`` is (name, display width); segments not in ``drop_order`` are always kept.
+    When ``width`` <= 0 (not measured yet) everything is kept.
     """
     kept = {name for name, _ in lengths}
     if width <= 0:

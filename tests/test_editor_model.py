@@ -1,4 +1,5 @@
-"""編輯器的純邏輯測試(不需要 Textual)。"""
+"""Tests for the editor's pure logic (no Textual needed)."""
+
 import json
 import os
 import tempfile
@@ -24,14 +25,18 @@ class FormatTests(unittest.TestCase):
     def test_gauge_and_int_format(self):
         self.assertEqual(M.gauge(4, 0, 4, 8), "█" * 8)
         self.assertEqual(M.gauge(0, 0, 4, 8), "░" * 8)
-        self.assertTrue(M.format_value(SCHEMA["combat.retreat_limit"], 2).endswith(" 2"))
-        self.assertEqual(M.format_value(SCHEMA["general.chrome_dev_port"], 9222), "9222")
+        self.assertTrue(
+            M.format_value(SCHEMA["combat.retreat_limit"], 2).endswith(" 2")
+        )
+        self.assertEqual(
+            M.format_value(SCHEMA["general.chrome_dev_port"], 9222), "9222"
+        )
 
     def test_every_field_formats_default_and_garbage(self):
         for f in SCHEMA.values():
             M.format_value(f, f.make_default(), 30)
             for junk in (None, object(), "x", 5, [1], {"a": 1}):
-                M.format_value(f, junk, 20)           # 不可丟例外
+                M.format_value(f, junk, 20)  # must not raise
             M.type_label(f)
 
     def test_bool_and_null(self):
@@ -44,12 +49,15 @@ class FormatTests(unittest.TestCase):
         f = SCHEMA["combat.retreat_points"]
         self.assertEqual(M.format_value(f, []), "(empty)")
         self.assertEqual(M.format_value(f, ["A", "B"]), "A, B")
-        self.assertTrue(M.format_value(f, list("ABCDEFGHIJ"), 12).startswith("10 items"))
+        self.assertTrue(
+            M.format_value(f, list("ABCDEFGHIJ"), 12).startswith("10 items")
+        )
 
     def test_describe_includes_issue_and_modified(self):
         f = SCHEMA["general.jst_offset"]
         issues = []
         from tui.schema import validate_field
+
         issues = validate_field(f.key, 99)
         lines = M.describe(f, 99, 0, issues, changed=True)
         joined = "\n".join(line.text for line in lines)
@@ -66,17 +74,18 @@ class ModuleTests(unittest.TestCase):
         self.assertEqual(len(mods), 11)
         hotkeys = [e.hotkey for e in M.MODULE_ENTRIES]
         self.assertEqual(len(set(hotkeys)), len(hotkeys))
-        # 編輯器自己使用的鍵不可被模組快捷鍵佔用
+        # keys used by the editor itself must not be taken by module shortcuts
         for reserved in "dzw":
             self.assertNotIn(reserved, hotkeys)
 
-    def test_all_61_keys_reachable(self):
+    def test_all_keys_reachable(self):
         values = {k: f.make_default() for k, f in SCHEMA.items()}
         seen = []
         for e in M.MODULE_ENTRIES:
             seen += M.module_keys(e.module, values)
-        self.assertEqual(sorted(seen), sorted(SCHEMA))
-        self.assertEqual(len(seen), 61)
+        # ship_switcher.slots is driven by the "Akashi repair" switch and is not shown directly in the form
+        self.assertEqual(sorted(seen), sorted(set(SCHEMA) - M.HIDDEN_KEYS))
+        self.assertEqual(len(seen) + len(M.HIDDEN_KEYS), 63)
 
     def test_unknown_keys(self):
         values = {"combat.enabled": True, "future.thing": 1}
@@ -84,20 +93,39 @@ class ModuleTests(unittest.TestCase):
 
     def test_every_field_has_an_editor(self):
         for f in SCHEMA.values():
-            self.assertIn(M.editor_for(f), {
-                "bool", "choice", "choice_int", "wheel", "map", "text", "preset_wheel",
-                "tokens", "recipe", "table", "quest", "list", "tree", "json"})
+            self.assertIn(
+                M.editor_for(f),
+                {
+                    "bool",
+                    "choice",
+                    "choice_int",
+                    "wheel",
+                    "map",
+                    "text",
+                    "preset_wheel",
+                    "tokens",
+                    "recipe",
+                    "table",
+                    "scheduler",
+                    "secretary",
+                    "quest",
+                    "list",
+                    "tree",
+                    "json",
+                },
+            )
         self.assertEqual(M.editor_for(None), "json")
         self.assertEqual(M.editor_for(SCHEMA["quest.quests"]), "quest")
-        self.assertEqual(M.editor_for(SCHEMA["scheduler.rules"]), "table")
-        self.assertEqual(M.editor_for(SCHEMA["factory.build_secretary"]), "text")
+        self.assertEqual(M.editor_for(SCHEMA["scheduler.rules"]), "scheduler")
+        self.assertEqual(M.editor_for(SCHEMA["factory.build_secretary"]), "secretary")
         self.assertEqual(M.editor_for(SCHEMA["ship_switcher.slots"]), "tree")
 
     def test_numbers_never_use_the_keyboard(self):
-        """數字欄位一律用滾輪 / 選單 / 格子,只有 int|str 的秘書艦保留文字輸入。"""
+        """Numeric fields always use wheels / menus / grids; no field uses text input for numbers (the secretary uses a dedicated menu)."""
         text_fields = [k for k, f in SCHEMA.items() if M.editor_for(f) == "text"]
-        self.assertEqual(sorted(text_fields),
-                         ["factory.build_secretary", "factory.develop_secretary"])
+        self.assertEqual(text_fields, [])
+        for key in ("factory.build_secretary", "factory.develop_secretary"):
+            self.assertEqual(M.editor_for(SCHEMA[key]), "secretary")
         self.assertEqual(M.editor_for(SCHEMA["combat.sortie_map"]), "map")
         self.assertEqual(M.editor_for(SCHEMA["combat.retreat_limit"]), "choice_int")
         self.assertEqual(M.editor_for(SCHEMA["general.chrome_dev_port"]), "wheel")
@@ -106,26 +134,44 @@ class ModuleTests(unittest.TestCase):
 
     def test_adjustable_fields(self):
         adjustable = {k for k, f in SCHEMA.items() if M.adjustable(f)}
-        for key in ("combat.retreat_limit", "combat.repair_limit",
-                    "passive_repair.repair_threshold", "event_reset.farm_difficulty",
-                    "combat.fleet_mode", "combat.enabled", "expedition.fleet_preset"):
+        for key in (
+            "combat.retreat_limit",
+            "combat.repair_limit",
+            "passive_repair.repair_threshold",
+            "event_reset.farm_difficulty",
+            "combat.fleet_mode",
+            "combat.enabled",
+            "expedition.fleet_preset",
+        ):
             self.assertIn(key, adjustable)
-        for key in ("general.jst_offset", "combat.repair_timelimit_minutes",
-                    "expedition.desire_oil", "combat.sortie_map"):
+        for key in (
+            "general.jst_offset",
+            "combat.repair_timelimit_minutes",
+            "expedition.desire_oil",
+            "combat.sortie_map",
+        ):
             self.assertNotIn(key, adjustable)
 
     def test_tables_match_schema_patterns(self):
         for key in M.TABLES:
             self.assertIn(key, SCHEMA)
-        self.assertEqual(set(M.TABLES), {
-            "combat.node_selects", "combat.node_formations",
-            "combat.node_night_battles", "scheduler.rules"})
+        self.assertEqual(
+            set(M.TABLES),
+            {
+                "combat.node_selects",
+                "combat.node_formations",
+                "combat.node_night_battles",
+                "scheduler.rules",
+            },
+        )
 
 
 class SearchTests(unittest.TestCase):
     def test_search_by_key_label_help(self):
         self.assertEqual(M.search_fields("night")[0].key, "combat.node_night_battles")
-        self.assertIn("combat.retreat_limit", [f.key for f in M.search_fields("撤退")])
+        self.assertIn(
+            "combat.retreat_limit", [f.key for f in M.search_fields("retreat")]
+        )
         self.assertTrue(M.search_fields("chrome"))
         self.assertEqual(M.search_fields(""), [])
         self.assertEqual(M.search_fields("zzzzqqq"), [])
@@ -136,7 +182,9 @@ class SearchTests(unittest.TestCase):
         self.assertNotIn("expedition.fleet_2", keys)
 
     def test_name_hit_ranks_first(self):
-        self.assertEqual(M.search_fields("secretary")[0].name.endswith("secretary"), True)
+        self.assertEqual(
+            M.search_fields("secretary")[0].name.endswith("secretary"), True
+        )
 
 
 class DangerTests(unittest.TestCase):
@@ -150,10 +198,14 @@ class DangerTests(unittest.TestCase):
         self.assertEqual(M.added_items(["A"], ["A", "B"]), ["B"])
 
     def test_non_danger_never_confirms(self):
-        self.assertFalse(M.needs_danger_confirm(SCHEMA["combat.retreat_points"], [], ["A"]))
+        self.assertFalse(
+            M.needs_danger_confirm(SCHEMA["combat.retreat_points"], [], ["A"])
+        )
 
     def test_only_push_nodes_is_danger(self):
-        self.assertEqual([k for k, f in SCHEMA.items() if f.danger], ["combat.push_nodes"])
+        self.assertEqual(
+            [k for k, f in SCHEMA.items() if f.danger], ["combat.push_nodes"]
+        )
 
 
 class ParseTests(unittest.TestCase):
@@ -189,9 +241,13 @@ class ParseTests(unittest.TestCase):
 
     def test_enum_options_nullable(self):
         opts = M.enum_options(SCHEMA["expedition.fleet_preset"])
-        self.assertEqual([v for _, v in opts], [None, "auto"])      # disable 第一,auto 第二
+        self.assertEqual(
+            [v for _, v in opts], [None, "auto"]
+        )  # disable first, auto second
         self.assertEqual(opts[0][0], "disable")
-        self.assertEqual([v for _, v in M.enum_options(SCHEMA["combat.fleet_mode"])][0], "standard")
+        self.assertEqual(
+            [v for _, v in M.enum_options(SCHEMA["combat.fleet_mode"])][0], "standard"
+        )
 
 
 class ListTests(unittest.TestCase):
@@ -204,11 +260,13 @@ class ListTests(unittest.TestCase):
     def test_item_error_only_reports_the_new_item(self):
         f = SCHEMA["combat.retreat_points"]
         self.assertIsNone(M.list_item_error(f, ["A"], "B"))
-        self.assertIn("節點", M.list_item_error(f, ["A"], "bad node!") or "")
+        self.assertIn("Node names", M.list_item_error(f, ["A"], "bad node!") or "")
 
     def test_lbas_nodes_allow_duplicates_and_transient_length(self):
         f = SCHEMA["combat.lbas_group_1_nodes"]
-        self.assertIsNone(M.list_item_error(f, ["A"], "A"))      # 一個時尚未滿 2 也不報
+        self.assertIsNone(
+            M.list_item_error(f, ["A"], "A")
+        )  # one item with fewer than 2 is not reported yet
         self.assertIsNone(M.list_item_error(f, [], "A"))
         self.assertIsNotNone(M.list_length_error(f, ["A"]))
         self.assertIsNone(M.list_length_error(f, ["A", "A"]))
@@ -221,8 +279,11 @@ class TableTests(unittest.TestCase):
         self.assertEqual(spec.parse("A>B"), ("A", "B"))
         self.assertEqual(spec.format(("A", "B")), "A>B")
         spec = M.TABLES["scheduler.rules"]
-        for text in ("time:0230:stop:kcauto", "sorties_run:15:stop:combat",
-                     "a:b:c:d:e"):
+        for text in (
+            "time:0230:stop:kcauto",
+            "sorties_run:15:stop:combat",
+            "a:b:c:d:e",
+        ):
             self.assertEqual(spec.format(spec.parse(text)), text)
 
     def test_parse_pads_and_merges_extra(self):
@@ -243,14 +304,20 @@ class TableTests(unittest.TestCase):
         self.assertIsNotNone(M.check_table_row(f, spec, ["", "diamond"], [], None))
         f = SCHEMA["scheduler.rules"]
         spec = M.TABLES[f.key]
-        self.assertIsNone(M.check_table_row(f, spec, ["time", "0230", "stop", "kcauto", ""], [], None))
-        self.assertIsNotNone(M.check_table_row(f, spec, ["time", "", "stop", "kcauto", ""], [], None))
+        self.assertIsNone(
+            M.check_table_row(f, spec, ["time", "0230", "stop", "kcauto", ""], [], None)
+        )
+        self.assertIsNotNone(
+            M.check_table_row(f, spec, ["time", "", "stop", "kcauto", ""], [], None)
+        )
 
     def test_night_battle_choices(self):
         col = M.TABLES["combat.node_night_battles"].columns[1]
         self.assertEqual(col.choices, ("True", "False"))
         f = SCHEMA["combat.node_night_battles"]
-        self.assertIsNone(M.check_table_row(f, M.TABLES[f.key], ["A", "True"], [], None))
+        self.assertIsNone(
+            M.check_table_row(f, M.TABLES[f.key], ["A", "True"], [], None)
+        )
 
     def test_suggestions(self):
         spec = M.TABLES["scheduler.rules"]
@@ -293,15 +360,22 @@ class PresetTests(unittest.TestCase):
 
 class QuestTests(unittest.TestCase):
     def test_grouping_keeps_file_order(self):
-        cat = [M.QuestInfo(i) for i in ("Bd1", "Bd10", "Bd2", "Bw1", "Cd1", "2610B2", "weird")]
+        cat = [
+            M.QuestInfo(i)
+            for i in ("Bd1", "Bd10", "Bd2", "Bw1", "Cd1", "2610B2", "weird")
+        ]
         groups = M.group_quests(cat, ["Bd1", "Zzz9"])
-        self.assertEqual([g for g, _ in groups], ["Bd", "Bw", "Cd", "2610", "misc", "other"])
+        self.assertEqual(
+            [g for g, _ in groups], ["2610", "Bd", "Bw", "Cd", "misc", "other"]
+        )
         self.assertEqual(dict(groups)["Bd"], ["Bd1", "Bd10", "Bd2"])
         self.assertEqual(dict(groups)["other"], ["Zzz9"])
 
     def test_merge_keeps_order(self):
-        self.assertEqual(M.merge_selection(["Bw1", "Bd1"], ["Bd1", "Bd2", "Bw1"]),
-                         ["Bw1", "Bd1", "Bd2"])
+        self.assertEqual(
+            M.merge_selection(["Bw1", "Bd1"], ["Bd1", "Bd2", "Bw1"]),
+            ["Bw1", "Bd1", "Bd2"],
+        )
         self.assertEqual(M.merge_selection(["A1"], []), [])
 
     def _write(self, root, rel, data):
@@ -311,12 +385,20 @@ class QuestTests(unittest.TestCase):
 
     def test_catalog_reads_only_quests_json_top_level_keys(self):
         with tempfile.TemporaryDirectory() as tmp:
-            self._write(tmp, "data/quests/quests.json", {
-                "Bd1": {"id": 201, "type": "daily", "recommended_map": ["B-5-3-P"]},
-                "2610B2": {"id": 985, "type": "weekly"},
-                "Bw1": {"id": 214, "type": "weekly", "map_context": [{"name": "C9"}]},
-            })
-            self._write(tmp, "data/other/quest_stuff.json", {"Zz9": {}})   # 不讀
+            self._write(
+                tmp,
+                "data/quests/quests.json",
+                {
+                    "Bd1": {"id": 201, "type": "daily", "recommended_map": ["B-5-3-P"]},
+                    "2610B2": {"id": 985, "type": "weekly"},
+                    "Bw1": {
+                        "id": 214,
+                        "type": "weekly",
+                        "map_context": [{"name": "C9"}],
+                    },
+                },
+            )
+            self._write(tmp, "data/other/quest_stuff.json", {"Zz9": {}})  # not read
             cat = M.load_quest_catalog(tmp)
             self.assertEqual([q.id for q in cat], ["Bd1", "2610B2", "Bw1"])
             self.assertEqual(cat[0].note, "#201 daily")
@@ -344,7 +426,7 @@ class QuestTests(unittest.TestCase):
     def test_real_quests_file_if_present(self):
         path = os.environ.get("KCAUTO_QUESTS")
         if not path:
-            self.skipTest("設 KCAUTO_QUESTS=<quests.json> 可檢查實際檔案")
+            self.skipTest("set KCAUTO_QUESTS=<quests.json> to check the real file")
         with tempfile.TemporaryDirectory() as tmp:
             target = Path(tmp) / "data/quests/quests.json"
             target.parent.mkdir(parents=True)
@@ -399,7 +481,7 @@ class WheelModelTests(unittest.TestCase):
         self.assertEqual(M.map_node_items(nodes, "1", "1"), ["—"])
         self.assertEqual(M.map_node_items(None, "2", "2"), ["—"])
         self.assertEqual(M.map_node_items(nodes, "auto", "—"), ["—"])
-        # 目前值不在 noro6 內也保留,不會一打開就被悄悄改掉
+        # a current value not in noro6 is also kept, so opening does not silently change it
         self.assertEqual(M.map_node_items(nodes, "2", "2", "Z"), ["—", "A", "Z"])
         f = SCHEMA["combat.sortie_map"]
         for node in ("A", "G", "Z"):
@@ -410,7 +492,9 @@ class WheelModelTests(unittest.TestCase):
         self.assertEqual(len(M.map_number_items("7")), 4)
         self.assertEqual(len(M.map_number_items("E")), M.EVENT_MAPS)
         self.assertEqual(M.map_number_items("auto"), ["—"])
-        self.assertEqual(len(M.map_number_items("2", 8)), 8)       # 既有值超出時延伸
+        self.assertEqual(
+            len(M.map_number_items("2", 8)), 8
+        )  # extend when the existing value is out of range
         self.assertIn("E", M.world_items())
         self.assertIn("2610", M.world_items("2610"))
 
@@ -422,7 +506,7 @@ class WheelModelTests(unittest.TestCase):
                 self.assertEqual(f.validate(M.build_map(world, n, "A")), [], (world, n))
 
     def test_resource_layout(self):
-        """配方 2×2:上 fuel/steel,下 ammo/bauxite;設定檔順序仍是 fuel, ammo, steel, bauxite。"""
+        """Recipe 2×2: top fuel/steel, bottom ammo/bauxite; the config order is still fuel, ammo, steel, bauxite."""
         names = [r[0] for r in M.RESOURCES]
         self.assertEqual(names, ["fuel", "ammo", "steel", "bauxite"])
         place = {r[0]: (r[2], r[3]) for r in M.RESOURCES}
@@ -430,12 +514,14 @@ class WheelModelTests(unittest.TestCase):
         self.assertEqual(place["steel"], (0, 1))
         self.assertEqual(place["ammo"], (1, 0))
         self.assertEqual(place["bauxite"], (1, 1))
-        self.assertEqual(len({r[1] for r in M.RESOURCES}), 4)           # 四種顏色各不相同
+        self.assertEqual(
+            len({r[1] for r in M.RESOURCES}), 4
+        )  # the four colours are all different
 
     def test_adjust_value(self):
         f = SCHEMA["combat.retreat_limit"]
         self.assertEqual(M.adjust_value(f, 2, 1), 3)
-        self.assertEqual(M.adjust_value(f, 4, 1), 4)            # 到頭不循環
+        self.assertEqual(M.adjust_value(f, 4, 1), 4)  # no wrap-around at the end
         self.assertEqual(M.adjust_value(f, 0, -1), 0)
         self.assertEqual(M.adjust_value(SCHEMA["combat.enabled"], False, 1), True)
         self.assertEqual(M.adjust_value(SCHEMA["combat.enabled"], True, -1), False)
@@ -448,15 +534,20 @@ class WheelModelTests(unittest.TestCase):
 class AdjustTests(unittest.TestCase):
     def test_enter_style_wrap_on_ints_and_bools(self):
         f = SCHEMA["combat.retreat_limit"]
-        self.assertEqual(M.adjust_value(f, 4, 1, wrap=True), 0)       # 到頭繞回
+        self.assertEqual(
+            M.adjust_value(f, 4, 1, wrap=True), 0
+        )  # wraps around at the end
         self.assertEqual(M.adjust_value(f, 0, -1, wrap=True), 4)
         self.assertEqual(M.adjust_value(f, 2, 1, wrap=True), 3)
-        self.assertEqual(M.adjust_value(f, 4, 1), 4)                  # ← → 不繞
+        self.assertEqual(M.adjust_value(f, 4, 1), 4)  # ← → do not wrap
         b = SCHEMA["combat.enabled"]
-        self.assertEqual(M.adjust_value(b, True, 1, wrap=True), False)  # Enter = 反轉
+        self.assertEqual(M.adjust_value(b, True, 1, wrap=True), False)  # Enter = toggle
         self.assertEqual(M.adjust_value(b, False, 1, wrap=True), True)
-        self.assertEqual(M.adjust_value(b, True, 1), True)            # → 永遠是 on
+        # switches cycle: both ← and → flip, there is no "stuck at on / off" end
+        self.assertEqual(M.adjust_value(b, True, 1), False)
+        self.assertEqual(M.adjust_value(b, False, 1), True)
         self.assertEqual(M.adjust_value(b, True, -1), False)
+        self.assertEqual(M.adjust_value(b, False, -1), True)
 
     def test_wrap_ignores_garbage_values(self):
         f = SCHEMA["combat.retreat_limit"]
@@ -469,8 +560,9 @@ class AdjustTests(unittest.TestCase):
         self.assertTrue(M.can_adjust(f, 4, -1))
         self.assertFalse(M.can_adjust(f, 0, -1))
         b = SCHEMA["combat.enabled"]
-        self.assertFalse(M.can_adjust(b, True, 1))
-        self.assertTrue(M.can_adjust(b, True, -1))
+        for value in (True, False):  # switches cycle: both arrows work
+            self.assertTrue(M.can_adjust(b, value, 1))
+            self.assertTrue(M.can_adjust(b, value, -1))
         self.assertTrue(M.can_adjust(SCHEMA["combat.fleet_mode"], "standard", 1))
 
 
@@ -489,12 +581,18 @@ class PresetWheelModelTests(unittest.TestCase):
         self.assertEqual(M.preset_wheel_current(self.LIST, []), "disable")
         self.assertEqual(M.preset_wheel_current(self.LIST, [3]), "3")
         self.assertEqual(M.preset_wheel_current(self.LIST, ["auto"]), "auto")
-        self.assertEqual(M.preset_wheel_current(self.LIST, [7, 9]), "7")     # 多個:取第一個
+        self.assertEqual(
+            M.preset_wheel_current(self.LIST, [7, 9]), "7"
+        )  # several: take the first
         self.assertEqual(M.preset_wheel_current(self.LIST, "junk"), "disable")
         self.assertEqual(M.preset_wheel_current(self.PVP, None), "disable")
-        self.assertEqual(M.preset_wheel_current(self.PVP, 0), "disable")     # 0 也是不使用
+        self.assertEqual(
+            M.preset_wheel_current(self.PVP, 0), "disable"
+        )  # 0 also means not used
         self.assertEqual(M.preset_wheel_current(self.PVP, "auto"), "auto")
-        self.assertEqual(M.preset_wheel_current(self.PVP, 99), "disable")    # 對不上 → disable
+        self.assertEqual(
+            M.preset_wheel_current(self.PVP, 99), "disable"
+        )  # no match → disable
 
     def test_list_field_always_gets_exactly_one_element(self):
         for token in M.preset_wheel_tokens(self.LIST):
@@ -504,26 +602,39 @@ class PresetWheelModelTests(unittest.TestCase):
         self.assertEqual(M.preset_wheel_result(self.LIST, "disable"), [])
         self.assertEqual(M.preset_wheel_result(self.LIST, "auto"), ["auto"])
         self.assertEqual(M.preset_wheel_result(self.LIST, "7", []), [7])
-        self.assertEqual(M.preset_wheel_result(self.LIST, "7", ["1"]), ["7"])   # 沿用字串型別
+        self.assertEqual(
+            M.preset_wheel_result(self.LIST, "7", ["1"]), ["7"]
+        )  # keep the string type
 
     def test_pvp_results_are_valid(self):
         for token in M.preset_wheel_tokens(self.PVP):
-            self.assertEqual(self.PVP.validate(M.preset_wheel_result(self.PVP, token)), [], token)
+            self.assertEqual(
+                self.PVP.validate(M.preset_wheel_result(self.PVP, token)), [], token
+            )
         self.assertIsNone(M.preset_wheel_result(self.PVP, "disable", None))
-        self.assertEqual(M.preset_wheel_result(self.PVP, "disable", 0), 0)    # 原本是 0 就維持 0
+        self.assertEqual(
+            M.preset_wheel_result(self.PVP, "disable", 0), 0
+        )  # if it was 0 it stays 0
 
     def test_every_disabled_spelling_displays_as_disable(self):
-        for f, values in ((self.LIST, [[], None]), (self.PVP, [None, 0]),
-                          (SCHEMA["expedition.fleet_preset"], [None])):
+        for f, values in (
+            (self.LIST, [[], None]),
+            (self.PVP, [None, 0]),
+            (SCHEMA["expedition.fleet_preset"], [None]),
+        ):
             for v in values:
                 self.assertEqual(M.format_value(f, v), "disable", (f.key, v))
         self.assertEqual(M.format_value(self.LIST, [7]), "7")
         self.assertEqual(M.format_value(self.PVP, "auto"), "auto")
-        self.assertEqual(M.format_value(SCHEMA["combat.retreat_points"], []), "(empty)")  # 其他欄位不受影響
+        self.assertEqual(
+            M.format_value(SCHEMA["combat.retreat_points"], []), "(empty)"
+        )  # other fields are unaffected
 
     def test_expedition_preset_is_an_enum_with_disable_first(self):
         f = SCHEMA["expedition.fleet_preset"]
-        self.assertEqual(M.editor_for(f), "choice")                 # enum:選取後用 ← → 調整
+        self.assertEqual(
+            M.editor_for(f), "choice"
+        )  # enum: after selecting, adjust with ← →
         self.assertTrue(M.adjustable(f))
         self.assertEqual([v for _, v in M.enum_options(f)], [None, "auto"])
 
@@ -572,3 +683,69 @@ class JsonTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class RecipePresetLoadTests(unittest.TestCase):
+    def _write(self, root, name, data):
+        d = Path(root) / "data" / "factory"
+        d.mkdir(parents=True, exist_ok=True)
+        (d / name).write_text(json.dumps(data), encoding="utf-8")
+
+    def test_loads_develop_presets(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._write(
+                root,
+                "develop_recipe_preset.json",
+                {
+                    "radar": {
+                        "factory.develop_recipe": [10, 10, 250, 250],
+                        "factory.develop_secretary": "CV",
+                        "comment": "Radar",
+                    },
+                    "Swordfish": {
+                        "factory.develop_recipe": [20, 60, 10, 110],
+                        "factory.develop_secretary": 14860,
+                        "comment": "",
+                    },
+                    "bad": {"factory.develop_recipe": [1, 2, 3]},
+                    "worse": 5,
+                },
+            )
+            presets = M.load_recipe_presets(root, "develop")
+            self.assertEqual([p.name for p in presets], ["radar", "Swordfish"])
+            self.assertEqual(presets[0].recipe, (10, 10, 250, 250))
+            self.assertEqual(presets[0].secretary, "CV")
+            self.assertEqual(presets[1].secretary, 14860)
+
+    def test_build_uses_construct_file_and_zero_secretary(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._write(
+                root,
+                "construct_recipe_preset.json",
+                {
+                    "Daily": {
+                        "factory.build_recipe": [30, 30, 30, 30],
+                        "factory.build_secretary": 0,
+                        "comment": "",
+                    }
+                },
+            )
+            [p] = M.load_recipe_presets(root, "build")
+            self.assertEqual((p.name, p.recipe, p.secretary), ("Daily", (30,) * 4, 0))
+            self.assertEqual(M.load_recipe_presets(root, "develop"), [])
+
+    def test_missing_or_broken_file(self):
+        with tempfile.TemporaryDirectory() as root:
+            self.assertEqual(M.load_recipe_presets(root, "build"), [])
+            d = Path(root) / "data" / "factory"
+            d.mkdir(parents=True)
+            (d / "construct_recipe_preset.json").write_text("{oops", encoding="utf-8")
+            self.assertEqual(M.load_recipe_presets(root, "build"), [])
+
+
+class ShipTypeTests(unittest.TestCase):
+    def test_types_in_requested_order(self):
+        self.assertEqual(
+            " ".join(M.SHIP_TYPE_CODES),
+            "DE DD CL CLT CA CAV CVL FBB BB BBV CV SS SSV AV LHA CVB AR AS CT AO",
+        )

@@ -1,16 +1,20 @@
-"""kcauto 日誌行的 ANSI 解析。純 Python,不依賴 Rich / Textual。
+"""ANSI parsing for kcauto log lines. Pure Python, no Rich / Textual dependency.
 
-沿用舊 CUI 的顏色約定(``cui/util.py: print_log``):
-    91 → 錯誤、92 → 狀態、93 → 警告、94 → log;其餘一律視為 debug(預設色)。
+Keeps the colour convention of the old CUI (``cui/util.py: print_log``):
+    91 → error, 92 → status, 93 → warning, 94 → log; anything else is debug (default colour).
 
-舊版用 ``chunk.isdigit()`` 判斷,遇到 ``91;1`` 這類複合參數會把它當成文字印出來;
-這裡正確拆解參數,並丟棄游標移動、OSC 標題等非顏色序列,避免日誌出現亂碼。
+The old code used ``chunk.isdigit()``, so compound parameters such as ``91;1`` were printed
+as text; here the parameters are parsed properly, and non-colour sequences (cursor movement,
+OSC titles, ...) are dropped so the log never shows garbage.
 """
+
 from __future__ import annotations
 
 import re
 
-Segment = tuple[str, str]   # (文字, 樣式);樣式是 Rich 樣式字串,空字串 = 預設
+Segment = tuple[
+    str, str
+]  # (text, style); style is a Rich style string, empty string = default
 
 ERROR_STYLE = "#e06c75"
 STATUS_STYLE = "#98c379"
@@ -24,14 +28,14 @@ SGR_STYLES = {
     "94": LOG_STYLE,
 }
 
-# CSI:ESC [ 參數 中間字元 結尾字元;OSC:ESC ] ... (BEL 或 ESC \)
+# CSI: ESC [ params intermediates final; OSC: ESC ] ... (BEL or ESC \)
 _CSI = re.compile(r"\x1b\[([0-9;?]*)([ -/]*[@-~])")
 _OSC = re.compile(r"\x1b\][^\x07\x1b]*(?:\x07|\x1b\\)")
 _STRAY_ESC = re.compile(r"\x1b")
 
 
 def parse_ansi(text: str) -> list[Segment]:
-    """把含 ANSI 序列的一行拆成 (文字, 樣式) 區段;相鄰同樣式區段會合併。"""
+    """Split a line containing ANSI sequences into (text, style) segments; adjacent segments with the same style are merged."""
     text = _OSC.sub("", text)
     segments: list[Segment] = []
     style = ""
@@ -47,17 +51,17 @@ def parse_ansi(text: str) -> list[Segment]:
             segments.append((chunk, style))
 
     for match in _CSI.finditer(text):
-        add(text[pos:match.start()])
+        add(text[pos : match.start()])
         pos = match.end()
         if match.group(2) != "m":
-            continue                      # 非顏色序列:丟棄
+            continue  # Non-colour sequences: dropped
         params = match.group(1).split(";") if match.group(1) else ["0"]
         for param in params:
             if param in ("", "0"):
                 style = ""
             elif param in SGR_STYLES:
                 style = SGR_STYLES[param]
-            # 其他(粗體、底線、背景色、256 色…)忽略,維持目前樣式
+            # Others (bold, underline, background, 256 colours, ...) are ignored; keep the current style
     add(text[pos:])
     return segments
 

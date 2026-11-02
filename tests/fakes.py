@@ -1,4 +1,5 @@
-"""UI 測試用的假 Runner:介面與 ``tui.runner.Runner`` 相同,但不啟動任何行程。"""
+"""Fake Runner for UI tests: same interface as ``tui.runner.Runner`` but starts no process."""
+
 from tui.runner import ProcSample, RunState
 
 
@@ -11,7 +12,7 @@ class FakeRunner:
         self._state = RunState.STOPPED
         self._waiting = False
 
-    # --- 狀態 ----------------------------------------------------------- #
+    # --- state --------------------------------------------------------------- #
     @property
     def state(self):
         return self._state
@@ -26,7 +27,7 @@ class FakeRunner:
         if self.on_state:
             self.on_state(state, self.waiting_enter)
 
-    # --- 與 Runner 相同的操作 -------------------------------------------- #
+    # --- same operations as Runner ------------------------------------------- #
     async def start(self):
         self.calls.append("start")
         if self._state is not RunState.STOPPED:
@@ -82,7 +83,7 @@ class FakeRunner:
     def kill_now(self):
         self.calls.append("kill_now")
 
-    # --- 測試輔助 -------------------------------------------------------- #
+    # --- test helpers --------------------------------------------------------- #
     def emit(self, kind, text):
         self.on_log(kind, text)
 
@@ -91,6 +92,6 @@ class FakeRunner:
 
     @staticmethod
     def make_sample(**kw):
-        values = dict(pid=1234, uptime=192.0, cpu=12.0, rss=180 * 1024 ** 2)
+        values = dict(pid=1234, uptime=192.0, cpu=12.0, rss=180 * 1024**2)
         values.update(kw)
         return ProcSample(**values)

@@ -1,12 +1,13 @@
-"""ConfigStore:CUI 的設定資料層(與 UI、與 kcauto 行程皆無耦合)。
+"""ConfigStore: the CUI's config data layer (not coupled to the UI or the kcauto process).
 
-職責
-  * 載入:schema 預設值 ← 模板檔 ← 使用者設定檔,逐層覆蓋。
-  * 未知 key 一律保留並原樣寫回,避免新版 kcauto 加了欄位而被 CUI 吃掉。
-  * 追蹤修改(dirty / changed_keys),可還原單一欄位或全部。
-  * 驗證:單欄位 + 跨欄位,結果以 ``Issue`` 回報。
-  * 存檔:先備份,再「寫暫存檔 → fsync → os.replace」,bot 不會讀到寫到一半的 JSON。
+Responsibilities
+  * Loading: schema defaults ← template file ← user config file, each layer overriding the previous.
+  * Unknown keys are always kept and written back as-is, so a newer kcauto adding a field is not swallowed by the CUI.
+  * Track modifications (dirty / changed_keys); a single field or everything can be reverted.
+  * Validation: single field + cross-field, reported as ``Issue``.
+  * Saving: back up first, then "write temp file → fsync → os.replace", so the bot never reads half-written JSON.
 """
+
 from __future__ import annotations
 
 import copy
@@ -16,6 +17,7 @@ import tempfile
 from pathlib import Path
 from typing import Any, Callable, Iterable, Optional
 
+from . import akashi
 from .schema import (
     SCHEMA,
     Issue,
@@ -30,15 +32,15 @@ Listener = Callable[[Optional[str]], None]
 
 
 class ConfigLoadError(Exception):
-    """設定檔或模板無法讀取(不存在以外的原因,例如 JSON 損壞)。"""
+    """The config or template cannot be read (for reasons other than not existing, e.g. corrupt JSON)."""
 
 
 class ConfigValidationError(Exception):
-    """存檔時發現 error 等級的問題。"""
+    """An error-level issue was found when saving."""
 
     def __init__(self, issues: list[Issue]):
         self.issues = issues
-        super().__init__("設定包含錯誤:\n" + "\n".join(str(i) for i in issues))
+        super().__init__("Config has errors:\n" + "\n".join(str(i) for i in issues))
 
 
 def _read_json_object(path: Path) -> dict[str, Any]:
@@ -46,12 +48,15 @@ def _read_json_object(path: Path) -> dict[str, Any]:
         with open(path, "r", encoding="utf-8") as fh:
             data = json.load(fh)
     except json.JSONDecodeError as exc:
-        raise ConfigLoadError(f"{path} 不是有效的 JSON:{exc}") from exc
+        raise ConfigLoadError(f"{path} is not valid JSON: {exc}") from exc
     except OSError as exc:
-        raise ConfigLoadError(f"無法讀取 {path}:{exc}") from exc
+        raise ConfigLoadError(f"Cannot read {path}: {exc}") from exc
     if not isinstance(data, dict):
-        raise ConfigLoadError(f"{path} 的最上層必須是 JSON 物件")
+        raise ConfigLoadError(f"The top level of {path} must be a JSON object")
     return data
+
+
+PASSIVE_REPAIR_KEY = "passive_repair.enabled"
 
 
 class ConfigStore:
@@ -70,7 +75,7 @@ class ConfigStore:
         self.load()
 
     # ------------------------------------------------------------------ #
-    # 載入
+    # loading
     # ------------------------------------------------------------------ #
     def load(self) -> None:
         merged = defaults()
@@ -84,13 +89,17 @@ class ConfigStore:
         self._unknown_order = [k for k in merged if k not in SCHEMA]
         self._values = merged
         self._saved = copy.deepcopy(merged)
+        self.forced_notes: list[
+            str
+        ] = []  # settings that were forced to change (the UI shows a notification after reading them)
+        self._enforce()
         self._notify(None)
 
     # ------------------------------------------------------------------ #
-    # 讀寫
+    # read / write
     # ------------------------------------------------------------------ #
     def get(self, key: str) -> Any:
-        """回傳值的副本,外部修改不會影響內部狀態。"""
+        """Return a copy of the value; changing it outside does not affect the internal state."""
         return copy.deepcopy(self._values[key])
 
     def __contains__(self, key: str) -> bool:
@@ -103,40 +112,86 @@ class ConfigStore:
         return {k: copy.deepcopy(self._values[k]) for k in self._ordered_keys()}
 
     def set(self, key: str, value: Any) -> list[Issue]:
-        """設定欄位並回傳該欄位(含跨欄位)相關的問題。
+        """Set a field and return the issues related to it (including cross-field ones).
 
-        不合法的值仍會被保留(編輯器需要顯示使用者正在輸入的內容),
-        是否允許存檔/套用由 ``save`` 決定。
+        Invalid values are still kept (the editor needs to show what the user is typing); whether saving / applying is allowed is decided by ``save``.
         """
         value = copy.deepcopy(value)
         if key not in SCHEMA and key not in self._values:
             self._unknown_order.append(key)
+        was = self._values.get(key)
         self._values[key] = value
+        if key == akashi.ENABLED_KEY:  # Akashi repair switch: the rules follow it
+            self._values[akashi.SLOTS_KEY] = akashi.slots_for(
+                value is True, self._values.get(akashi.SLOTS_KEY)
+            )
+            self._notify(akashi.SLOTS_KEY)
+        self._enforce()
         self._notify(key)
+        if key == akashi.COMBAT_ENABLED_KEY and was is True and value is False:
+            self._combat_disabled()
         return self.issues_for(key)
 
+    def _combat_disabled(self) -> None:
+        """Combat was just switched off: turn Akashi repair and passive repair on.
+
+        Only a user toggle triggers this (not load / revert), and there is no reverse rule
+        for passive repair when combat is enabled. Notifies only if something changed.
+        """
+        changed = False
+        for key in (akashi.ENABLED_KEY, PASSIVE_REPAIR_KEY):
+            if self._values.get(key) is not True:
+                self.set(key, True)
+                changed = True
+        if changed:
+            self.forced_notes.append("combat_off")
+
     def reset_key(self, key: str) -> None:
-        """還原為 schema 預設值(未知欄位無預設,會被忽略)。"""
+        """Reset to the schema default (unknown fields have no default and are ignored)."""
         field = SCHEMA.get(key)
         if field is not None:
             self.set(key, field.make_default())
 
     def revert_key(self, key: str) -> None:
-        """還原為上次存檔(或載入)時的值。"""
+        """Revert to the value at the last save (or load)."""
         if key in self._saved:
             self._values[key] = copy.deepcopy(self._saved[key])
+            if key == akashi.ENABLED_KEY and akashi.SLOTS_KEY in self._saved:
+                self._values[akashi.SLOTS_KEY] = copy.deepcopy(
+                    self._saved[akashi.SLOTS_KEY]
+                )
+                self._notify(akashi.SLOTS_KEY)
+            self._enforce()
             self._notify(key)
 
     def revert_all(self) -> None:
         self._values = copy.deepcopy(self._saved)
+        self._enforce()
         self._notify(None)
 
+    def _enforce(self) -> None:
+        """Force Akashi repair off when combat is enabled (the rules are cleared too). Notifies only if something changed."""
+        if (
+            akashi.forced_off(self._values)
+            and self._values.get(akashi.ENABLED_KEY) is True
+        ):
+            self._values[akashi.ENABLED_KEY] = False
+            self._values[akashi.SLOTS_KEY] = {}
+            self.forced_notes.append("akashi")
+            self._notify(akashi.SLOTS_KEY)
+            self._notify(akashi.ENABLED_KEY)
+
+    def pop_forced(self) -> list[str]:
+        notes, self.forced_notes = self.forced_notes, []
+        return notes
+
     # ------------------------------------------------------------------ #
-    # 修改狀態
+    # modification state
     # ------------------------------------------------------------------ #
     def changed_keys(self) -> list[str]:
         return [
-            k for k in self._ordered_keys()
+            k
+            for k in self._ordered_keys()
             if k not in self._saved or self._values[k] != self._saved[k]
         ]
 
@@ -148,7 +203,7 @@ class ConfigStore:
         return key not in self._saved or self._values.get(key) != self._saved[key]
 
     # ------------------------------------------------------------------ #
-    # 驗證
+    # validation
     # ------------------------------------------------------------------ #
     def issues(self) -> list[Issue]:
         return validate_all(self._values)
@@ -162,10 +217,10 @@ class ConfigStore:
         return has_errors(self.issues())
 
     # ------------------------------------------------------------------ #
-    # 存檔
+    # saving
     # ------------------------------------------------------------------ #
     def save(self, *, force: bool = False, backup: bool = True) -> Path:
-        """原子寫入設定檔。有 error 等級問題時拒絕,除非 ``force=True``。"""
+        """Write the config file atomically. Refuses when there are error-level issues, unless ``force=True``."""
         problems = [i for i in self.issues() if i.level == "error"]
         if problems and not force:
             raise ConfigValidationError(problems)
@@ -205,7 +260,7 @@ class ConfigStore:
         self.backup_path.write_bytes(data)
 
     # ------------------------------------------------------------------ #
-    # 變更通知(給 UI 訂閱)
+    # change notification (for UI subscribers)
     # ------------------------------------------------------------------ #
     def subscribe(self, listener: Listener) -> None:
         self._listeners.append(listener)
@@ -220,7 +275,7 @@ class ConfigStore:
 
     # ------------------------------------------------------------------ #
     def _ordered_keys(self) -> Iterable[str]:
-        """schema 順序在前,未知欄位依原本出現順序接在後面。"""
+        """Schema order first; unknown fields follow in their original order of appearance."""
         for key in SCHEMA:
             if key in self._values:
                 yield key

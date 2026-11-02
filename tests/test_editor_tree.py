@@ -1,4 +1,5 @@
-"""JSON 樹狀編輯的純邏輯測試。"""
+"""Tests for the pure logic of the JSON tree editor."""
+
 import copy
 import unittest
 
@@ -11,10 +12,28 @@ def sample():
 
 class KindTests(unittest.TestCase):
     def test_kind_of(self):
-        cases = {None: "null", True: "bool", 3: "int", 1.5: "float", "s": "str",
-                 {}: "object", []: "list"} if False else [
-            (None, "null"), (True, "bool"), (False, "bool"), (3, "int"), (1.5, "float"),
-            ("s", "str"), ({}, "object"), ([], "list")]
+        cases = (
+            {
+                None: "null",
+                True: "bool",
+                3: "int",
+                1.5: "float",
+                "s": "str",
+                {}: "object",
+                []: "list",
+            }
+            if False
+            else [
+                (None, "null"),
+                (True, "bool"),
+                (False, "bool"),
+                (3, "int"),
+                (1.5, "float"),
+                ("s", "str"),
+                ({}, "object"),
+                ([], "list"),
+            ]
+        )
         for value, kind in cases:
             self.assertEqual(T.kind_of(value), kind, value)
 
@@ -41,7 +60,9 @@ class KindTests(unittest.TestCase):
         self.assertEqual(T.convert("2.5", "float"), 2.5)
         self.assertEqual(T.convert(3, "float"), 3.0)
         self.assertEqual(T.convert("x", "object"), {})
-        self.assertEqual(T.convert({"a": 1}, "str"), "")        # 容器不轉成字串
+        self.assertEqual(
+            T.convert({"a": 1}, "str"), ""
+        )  # containers are not converted to strings
         self.assertEqual(T.convert({"a": 1}, "object"), {"a": 1})
         self.assertIsNone(T.convert(5, "null"))
 
@@ -56,12 +77,14 @@ class EditTests(unittest.TestCase):
         self.assertEqual(root["1"]["rules"], ["a", None])
         T.delete_at(root, ("2",))
         self.assertNotIn("2", root)
-        self.assertEqual(T.set_at(root, (), [1]), [1])           # 取代根
+        self.assertEqual(T.set_at(root, (), [1]), [1])  # replace the root
 
     def test_add_child(self):
         root = sample()
         self.assertEqual(T.add_child(root, ("1",), "new", 5), ("1", "new"))
-        self.assertEqual(T.add_child(root, ("1", "rules"), None, "z"), ("1", "rules", 3))
+        self.assertEqual(
+            T.add_child(root, ("1", "rules"), None, "z"), ("1", "rules", 3)
+        )
         self.assertEqual(root["1"]["rules"][-1], "z")
         with self.assertRaises(ValueError):
             T.add_child(root, ("1",), None, 1)
@@ -78,7 +101,9 @@ class EditTests(unittest.TestCase):
         parent = {"a": 1, "b": 2}
         self.assertIsNone(T.key_error(parent, "c"))
         self.assertIn("exists", T.key_error(parent, "a"))
-        self.assertIsNone(T.key_error(parent, "a", current="a"))   # 改回自己的名字沒問題
+        self.assertIsNone(
+            T.key_error(parent, "a", current="a")
+        )  # renaming back to its own name is fine
         self.assertIn("empty", T.key_error(parent, "  "))
         self.assertEqual(T.unique_key({"new": 1, "new_2": 1}), "new_3")
 
@@ -101,7 +126,9 @@ class FlattenTests(unittest.TestCase):
         self.assertEqual(len(T.flatten(small, T.initial_expanded(small))), 8)
         big = {str(i): {"a": [1, 2, 3], "b": {"c": 1}} for i in range(30)}
         expanded = T.initial_expanded(big)
-        self.assertTrue(all(len(p) == 1 for p in expanded))     # 只展開第一層
+        self.assertTrue(
+            all(len(p) == 1 for p in expanded)
+        )  # only the first level is expanded
 
     def test_scalar_and_empty_root(self):
         self.assertEqual(T.flatten({}, set()), [])
@@ -131,7 +158,7 @@ class FlattenTests(unittest.TestCase):
         root = sample()
         work = T.make_working_copy(root)
         T.set_at(work, ("1", "ship"), 1)
-        self.assertEqual(root["1"]["ship"], 123)               # 原本的不受影響
+        self.assertEqual(root["1"]["ship"], 123)  # the original one is unaffected
 
 
 if __name__ == "__main__":

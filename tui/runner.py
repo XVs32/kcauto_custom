@@ -1,19 +1,19 @@
-"""kcauto 行程控制。與 Textual 無關,透過 callback 回報日誌與狀態。
+"""kcauto process control. Independent of Textual; reports log and state through callbacks.
 
-沿用舊 CUI(``cui/util.py``)的行為
-  * 指令:優先 ``./bin/kcauto_custom/kcauto_custom[.exe]``,否則 ``python kcauto``,
-    參數固定 ``--cli --cfg <config 名稱>``。
-  * 暫停:用 psutil 對行程 suspend / resume(整個行程凍結)。
-  * 輸出含 ``Press Enter to continue`` 時進入「等待 Enter」,由使用者決定何時往 stdin 寫入換行。
-  * 重新載入設定 = 結束行程後重新啟動(kcauto 沒有熱重載)。
+Keeps the behaviour of the old CUI (``cui/util.py``)
+  * Command: prefer ``./bin/kcauto_custom/kcauto_custom[.exe]``, otherwise ``python kcauto``,
+    with fixed arguments ``--cli --cfg <config name>``.
+  * Pause: suspend / resume the process with psutil (the whole process is frozen).
+  * When the output contains ``Press Enter to continue`` it enters "waiting for Enter" and the user decides when to write a newline to stdin.
+  * Reloading config = end the process and start it again (kcauto has no hot reload).
 
-與舊版不同(皆為修正)
-  * 結束行程時連同子行程一起結束,避免殘留(舊版只 kill 主行程)。
-  * 設定 PYTHONUNBUFFERED / PYTHONIOENCODING,日誌不會被管線緩衝延遲、
-    Windows 上也不會因 locale 編碼而亂碼。
-  * Python 備援模式使用 ``sys.executable``,不再依賴 PATH 上的 python / python3。
-  * 不會自動啟動;由使用者明確操作。
+Differences from the old version (all fixes)
+  * Ending the process also ends its child processes, so nothing is left behind (the old version only killed the main process).
+  * Sets PYTHONUNBUFFERED / PYTHONIOENCODING, so the log is not delayed by pipe buffering and is not garbled by the locale encoding on Windows.
+  * The Python fallback uses ``sys.executable`` instead of relying on python / python3 on PATH.
+  * Never starts automatically; the user must start it explicitly.
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -27,10 +27,10 @@ from typing import Callable, Optional, Sequence
 import psutil
 
 PROMPT = "Press Enter to continue"
-READ_LIMIT = 1 << 20          # 單行輸出上限(預設 64 KiB 太小)
+READ_LIMIT = 1 << 20  # per-line output limit (the default 64 KiB is too small)
 
-LOG_OUTPUT = "output"         # kcauto 的輸出(可能含 ANSI)
-LOG_SYSTEM = "system"         # CUI 自己的訊息
+LOG_OUTPUT = "output"  # kcauto output (may contain ANSI)
+LOG_SYSTEM = "system"  # messages from the CUI itself
 
 
 class RunState(str, Enum):
@@ -46,9 +46,9 @@ class UnsupportedPlatform(RuntimeError):
 @dataclass(frozen=True)
 class ProcSample:
     pid: int
-    uptime: float      # 秒
-    cpu: float         # %,可能超過 100(多核心)
-    rss: int           # bytes
+    uptime: float  # seconds
+    cpu: float  # %, may exceed 100 (multiple cores)
+    rss: int  # bytes
 
 
 # ---------------------------------------------------------------------- #
@@ -60,24 +60,28 @@ def build_command(
     python: str = sys.executable,
     isfile: Callable[[str], bool] = os.path.isfile,
 ) -> tuple[list[str], str]:
-    """回傳 (指令, 要顯示在日誌的說明)。"""
+    """Return (command, a note to show in the log)."""
     if platform.startswith("linux"):
         filename = "kcauto_custom"
     elif platform in ("darwin", "win32"):
         filename = "kcauto_custom.exe"
     else:
-        raise UnsupportedPlatform(f"不支援的作業系統:{platform}")
+        raise UnsupportedPlatform(f"Unsupported platform: {platform}")
 
     args = ["--cli", "--cfg", config_name]
-    # 用絕對路徑:Windows 的 CreateProcess 對相對執行檔路徑的解析和 cwd 參數有出入
+    # Use an absolute path: on Windows CreateProcess resolves relative executable paths differently from the cwd argument
     exec_path = os.path.join(os.path.abspath(cwd), "bin", "kcauto_custom", filename)
     if isfile(exec_path):
-        return [exec_path, *args], f"從 {filename} 啟動 kcauto"
-    return [python, "kcauto", *args], f"找不到 {filename},改用 Python 啟動 kcauto"
+        return [exec_path, *args], f"Starting kcauto from {filename}"
+    return [
+        python,
+        "kcauto",
+        *args,
+    ], f"{filename} not found; starting kcauto with Python"
 
 
 def kill_tree(ps: Optional[psutil.Process], pid: int, timeout: float) -> None:
-    """結束行程與其所有子行程(包含被 suspend 的)。"""
+    """End the process and all its children (including suspended ones)."""
     try:
         root = ps if ps is not None else psutil.Process(pid)
     except psutil.Error:
@@ -91,14 +95,14 @@ def kill_tree(ps: Optional[psutil.Process], pid: int, timeout: float) -> None:
             proc.kill()
         except psutil.Error:
             pass
-    # 只等孫行程。直接子行程(procs 最後一個)的結束狀態必須留給 asyncio 讀取,
-    # 否則 asyncio 會回報 "exit status already read" 並拿到錯誤的 exit code。
+    # Only wait for grandchildren. The exit status of the direct child (the last in procs) must be left for asyncio to read,
+    # otherwise asyncio reports "exit status already read" and gets the wrong exit code.
     descendants = procs[:-1]
     if descendants:
         psutil.wait_procs(descendants, timeout=timeout)
 
 
-LogCallback = Callable[[str, str], None]            # (kind, text)
+LogCallback = Callable[[str, str], None]  # (kind, text)
 StateCallback = Callable[["RunState", bool], None]  # (state, waiting_enter)
 
 
@@ -131,7 +135,7 @@ class Runner:
         self._last_emitted: tuple[RunState, bool] | None = None
 
     # ------------------------------------------------------------------ #
-    # 狀態
+    # state
     # ------------------------------------------------------------------ #
     @property
     def is_alive(self) -> bool:
@@ -164,7 +168,7 @@ class Runner:
             self.on_log(kind, text)
 
     # ------------------------------------------------------------------ #
-    # 啟動 / 結束
+    # start / exit
     # ------------------------------------------------------------------ #
     def _build(self) -> tuple[Sequence[str], str]:
         if self._command_builder is not None:
@@ -184,7 +188,7 @@ class Runner:
         try:
             command, note = self._build()
         except UnsupportedPlatform as exc:
-            self._log(LOG_SYSTEM, f"無法啟動 kcauto:{exc}")
+            self._log(LOG_SYSTEM, f"Cannot start kcauto: {exc}")
             return False
         self._log(LOG_SYSTEM, note)
         try:
@@ -198,7 +202,7 @@ class Runner:
                 limit=READ_LIMIT,
             )
         except OSError as exc:
-            self._log(LOG_SYSTEM, f"啟動失敗:{exc}")
+            self._log(LOG_SYSTEM, f"Failed to start: {exc}")
             return False
 
         self._proc = proc
@@ -207,7 +211,7 @@ class Runner:
         self._stopping = False
         try:
             self._ps = psutil.Process(proc.pid)
-            self._ps.cpu_percent(None)       # 預熱,之後的取樣才有意義
+            self._ps.cpu_percent(None)  # warm-up, so later samples are meaningful
         except psutil.Error:
             self._ps = None
         self._reader = asyncio.create_task(self._read(proc))
@@ -215,7 +219,7 @@ class Runner:
         return True
 
     async def stop(self) -> bool:
-        """結束行程(含子行程)。原本就沒在跑時回傳 False。"""
+        """End the process (and its children). Returns False when it was not running."""
         proc = self._proc
         if proc is None or proc.returncode is not None:
             return False
@@ -231,13 +235,13 @@ class Runner:
         return True
 
     async def restart(self) -> bool:
-        """重新載入設定 = 結束後重新啟動(沒在跑就直接啟動)。"""
+        """Reload config = restart after ending (just start if it is not running)."""
         if await self.stop():
-            self._log(LOG_SYSTEM, "kcauto 重新啟動")
+            self._log(LOG_SYSTEM, "kcauto restarting")
         return await self.start()
 
     def kill_now(self) -> None:
-        """同步結束行程;給 App 關閉時的最後保險,不等待日誌收尾。"""
+        """End the process synchronously; a last safeguard when the App closes, does not wait for the log to finish."""
         proc = self._proc
         if proc is None or proc.returncode is not None:
             return
@@ -245,7 +249,7 @@ class Runner:
         kill_tree(self._ps, proc.pid, 1.0)
 
     # ------------------------------------------------------------------ #
-    # 暫停 / 繼續
+    # pause / resume
     # ------------------------------------------------------------------ #
     def pause(self) -> bool:
         if not self.is_alive or self._paused or self._ps is None:
@@ -253,10 +257,10 @@ class Runner:
         try:
             self._ps.suspend()
         except psutil.Error as exc:
-            self._log(LOG_SYSTEM, f"暫停失敗:{exc}")
+            self._log(LOG_SYSTEM, f"Pause failed: {exc}")
             return False
         self._paused = True
-        self._log(LOG_SYSTEM, "kcauto 已暫停")
+        self._log(LOG_SYSTEM, "kcauto paused")
         self._emit_state()
         return True
 
@@ -266,15 +270,15 @@ class Runner:
         try:
             self._ps.resume()
         except psutil.Error as exc:
-            self._log(LOG_SYSTEM, f"繼續失敗:{exc}")
+            self._log(LOG_SYSTEM, f"Resume failed: {exc}")
             return False
         self._paused = False
-        self._log(LOG_SYSTEM, "kcauto 已繼續")
+        self._log(LOG_SYSTEM, "kcauto resumed")
         self._emit_state()
         return True
 
     def toggle_pause(self) -> Optional[bool]:
-        """切換暫停/繼續,回傳切換後是否處於暫停;沒在執行時回傳 None。"""
+        """Toggle pause / resume; returns whether it is paused afterwards, or None when not running."""
         if not self.is_alive:
             return None
         if self._paused:
@@ -284,7 +288,7 @@ class Runner:
         return self._paused
 
     # ------------------------------------------------------------------ #
-    # 等待 Enter
+    # waiting for Enter
     # ------------------------------------------------------------------ #
     async def send_enter(self) -> bool:
         proc = self._proc
@@ -300,7 +304,7 @@ class Runner:
         return True
 
     # ------------------------------------------------------------------ #
-    # 取樣
+    # sampling
     # ------------------------------------------------------------------ #
     def sample(self) -> Optional[ProcSample]:
         ps = self._ps
@@ -318,7 +322,7 @@ class Runner:
             return None
 
     # ------------------------------------------------------------------ #
-    # 讀取輸出
+    # reading output
     # ------------------------------------------------------------------ #
     async def _read(self, proc: asyncio.subprocess.Process) -> None:
         try:
@@ -327,7 +331,7 @@ class Runner:
             while True:
                 try:
                     raw = await stream.readline()
-                except ValueError:                    # 單行超過 READ_LIMIT
+                except ValueError:  # a single line exceeded READ_LIMIT
                     raw = await stream.read(READ_LIMIT)
                 if not raw:
                     break
@@ -343,7 +347,7 @@ class Runner:
             self._finish(proc, code)
 
     def _finish(self, proc: asyncio.subprocess.Process, code: Optional[int]) -> None:
-        if proc is not self._proc:        # 已經被新的行程取代
+        if proc is not self._proc:  # already replaced by a newer process
             return
         stopping = self._stopping
         self._proc = None
@@ -352,7 +356,7 @@ class Runner:
         self._waiting = False
         self._stopping = False
         if stopping:
-            self._log(LOG_SYSTEM, "kcauto 已終止")
+            self._log(LOG_SYSTEM, "kcauto stopped")
         else:
-            self._log(LOG_SYSTEM, f"kcauto 已結束(exit code {code})")
+            self._log(LOG_SYSTEM, f"kcauto exited (exit code {code})")
         self._emit_state()

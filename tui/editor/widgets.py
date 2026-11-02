@@ -1,8 +1,8 @@
-"""編輯器用的小元件:清單、循環選單、preset 格子、可點擊的按鈕標籤。
+"""Small widgets for the editor: lists, cycling menus, preset grids, clickable button labels.
 
-全部自己畫(render)而不依賴 Textual 內建的 OptionList / Button / Select,
-這樣外觀一致,也不受各版本 API 差異影響。
+Everything is drawn by hand (render) instead of relying on Textual's built-in OptionList / Button / Select, so the look is consistent and not affected by API differences between versions.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -27,13 +27,13 @@ YELLOW = "#e5c07b"
 class Row:
     text: str
     selectable: bool = True
-    checked: Optional[bool] = None     # None:不畫勾選框
-    toggle: bool = False               # 點擊/空白鍵是「切換」而不是「選取」
+    checked: Optional[bool] = None  # None: no checkbox is drawn
+    toggle: bool = False  # a click / Space "toggles" instead of "selects"
     style: str = ""
 
 
 class PickList(Widget, can_focus=True):
-    """可捲動的單欄清單。上下鍵移動;Enter 選取;空白鍵切換勾選。"""
+    """Scrollable single-column list. Up/Down move; Enter selects; Space toggles the tick."""
 
     BINDINGS = [
         Binding("up", "move(-1)", show=False),
@@ -59,7 +59,7 @@ class PickList(Widget, can_focus=True):
             self.index = index
 
     class Moved(Message):
-        """游標移到另一項(用來即時更新路徑列、預覽等)。"""
+        """The cursor moved to another item (used to update the path row, previews, etc. live)."""
 
         def __init__(self, source: "PickList", index: int) -> None:
             super().__init__()
@@ -67,15 +67,21 @@ class PickList(Widget, can_focus=True):
             self.index = index
 
     class Edge(Message):
-        """已在最上/最下一項時又往外按:direction = -1 / +1。"""
+        """Pressed outward while already on the first / last item: direction = -1 / +1."""
 
         def __init__(self, source: "PickList", direction: int) -> None:
             super().__init__()
             self.source = source
             self.direction = direction
 
-    def __init__(self, rows: Sequence[Row] = (), *, max_visible: int = 10,
-                 empty: str = "(empty)", id: str | None = None) -> None:
+    def __init__(
+        self,
+        rows: Sequence[Row] = (),
+        *,
+        max_visible: int = 10,
+        empty: str = "(empty)",
+        id: str | None = None,
+    ) -> None:
         super().__init__(id=id)
         self.max_visible = max_visible
         self.empty = empty
@@ -109,7 +115,7 @@ class PickList(Widget, can_focus=True):
         return self.rows[self.cursor] if 0 <= self.cursor < len(self.rows) else None
 
     def move_cursor(self, delta: int, *, edge: bool = False) -> bool:
-        """往 delta 方向移動 |delta| 個可選項;回傳是否有動。"""
+        """Move |delta| selectable items in the direction of delta; returns whether it moved."""
         step = 1 if delta > 0 else -1
         i, remaining = self.cursor, abs(delta)
         while remaining:
@@ -166,6 +172,16 @@ class PickList(Widget, can_focus=True):
         else:
             self.post_message(self.Chosen(self, index))
 
+    def on_mouse_scroll_up(self, event: events.MouseScrollUp) -> None:
+        event.stop()
+        event.prevent_default()
+        self.move_cursor(-3)
+
+    def on_mouse_scroll_down(self, event: events.MouseScrollDown) -> None:
+        event.stop()
+        event.prevent_default()
+        self.move_cursor(3)
+
     def on_focus(self) -> None:
         self.refresh()
 
@@ -189,8 +205,10 @@ class PickList(Widget, can_focus=True):
             row = self.rows[i]
             line = Text(no_wrap=True, overflow="ellipsis")
             if row.checked is not None:
-                line.append("[x] " if row.checked else "[ ] ",
-                            style=GREEN if row.checked else DIM)
+                line.append(
+                    "[x] " if row.checked else "[ ] ",
+                    style=GREEN if row.checked else DIM,
+                )
             line.append(row.text, style=row.style)
             if i == self.cursor and row.selectable:
                 line.pad_right(max(0, width - line.cell_len))
@@ -203,7 +221,7 @@ class PickList(Widget, can_focus=True):
 
 # ---------------------------------------------------------------------- #
 class CycleBox(Widget, can_focus=True):
-    """用 ←/→ 或空白鍵在固定選項間循環的輸入格。Enter 送出。"""
+    """Input cell that cycles through fixed options with ←/→ or Space. Enter submits."""
 
     BINDINGS = [
         Binding("left", "cycle(-1)", show=False),
@@ -217,8 +235,9 @@ class CycleBox(Widget, can_focus=True):
             super().__init__()
             self.source = source
 
-    def __init__(self, options: Sequence[str], *, value: str | None = None,
-                 id: str | None = None) -> None:
+    def __init__(
+        self, options: Sequence[str], *, value: str | None = None, id: str | None = None
+    ) -> None:
         super().__init__(id=id)
         self.options = list(options)
         self.value = value if value in self.options else self.options[0]
@@ -248,14 +267,16 @@ class CycleBox(Widget, can_focus=True):
 
     def render(self) -> Text:
         style = "bold #e8eaed on #3a4150" if self.has_focus else "on #242932"
-        return Text(f" ‹ {self.value} › ", style=style, no_wrap=True, overflow="ellipsis")
+        return Text(
+            f" ‹ {self.value} › ", style=style, no_wrap=True, overflow="ellipsis"
+        )
 
 
 # ---------------------------------------------------------------------- #
 class PresetGrid(Widget, can_focus=True):
-    """艦隊 preset 的格子:1~15、auto(單選時另有 null、0)。
+    """Fleet preset grid: 1-15, auto (plus null and 0 for single choice).
 
-    multi=True 時可複選,並記錄點選順序(順序就是寫進設定檔的順序)。
+    With multi=True several can be chosen and the click order is recorded (the order is the order written to the config).
     """
 
     COLS = 5
@@ -275,8 +296,14 @@ class PresetGrid(Widget, can_focus=True):
             super().__init__()
             self.source = source
 
-    def __init__(self, tokens: Sequence[str], selected: Sequence[str], *,
-                 multi: bool, id: str | None = None) -> None:
+    def __init__(
+        self,
+        tokens: Sequence[str],
+        selected: Sequence[str],
+        *,
+        multi: bool,
+        id: str | None = None,
+    ) -> None:
         super().__init__(id=id)
         self.tokens = list(tokens)
         self.multi = multi
@@ -311,7 +338,9 @@ class PresetGrid(Widget, can_focus=True):
 
     def action_accept(self) -> None:
         if not self.multi:
-            self._toggle_at(self.cursor)       # 單選:Enter 同時選取並確定
+            self._toggle_at(
+                self.cursor
+            )  # single choice: Enter selects and confirms at the same time
         self.post_message(self.Accepted(self))
 
     def on_click(self, event: events.Click) -> None:
@@ -348,8 +377,18 @@ class PresetGrid(Widget, can_focus=True):
 
 
 # ---------------------------------------------------------------------- #
-class ActionLabel(Static):
-    """可點擊的小按鈕,例如 [ OK ] [ Cancel ]。"""
+class ActionLabel(Static, can_focus=True):
+    """Small button that can be clicked or operated with the keyboard, e.g. [ OK ] [ Cancel ].
+
+    ↓ past the end of a list jumps to this row; ← → move between buttons, Enter / Space presses, ↑ returns to the list.
+    """
+
+    BINDINGS = [
+        Binding("enter,space", "press", show=False),
+        Binding("left", "sibling(-1)", show=False),
+        Binding("right", "sibling(1)", show=False),
+        Binding("up", "back", show=False),
+    ]
 
     class Clicked(Message):
         def __init__(self, source: "ActionLabel", command: str) -> None:
@@ -369,41 +408,61 @@ class ActionLabel(Static):
         event.stop()
         self.post_message(self.Clicked(self, self.command))
 
+    def action_press(self) -> None:
+        self.post_message(self.Clicked(self, self.command))
+
+    def action_sibling(self, delta: int) -> None:
+        row = [
+            w
+            for w in (self.parent.children if self.parent else [])
+            if isinstance(w, ActionLabel)
+        ]
+        if self in row:
+            target = row.index(self) + delta
+            if 0 <= target < len(row):
+                row[target].focus()
+
+    def action_back(self) -> None:
+        back = getattr(self.screen, "return_from_buttons", None)
+        if back is not None:
+            back()
+
 
 # ---------------------------------------------------------------------- #
 @dataclass
 class Wheel:
-    """一個滾輪:items 為顯示文字,index 為目前選中的項目。"""
+    """One wheel: items are the display text, index is the currently selected item."""
+
     items: list[str]
     index: int = 0
-    label: str = ""             # 顯示在滾輪上方的標題;有標題的滾輪同時是「一組」的起點
-    span: int = 1               # 標題橫跨幾個滾輪(一個數字由多位數滾輪組成時使用)
-    wrap: bool = True           # 滾到盡頭是否繞回另一端
-    gap: int = 1                # 與同一排前一個滾輪之間空幾格(同一個數字的位數之間用 0)
-    divider: bool = False       # gap 夠寬(>= 3)時在中間畫一條分隔線,分開不同的資源 / 欄位
-    tight: bool = False         # 窄版:寬度只比內容多 1 格(逐位數滾輪用)
-    row: int = 0                # 第幾排(配方用 2×2 排版)
-    color: str = ""             # 該組的顏色(標題與選中列);空字串 = 預設黃色
+    label: str = ""  # title shown above the wheel; a wheel with a title is also the start of a "group"
+    span: int = 1  # how many wheels the title spans (used when one number is made of several digit wheels)
+    wrap: bool = True  # whether scrolling past the end wraps to the other end
+    gap: int = 1  # blank cells between this wheel and the previous one in the same row (0 between the digits of one number)
+    divider: bool = False  # when gap is wide enough (>= 3) draw a divider in the middle, separating different resources / fields
+    tight: bool = False  # narrow: the width is only 1 cell more than the content (for digit-by-digit wheels)
+    row: int = 0  # which row (used for the recipe's 2×2 layout)
+    color: str = ""  # colour of this group (title and selected row); empty string = default yellow
 
 
 DEFAULT_WHEEL_COLOR = "#e5c07b"
 
 
 class WheelPicker(Widget, can_focus=True):
-    """像手機鬧鐘的滾輪選擇器。
+    """Wheel picker like a phone alarm clock.
 
-    一般模式:← → 換滾輪;↑ ↓ 滾動(↑ = 上一個值,↓ = 下一個值);Enter 確定。
+    Normal mode: ← → change wheel; ↑ ↓ scroll (↑ = previous value, ↓ = next value); Enter confirms.
 
-    分組模式(``grouped=True``,配方這類「好幾個數字」用)分兩層:
-      第一層 選資源:← → ↑ ↓ 在各組(與下方的 OK / Cancel)之間移動,Enter 進入該組;
-      第二層 調數字:← → 在該組的位數間移動,↑ ↓ 滾動,Enter 確定並回到第一層,
-                     Esc 放棄這一組的修改並回到第一層(由對話框呼叫 ``leave_digits``)。
-    Tab / Shift+Tab:一般模式跳到下一組;分組模式在第一層依閱讀順序移動。
-    滑鼠:點上/下方的項目會滾到那一項(分組模式會同時進入第二層);滑鼠滾輪滾動所在的滾輪。
-    每次數值變動送出 ``Changed``,對話框可據此即時驗證或連動其他滾輪。
+    Grouped mode (``grouped=True``, for things like a recipe with "several numbers") has two levels:
+      Level 1 pick a resource: ← → ↑ ↓ move between groups (and the OK / Cancel below), Enter goes into the group;
+      Level 2 adjust the number: ← → move between the digits of the group, ↑ ↓ scroll, Enter confirms and returns to level 1,
+                     Esc discards this group's change and returns to level 1 (the dialog calls ``leave_digits``).
+    Tab / Shift+Tab: in normal mode jump to the next group; in grouped mode move in reading order at level 1.
+    Mouse: clicking an item above / below scrolls to it (in grouped mode it also enters level 2); the mouse wheel scrolls the wheel under the pointer.
+    Every value change sends ``Changed``, so the dialog can validate live or drive other wheels.
     """
 
-    VISIBLE = 5          # 預設一次看到幾列(中間那列是選中的);空間不足時可縮成 3
+    VISIBLE = 5  # how many rows are visible by default (the middle one is selected); can shrink to 3 when space is short
 
     BINDINGS = [
         Binding("left", "column(-1)", show=False),
@@ -429,47 +488,72 @@ class WheelPicker(Widget, can_focus=True):
             self.source = source
 
     class Cancelled(Message):
-        """分組模式下在 Cancel 格按 Enter / 點擊。"""
+        """In grouped mode, Enter / click on the Cancel cell."""
 
         def __init__(self, source: "WheelPicker") -> None:
             super().__init__()
             self.source = source
 
+    class Leave(Message):
+        """In grouped mode, level 1 is already at the far left / top and the key was pressed outward: direction = "left" / "up" (lets the dialog move focus)."""
+
+        def __init__(self, source: "WheelPicker", direction: str) -> None:
+            super().__init__()
+            self.source = source
+            self.direction = direction
+
     class LevelChanged(Message):
-        """分組模式切換第一層 / 第二層:level = "group" / "digit"。"""
+        """Grouped mode switched between level 1 / level 2: level = "group" / "digit"."""
 
         def __init__(self, source: "WheelPicker", level: str) -> None:
             super().__init__()
             self.source = source
             self.level = level
 
-    def __init__(self, wheels: Sequence[Wheel], *, id: str | None = None,
-                 grouped: bool = False, buttons: Sequence[str] = ()) -> None:
+    def __init__(
+        self,
+        wheels: Sequence[Wheel],
+        *,
+        id: str | None = None,
+        grouped: bool = False,
+        buttons: Sequence[str] = (),
+    ) -> None:
         super().__init__(id=id)
         self.wheels = list(wheels)
         self.col = 0
         self.rows_shown = self.VISIBLE
         self.grouped = grouped
-        self.button_labels = list(buttons)         # 分組模式下方的 OK / Cancel 格
+        self.button_labels = list(
+            buttons
+        )  # the OK / Cancel cells below in grouped mode
         self.level = "group" if grouped else "digit"
-        self.gpos = (0, 0)                   # 第一層游標:(第幾列目標, 該列第幾個)
-        self._entry: dict[int, int] = {}     # 進入第二層時各位數的值,Esc 用來還原
+        self.gpos = (0, 0)  # level-1 cursor: (which row target, which one in that row)
+        self._entry: dict[
+            int, int
+        ] = {}  # values of the digits when entering level 2, used by Esc to restore
         self._labels = any(w.label for w in self.wheels)
         self._apply_height()
 
     def _extra_lines(self) -> int:
-        return 2 if self.button_labels else 0       # 分隔線 + OK / Cancel 那一列
+        return 2 if self.button_labels else 0  # divider + the OK / Cancel row
 
     def _apply_height(self) -> None:
         self.styles.height = self.height_for(self.rows_shown)
 
+    def get_content_width(self, container, viewport) -> int:
+        """Used when width: auto (side by side with the preset list)."""
+        return max(cell_len(line) for line in str(self.render()).split("\n"))
+
     def height_for(self, visible: int) -> int:
         blocks = len(self._block_rows())
-        return (blocks * (visible + (1 if self._labels else 0)) + (blocks - 1)
-                + self._extra_lines())
+        return (
+            blocks * (visible + (1 if self._labels else 0))
+            + (blocks - 1)
+            + self._extra_lines()
+        )
 
     def set_visible(self, visible: int) -> None:
-        """顯示幾列(奇數)。終端機太矮時縮成 3 列。"""
+        """How many rows to show (odd). Shrinks to 3 rows when the terminal is too short."""
         self.rows_shown = visible
         self._apply_height()
         self.refresh()
@@ -508,7 +592,7 @@ class WheelPicker(Widget, can_focus=True):
         self.refresh()
         self.post_message(self.Changed(self, column))
 
-    # --- 幾何:滾輪依 row 分成幾排,每排各自從 x=0 開始 ---------------------- #
+    # --- geometry: wheels are split into rows by row, each row starts at x=0 ------ #
     def _block_rows(self) -> list[list[int]]:
         rows: dict[int, list[int]] = {}
         for i, w in enumerate(self.wheels):
@@ -523,7 +607,7 @@ class WheelPicker(Widget, can_focus=True):
         for w in self.wheels:
             content = max(cell_len(i) for i in w.items)
             width = content + 1 if w.tight else max(3, content + 2)
-            if w.label and w.span == 1:              # 單一滾輪的標題要放得下
+            if w.label and w.span == 1:  # the title of a single wheel must fit
                 width = max(width, cell_len(w.label) + 1)
             widths.append(width)
         return widths
@@ -540,7 +624,7 @@ class WheelPicker(Widget, can_focus=True):
         return starts
 
     def _locate(self, x: int, y: int) -> tuple[int, int]:
-        """畫面座標 → (滾輪索引或 -1, 該排內的列位移:0=中間、-2=最上)。"""
+        """Screen coordinates → (wheel index or -1, row offset within that row: 0 = middle, -2 = top)."""
         height = self._block_height()
         block, inner = divmod(y, height + 1)
         rows = self._block_rows()
@@ -558,16 +642,18 @@ class WheelPicker(Widget, can_focus=True):
         return starts or [0]
 
     def _group_of(self, column: int) -> int:
-        """該滾輪所屬那一組的起點(有標題的滾輪)。"""
+        """Start of the group this wheel belongs to (a wheel with a title)."""
         starts = [s for s in self._group_starts() if s <= column]
         return starts[-1] if starts else 0
 
     def _group_range(self, start: int) -> range:
-        return range(start, min(start + max(1, self.wheels[start].span), len(self.wheels)))
+        return range(
+            start, min(start + max(1, self.wheels[start].span), len(self.wheels))
+        )
 
-    # --- 分組模式第一層:目標格(各組 + 下方的動作格)-------------------------- #
+    # --- grouped mode level 1: target cells (each group + the action cells below) --- #
     def _targets(self) -> list[list[tuple[str, Any]]]:
-        """每一列的目標:("group", 起點滾輪) 或 ("action", 名稱)。"""
+        """Target of each row: ("group", first wheel) or ("action", name)."""
         rows: list[list[tuple[str, Any]]] = []
         starts = set(self._group_starts())
         for members in self._block_rows():
@@ -593,7 +679,7 @@ class WheelPicker(Widget, can_focus=True):
     def _action_line(self) -> int:
         return self.height_for(self.rows_shown) - 1
 
-    # --- 動作 ----------------------------------------------------------- #
+    # --- actions ----------------------------------------------------------- #
     def _move_target(self, dr: int, dc: int) -> None:
         rows = self._targets()
         r, c = self.gpos
@@ -606,7 +692,7 @@ class WheelPicker(Widget, can_focus=True):
         self.refresh()
 
     def enter_digits(self, start: int, column: int | None = None) -> None:
-        """分組模式:進入第二層,調整該組的位數。記下目前的值,Esc 時還原。"""
+        """Grouped mode: enter level 2 and adjust this group's digits. Remembers the current values so Esc can restore them."""
         self.level = "digit"
         group = self._group_range(start)
         self.col = column if column is not None and column in group else start
@@ -615,7 +701,7 @@ class WheelPicker(Widget, can_focus=True):
         self.post_message(self.LevelChanged(self, "digit"))
 
     def leave_digits(self, *, revert: bool) -> None:
-        """回到第一層。revert=True 時還原這一組進入前的值(Esc)。"""
+        """Return to level 1. With revert=True restore this group's values from before entering (Esc)."""
         if not self.in_digits:
             return
         start = self._group_of(self.col)
@@ -630,28 +716,43 @@ class WheelPicker(Widget, can_focus=True):
 
     def action_column(self, direction: int) -> None:
         if self.grouped and self.level == "group":
+            if direction < 0 and self.gpos[1] == 0:
+                self.post_message(self.Leave(self, "left"))
+                return
             self._move_target(0, direction)
             return
         new = self.col + direction
         if self.in_digits and new not in self._group_range(self._group_of(self.col)):
-            return                                   # 第二層只在這一組的位數間移動
+            return  # level 2 only moves between this group's digits
         if 0 <= new < len(self.wheels):
             self.col = new
             self.refresh()
 
     def action_scroll(self, delta: int) -> None:
         if self.grouped and self.level == "group":
-            if abs(delta) == 1:                      # 第一層:↑ ↓ 換列
+            if abs(delta) == 1:  # level 1: ↑ ↓ change row
+                if delta < 0 and self.gpos[0] == 0:
+                    self.post_message(self.Leave(self, "up"))
+                    return
                 self._move_target(delta, 0)
             return
         self.scroll_wheel(self.col, delta)
 
     def action_group(self, direction: int) -> None:
         if self.grouped:
-            if self.level == "group":                # 依閱讀順序走過所有目標
-                flat = [(r, c) for r, row in enumerate(self._targets()) for c in range(len(row))]
-                at = flat.index((min(self.gpos[0], len(self._targets()) - 1),
-                                 self.gpos[1])) if self.gpos in flat else 0
+            if self.level == "group":  # walk through all targets in reading order
+                flat = [
+                    (r, c)
+                    for r, row in enumerate(self._targets())
+                    for c in range(len(row))
+                ]
+                at = (
+                    flat.index(
+                        (min(self.gpos[0], len(self._targets()) - 1), self.gpos[1])
+                    )
+                    if self.gpos in flat
+                    else 0
+                )
                 self.gpos = flat[min(max(at + direction, 0), len(flat) - 1)]
                 self.refresh()
             return
@@ -665,7 +766,7 @@ class WheelPicker(Widget, can_focus=True):
         if not self.grouped:
             self.post_message(self.Accepted(self))
         elif self.level == "digit":
-            self.leave_digits(revert=False)           # 確定這一組,回到第一層
+            self.leave_digits(revert=False)  # confirm this group and return to level 1
         else:
             kind, value = self._current_target()
             if kind == "group":
@@ -683,7 +784,9 @@ class WheelPicker(Widget, can_focus=True):
                 if x0 <= event.x < x1:
                     self.gpos = (len(self._targets()) - 1, i)
                     self.refresh()
-                    self.post_message(self.Accepted(self) if i == 0 else self.Cancelled(self))
+                    self.post_message(
+                        self.Accepted(self) if i == 0 else self.Cancelled(self)
+                    )
             return
         column, offset = self._locate(event.x, event.y)
         if column < 0:
@@ -714,9 +817,10 @@ class WheelPicker(Widget, can_focus=True):
         event.prevent_default()
         column, _ = self._locate(event.x, event.y)
         if column >= 0:
-            if self.grouped and not (self.in_digits and
-                                     self._group_of(self.col) == self._group_of(column)):
-                return                               # 分組模式要先進入該組才能滾動
+            if self.grouped and not (
+                self.in_digits and self._group_of(self.col) == self._group_of(column)
+            ):
+                return  # in grouped mode you must enter the group before you can scroll
             self.col = column
             self.scroll_wheel(column, delta)
 
@@ -732,7 +836,7 @@ class WheelPicker(Widget, can_focus=True):
     def on_blur(self) -> None:
         self.refresh()
 
-    # --- 繪製 ----------------------------------------------------------- #
+    # --- drawing ----------------------------------------------------------- #
     DIVIDER_STYLE = "#4b5263"
 
     @staticmethod
@@ -744,7 +848,7 @@ class WheelPicker(Widget, can_focus=True):
         return " " * g
 
     def _focus_group(self) -> int | None:
-        """分組模式下,目前被游標選中的那一組(游標在動作格時為 None)。"""
+        """In grouped mode, the group the cursor is on (None when the cursor is on an action cell)."""
         if not self.grouped:
             return None
         kind, value = self._current_target()
@@ -752,22 +856,27 @@ class WheelPicker(Widget, can_focus=True):
             return self._group_of(self.col)
         return value if kind == "group" else None
 
-    def _label_line(self, members: list[int], widths: list[int],
-                    starts: dict[int, int]) -> list[tuple[str, str]]:
-        """標題列:(文字, 樣式)片段。標題橫跨它的整組滾輪,組與組之間畫分隔線。"""
+    def _label_line(
+        self, members: list[int], widths: list[int], starts: dict[int, int]
+    ) -> list[tuple[str, str]]:
+        """Title row: (text, style) segments. A title spans all wheels of its group, with dividers drawn between groups."""
         out: list[tuple[str, str]] = []
         x = 0
         focus_group = self._focus_group()
         for k, idx in enumerate(members):
             w = self.wheels[idx]
             start = starts[idx]
-            if start < x:                               # 已被前一個標題涵蓋
+            if start < x:  # already covered by the previous title
                 continue
             if start > x:
                 gap = start - x
                 divider = k and w.divider and w.gap >= 3
-                out.append((self._gap_text(w) if divider else " " * gap,
-                            self.DIVIDER_STYLE if divider else ""))
+                out.append(
+                    (
+                        self._gap_text(w) if divider else " " * gap,
+                        self.DIVIDER_STYLE if divider else "",
+                    )
+                )
                 x = start
             if w.label:
                 last = members[min(k + w.span, len(members)) - 1]
@@ -783,7 +892,7 @@ class WheelPicker(Widget, can_focus=True):
         return out
 
     def _cell_style(self, idx: int, wheel: Wheel) -> str:
-        """中間那一列(選中的值)的樣式。"""
+        """Style of the middle row (the selected value)."""
         tint = wheel.color or DEFAULT_WHEEL_COLOR
         base = f"bold {wheel.color or '#e8eaed'}"
         if self.grouped:
@@ -791,12 +900,20 @@ class WheelPicker(Widget, can_focus=True):
             focus = self._focus_group()
             in_focus = focus is not None and idx in self._group_range(focus)
             if self.level == "group":
-                if in_focus:                              # 第一層:整組亮起
-                    return f"bold #0f1115 on {tint}" if self.has_focus else f"{base} on #3a4150"
+                if in_focus:  # level 1: the whole group lights up
+                    return (
+                        f"bold #0f1115 on {tint}"
+                        if self.has_focus
+                        else f"{base} on #3a4150"
+                    )
                 return f"{base} on #242932"
-            if in_focus:                                  # 第二層:這一組暗亮,正在調的那位最亮
+            if in_focus:  # level 2: this group is dimly lit, the digit being adjusted is brightest
                 if idx == self.col:
-                    return f"bold #0f1115 on {tint}" if self.has_focus else f"{base} on #3a4150"
+                    return (
+                        f"bold #0f1115 on {tint}"
+                        if self.has_focus
+                        else f"{base} on #3a4150"
+                    )
                 return f"{base} on #3a4150"
             return f"{base} on #242932"
         if idx == self.col:
@@ -814,8 +931,10 @@ class WheelPicker(Widget, can_focus=True):
 
         for b, members in enumerate(rows):
             if b:
-                text.append("\n")                      # 結束上一排的最後一列
-                text.append("─" * extent, style=self.DIVIDER_STYLE)     # 排與排之間的分隔線
+                text.append("\n")  # finish the last row of the previous line
+                text.append(
+                    "─" * extent, style=self.DIVIDER_STYLE
+                )  # divider between rows
                 text.append("\n")
             if self._labels:
                 for piece, style in self._label_line(members, widths, starts):
@@ -828,8 +947,9 @@ class WheelPicker(Widget, can_focus=True):
                         if wheel.divider and wheel.gap >= 3:
                             text.append(self._gap_text(wheel), style=self.DIVIDER_STYLE)
                         else:
-                            text.append(" " * wheel.gap,
-                                        style="on #242932" if r == 0 else "")
+                            text.append(
+                                " " * wheel.gap, style="on #242932" if r == 0 else ""
+                            )
                     n = len(wheel.items)
                     at = wheel.index + r
                     if wheel.wrap and n:
@@ -849,11 +969,18 @@ class WheelPicker(Widget, can_focus=True):
             text.append("\n")
             text.append("─" * extent, style=self.DIVIDER_STYLE)
             text.append("\n")
-            kind, value = self._current_target() if self.level == "group" else ("", None)
+            kind, value = (
+                self._current_target() if self.level == "group" else ("", None)
+            )
             for name, x0, x1 in self._action_cells():
                 chosen = kind == "action" and value == name
-                style = ("bold #0f1115 on #e5c07b" if chosen and self.has_focus
-                         else "bold #e8eaed on #3a4150" if chosen else "bold #e8eaed on #242932")
+                style = (
+                    "bold #0f1115 on #e5c07b"
+                    if chosen and self.has_focus
+                    else "bold #e8eaed on #3a4150"
+                    if chosen
+                    else "bold #e8eaed on #242932"
+                )
                 text.append(f"[ {name} ]", style=style)
                 text.append("  ")
         return text

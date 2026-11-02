@@ -1,4 +1,5 @@
-"""noro6 讀取:LZString 解壓縮與出擊節點索引。"""
+"""noro6 reading: LZString decompression and the sortie node index."""
+
 import json
 import os
 import random
@@ -18,11 +19,26 @@ def folder(name, *children):
     return {"name": name, "isDirectory": True, "childItems": list(children)}
 
 
-SAMPLE = {"savedata": folder("root", folder("1: sea",
-          preset("B-1-1"), preset("By2-1-1"), preset("B-2-2"), preset("B-2-2-A"),
-          preset("B-2-2-B-bak"), folder("old-bak", preset("B-9-9-X")),
-          preset("B-5-6-G"), preset("B-5-6-R"), preset("2610B2-2-2"), preset("D-A2"),
-          preset("B-7-2-G"), preset("B-7-2-M")))}
+SAMPLE = {
+    "savedata": folder(
+        "root",
+        folder(
+            "1: sea",
+            preset("B-1-1"),
+            preset("By2-1-1"),
+            preset("B-2-2"),
+            preset("B-2-2-A"),
+            preset("B-2-2-B-bak"),
+            folder("old-bak", preset("B-9-9-X")),
+            preset("B-5-6-G"),
+            preset("B-5-6-R"),
+            preset("2610B2-2-2"),
+            preset("D-A2"),
+            preset("B-7-2-G"),
+            preset("B-7-2-M"),
+        ),
+    )
+}
 
 
 def write(root, data, rel="configs/noro6/noro6"):
@@ -35,8 +51,13 @@ class LzStringTests(unittest.TestCase):
     def test_roundtrip(self):
         random.seed(7)
         samples = ["a", "abc", "艦これ" * 30, json.dumps(SAMPLE, ensure_ascii=False)]
-        samples += ["".join(random.choice("abcdef日本 {}\":,") for _ in range(random.randint(1, 1500)))
-                    for _ in range(40)]
+        samples += [
+            "".join(
+                random.choice('abcdef日本 {}":,')
+                for _ in range(random.randint(1, 1500))
+            )
+            for _ in range(40)
+        ]
         for text in samples:
             self.assertEqual(noro6.decompress_utf16(compress_utf16(text)), text)
 
@@ -52,13 +73,17 @@ class PresetTests(unittest.TestCase):
             names = noro6.load_preset_names(tmp)
         self.assertIn("B-2-2-A", names)
         self.assertNotIn("B-2-2-B-bak", names)
-        self.assertNotIn("B-9-9-X", names)               # -bak 資料夾連同子項都略過
+        self.assertNotIn(
+            "B-9-9-X", names
+        )  # -bak folders are skipped together with their children
 
     def test_sortie_nodes_only_plain_b_presets_with_a_node(self):
         with tempfile.TemporaryDirectory() as tmp:
             write(tmp, SAMPLE)
             index = noro6.load_sortie_nodes(tmp)
-        self.assertEqual(index, {("2", 2): ["A"], ("5", 6): ["G", "R"], ("7", 2): ["G", "M"]})
+        self.assertEqual(
+            index, {("2", 2): ["A"], ("5", 6): ["G", "R"], ("7", 2): ["G", "M"]}
+        )
 
     def test_falls_back_to_template(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -85,7 +110,9 @@ class PresetTests(unittest.TestCase):
     def test_real_file_if_provided(self):
         path = os.environ.get("KCAUTO_NORO6")
         if not path:
-            self.skipTest("設 KCAUTO_NORO6=<configs/noro6/noro6> 可檢查實際檔案")
+            self.skipTest(
+                "set KCAUTO_NORO6=<configs/noro6/noro6> to check the real file"
+            )
         with tempfile.TemporaryDirectory() as tmp:
             target = Path(tmp) / "configs/noro6/noro6"
             target.parent.mkdir(parents=True)

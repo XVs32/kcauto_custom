@@ -1,4 +1,5 @@
-"""窄視窗的純函式測試。"""
+"""Tests for the narrow-window pure functions."""
+
 import unittest
 
 from tui.editor import narrow as N
@@ -10,14 +11,18 @@ class FitSegmentsTests(unittest.TestCase):
     PARTS = [("title", 10), ("state", 8), ("mode", 12), ("file", 14), ("errors", 5)]
 
     def test_everything_fits(self):
-        self.assertEqual(fit_segments(self.PARTS, ("title", "mode"), 100),
-                         {"title", "state", "mode", "file", "errors"})
+        self.assertEqual(
+            fit_segments(self.PARTS, ("title", "mode"), 100),
+            {"title", "state", "mode", "file", "errors"},
+        )
 
     def test_unmeasured_width_keeps_all(self):
         self.assertEqual(len(fit_segments(self.PARTS, ("title", "mode"), 0)), 5)
 
     def test_drops_in_order_until_it_fits(self):
-        kept = fit_segments(self.PARTS, ("title", "mode"), 40)       # 總 49 → 丟 title 後 39
+        kept = fit_segments(
+            self.PARTS, ("title", "mode"), 40
+        )  # total 49 → 39 after dropping title
         self.assertEqual(kept, {"state", "mode", "file", "errors"})
         kept = fit_segments(self.PARTS, ("title", "mode"), 30)
         self.assertEqual(kept, {"state", "file", "errors"})
@@ -67,8 +72,11 @@ class TabsTests(unittest.TestCase):
     def test_always_fits_when_possible(self):
         for index in range(len(self.LABELS)):
             for width in (30, 40, 60, 71):
-                self.assertLessEqual(self.width(N.tabs_layout(self.LABELS, index, width)),
-                                     width, (index, width))
+                self.assertLessEqual(
+                    self.width(N.tabs_layout(self.LABELS, index, width)),
+                    width,
+                    (index, width),
+                )
 
     def test_wraps_around_at_the_ends(self):
         first = N.tabs_layout(self.LABELS, 0, 80)
@@ -82,7 +90,34 @@ class TabsTests(unittest.TestCase):
         self.assertEqual(N.tabs_step(30, 60), 0)
         self.assertEqual(N.tabs_step(40, 60), 1)
         self.assertEqual(N.tabs_step(59, 60), 1)
-        self.assertEqual(N.tabs_step(0, 1), -1)                      # 極窄也不除以零
+        self.assertEqual(
+            N.tabs_step(0, 1), -1
+        )  # no division by zero even when extremely narrow
+
+
+class TabsCenteredTests(unittest.TestCase):
+    LABELS = [e.label for e in MODULE_ENTRIES]
+
+    def _center(self, segs):
+        before = sum(
+            cell_len(t) for t, role in segs[: [r for _, r in segs].index("current")]
+        )
+        cur = next(t for t, r in segs if r == "current")
+        return before + cell_len(cur) / 2
+
+    def test_current_item_is_centered(self):
+        for width in (40, 60, 80):
+            for i in range(len(self.LABELS)):
+                segs = N.tabs_centered(self.LABELS, i, width)
+                total = sum(cell_len(t) for t, _ in segs)
+                self.assertLessEqual(total, width)
+                if any(r == "side" for _, r in segs):
+                    self.assertAlmostEqual(self._center(segs), width / 2, delta=1)
+
+    def test_falls_back_when_neighbours_do_not_fit(self):
+        segs = N.tabs_centered(self.LABELS, 2, 20)
+        self.assertFalse(any(r == "side" for _, r in segs))
+        self.assertLessEqual(sum(cell_len(t) for t, _ in segs), 20)
 
 
 class ArrowTests(unittest.TestCase):
@@ -105,9 +140,11 @@ class ArrowTests(unittest.TestCase):
         self.assertEqual(N.arrow_hit(zones, x0 - 1, 0), -1)
         self.assertEqual(N.arrow_hit(zones, x0 + 1, 0), -1)
         self.assertEqual(N.arrow_hit(zones, x0 + 2 + 4 + 1, 0), 1)
-        self.assertEqual(N.arrow_hit(zones, x0 + 4, 0), 0)            # 值的中間不算
-        self.assertEqual(N.arrow_hit(zones, x0, 1), 0)                # 錯的那一列
-        self.assertEqual(N.arrow_hit(zones, 3, 0), 0)                 # 標籤上
+        self.assertEqual(
+            N.arrow_hit(zones, x0 + 4, 0), 0
+        )  # the middle of the value does not count
+        self.assertEqual(N.arrow_hit(zones, x0, 1), 0)  # the wrong row
+        self.assertEqual(N.arrow_hit(zones, 3, 0), 0)  # on the label
 
 
 class HintTests(unittest.TestCase):

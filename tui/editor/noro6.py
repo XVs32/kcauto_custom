@@ -1,13 +1,11 @@
-"""讀取 noro6 設定檔(configs/noro6/noro6),找出出擊海域有哪些「指定目標節點」的預設。
+"""Read the noro6 config file (configs/noro6/noro6) and find which sortie maps have presets that "specify a target node".
 
-檔案格式與 fleet/noro6.py 相同:LZString(UTF-16)壓縮的 JSON,
-``savedata`` 是資料夾樹,葉節點的 ``name`` 就是預設名稱,例如
-``B-2-2``(2-2 一般預設)、``B-2-2-A``(2-2 目標節點 A)、``B-7-2-G``。
-名稱以 ``-bak`` 結尾的會被 kcauto 略過,這裡也一樣(連同其子項)。
+The file format is the same as fleet/noro6.py: JSON compressed with LZString (UTF-16); ``savedata`` is a folder tree whose leaf ``name`` is the preset name, e.g. ``B-2-2`` (2-2 general preset), ``B-2-2-A`` (2-2 target node A), ``B-7-2-G``.
+Names ending in ``-bak`` are skipped by kcauto, and here too (together with their children).
 
-這裡不直接 import fleet.noro6:它會連帶載入 constants、ships、logger 等整個
-kcauto 本體,而 CUI 的資料層不應依賴它們。解壓縮的實作只有幾十行,獨立維護。
+This does not import fleet.noro6 directly: that would also load constants, ships, logger and the rest of the kcauto core, which the CUI data layer should not depend on. The decompression is only a few dozen lines, so it is maintained separately.
 """
+
 from __future__ import annotations
 
 import json
@@ -17,12 +15,12 @@ from typing import Any, Optional
 
 NORO6_FILES = ("configs/noro6/noro6", "template/configs/noro6/noro6")
 
-# B-<世界>-<編號>[-<節點>]:一般出擊預設。任務用的 By2-1-1、2610B2-1-2 不會符合。
+# B-<world>-<number>[-<node>]: a normal sortie preset. Quest presets such as By2-1-1 and 2610B2-1-2 do not match.
 _SORTIE_PRESET = re.compile(r"B-([A-Za-z0-9]+)-(\d+)(?:-([A-Za-z0-9]+))?")
 
 
 def decompress_utf16(compressed: str) -> Optional[str]:
-    """LZString.decompressFromUTF16。格式不合時回傳 None。"""
+    """LZString.decompressFromUTF16. Returns None when the format is wrong."""
     if not compressed:
         return ""
     length = len(compressed)
@@ -117,7 +115,7 @@ def _collect(node: Any, out: list[str]) -> None:
 
 
 def load_preset_names(root: Path | str = ".") -> list[str]:
-    """檔案內所有(非 -bak)預設名稱,依檔案順序。讀不到或格式不對時回傳空清單。"""
+    """All (non -bak) preset names in the file, in file order. Returns an empty list when unreadable or malformed."""
     path = find_file(root)
     if path is None:
         return []
@@ -134,7 +132,7 @@ def load_preset_names(root: Path | str = ".") -> list[str]:
 
 
 def sortie_nodes(names: list[str]) -> dict[tuple[str, int], list[str]]:
-    """{(世界, 編號): [有指定目標節點的預設的節點名稱…]},例如 ("2", 2) → ["A"]。"""
+    """{(world, number): [node names of presets that specify a target node ...]}, e.g. ("2", 2) → ["A"]."""
     index: dict[tuple[str, int], list[str]] = {}
     for name in names:
         m = _SORTIE_PRESET.fullmatch(name)

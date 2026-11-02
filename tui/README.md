@@ -1,189 +1,181 @@
-# kcauto_custom CUI(重寫版)— 階段 4
+# kcauto_custom CUI (rewrite)
 
-## 安裝與執行
+A btop-style dashboard and full-screen config editor for kcauto_custom, built on
+[Textual](https://textual.textualize.io/). It edits `configs/config_cui.json`, starts and
+controls the kcauto process, and shows its log.
+
+## Install and run
 
 ```
-pip install "textual>=0.86" psutil   # Python 3.11
-python -m tui                # 請在專案根目錄執行;預設讀 configs/config_cui.json
-python -m tui --config PATH --template PATH --autostart
+pip install "textual>=0.86" psutil     # Python 3.11+
+python -m tui                          # run from the project root; reads configs/config_cui.json
+python -m tui --config PATH --template PATH --lang ja --autostart
 ```
 
-## 測試
+Run it from the project root: the CUI starts kcauto from the current working directory
+(`./bin/kcauto_custom/kcauto_custom[.exe]`, otherwise `python kcauto`) with
+`--cli --cfg <config name>`.
+
+| Option | Meaning |
+|---|---|
+| `--config PATH` | config file (default `configs/config_cui.json`) |
+| `--template PATH` | template file used for defaults |
+| `--lang CODE` | editor language: `en` (default), `zh_TW`, `ja` |
+| `--autostart` | start kcauto right after opening (off by default) |
+
+## Tests
 
 ```
 python -m unittest discover -s tests -t . -v
 ```
 
-- 純 Python 部分(schema、store、summaries)不需要 Textual。
-- `tests/test_app.py` 需要 Textual,沙盒中沒有執行過,請務必在實際環境跑一次。
-- 設 `KCAUTO_TEMPLATE=data/config/config_cui_template.json` 可檢查 schema 是否涵蓋實際模板。
+- The pure-Python parts (schema, store, summaries, model logic) need no Textual.
+- Without Textual, `tests/textual_stub.py` lets the dialog / widget *logic* run; the real UI
+  tests (`tests/test_app.py`, `tests/test_editor_ui.py`) need Textual and are skipped otherwise.
+- Set `KCAUTO_TEMPLATE=<template.json>`, `KCAUTO_QUESTS=<quests.json>` or
+  `KCAUTO_NORO6=<configs/noro6/noro6>` to check the schema / quest catalogue / noro6 reader
+  against your real files.
 
-## 目前可用
+## Dashboard
 
-| 操作 | 作用 |
+| Key | Action |
 |---|---|
-| 方向鍵 | 在方框間移動(焦點在日誌時改為捲動日誌) |
-| `c e p u s f r h v g` | 直接跳到該方框 |
-| Space / 點右下角 ON·OFF | 切換模組的 `enabled`;**焦點在日誌時改為暫停/繼續 kcauto** |
-| 單擊 / 雙擊·Enter | 聚焦 / 開啟全螢幕編輯器 |
-| `a` | **套用**:存檔後(重新)啟動 kcauto。有 error 時不啟動 |
-| `b` | 暫停/繼續 kcauto(任何位置) |
-| `k` | 停止 kcauto(連同子行程) |
-| `l` | 聚焦日誌;日誌因版面被隱藏時改為全螢幕日誌 |
-| Esc | 離開日誌 / 全螢幕日誌 |
-| 日誌上按 Enter | kcauto 輸出 `Press Enter to continue` 時送出 Enter |
-| `w` / `q` | 存檔 / 離開(有未儲存修改或 kcauto 仍在執行時會詢問) |
+| arrow keys | move between boxes; walking past the edge toward the log enters the log |
+| `c e p u s f r h v g` | jump straight to that module's box |
+| `x` / click ON·OFF at the bottom right | toggle the box's `enabled` |
+| Space | pause / resume kcauto (works anywhere on the dashboard) |
+| Enter / double-click | open the editor on that module |
+| `a` | apply: save, then (re)start kcauto (not started if there are errors) |
+| `l` | focus the log; when the log is hidden by the layout, show it full screen |
+| Esc | leave the log / full-screen log |
+| `t` | choose the editor language |
+| `w` / `q` | save / quit (asks if there are unsaved changes or kcauto is running) |
 
-## kcauto 行程控制(和舊版 CUI 的差異)
+On the log:
 
-沿用:啟動指令(`./bin/kcauto_custom/kcauto_custom[.exe]`,找不到才用 Python)、
-`--cli --cfg <名稱>`、ANSI 顏色約定(91 錯誤 / 92 狀態 / 93 警告 / 94 log)、
-用 suspend/resume 暫停、`Press Enter to continue` 的偵測、重載 = 結束後重新啟動。
-
-不同(皆為修正):
-- **不會自動啟動**。舊版也是如此(啟動等同於「Reload config → Yes」),這裡改成明確的 `a`;
-  需要自動啟動可加 `--autostart`。
-- 結束時**連子行程一起結束**(舊版只 kill 主行程)。離開 CUI 時一定會清掉 kcauto,
-  即使用 Ctrl+Q 或當機離開也一樣。
-- 子行程設定 `PYTHONUNBUFFERED=1`、`PYTHONIOENCODING=utf-8`:日誌不會被管線緩衝延遲,
-  Windows 上也不會因 locale 編碼而亂碼。
-- Python 備援模式用 `sys.executable`,不依賴 PATH 上的 `python` / `python3`。
-- ANSI 複合參數(例如 `91;1`)能正確解析,不會把控制碼印成文字。
-- 日誌保留最近 3000 行;日誌被隱藏時不會無限累積記憶體。
-
-狀態列顯示:執行狀態、執行時間、CPU 迷你圖與百分比、記憶體、等待 Enter 的提示。
-
-## 響應式版面
-
-| 條件 | 版面 |
+| Key | Action |
 |---|---|
-| 橫向足夠(寬 ≥ 110) | 日誌在右側;方框依寬度自動 2 / 3 / 4 欄(約 110 / 144 / 178 欄起) |
-| 橫向不足、直向足夠 | 日誌移到儀表板下方;方框 1~4 欄(每欄至少 34 欄寬) |
-| 兩者都不足 | 隱藏日誌,方框佔滿 |
+| ↑ ↓ / PgUp PgDn | scroll |
+| ← | back to the boxes (with the log below, ↑ at the very top also goes back) |
+| Enter | if kcauto is waiting at `Press Enter to continue`, send Enter; otherwise same as `a` |
 
-「直向足夠」= 方框區實際高度(依內容估算)+ 狀態列/提示列 + 日誌最小 8 列。
-數值定義在 `tui/layout.py`,`theme.tcss` 必須同步,`tests/test_layout.py` 會檢查。
+The dashboard text is English only. The editor (labels, help, dialogs, messages) follows the
+selected language.
 
-## 打包注意
+### Responsive layout
 
-`tui/theme.tcss` 必須隨程式一起打包。PyInstaller 範例:
-
-```
---add-data "kcauto/tui/theme.tcss:tui"      # Windows 用分號:  ...theme.tcss;tui
-```
-
-
-## 編輯器(階段 4)
-
-在儀表板按 Enter 或雙擊方框開啟,直接停在該模組。所有修改立即寫入記憶體並同步到儀表板,
-按 `w` 才會存檔。編輯期間 kcauto 的日誌仍會累積;若它在等待 Enter,請先 Esc 回儀表板。
-
-| 按鍵 | 作用 |
+| Condition | Layout |
 |---|---|
-| ↑ ↓ / PgUp PgDn / Home End | 在欄位間移動 |
-| ← | 回到左側模組清單(視窗 < 72 欄時,← → 改為切換模組) |
-| `c e p u s f r h v g o` | 跳到該模組(`o` = 未知 key) |
-| `[` `]` | 上一個 / 下一個模組 |
-| Enter / 單擊 | 編輯(依型別開對應的控制項) |
-| Space | 布林切換、enum 循環;其他型別等同 Enter |
-| `+` `-` | 整數微調、enum 循環 |
-| `d` | 還原為預設值 |
-| `z` | 還原為上次存檔的值 |
-| `/` | 搜尋全部欄位(key、標籤、說明) |
-| `w` | 存檔(有 error 時拒絕) |
-| Esc | 離開編輯器 |
+| enough width for at least one card column plus a 40-column log | log on the right; cards use the **fewest columns (1-4) that fit the screen height**, and all spare width goes to the log |
+| not enough width, enough height | log below the dashboard; cards use 1-4 columns by width |
+| neither | log hidden, cards fill the screen (`l` shows the log full screen) |
 
-欄位列左側:`✖` 錯誤、`⚠` 警告、`!` 高風險;`*` 代表已修改。底部面板顯示 key、說明、型別、預設值、目前值與問題。
+The numbers live in `tui/layout.py`; `tui/theme.tcss` must match (`tests/test_layout.py` checks it).
 
-### 各型別的控制項
+### kcauto process control
 
-**原則:數字不用鍵盤打字。** 只有「等級」型用左右鍵,其餘數字用滾輪(像手機鬧鐘)。
+Kept from the old CUI: the start command, `--cli --cfg <name>`, the ANSI colour convention
+(91 error / 92 status / 93 warning / 94 log), pausing with suspend / resume, detection of
+`Press Enter to continue`, and "reload config = end the process and start it again".
 
-| 欄位 | 控制項 |
+Different (all fixes):
+
+- **Never starts automatically** (use `a`, or `--autostart`).
+- Ending kcauto also ends its **child processes**, and leaving the CUI always cleans kcauto up.
+- Child processes get `PYTHONUNBUFFERED=1` and `PYTHONIOENCODING=utf-8`, so the log is not delayed
+  and does not turn into garbage on Windows.
+- The Python fallback uses `sys.executable`, not `python` / `python3` from PATH.
+- Compound ANSI parameters such as `91;1` are parsed correctly.
+- The log keeps the latest 3000 lines, even while hidden.
+
+There is no separate "stop" key: quit the CUI (`q`) to end kcauto, or apply (`a`) to restart it.
+
+The status bar shows: run state, uptime, CPU sparkline and percentage, memory, and a hint when
+kcauto is waiting for Enter.
+
+## Editor
+
+Open it with Enter or a double-click on a box. All edits are applied to the in-memory config
+immediately and shown on the dashboard; `w` saves. kcauto's log keeps accumulating while you edit.
+
+| Key | Action |
 |---|---|
-| bool | 第一層 Enter 進入 → ← = off、→ = on → Enter 確定 / Esc 還原(見下「兩層操作」);**不會跳出選單** |
-| enum(含 `null`) | 同上:進入後 ← → 循環;`null` 一律顯示成 `disable` 並排第一,`auto` 第二 |
-| 只有幾級的整數(損傷等級 0~4、難度 1~4…) | 同上:進入後 ← → 調整(到頭就停) |
-| 其他整數(連接埠、資源目標量、時間、時差…) | **逐位數滾輪**:← → 換位數、↑ 上一個值、↓ 下一個值、Enter 確定;超出範圍自動收斂;有負數範圍的欄位多一個 ± 輪 |
-| `combat.sortie_map` | 三個滾輪:世界(auto/1~7/E)、海域編號(隨世界變動)、**目標節點**。節點只列出 `configs/noro6/noro6`(找不到則 `template/configs/noro6/noro6`)內確實有對應預設的,例如有 `B-2-2-A` 就能選 `2-2-A`;`—` 代表不指定(`2-2`)。名稱結尾為 `-bak` 的預設會略過 |
-| `factory.*_recipe` | 2×2 滾輪(上排 fuel 綠、steel 灰,下排 ammo 棕、bauxite 橘),**兩層操作**:第一層 ↑↓←→ 在四種資源與下方的 `[ OK ] [ Cancel ]` 之間移動,Enter 進入該資源;第二層 ← → 換位數、↑↓ 滾動,Enter 確定並回到第一層,Esc 只還原這一個資源並回到第一層(第一層按 Esc = 取消整個對話框)。存檔順序仍是 `[fuel, ammo, steel, bauxite]` |
-| `factory.*_secretary` | 輸入框;純數字存成整數,其他存成字串(唯一保留打字的數字欄) |
-| `combat.fleet_presets`、`pvp.fleet_preset` | **單一值的滾動式列表**:`disable` 第一項、`auto` 第二項,接著 1~15。`fleet_presets` 固定只寫**一個**元素(`disable` = 空清單),設定檔裡原本有多個時會提示「只能保留一個」;pvp 的 `null` / `0` 都顯示為 `disable`(原本是 0 就維持 0)。`expedition.fleet_preset` 是 enum,同樣 disable、auto 的順序 |
-| `combat.lbas_groups` | 1 / 2 / 3 三格複選 |
-| 字串陣列 | 清單編輯器:輸入框可一次貼多個(逗號/空白分隔);↓ 進清單,Enter 修改該項,Delete/x 移除 |
-| `combat.node_selects` / `node_formations` / `node_night_battles` | 兩欄表格(陣型、夜戰用循環選單) |
-| `scheduler.rules` | 五欄表格(extra 可省略),只驗結構 |
-| `quest.quests` | 依前綴分組的勾選清單,只列出 `data/quests/quests.json`(找不到則 `template/data/quests/quests.json`)內有的任務;已選但不在檔案內的會歸到 `other` 組以免遺失 |
-| `ship_switcher.slots`、內容是物件/清單的未知 key | **樹狀表格編輯器**(見下);純量的未知 key 用 JSON 編輯器 |
-| `combat.push_nodes` | 新增節點時會跳出二次確認(y / n);移除不需確認 |
+| ↑ ↓ / PgUp PgDn / Home End | move between fields |
+| ← | back to the module list (below 72 columns ← → switch modules) |
+| `c e p u s f r h v g o` | jump to that module (`o` = unknown keys) |
+| `[` `]` | previous / next module |
+| Enter / click | edit (opens the control for the field's type) |
+| Space | toggle a switch, cycle an enum; same as Enter for other types |
+| `+` `-` | nudge an integer, cycle an enum |
+| `d` | reset to the default |
+| `z` | revert to the last saved value |
+| `/` | search all fields (key, label, help; the current language and English) |
+| `w` | save (refused while there are errors) |
+| Esc | leave the editor |
 
-### 樹狀表格編輯器(`ship_switcher.slots` 與未知 key)
+The first row of the module list is `..`: select it (↑ from the first module, then Enter or a
+click) to go back to the dashboard, exactly like Esc.
 
-這類設定的結構不固定,所以不做固定表單,而是一列一個節點的可展開表格:
+Field rows: `✖` error, `⚠` warning, `!` high risk, `*` modified. The bottom panel shows the key,
+help, type, default, current value and issues.
 
-```
-▾ 1                 object {3}
-    ship            int    123
-  ▾ rules           list   [2]
-      [0]           str    "a"
-      [1]           bool   on
-▸ 2                 object {0}
-```
+### Two-level operation (all fields)
 
-| 按鍵 | 作用 |
+- **Level 1 (list):** ↑ ↓ only move between fields; ← goes to the module list. **Enter** enters a field.
+- **Switches, enums and integers with a few levels** enter in place: the whole row is highlighted and
+  `‹ ›` appear around the value. ← → change the value (`+` `-` also work, Space = next value);
+  Enter confirms, Esc restores the value from before entering.
+  **Switches and enums cycle**: either arrow flips a switch, and an enum wraps around at the ends.
+  Small-range integers stop at their ends.
+- **Everything else** opens a dialog (Enter = OK, Esc = cancel; inside an input box Enter adds / confirms
+  the item, and Enter on an empty box = OK).
+- While editing a row, ↑ ↓, module shortcuts and `d z w /` are disabled so you cannot leave by accident.
+
+**Mouse:** the first click only selects a row; clicking an already selected row enters editing, where
+`‹ ›` become clickable; clicking another row or pressing Enter confirms. Non-adjustable fields open
+their dialog with one click.
+
+### Controls by field type
+
+**Principle: numbers are never typed.** Small level-like integers use ← →; other numbers use
+digit-by-digit wheels (like a phone alarm clock).
+
+| Field | Control |
 |---|---|
-| ↑ ↓ | 移動;上方顯示目前節點的路徑(如 `1.rules[0]`) |
-| → / ← | 展開 / 收合;在非容器上按 ← 回到上一層 |
-| Enter / 點擊 | 容器 = 展開收合;布林 = 切換;整數 = 逐位數滾輪;字串 / 小數 = 輸入框 |
-| `a` | 新增項目(選到容器就加在裡面,選到一般值就加在同一層);object 先輸入 key 再選型別,list 只選型別;新增完會直接開編輯器 |
-| `x` / Delete | 刪除目前節點 |
-| `r` | 改 key 名稱(保持原本順序,重複的 key 會被擋下) |
-| `t` | 改型別(能轉換就保留內容,例如 `"12"` → 12) |
-| `j` | 以原始 JSON 編輯(語法錯誤會即時提示) |
-| Ctrl+S 或 OK | 套用;Esc 取消(不會改到原本的設定) |
+| bool, enum (including `null`) | in-place editing; `null` is shown as `disable` |
+| integers with few levels (damage levels 0-4, difficulty 1-4, ...) | in-place editing, ← → |
+| other integers (ports, resource targets, time, offset, ...) | **digit wheel**: ← → digit, ↑ previous value, ↓ next value, Enter confirm; out-of-range values snap into range; a ± wheel when negatives are allowed |
+| `combat.sortie_map` | three wheels: world (auto / 1-7 / E), map number, **target node**. Nodes come from `configs/noro6/noro6` (fallback `template/configs/noro6/noro6`) and only nodes that really have a preset are offered (`B-2-2-A` → `2-2-A`); `—` = no node. `-bak` presets are skipped |
+| `factory.build_recipe`, `factory.develop_recipe` | 2×2 wheels (top: fuel, steel; bottom: ammo, bauxite), two-level. Level 1: arrows choose a resource or the `[ OK ] [ Cancel ]` cells; level 2: adjust that resource's digits. The saved order is still `[fuel, ammo, steel, bauxite]`. A **Presets** list is read from `data/factory/construct_recipe_preset.json` / `develop_recipe_preset.json`; applying a preset sets the four resources and the matching secretary. The list sits left of the wheels when the terminal is at least 92 columns wide, otherwise above them (`p`, ← or ↑ moves into it) |
+| `factory.build_secretary`, `factory.develop_secretary` | a list of ship types (DE, DD, CL, CLT, CA, CAV, CVL, FBB, BB, BBV, CV, SS, SSV, AV, LHA, CVB, AR, AS, CT, AO) plus **Production ID…**, which opens a digit wheel. Ship type codes stay in English in every language |
+| `combat.fleet_presets`, `pvp.fleet_preset` | a single-value scrolling list: `disable`, `auto`, then 1-15. `fleet_presets` always writes exactly one element (`disable` = empty list); `null` / `0` show as `disable`. `expedition.fleet_preset` is an enum (disable, auto) |
+| `combat.lbas_groups` | three tick boxes: 1 / 2 / 3 |
+| string arrays | list editor: paste several items at once (comma / space separated); ↓ enters the list, Enter edits an item, Delete / `x` removes it |
+| `combat.node_selects`, `node_formations`, `node_night_battles` | two-column tables |
+| `scheduler.rules` | a dedicated dialog with exactly two rules: **stop kcauto at HH:MM** (`time:HHMM:stop:kcauto`) and **stop combat after N sorties** (`sorties_run:N:stop:combat`). Space = on/off, Enter = set value, `o` = OK. Other rules are removed when you press OK |
+| `quest.quests` | checklist grouped by prefix (events first, newest first); a group header folds / unfolds it, Space ticks a quest. Only quests in `data/quests/quests.json` (fallback `template/data/quests/quests.json`) are listed; selected quests missing from the file go to an `other` group so they are never lost |
+| `ship_switcher.enabled` ("Akashi repair") | one switch: on fills `ship_switcher.slots` with the fixed Akashi repair rules, off clears them. `ship_switcher.slots` itself is not shown. See *Linked settings* below |
+| unknown keys holding objects / lists | **tree-table editor** (below); scalar unknown keys use a JSON editor |
+| `combat.push_nodes` | adding a node asks for confirmation (y / n); removing does not |
+| expeditions | the first row "All fleets 2/3/4" sets fleets 2, 3 and 4 at once (`auto`, `overnight`, a custom list, or clear); `d` / `z` reset / revert all three. Add presets in `EXPEDITION_PRESETS` in `editor/model.py` |
 
-編輯期間改的是工作副本;最上層一定要維持原本的型別(object 不能變 list)。
+Lists and tables that have **OK / Cancel** buttons below them: press ↓ at the end of the list to move
+to the buttons, ← → to switch button, Enter / Space to press, ↑ to go back to the list.
 
-### 窄視窗
+### Linked settings
 
-| 視窗寬度 | 變化 |
-|---|---|
-| < 72 欄 | 隱藏左側模組清單,上方改成一列「‹ 上一個 [ 目前 ] 下一個 ›」,**點左 / 右三分之一**切換模組;`[` `]` 與模組快捷鍵照常 |
-| < 50 欄 | 每個欄位佔兩列(標籤一列、值一列),值不會再被截掉 |
-| 對話框 < 70 欄 | 縮小留白;表格的輸入格改成直式、每格一列 |
-| 任何窄度 | 上方資訊列、底部提示列、儀表板狀態列會依寬度丟掉次要資訊(模組切換提示、指令說明、CPU 迷你圖、模式…),**存檔 / 離開、檔名(含 `*`)與錯誤警告數永遠保留** |
+- `combat.override` off → every `combat.*` setting except `enabled`, `fleet_presets` and `sortie_map`
+  is shown in grey: it can still be changed, but kcauto ignores it (it uses the defaults in `data/combat`).
+- **Akashi repair and combat are exclusive**: enabling combat turns Akashi repair off (and clears its
+  rules), and Akashi repair cannot be turned on while combat is enabled. A file that has both on is
+  corrected on load and shows as modified.
+- **Turning combat off** (a real on → off toggle, including `d` reset) turns **Akashi repair** and
+  **passive repair** on. Turning combat on does not touch passive repair. Loading and reverting
+  never trigger this.
 
-高度不足時的處理見上方「矮視窗」。
+### Tree-table editor (`ship_switcher.slots` and unknown keys)
 
-**滑鼠**:滾輪元件可點上/下方的項目直接滾到該項,也可用滑鼠滾輪(往上 = 上一個值);按鈕(OK / Remove / Cancel)可直接點。
-
-**矮視窗**:終端機高度不夠時,對話框內的清單會自動縮短、滾輪縮成 3 列,讓底部按鈕不被切掉;編輯器表單的 ↑↓ 永遠是換列(焦點列會自動捲進可視範圍),不會變成捲動整個面板。
-
-**遠征**:表單最上方有「All fleets 2/3/4」列,按 Enter 一次把 2、3、4 艦隊都設成 `auto`、`overnight`、自訂清單,或全部清空;`d` / `z` 對它是還原預設 / 還原存檔。
-要增加預設,改 `editor/model.py` 的 `EXPEDITION_PRESETS`。
-
-對話框通用:輸入框內 Enter = 新增/確認該筆,**空白時 Enter = OK**;Esc = 取消。
-
-### 兩層操作(所有欄位一致)
-
-> 第一層(列表):**↑ ↓ 只在欄位之間移動**,← 回到模組清單(窄視窗 ← → 切換模組)。
-> **Enter** 進入該欄位,才會動到它的值;再按一次 **Enter = 確定並回到列表**。
-
-| 欄位種類 | 進入後(第二層) | Enter | Esc |
-|---|---|---|---|
-| 開關 / enum / 少數等級整數 | 該列整行反白,值左右出現 `‹ ›`;**← →** 改值(`+` `-` 也可,Space = 下一個值) | 確定,回到列表 | 還原成進入前的值,回到列表 |
-| 其他(滾輪、清單、表格…) | 開對話框,在對話框內操作 | 確定 | 取消 |
-| 配方(多個數字) | 先選資源,再 Enter 進入調位數(兩層,見上表) | 同上 | 同上 |
-
-編輯中其他按鍵(↑↓、模組快捷鍵、`d` `z` `w` `/`)暫時停用,避免不小心離開;提示列也會換成「←→ change / enter confirm / esc cancel」。
-
-**滑鼠**:第一次點擊只**選取**那一列(不改值、不跳選單);在已選取的列上**再點一次**進入編輯,這時才會出現 `‹ ›`,點箭頭改值(已到頭的方向是暗色);點別的列或 Enter 確定。畫面上沒有箭頭時,點箭頭的位置不會誤觸。不可調整的欄位(滾輪、清單等)點一下就開對話框。
-
-> 窄視窗(< 72 欄)隱藏模組清單時,第一層按 ← → 切換模組;要改值請先 Enter 進入。
-
-### 樹狀表格編輯器(`ship_switcher.slots` 與未知 key)
-
-這類設定的結構不固定,所以不做固定表單,而是一列一個節點的可展開表格:
+Settings without a fixed structure are edited as an expandable table, one node per row:
 
 ```
 ▾ 1                 object {3}
@@ -194,35 +186,57 @@ python -m unittest discover -s tests -t . -v
 ▸ 2                 object {0}
 ```
 
-| 按鍵 | 作用 |
+| Key | Action |
 |---|---|
-| ↑ ↓ | 移動;上方顯示目前節點的路徑(如 `1.rules[0]`) |
-| → / ← | 展開 / 收合;在非容器上按 ← 回到上一層 |
-| Enter / 點擊 | 容器 = 展開收合;布林 = 切換;整數 = 逐位數滾輪;字串 / 小數 = 輸入框 |
-| `a` | 新增項目(選到容器就加在裡面,選到一般值就加在同一層);object 先輸入 key 再選型別,list 只選型別;新增完會直接開編輯器 |
-| `x` / Delete | 刪除目前節點 |
-| `r` | 改 key 名稱(保持原本順序,重複的 key 會被擋下) |
-| `t` | 改型別(能轉換就保留內容,例如 `"12"` → 12) |
-| `j` | 以原始 JSON 編輯(語法錯誤會即時提示) |
-| Ctrl+S 或 OK | 套用;Esc 取消(不會改到原本的設定) |
+| ↑ ↓ | move; the current path (e.g. `1.rules[0]`) is shown above |
+| → / ← | expand / collapse; ← on a non-container goes to the parent |
+| Enter / click | container = expand / collapse; bool = toggle; integer = digit wheel; string / decimal = input box |
+| `a` | add (inside a container, or beside a plain value); objects ask for a key first, then the type; lists only ask for the type |
+| `x` / Delete | delete the node |
+| `r` | rename the key (order is kept; duplicate keys are refused) |
+| `t` | change the type (content is kept when it converts cleanly, e.g. `"12"` → 12) |
+| `j` | edit as raw JSON (syntax errors are shown live) |
+| Ctrl+S or OK | apply; Esc cancels without touching the original |
 
-編輯期間改的是工作副本;最上層一定要維持原本的型別(object 不能變 list)。
+You edit a working copy, and the top level must keep its type (an object cannot become a list).
 
-### 窄視窗
+### Narrow and short windows
 
-| 視窗寬度 | 變化 |
+| Window | Change |
 |---|---|
-| < 72 欄 | 隱藏左側模組清單,上方改成一列「‹ 上一個 [ 目前 ] 下一個 ›」,**點左 / 右三分之一**切換模組;`[` `]` 與模組快捷鍵照常 |
-| < 50 欄 | 每個欄位佔兩列(標籤一列、值一列),值不會再被截掉 |
-| 對話框 < 70 欄 | 縮小留白;表格的輸入格改成直式、每格一列 |
-| 任何窄度 | 上方資訊列、底部提示列、儀表板狀態列會依寬度丟掉次要資訊(模組切換提示、指令說明、CPU 迷你圖、模式…),**存檔 / 離開、檔名(含 `*`)與錯誤警告數永遠保留** |
+| < 72 columns | the module list is hidden; a one-row "‹ previous [ current ] next ›" switcher is shown on top, centred on the current module (click the left / right third, or use `[` `]` and the module shortcuts) |
+| < 50 columns | every field takes two rows (label, value) |
+| dialogs < 70 columns | less padding; table inputs are laid out vertically |
+| any narrow width | the top info row, hint bar and dashboard status bar drop minor items first; **save / quit, the file name (with `*`) and the error / warning count are always kept** |
+| short terminal | lists inside dialogs shorten and wheels shrink to 3 rows so the bottom buttons are never cut off; ↑ ↓ in the form always move rows (the focused row scrolls into view) |
 
-高度不足時的處理見上方「矮視窗」。
+**Mouse:** wheel widgets can be clicked above / below the centre to scroll to that item, and the mouse
+wheel scrolls them (up = previous value); buttons can be clicked; the mouse wheel also scrolls lists.
 
-**矮視窗**:終端機高度不夠時,對話框內的清單會自動縮短、滾輪縮成 3 列,讓底部按鈕不被切掉;編輯器表單的 ↑↓ 永遠是換列(焦點列會自動捲進可視範圍),不會變成捲動整個面板。
+## Languages
 
-**遠征**:表單最上方有「All fleets 2/3/4」列,按 Enter 一次把 2、3、4 艦隊都設成 `auto`、`overnight`、自訂清單,或全部清空;`d` / `z` 對它是還原預設 / 還原存檔。
-要增加預設,改 `editor/model.py` 的 `EXPEDITION_PRESETS`。
+English is the default. Press `t` on the dashboard, or use `--lang CODE` / `KCAUTO_LANG`, to switch;
+the choice is saved in `configs/tui_prefs.json` and the editor uses it the next time it opens.
 
-對話框通用:輸入框內 Enter = 新增/確認該筆,**空白時 Enter = OK**;Esc = 取消。
+To add a language, drop `tui/locales/<code>.json` next to the existing ones:
 
+```json
+{
+  "_name": "Display name",
+  "fields": {"combat.enabled": {"label": "...", "help": "..."}},
+  "messages": {"English source text": "translation"}
+}
+```
+
+Anything that is not translated falls back to English, so a file can cover only part of the UI.
+`tests/test_i18n.py` checks the bundled languages for missing fields / strings and mismatched
+`{placeholders}`.
+
+## Packaging
+
+`tui/theme.tcss` and `tui/locales/*.json` must be bundled with the program. PyInstaller example:
+
+```
+--add-data "kcauto/tui/theme.tcss:tui" --add-data "kcauto/tui/locales:tui/locales"
+# on Windows use ; instead of :
+```

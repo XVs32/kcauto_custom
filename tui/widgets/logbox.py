@@ -1,17 +1,18 @@
-"""日誌方框:顯示 kcauto 的輸出與 CUI 自己的訊息。
+"""Log box: shows kcauto output and the CUI's own messages.
 
-設計重點
-  * 自己保留一份有上限的歷史(``history``)。方框被隱藏(版面放不下)時不寫進 RichLog,
-    因為隱藏中的 RichLog 會把寫入暫存起來而無上限成長;重新顯示或視窗寬度改變時,
-    再從歷史重繪(同時讓自動換行依新寬度重算)。
-  * 輸出行依 ANSI 顏色約定上色(見 ``ansi.py``)。
-  * 方框取得焦點時,方向鍵/翻頁鍵用來捲動日誌;Esc 回到方框區。
+Design notes
+  * Keeps its own bounded history (``history``). While the box is hidden (no room in the layout) nothing is written to the RichLog, because a hidden RichLog buffers writes without limit; when it is shown again or the window width changes, it is redrawn from the history (which also recomputes word wrap for the new width).
+  * Output lines are coloured by the ANSI colour convention (see ``ansi.py``).
+  * While the box has focus, ↑ ↓ and the paging keys scroll the log; ← returns to the boxes (when the log is below, ↑ at the very top returns too).
+    Pressing an arrow key toward the log from the boxes enters the log (see ``KcautoCui.action_move_focus``). Esc still works.
 """
+
 from __future__ import annotations
 
 from collections import deque
 
 from rich.text import Text
+from textual.binding import Binding
 from textual.widgets import RichLog
 
 from ..ansi import parse_ansi
@@ -19,10 +20,27 @@ from ..runner import LOG_OUTPUT
 
 BUFFER_LINES = 3000
 SYSTEM_STYLE = "italic #7f848e"
-REWRAP_DELAY = 0.2     # 視窗縮放時的重繪延遲(秒),避免拖曳過程中連續重繪
+REWRAP_DELAY = 0.2  # redraw delay (seconds) when the window is resized, to avoid redrawing continuously while dragging
 
 
 class LogBox(RichLog, can_focus=True):
+    BINDINGS = [
+        Binding("up", "log_arrow(0,-1)", show=False),
+        Binding("down", "log_arrow(0,1)", show=False),
+        Binding("left", "log_arrow(-1,0)", show=False),
+        Binding("right", "log_arrow(1,0)", show=False),
+    ]
+
+    def action_log_arrow(self, dx: int, dy: int) -> None:
+        """Arrow keys: leave the log when appropriate by handing over to the App, otherwise scroll the log."""
+        leave = getattr(self.app, "log_arrow", None)
+        if leave is not None and leave(dx, dy, self.scroll_y <= 0):
+            return
+        if dy < 0:
+            self.scroll_up(animate=False)
+        elif dy > 0:
+            self.scroll_down(animate=False)
+
     def __init__(self, **kwargs) -> None:
         super().__init__(
             max_lines=BUFFER_LINES,
@@ -38,7 +56,7 @@ class LogBox(RichLog, can_focus=True):
         self._last_width = 0
 
     # ------------------------------------------------------------------ #
-    # 寫入
+    # writing
     # ------------------------------------------------------------------ #
     @staticmethod
     def to_text(kind: str, text: str) -> Text:
@@ -61,13 +79,13 @@ class LogBox(RichLog, can_focus=True):
         return [line.plain for line in self.history]
 
     # ------------------------------------------------------------------ #
-    # 顯示 / 重繪
+    # display / redraw
     # ------------------------------------------------------------------ #
     def _visible(self) -> bool:
         return self.display and self.size.width > 0
 
     def sync(self) -> None:
-        """版面變動後呼叫:若方框現在可見且內容過期,從歷史重繪。"""
+        """Call after a layout change: if the box is now visible and its content is stale, redraw from the history."""
         if self._stale and self._visible():
             self._rewrite()
 

@@ -1,12 +1,12 @@
-/* kcauto_custom CUI — btop 風格主題(階段 2)
-   只使用 hex 色與長期穩定的屬性,避免依賴特定 Textual 版本的設計變數。 */
+/* kcauto_custom CUI — btop-style theme (stage 2)
+   Uses only hex colours and long-term stable properties, avoiding design variables that depend on a specific Textual version. */
 
 Screen {
     background: #0f1115;
     color: #c8ccd4;
 }
 
-/* ---- 頂部狀態列 / 底部提示列 ------------------------------------------ */
+/* ---- top status bar / bottom hint bar ------------------------------------------ */
 #status {
     dock: top;
     height: 1;
@@ -21,12 +21,12 @@ Screen {
     padding: 0 1;
 }
 
-/* ---- 主區域(響應式)---------------------------------------------------
-   版面由 app.py 依終端機大小在 #main 上加 class:
-     cols-1 ~ cols-4          方框欄數
-     log-right / log-bottom / log-hidden   日誌位置
-   規則與數值定義在 layout.py:方框最小寬度 34、捲軸 2、日誌最小寬度 40、
-   日誌最小高度 8。右側模式的 #cards 寬度 = 欄數 × 34 + 2。 */
+/* ---- main area (responsive) ---------------------------------------------------
+   app.py adds classes on #main according to the terminal size:
+   cols-1 ~ cols-4          number of card columns
+   log-right / log-bottom / log-hidden   log position
+   Rules and values are defined in layout.py: minimum card width 34, scrollbar 2, minimum log width 40,
+   minimum log height 8. In right mode the #cards width = columns × 34 + 2. */
 
 #main {
     height: 1fr;
@@ -56,30 +56,31 @@ Screen {
 #main.cols-3 #cards { grid-size: 3; }
 #main.cols-4 #cards { grid-size: 4; }
 
-/* 日誌在右側:方框區固定寬度,日誌吃掉剩下的寬度 */
+/* Log on the right: the card area has a fixed width and the log takes the remaining width */
 #main.log-right { layout: horizontal; }
 #main.log-right #cards { height: 1fr; }
+#main.log-right.cols-1 #cards { width: 36; }
 #main.log-right.cols-2 #cards { width: 70; }
 #main.log-right.cols-3 #cards { width: 104; }
 #main.log-right.cols-4 #cards { width: 138; }
 #main.log-right #log-box { width: 1fr; height: 1fr; }
 
-/* 日誌在下方:方框區依內容自動高度,日誌吃掉剩下的高度 */
+/* Log below: the card area is as tall as its content and the log takes the remaining height */
 #main.log-bottom { layout: vertical; }
 #main.log-bottom #cards { width: 100%; height: auto; }
 #main.log-bottom #log-box { width: 100%; height: 1fr; min-height: 8; }
 
-/* 兩者都放不下:隱藏日誌 */
+/* Neither fits: hide the log */
 #main.log-hidden { layout: vertical; }
 #main.log-hidden #cards { width: 100%; height: 1fr; }
 #main.log-hidden #log-box { display: none; }
 
-/* 全螢幕日誌:日誌被隱藏時按 l 進入(必須放在 log-hidden 規則之後以覆蓋它) */
+/* Full-screen log: entered with l while the log is hidden (must come after the log-hidden rules to override them) */
 #main.log-full { layout: vertical; }
 #main.log-full #cards { display: none; }
 #main.log-full #log-box { display: block; width: 100%; height: 1fr; }
 
-/* ---- 模組方框 ---------------------------------------------------------- */
+/* ---- module boxes ---------------------------------------------------------- */
 ModuleCard {
     width: 100%;
     height: auto;
@@ -96,7 +97,7 @@ ModuleCard.off {
     color: #6b7280;
 }
 
-/* 每個模組一個強調色:邊框、標題、開關;聚焦時邊框加粗 */
+/* One accent colour per module: border, title, switch; the border gets thicker when focused */
 ModuleCard.mod-combat          { border: round #e06c75; border-title-color: #e06c75; border-subtitle-color: #e06c75; }
 ModuleCard.mod-expedition      { border: round #56b6c2; border-title-color: #56b6c2; border-subtitle-color: #56b6c2; }
 ModuleCard.mod-pvp             { border: round #98c379; border-title-color: #98c379; border-subtitle-color: #98c379; }
@@ -119,7 +120,7 @@ ModuleCard.mod-ship_switcher:focus   { border: heavy #7fbbb3; }
 ModuleCard.mod-event_reset:focus     { border: heavy #f4a6c0; }
 ModuleCard.mod-general:focus         { border: heavy #abb2bf; }
 
-/* 停用的模組:邊框也變暗(放在最後以覆蓋強調色) */
+/* Disabled modules: the border dims too (placed last to override the accent colour) */
 ModuleCard.off {
     border: round #3b4252;
     border-title-color: #6b7280;
@@ -130,7 +131,7 @@ ModuleCard.off:focus {
     border: heavy #6b7280;
 }
 
-/* ---- 離開確認 ---------------------------------------------------------- */
+/* ---- quit confirmation --------------------------------------------------------- */
 ConfirmQuit {
     align: center middle;
     background: rgba(0, 0, 0, 0.55);
@@ -144,7 +145,7 @@ ConfirmQuit {
     background: #181b21;
 }
 
-/* ---- 編輯器(階段 4)-------------------------------------------------- */
+/* ---- editor (stage 4) -------------------------------------------------- */
 EditorScreen {
     background: #0f1115;
     layout: vertical;
@@ -215,12 +216,12 @@ FormPane .grp:first-child {
     padding: 0 1;
 }
 
-/* 視窗太窄(< 72 欄):隱藏左側模組清單,改用 [ ] 或 ← → 切換模組 */
+/* Window too narrow (< 72 columns): hide the module list on the left; switch modules with [ ] or ← → */
 EditorScreen.narrow #ed-left {
     display: none;
 }
 
-/* ---- 對話框 ------------------------------------------------------------- */
+/* ---- dialogs ------------------------------------------------------------- */
 Dialog {
     align: center middle;
     background: rgba(0, 0, 0, 0.55);
@@ -256,6 +257,31 @@ Dialog {
     margin-bottom: 1;
 }
 
+#wheelrow {
+    height: auto;
+    layout: horizontal;
+}
+
+#wheelrow.stack {
+    layout: vertical;
+}
+
+#wheelrow WheelPicker {
+    width: auto;
+}
+
+#presetbox {
+    width: 1fr;
+    height: auto;
+    margin-right: 2;
+}
+
+#wheelrow.stack #presetbox {
+    width: 100%;
+    margin-right: 0;
+    margin-bottom: 1;
+}
+
 .dlg-meta {
     color: #6b7280;
     height: auto;
@@ -288,6 +314,12 @@ Dialog {
 
 .action-label:hover {
     background: #3a4150;
+}
+
+.action-label:focus {
+    background: #e5c07b;
+    color: #0f1115;
+    text-style: bold;
 }
 
 .dlg Input {
@@ -339,7 +371,7 @@ CycleBox:focus {
     height: 14;
 }
 
-/* ---- 窄視窗(階段 5~6)---------------------------------------------------- */
+/* ---- narrow window (stages 5-6) ------------------------------------------------ */
 ModuleTabs {
     display: none;
     width: 100%;
@@ -351,7 +383,7 @@ EditorScreen.narrow ModuleTabs {
     display: block;
 }
 
-/* < 50 欄:每個欄位兩列(標籤 / 值) */
+/* < 50 columns: every field takes two lines (label / value) */
 EditorScreen.compact FieldRow {
     height: 2;
 }
@@ -365,7 +397,7 @@ EditorScreen.compact #ed-help {
     max-height: 7;
 }
 
-/* 對話框窄版:縮小留白,表格儲存格改直式排列且只佔一列 */
+/* Narrow dialogs: less padding; table cells become vertical and take one row each */
 Dialog.narrow .dlg {
     width: 100%;
     max-width: 100%;
@@ -401,7 +433,7 @@ Dialog.narrow .dlg-buttons {
     margin-top: 0;
 }
 
-/* 正在調整數值的那一列(第二層編輯) */
+/* The row whose value is being adjusted (second-level editing) */
 FieldRow.editing {
     background: #3a4150;
 }

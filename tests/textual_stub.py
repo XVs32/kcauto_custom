@@ -1,10 +1,9 @@
-"""沙盒用的 Textual / Rich 極簡替身。
+"""Minimal stand-in for Textual / Rich used in the sandbox.
 
-只在「沒有安裝 textual」時才會被 ``install()`` 啟用,目的不是模擬畫面,
-而是讓編輯器的對話框與元件的「邏輯」(按鈕、清單、滾輪、確定/取消)能在沒有
-Textual 的環境真的被執行,抓出 AttributeError 之類的低級錯誤。
-真正的畫面行為仍以 tests/test_editor_ui.py(需要 Textual)為準。
+Only enabled by ``install()`` when "textual is not installed". Its purpose is not to simulate the screen, but to let the *logic* of the editor's dialogs and widgets (buttons, lists, wheels, confirm/cancel) actually run in an environment without Textual, catching low-level errors such as AttributeError.
+Real screen behaviour is still decided by tests/test_editor_ui.py (which needs Textual).
 """
+
 from __future__ import annotations
 
 import re
@@ -17,8 +16,14 @@ STATE = SimpleNamespace(focused=None)
 
 
 def _cells(text: str) -> int:
-    return sum(0 if unicodedata.combining(c) else
-               2 if unicodedata.east_asian_width(c) in ("W", "F") else 1 for c in text)
+    return sum(
+        0
+        if unicodedata.combining(c)
+        else 2
+        if unicodedata.east_asian_width(c) in ("W", "F")
+        else 1
+        for c in text
+    )
 
 
 class Text:
@@ -170,16 +175,17 @@ def _module(name, **attrs):
 
 
 def uninstall() -> None:
-    """匯入完被測模組後移除替身,避免其他測試誤以為有安裝 textual。"""
+    """Remove the stand-in after importing the modules under test, so other tests do not think textual is installed."""
     for name in _INSTALLED:
         sys.modules.pop(name, None)
     _INSTALLED.clear()
 
 
 def install() -> bool:
-    """啟用替身。已經有真的 textual 時什麼都不做,回傳 False。"""
+    """Enable the stand-in. Does nothing and returns False when real textual is present."""
     try:
         import textual  # noqa: F401
+
         return False
     except ImportError:
         pass
@@ -191,13 +197,23 @@ def install() -> bool:
     class Event(Message):
         pass
 
-    events = _module("textual.events",
-                     Click=Event, MouseEvent=Event, MouseScrollUp=Event,
-                     MouseScrollDown=Event, Resize=Event, DescendantFocus=Event, Key=Event)
-    containers = _module("textual.containers", Horizontal=type("Horizontal", (Widget,), {}),
-                         Vertical=type("Vertical", (Widget,), {}),
-                         VerticalScroll=type("VerticalScroll", (Widget,), {}),
-                         Grid=type("Grid", (Widget,), {}))
+    events = _module(
+        "textual.events",
+        Click=Event,
+        MouseEvent=Event,
+        MouseScrollUp=Event,
+        MouseScrollDown=Event,
+        Resize=Event,
+        DescendantFocus=Event,
+        Key=Event,
+    )
+    containers = _module(
+        "textual.containers",
+        Horizontal=type("Horizontal", (Widget,), {}),
+        Vertical=type("Vertical", (Widget,), {}),
+        VerticalScroll=type("VerticalScroll", (Widget,), {}),
+        Grid=type("Grid", (Widget,), {}),
+    )
 
     def on(*_a, **_k):
         return lambda f: f
@@ -216,20 +232,21 @@ def install() -> bool:
 
 
 # ---------------------------------------------------------------------- #
-# 測試輔助
+# test helpers
 # ---------------------------------------------------------------------- #
 def snake(name: str) -> str:
     return re.sub(r"(?<!^)(?=[A-Z])", "_", name).lower()
 
 
 def handler_name(message) -> str:
-    """PickList.Chosen → on_pick_list_chosen(與 Textual 的規則相同)。"""
+    """PickList.Chosen → on_pick_list_chosen (same rule as Textual)."""
     qual = type(message).__qualname__
     return "on_" + "_".join(snake(part) for part in qual.split("."))
 
 
 def mount(screen):
-    """執行 compose(),把產生的元件登記起來,再呼叫 on_mount()。"""
+    """Run compose(), register the produced widgets, then call on_mount()."""
+
     def walk(widget):
         screen._all.append(widget)
         if widget.id:
@@ -245,7 +262,7 @@ def mount(screen):
 
 
 def pump(screen, limit=50):
-    """把子元件 post 出來的訊息交給對話框的處理器(模擬訊息往上冒泡)。"""
+    """Hand messages posted by child widgets to the dialog's handlers (simulating bubbling up)."""
     for _ in range(limit):
         pending = [(w, m) for w in screen._all for m in w.posted]
         if not pending:

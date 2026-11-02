@@ -1,4 +1,5 @@
-"""行程資訊的格式化工具(狀態列用)。純 Python。"""
+"""Formatting helpers for process info (used by the status bar). Pure Python."""
+
 from __future__ import annotations
 
 from typing import Sequence
@@ -7,7 +8,7 @@ SPARK_CHARS = "▁▂▃▄▅▆▇█"
 
 
 def sparkline(values: Sequence[float], maximum: float = 100.0, width: int = 8) -> str:
-    """最近 ``width`` 筆資料畫成迷你圖;資料不足時左側補空白,長度恆為 width。"""
+    """Draw the latest ``width`` samples as a sparkline; pad with blanks on the left when there is not enough data, so the length is always width."""
     if width <= 0:
         return ""
     recent = list(values)[-width:]
@@ -39,6 +40,10 @@ def fmt_bytes(count: float) -> str:
         if value < 1024 or unit == "T":
             if unit == "B":
                 return f"{int(value)}B"
-            return f"{value:.0f}{unit}" if value >= 100 else f"{value:.1f}{unit}".replace(".0", "")
+            return (
+                f"{value:.0f}{unit}"
+                if value >= 100
+                else f"{value:.1f}{unit}".replace(".0", "")
+            )
         value /= 1024
     return f"{value:.0f}T"  # pragma: no cover

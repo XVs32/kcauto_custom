@@ -1,11 +1,12 @@
-"""編輯器的對話框(ModalScreen)。
+"""Editor dialogs (ModalScreen).
 
-共同約定
-  * 取消(Esc / 點 Cancel)→ dismiss(None);確定 → dismiss(Picked(value))。
-    用 ``Picked`` 包起來,因為 ``None`` 本身(null)也是合法的欄位值。
-  * 在輸入框內按 Enter:有內容 = 新增/確認該筆;空白 = 按下 OK。
-  * 方向鍵:在輸入框按 ↓ 進入清單,在清單最上方按 ↑ 回到輸入框。
+Shared conventions
+  * Cancel (Esc / click Cancel) → dismiss(None); confirm → dismiss(Picked(value)).
+    The result is wrapped in ``Picked`` because ``None`` itself (null) is also a valid field value.
+  * Enter inside an input box: with content = add / confirm that entry; empty = press OK.
+  * Arrow keys: ↓ in the input box enters the list, ↑ at the top of the list returns to the input box.
 """
+
 from __future__ import annotations
 
 import re
@@ -18,18 +19,29 @@ from textual.app import ComposeResult
 from textual.binding import Binding
 from textual.containers import Horizontal, Vertical
 from textual.screen import ModalScreen
+from textual.widget import Widget
 from textual.widgets import Input, Static
 
-try:                                    # TextArea 需要較新的 Textual;沒有就退回單行輸入
+try:  # TextArea needs a newer Textual; without it fall back to a single-line input
     from textual.widgets import TextArea
-except ImportError:                     # pragma: no cover
+except ImportError:  # pragma: no cover
     TextArea = None
 
+from ..i18n import t
 from ..schema import Field, Kind
+from ..schema.scheduler_rule import parse_rule
 from . import model as M
 from . import narrow as N
 from . import tree as TR
-from .widgets import ActionLabel, CycleBox, PickList, PresetGrid, Row, Wheel, WheelPicker
+from .widgets import (
+    ActionLabel,
+    CycleBox,
+    PickList,
+    PresetGrid,
+    Row,
+    Wheel,
+    WheelPicker,
+)
 
 ERR = "bold #e06c75"
 DIM = "#6b7280"
@@ -41,14 +53,16 @@ class Picked:
 
 
 def _static(text: str | Text, *, classes: str = "", id: str | None = None) -> Static:
-    return Static(text if isinstance(text, Text) else Text(text), classes=classes, id=id)
+    return Static(
+        text if isinstance(text, Text) else Text(text), classes=classes, id=id
+    )
 
 
 class Dialog(ModalScreen):
     BINDINGS = [Binding("escape", "cancel", "Cancel", show=False)]
 
-    # 清單元件 id → (清單以外的元件佔用的列數, 預設最多顯示幾列)。
-    # 終端機太矮時依視窗高度縮短清單,讓底部的 OK / Cancel 不會被切掉。
+    # list widget id → (rows taken by widgets other than the list, default maximum rows shown).
+    # On a short terminal the list is shortened to the window height, so the bottom OK / Cancel is not cut off.
     FIT: dict[str, tuple[int, int]] = {}
 
     def on_resize(self, event) -> None:
@@ -64,10 +78,34 @@ class Dialog(ModalScreen):
     def action_cancel(self) -> None:
         self.dismiss(None)
 
+    # --- list ↔ bottom buttons: ↓ past the end of the list moves to the buttons, ↑ on the buttons returns to the list --- #
+    _before_buttons: Optional[Widget] = None
+
+    def focus_buttons(self, source: Optional[Widget] = None) -> bool:
+        labels = list(self.query(ActionLabel))
+        if not labels:
+            return False
+        self._before_buttons = source
+        labels[0].focus()
+        return True
+
+    def return_from_buttons(self) -> None:
+        target = self._before_buttons
+        if target is None or not getattr(target, "is_attached", True):
+            lists = list(self.query(PickList))
+            target = lists[0] if lists else None
+        if target is not None:
+            target.focus()
+
+    def on_pick_list_edge(self, event: PickList.Edge) -> None:
+        if event.direction > 0:
+            event.stop()
+            self.focus_buttons(event.source)
+
     def accept(self, value: Any) -> None:
         self.dismiss(Picked(value))
 
-    def run_command(self, command: str) -> None:        # 子類別覆寫
+    def run_command(self, command: str) -> None:  # overridden by subclasses
         if command == "cancel":
             self.action_cancel()
 
@@ -85,18 +123,24 @@ class Dialog(ModalScreen):
 
     @staticmethod
     def buttons(*items: tuple[str, str]) -> Horizontal:
-        return Horizontal(*(ActionLabel(label, cmd) for label, cmd in items),
-                          classes="dlg-buttons")
+        return Horizontal(
+            *(ActionLabel(label, cmd) for label, cmd in items), classes="dlg-buttons"
+        )
 
 
 # ---------------------------------------------------------------------- #
 class ChoiceDialog(Dialog):
-    """單選清單(enum)。"""
+    """Single-choice list (enum)."""
 
     FIT = {"choices": (11, 12)}
 
-    def __init__(self, title: str, help_text: str,
-                 options: Sequence[tuple[str, Any]], current: Any) -> None:
+    def __init__(
+        self,
+        title: str,
+        help_text: str,
+        options: Sequence[tuple[str, Any]],
+        current: Any,
+    ) -> None:
         super().__init__()
         self.title_text, self.help_text = title, help_text
         self.options = list(options)
@@ -126,7 +170,7 @@ class ChoiceDialog(Dialog):
 
 # ---------------------------------------------------------------------- #
 class TextDialog(Dialog):
-    """int / int|str / str 的單行輸入。整數可用 ↑↓ 微調。"""
+    """Single-line input for int / int|str / str. Integers can be nudged with ↑↓."""
 
     BINDINGS = [
         *Dialog.BINDINGS,
@@ -143,9 +187,18 @@ class TextDialog(Dialog):
         f = self.field
         with Vertical(classes="dlg"):
             yield from self.header(f.label, f.help)
-            yield _static(f"{f.key}   {M.type_label(f)}   default {M.format_value(f, f.default, 30)}",
-                          classes="dlg-meta")
-            yield Input(value="" if self.current is None else str(self.current), id="value")
+            yield _static(
+                t(
+                    "{key}   {type}   default {default}",
+                    key=f.key,
+                    type=M.type_label(f),
+                    default=M.format_value(f, f.default, 30),
+                ),
+                classes="dlg-meta",
+            )
+            yield Input(
+                value="" if self.current is None else str(self.current), id="value"
+            )
             yield _static("", classes="dlg-err", id="err")
             yield self.buttons(("OK", "ok"), ("Cancel", "cancel"))
 
@@ -198,7 +251,7 @@ class TextDialog(Dialog):
 
 # ---------------------------------------------------------------------- #
 class ListDialog(Dialog):
-    """字串/整數陣列(chip 清單)。輸入框可一次貼上多個項目(以逗號或空白分隔)。"""
+    """Array of strings / integers (chip list). The input box accepts several items pasted at once (separated by commas or spaces)."""
 
     FIT = {"items": (17, 8)}
 
@@ -213,12 +266,19 @@ class ListDialog(Dialog):
         with Vertical(classes="dlg"):
             yield from self.header(f.label, f.help)
             if f.pattern_hint:
-                yield _static(f"format: {f.pattern_hint}", classes="dlg-meta")
+                yield _static(t("format: {hint}", hint=f._hint()), classes="dlg-meta")
             if f.lengths:
-                yield _static("count must be " + " or ".join(str(n) for n in f.lengths),
-                              classes="dlg-meta")
+                yield _static(
+                    t(
+                        "count must be {allowed}",
+                        allowed=t(" or ").join(str(n) for n in f.lengths),
+                    ),
+                    classes="dlg-meta",
+                )
             yield PickList(self._build_rows(), max_visible=8, id="items")
-            yield Input(placeholder="type an item, Enter to add — empty Enter = OK", id="add")
+            yield Input(
+                placeholder=t("type an item, Enter to add — empty Enter = OK"), id="add"
+            )
             yield _static("", classes="dlg-err", id="err")
             yield self.buttons(("OK", "ok"), ("Remove", "remove"), ("Cancel", "cancel"))
 
@@ -231,12 +291,14 @@ class ListDialog(Dialog):
     def on_mount(self) -> None:
         self.query_one("#add", Input).focus()
 
-    # --- 輸入 -------------------------------------------------------------- #
+    # --- input ------------------------------------------------------------- #
     def on_input_submitted(self, event: Input.Submitted) -> None:
         event.stop()
         text = event.value.strip()
         if not text:
-            if self._editing is not None:        # 編輯到一半清空 = 放棄這次編輯
+            if (
+                self._editing is not None
+            ):  # clearing it halfway through editing = abandon this edit
                 self._editing = None
                 self.show_error()
                 return
@@ -252,13 +314,13 @@ class ListDialog(Dialog):
                 self.show_error(error)
                 return
             staged.append(candidate)
-        added = staged[len(base):]
+        added = staged[len(base) :]
         if self._editing is None:
             self.items.extend(added)
             cursor = len(self.items) - 1
         else:
             at = self._editing
-            self.items[at:at + 1] = added
+            self.items[at : at + 1] = added
             cursor = at
             self._editing = None
         event.input.value = ""
@@ -272,7 +334,7 @@ class ListDialog(Dialog):
             return
         self.accept(list(self.items))
 
-    # --- 清單 -------------------------------------------------------------- #
+    # --- list -------------------------------------------------------------- #
     def action_focus_list(self) -> None:
         if self.items and isinstance(self.focused, (Input,)):
             self.query_one("#items", PickList).focus()
@@ -289,7 +351,7 @@ class ListDialog(Dialog):
             self.query_one("#add", Input).focus()
 
     def on_pick_list_chosen(self, event: PickList.Chosen) -> None:
-        """Enter:把該項放回輸入框修改。"""
+        """Enter: put the item back into the input box for editing."""
         event.stop()
         self._editing = event.index
         box = self.query_one("#add", Input)
@@ -322,7 +384,7 @@ class ListDialog(Dialog):
 
 # ---------------------------------------------------------------------- #
 class TableDialog(Dialog):
-    """多欄表格:每列是以分隔字元串起來的一個字串(A>B、A:line_ahead、排程規則…)。"""
+    """Multi-column table: each row is one string joined by a separator (A>B, A:line_ahead, schedule rules, ...)."""
 
     FIT = {"rows": (18, 8)}
 
@@ -339,13 +401,13 @@ class TableDialog(Dialog):
         Binding("delete,backspace,x", "remove", show=False),
     ]
 
-    # --- 畫面 -------------------------------------------------------------- #
+    # --- screen ------------------------------------------------------------- #
     def compose(self) -> ComposeResult:
         f, spec = self.field, self.spec
         with Vertical(classes="dlg dlg-wide"):
             yield from self.header(f.label, f.help)
             if spec.note:
-                yield _static(spec.note, classes="dlg-meta")
+                yield _static(t(spec.note), classes="dlg-meta")
             yield _static(self._header_line(), classes="dlg-colhead")
             yield PickList(self._build_rows(), max_visible=8, id="rows")
             with Horizontal(id="cells"):
@@ -353,41 +415,37 @@ class TableDialog(Dialog):
                     if col.choices:
                         yield CycleBox(col.choices, id=f"cell-{i}")
                     else:
-                        yield Input(placeholder=col.name + ("?" if col.optional else ""),
-                                    id=f"cell-{i}")
+                        yield Input(
+                            placeholder=col.name + ("?" if col.optional else ""),
+                            id=f"cell-{i}",
+                        )
             yield _static(self._suggestions(), classes="dlg-meta", id="suggest")
             yield _static("", classes="dlg-err", id="err")
             yield self.buttons(("OK", "ok"), ("Remove", "remove"), ("Cancel", "cancel"))
 
     def _header_line(self) -> str:
-        return "    " + " │ ".join(M.pad_cells(c.name, c.width) for c in self.spec.columns)
+        return "    " + " │ ".join(
+            M.pad_cells(c.name, c.width) for c in self.spec.columns
+        )
 
     def _build_rows(self) -> list[Row]:
         rows = []
         for i, item in enumerate(self.items):
             cells = self.spec.parse(item)
-            body = " │ ".join(M.pad_cells(c, col.width)
-                             for c, col in zip(cells, self.spec.columns))
+            body = " │ ".join(
+                M.pad_cells(c, col.width) for c, col in zip(cells, self.spec.columns)
+            )
             rows.append(Row(f"{i + 1:>2}. {body}"))
         return rows
 
     def _suggestions(self) -> str:
-        if self.field.key != "scheduler.rules":
-            return ""
-        seen = M.table_suggestions(self.items, self.spec)
-        examples = [["time", "sorties_run"], [], ["stop"], ["kcauto", "combat"], []]
-        parts = []
-        for col, have, ex in zip(self.spec.columns, seen, examples):
-            names = list(dict.fromkeys(have + ex))[:5]
-            if names:
-                parts.append(f"{col.name}: {', '.join(names)}")
-        return "seen / examples — " + "   ".join(parts) if parts else ""
+        return ""
 
     def _refresh_rows(self, cursor: int | None = None) -> None:
         self.query_one("#rows", PickList).set_rows(self._build_rows(), cursor)
         self.query_one("#suggest", Static).update(Text(self._suggestions(), style=DIM))
 
-    # --- 儲存格 -------------------------------------------------------------- #
+    # --- cells -------------------------------------------------------------- #
     def _cell_widgets(self) -> list:
         return [self.query_one(f"#cell-{i}") for i in range(len(self.spec.columns))]
 
@@ -414,7 +472,7 @@ class TableDialog(Dialog):
     def on_mount(self) -> None:
         self._cell_widgets()[0].focus()
 
-    # --- 動作 -------------------------------------------------------------- #
+    # --- actions ------------------------------------------------------------ #
     def on_input_submitted(self, event: Input.Submitted) -> None:
         event.stop()
         self._commit_row()
@@ -434,7 +492,9 @@ class TableDialog(Dialog):
             self._finish()
             return
         cells = self._cells()
-        error = M.check_table_row(self.field, self.spec, cells, self.items, self._editing)
+        error = M.check_table_row(
+            self.field, self.spec, cells, self.items, self._editing
+        )
         if error:
             self.show_error(error)
             return
@@ -498,10 +558,17 @@ class TableDialog(Dialog):
 
 # ---------------------------------------------------------------------- #
 class PresetDialog(Dialog):
-    """艦隊 preset:單選(pvp)或複選(combat.fleet_presets,記錄順序)。"""
+    """Fleet preset: single choice (pvp) or multiple choice (combat.fleet_presets, order is recorded)."""
 
-    def __init__(self, field: Field, value: Any, *, multi: bool,
-                 tokens: Sequence[str] | None = None, hint: str = "") -> None:
+    def __init__(
+        self,
+        field: Field,
+        value: Any,
+        *,
+        multi: bool,
+        tokens: Sequence[str] | None = None,
+        hint: str = "",
+    ) -> None:
         super().__init__()
         self.field = field
         self.value = value
@@ -515,12 +582,16 @@ class PresetDialog(Dialog):
         with Vertical(classes="dlg"):
             yield from self.header(f.label, f.help)
             hint = self.hint or (
-                "Space toggles a preset; the order you pick is the order saved. "
-                "Enter = OK." if self.multi else
-                "Arrows + Enter to choose. null = not used, 0 = unspecified.")
+                t(
+                    "Space toggles a preset; the order you pick is the order saved. Enter = OK."
+                )
+                if self.multi
+                else t("Arrows + Enter to choose. null = not used, 0 = unspecified.")
+            )
             yield _static(hint, classes="dlg-meta")
-            yield PresetGrid(tokens, M.preset_selection(self.value),
-                             multi=self.multi, id="grid")
+            yield PresetGrid(
+                tokens, M.preset_selection(self.value), multi=self.multi, id="grid"
+            )
             yield _static("", classes="dlg-meta", id="order")
             yield _static("", classes="dlg-err", id="err")
             yield self.buttons(("OK", "ok"), ("Clear", "clear"), ("Cancel", "cancel"))
@@ -533,8 +604,8 @@ class PresetDialog(Dialog):
         if not self.multi:
             return
         order = self.query_one(PresetGrid).order
-        label = " → ".join(order) if order else "(none)"
-        self.query_one("#order", Static).update(Text("order: " + label, style=DIM))
+        label = " → ".join(order) if order else t("(none)")
+        self.query_one("#order", Static).update(Text(t("order: ") + label, style=DIM))
 
     def _result(self) -> Any:
         grid = self.query_one(PresetGrid)
@@ -568,69 +639,138 @@ class NumSpec:
     lo: Optional[int] = None
     hi: Optional[int] = None
     min_places: int = 1
-    color: str = ""         # 該數字的顏色(標題與選中列)
-    row: int = 0            # 排版:第幾排 / 第幾欄(配方 2×2 用)
+    color: str = ""  # colour of this number (title and selected row)
+    row: int = 0  # layout: which row / column (used by the 2×2 recipe)
     col: int = 0
 
 
 class NumberDialog(Dialog):
-    """逐位數滾動的數字選擇器(一個或多個數字)。
+    """Digit-by-digit scrolling number picker (one or more numbers).
 
-    ← → 換位數,↑ ↓ 滾動,Enter 確定。超出範圍會自動收斂到最大/最小值。
-    單一數字回傳 int;多個數字(配方)回傳 list[int]。
+    ← → change digit, ↑ ↓ scroll, Enter confirms. Out-of-range values are clamped to the maximum / minimum.
+    A single number returns an int; several numbers (recipe) return a list[int].
     """
 
     HINT = "← →  digit    ↑ ↓  scroll    Enter  OK    Esc  cancel"
-    # 多個數字(配方)分兩層:先選資源,Enter 進去再調數字
+    # several numbers (recipe) have two levels: pick a resource first, Enter goes in to adjust the number
     HINT_GROUP = "↑ ↓ ← →  choose    Enter  edit this one    Tab  next    Esc  cancel"
     HINT_DIGIT = "← →  digit    ↑ ↓  scroll    Enter  confirm    Esc  undo this one"
-    OVERHEAD = 16            # 滾輪以外的元件佔用的列數(含邊框)
+    OVERHEAD = 16  # rows used by widgets other than the wheels (including border)
+    PRESET_ROWS = 7  # extra rows taken when the preset list is stacked above the wheels
+    SIDE_BY_SIDE = 92  # the terminal must be at least this wide for the presets to go left of the wheels
+    BINDINGS = [
+        *Dialog.BINDINGS,
+        Binding("p", "focus_presets", show=False),
+        Binding("right", "from_presets", show=False),
+    ]
+    stacked = (
+        False  # the preset list is currently stacked above the wheels (narrow terminal)
+    )
 
-    def __init__(self, field: Field, title: str, specs: Sequence[NumSpec], *,
-                 as_list: bool) -> None:
+    def __init__(
+        self,
+        field: Field,
+        title: str,
+        specs: Sequence[NumSpec],
+        *,
+        as_list: bool,
+        presets: Sequence[M.RecipePreset] = (),
+        secretary_key: str = "",
+    ) -> None:
         super().__init__()
+        self.recipe_presets = list(presets)
+        self.secretary_key = secretary_key
+        self.has_sec = False  # the secretary is only changed together with the recipe after a preset has been applied
+        self.sec_value: Any = None
         self.field = field
         self.title_text = title
         self.specs = list(specs)
         self.as_list = as_list
-        # 依 spec 的順序存放:(起始滾輪, 有無正負號, 位數)。滾輪本身依畫面排版順序排列。
+        # stored in spec order: (first wheel, has sign, digits). The wheels themselves are laid out in screen order.
         self.groups: list[tuple[int, bool, int]] = [(0, False, 1)] * len(self.specs)
 
     def compose(self) -> ComposeResult:
         wheels: list[Wheel] = []
-        order = sorted(range(len(self.specs)),
-                       key=lambda i: (self.specs[i].row, self.specs[i].col))
+        order = sorted(
+            range(len(self.specs)), key=lambda i: (self.specs[i].row, self.specs[i].col)
+        )
         for gi in order:
             spec = self.specs[gi]
-            signed, places = M.number_layout(spec.lo, spec.hi, spec.value, spec.min_places)
+            signed, places = M.number_layout(
+                spec.lo, spec.hi, spec.value, spec.min_places
+            )
             start = len(wheels)
             value = M.clamp_number(spec.value, spec.lo, spec.hi)
             span = places + (1 if signed else 0)
-            group_gap = 5 if spec.col > 0 else 0         # 右邊那組與左邊那組之間留寬並畫分隔線
+            group_gap = (
+                5 if spec.col > 0 else 0
+            )  # leave a wider gap and draw a divider between the right group and the left group
             common = dict(span=span, row=spec.row, color=spec.color, tight=True)
             if signed:
-                wheels.append(Wheel(["+", "-"], 1 if value < 0 else 0, label=spec.label,
-                                    gap=group_gap, divider=group_gap > 0, **common))
+                wheels.append(
+                    Wheel(
+                        ["+", "-"],
+                        1 if value < 0 else 0,
+                        label=spec.label,
+                        gap=group_gap,
+                        divider=group_gap > 0,
+                        **common,
+                    )
+                )
             for pos, d in enumerate(M.digits_of(value, places)):
                 first = pos == 0 and not signed
-                wheels.append(Wheel([str(n) for n in range(10)], d,
-                                    label=spec.label if first else "",
-                                    gap=group_gap if first else 0,
-                                    divider=first and group_gap > 0, **common))
+                wheels.append(
+                    Wheel(
+                        [str(n) for n in range(10)],
+                        d,
+                        label=spec.label if first else "",
+                        gap=group_gap if first else 0,
+                        divider=first and group_gap > 0,
+                        **common,
+                    )
+                )
             self.groups[gi] = (start, signed, places)
         f = self.field
         with Vertical(classes="dlg dlg-wide"):
             yield from self.header(self.title_text, f.help)
-            yield _static(f"{f.key}   {M.type_label(f)}   default "
-                          f"{M.format_value(f, f.default, 30)}", classes="dlg-meta")
-            yield WheelPicker(wheels, id="wheels", grouped=self.grouped,
-                              buttons=("OK", "Cancel") if self.grouped else ())
+            yield _static(self.meta_text(), classes="dlg-meta")
+            with Horizontal(id="wheelrow"):
+                if self.recipe_presets:
+                    with Vertical(id="presetbox"):
+                        yield _static(
+                            t("Presets   (← / ↑ / p = here · Enter = apply)"),
+                            classes="dlg-meta",
+                        )
+                        yield PickList(
+                            [Row(M.recipe_preset_row(p)) for p in self.recipe_presets],
+                            max_visible=8,
+                            id="presets",
+                        )
+                        yield _static("", classes="dlg-meta", id="pcomment")
+                yield WheelPicker(
+                    wheels,
+                    id="wheels",
+                    grouped=self.grouped,
+                    buttons=("OK", "Cancel") if self.grouped else (),
+                )
             yield _static("", classes="dlg-preview", id="preview")
             yield _static("", classes="dlg-err", id="err")
-            yield _static(self.HINT_GROUP if self.grouped else self.HINT,
-                          classes="dlg-meta", id="hint")
-            if not self.grouped:                    # 分組模式的 OK / Cancel 在滾輪下方,可用方向鍵選
+            yield _static(
+                t(self.HINT_GROUP if self.grouped else self.HINT),
+                classes="dlg-meta",
+                id="hint",
+            )
+            if not self.grouped:  # in grouped mode OK / Cancel are below the wheels and can be chosen with the arrow keys
                 yield self.buttons(("OK", "ok"), ("Cancel", "cancel"))
+
+    def meta_text(self) -> str:
+        f = self.field
+        return t(
+            "{key}   {type}   default {default}",
+            key=f.key,
+            type=M.type_label(f),
+            default=M.format_value(f, f.default, 30),
+        )
 
     @property
     def grouped(self) -> bool:
@@ -639,10 +779,82 @@ class NumberDialog(Dialog):
     def on_resize(self, event) -> None:
         Dialog.on_resize(self, event)
         picker = self.query_one(WheelPicker)
-        picker.set_visible(5 if event.size.height - self.OVERHEAD >= picker.height_for(5) else 3)
+        overhead = self.OVERHEAD
+        if self.recipe_presets:
+            # enough room → presets go left of the wheels; otherwise stack above the wheels
+            stacked = self.stacked = event.size.width < self.SIDE_BY_SIDE
+            self.query_one("#wheelrow").set_class(stacked, "stack")
+            lst = self.query_one("#presets", PickList)
+            if stacked:
+                overhead += self.PRESET_ROWS
+                lst.max_visible = max(3, min(4, event.size.height - 22))
+            else:
+                lst.max_visible = max(3, min(8, event.size.height - 18))
+            lst.set_rows(lst.rows, lst.cursor)
+        picker.set_visible(
+            5 if event.size.height - overhead >= picker.height_for(5) else 3
+        )
+
+    # --- preset ------------------------------------------------------------ #
+    def action_focus_presets(self) -> None:
+        if self.recipe_presets and not self.query_one(WheelPicker).in_digits:
+            lst = self.query_one("#presets", PickList)
+            lst.focus()
+            self._show_comment(lst.cursor)
+
+    def action_from_presets(self) -> None:
+        """With presets on the left, → in the list returns to the wheels (ignored otherwise)."""
+        if (
+            self.recipe_presets
+            and not self.stacked
+            and self.query_one("#presets").has_focus
+        ):
+            self.query_one(WheelPicker).focus()
+
+    def on_wheel_picker_leave(self, event: WheelPicker.Leave) -> None:
+        """Wheel first level walked past the edge: side by side, ← goes to the preset list; stacked, ↑ goes to the preset list."""
+        event.stop()
+        if not self.recipe_presets:
+            return
+        if (event.direction == "left" and not self.stacked) or (
+            event.direction == "up" and self.stacked
+        ):
+            self.action_focus_presets()
+
+    def _show_comment(self, index: int) -> None:
+        if 0 <= index < len(self.recipe_presets):
+            self.query_one("#pcomment", Static).update(
+                Text(self.recipe_presets[index].comment, style=DIM)
+            )
+
+    def on_pick_list_moved(self, event: PickList.Moved) -> None:
+        event.stop()
+        self._show_comment(event.index)
+
+    def on_pick_list_edge(self, event: PickList.Edge) -> None:
+        event.stop()
+        event.prevent_default()  # do not pass this on to Dialog's "jump to buttons"
+        if (
+            self.stacked and event.direction > 0
+        ):  # when stacked the list is above: ↓ at the end → wheels
+            self.query_one(WheelPicker).focus()
+
+    def on_pick_list_chosen(self, event: PickList.Chosen) -> None:
+        event.stop()
+        self._apply_preset(self.recipe_presets[event.index])
+        self.query_one(WheelPicker).focus()
+
+    def _apply_preset(self, preset: M.RecipePreset) -> None:
+        for gi, value in enumerate(preset.recipe):
+            spec = self.specs[gi]
+            self._write(gi, M.clamp_number(value, spec.lo, spec.hi))
+        if preset.secretary is not None and self.secretary_key:
+            self.has_sec, self.sec_value = True, preset.secretary
+        self._show_comment(self.recipe_presets.index(preset))
+        self._update_preview()
 
     def action_cancel(self) -> None:
-        """Esc:在第二層(調數字)= 放棄這一組的修改、回到選資源;在第一層 = 取消整個對話框。"""
+        """Esc: at the second level (adjusting a number) = discard this group's change and go back to choosing a resource; at the first level = cancel the whole dialog."""
         picker = self.query_one(WheelPicker)
         if picker.in_digits:
             picker.leave_digits(revert=True)
@@ -653,7 +865,11 @@ class NumberDialog(Dialog):
     def on_wheel_picker_level_changed(self, event: WheelPicker.LevelChanged) -> None:
         event.stop()
         self.query_one("#hint", Static).update(
-            Text(self.HINT_DIGIT if event.level == "digit" else self.HINT_GROUP, style=DIM))
+            Text(
+                t(self.HINT_DIGIT if event.level == "digit" else self.HINT_GROUP),
+                style=DIM,
+            )
+        )
 
     def on_wheel_picker_cancelled(self, event: WheelPicker.Cancelled) -> None:
         event.stop()
@@ -663,7 +879,7 @@ class NumberDialog(Dialog):
         self.query_one(WheelPicker).focus()
         self._update_preview()
 
-    # --- 讀寫滾輪 -------------------------------------------------------- #
+    # --- read / write wheels ----------------------------------------------- #
     def _read(self, gi: int) -> int:
         picker = self.query_one(WheelPicker)
         start, signed, places = self.groups[gi]
@@ -671,8 +887,10 @@ class NumberDialog(Dialog):
         if signed:
             negative = picker.wheels[start].items[picker.wheels[start].index] == "-"
             start += 1
-        digits = [int(picker.wheels[start + i].items[picker.wheels[start + i].index])
-                  for i in range(places)]
+        digits = [
+            int(picker.wheels[start + i].items[picker.wheels[start + i].index])
+            for i in range(places)
+        ]
         return M.number_from(negative, digits)
 
     def _write(self, gi: int, value: int) -> None:
@@ -711,9 +929,14 @@ class NumberDialog(Dialog):
         else:
             rng = ""
             if spec.lo is not None or spec.hi is not None:
-                rng = f"   (range {spec.lo if spec.lo is not None else '…'} .. " \
-                      f"{spec.hi if spec.hi is not None else '…'})"
+                rng = t(
+                    "   (range {lo} .. {hi})",
+                    lo=spec.lo if spec.lo is not None else "…",
+                    hi=spec.hi if spec.hi is not None else "…",
+                )
             shown = f"= {values[0]}{rng}"
+        if self.has_sec:
+            shown += t("   secretary {value}", value=self.sec_value)
         self.query_one("#preview", Static).update(Text(shown, style="bold #e5c07b"))
 
     def on_wheel_picker_accepted(self, event: WheelPicker.Accepted) -> None:
@@ -736,11 +959,253 @@ class NumberDialog(Dialog):
             super().run_command(command)
 
 
-class PresetWheelDialog(Dialog):
-    """艦隊 preset:單一值的滾動式列表(auto 在第一項,接著 1~15)。
+class TimeDialog(NumberDialog):
+    """Hour : minute wheels, returns [hh, mm]."""
 
-    清單欄位(combat.fleet_presets)固定只寫一個元素;結尾的 none = 空清單。
-    pvp 的結尾是 0(未指定)與 null。
+    def meta_text(self) -> str:
+        return t("kcauto stops at this time of day (24-hour clock)")
+
+    def _finish(self) -> None:
+        self.accept(self._values())
+
+
+# ---------------------------------------------------------------------- #
+class SchedulerDialog(Dialog):
+    """Schedule: only two rules — what time to stop kcauto, and after how many sorties to stop combat.
+
+    The format written to the config file is fixed: ``time:HHMM:stop:kcauto`` and ``sorties_run:N:stop:combat``.
+    Space / click = on/off, Enter = set value, o = OK. Other rules are not kept.
+    """
+
+    DEFAULTS = (("0300", "time"), 10)
+    BINDINGS = [
+        *Dialog.BINDINGS,
+        Binding("o", "apply", show=False),
+    ]
+
+    def __init__(self, field: Field, items: Sequence[Any]) -> None:
+        super().__init__()
+        self.field = field
+        self.sched_on = [False, False]
+        self.sched_val: list[Any] = ["0300", 10]
+        self.n_other = 0
+        for item in items:
+            try:
+                rule = parse_rule(item)
+            except ValueError:
+                self.n_other += 1
+                continue
+            if (
+                (rule.condition, rule.action, rule.module) == ("time", "stop", "kcauto")
+                and re.fullmatch(r"\d{4}", rule.value)
+                and not self.sched_on[0]
+            ):
+                self.sched_on[0], self.sched_val[0] = True, rule.value
+            elif (
+                (rule.condition, rule.action, rule.module)
+                == ("sorties_run", "stop", "combat")
+                and rule.value.isdigit()
+                and not self.sched_on[1]
+            ):
+                self.sched_on[1], self.sched_val[1] = True, int(rule.value)
+            else:
+                self.n_other += 1
+
+    def compose(self) -> ComposeResult:
+        with Vertical(classes="dlg"):
+            yield from self.header(self.field.label, self.field.help)
+            yield PickList(self._build_rows(), max_visible=2, id="sched")
+            note = ""
+            if self.n_other:
+                note = t(
+                    "{n} other rule(s) in the file will be removed when you press OK.",
+                    n=self.n_other,
+                )
+            yield _static(note, classes="dlg-err", id="err")
+            yield _static(
+                t("Space = on/off · Enter = set value · o = OK · Esc = cancel"),
+                classes="dlg-meta",
+            )
+            yield self.buttons(("OK", "ok"), ("Cancel", "cancel"))
+
+    def _build_rows(self) -> list[Row]:
+        hhmm = self.sched_val[0]
+        shown_t = f"{hhmm[:2]}:{hhmm[2:]}" if self.sched_on[0] else "--:--"
+        shown_n = f"{self.sched_val[1]}" if self.sched_on[1] else "--"
+        return [
+            Row(
+                M.pad_cells(t("Stop kcauto at"), 24) + shown_t,
+                checked=self.sched_on[0],
+                toggle=True,
+            ),
+            Row(
+                M.pad_cells(t("Stop combat after"), 24) + t("{n} sortie(s)", n=shown_n),
+                checked=self.sched_on[1],
+                toggle=True,
+            ),
+        ]
+
+    def _redraw(self) -> None:
+        lst = self.query_one("#sched", PickList)
+        lst.set_rows(self._build_rows(), lst.cursor)
+
+    def on_mount(self) -> None:
+        self.query_one("#sched", PickList).focus()
+
+    def on_pick_list_toggled(self, event: PickList.Toggled) -> None:
+        event.stop()
+        self.sched_on[event.index] = not self.sched_on[event.index]
+        self._redraw()
+
+    def on_pick_list_chosen(self, event: PickList.Chosen) -> None:
+        event.stop()
+        i = event.index
+        if i == 0:
+            hh, mm = int(self.sched_val[0][:2]), int(self.sched_val[0][2:])
+            specs = [
+                NumSpec("hour", hh, 0, 23, min_places=2, row=0, col=0),
+                NumSpec("min", mm, 0, 59, min_places=2, row=0, col=1),
+            ]
+            f = Field(
+                "scheduler.time",
+                Kind.RECIPE,
+                [0, 0],
+                t("Stop kcauto at"),
+                t("Time of day when kcauto stops."),
+            )
+            self.app.push_screen(
+                TimeDialog(f, t("Stop kcauto at"), specs, as_list=True),
+                partial(self._value_set, 0),
+            )
+        else:
+            spec = NumSpec("sorties", int(self.sched_val[1]), 1, 999)
+            f = Field(
+                "scheduler.sorties_run",
+                Kind.INT,
+                10,
+                t("Stop combat after"),
+                t("Combat stops after this many sorties."),
+                min=1,
+                max=999,
+            )
+            self.app.push_screen(
+                NumberDialog(
+                    f, t("Stop combat after (sorties)"), [spec], as_list=False
+                ),
+                partial(self._value_set, 1),
+            )
+
+    def _value_set(self, i: int, result: Optional[Picked]) -> None:
+        if result is None:
+            return
+        if i == 0:
+            hh, mm = result.value
+            self.sched_val[0] = f"{hh:02d}{mm:02d}"
+        else:
+            self.sched_val[1] = int(result.value)
+        self.sched_on[i] = True
+        self._redraw()
+
+    def _rules(self) -> list[str]:
+        rules = []
+        if self.sched_on[0]:
+            rules.append(f"time:{self.sched_val[0]}:stop:kcauto")
+        if self.sched_on[1]:
+            rules.append(f"sorties_run:{self.sched_val[1]}:stop:combat")
+        return rules
+
+    def action_apply(self) -> None:
+        self.accept(self._rules())
+
+    def run_command(self, command: str) -> None:
+        if command == "ok":
+            self.action_apply()
+        else:
+            super().run_command(command)
+
+
+class SecretaryDialog(Dialog):
+    """Secretary ship: pick a ship type (DD, CV, ...) or enter a specific ship's production ID with the wheel."""
+
+    FIT = {"ships": (11, 10)}
+
+    def __init__(self, field: Field, current: Any) -> None:
+        super().__init__()
+        self.field = field
+        self.current = current
+        # (display text, ship type code or None = production ID, current value?)
+        self.entries: list[tuple[str, Optional[str]]] = []
+        for code, name in M.SHIP_TYPES:
+            self.entries.append((M.pad_cells(code, 5) + t(name), code))
+        self.entries.append((t("Production ID…"), None))
+        self.extra: Optional[str] = None
+        if isinstance(current, str) and current not in M.SHIP_TYPE_CODES:
+            self.extra = current  # a non-standard string in the config file is still kept and selectable
+            self.entries.insert(0, (M.pad_cells(current, 5) + t("(current)"), current))
+
+    def _is_current(self, code: Optional[str]) -> bool:
+        if code is None:
+            return isinstance(self.current, int) and not isinstance(self.current, bool)
+        return self.current == code
+
+    def _rows(self) -> list[Row]:
+        rows = []
+        for text, code in self.entries:
+            if code is None and self._is_current(None):
+                text = t("Production ID…   now {value}", value=self.current)
+            rows.append(Row(("● " if self._is_current(code) else "  ") + text))
+        return rows
+
+    def compose(self) -> ComposeResult:
+        with Vertical(classes="dlg"):
+            yield from self.header(self.field.label, self.field.help)
+            yield PickList(self._rows(), max_visible=10, id="ships")
+            yield _static(
+                t("Enter / click = select · Esc = cancel"), classes="dlg-meta"
+            )
+            yield self.buttons(("Cancel", "cancel"))
+
+    def on_mount(self) -> None:
+        lst = self.query_one("#ships", PickList)
+        for i, (_, code) in enumerate(self.entries):
+            if self._is_current(code):
+                lst.set_rows(lst.rows, i)
+                break
+        lst.focus()
+
+    def on_pick_list_chosen(self, event: PickList.Chosen) -> None:
+        event.stop()
+        code = self.entries[event.index][1]
+        if code is not None:
+            self.accept(code)
+            return
+        start = self.current if self._is_current(None) else 0
+        spec = NumSpec(
+            t("production ID"), int(start), 0, M.SECRETARY_ID_MAX, min_places=5
+        )
+        f = Field(
+            self.field.key,
+            Kind.INT,
+            0,
+            self.field.label,
+            t("Production ID of the ship to use as secretary."),
+            min=0,
+            max=M.SECRETARY_ID_MAX,
+        )
+        self.app.push_screen(
+            NumberDialog(f, t("Production ID"), [spec], as_list=False), self._id_done
+        )
+
+    def _id_done(self, result: Optional[Picked]) -> None:
+        if result is not None:
+            self.accept(int(result.value))
+
+
+class PresetWheelDialog(Dialog):
+    """Fleet preset: a single-value scrolling list (auto first, then 1-15).
+
+    The list field (combat.fleet_presets) always writes exactly one element; the trailing none = empty list.
+    For pvp the trailing entries are 0 (unspecified) and null.
     """
 
     HINT = "↑ ↓  scroll    Enter  OK    Esc  cancel"
@@ -756,12 +1221,14 @@ class PresetWheelDialog(Dialog):
         current = M.preset_wheel_current(f, self.value)
         with Vertical(classes="dlg"):
             yield from self.header(f.label, f.help)
-            yield WheelPicker([Wheel(tokens, tokens.index(current), label="preset", wrap=False)],
-                              id="wheels")
+            yield WheelPicker(
+                [Wheel(tokens, tokens.index(current), label="preset", wrap=False)],
+                id="wheels",
+            )
             yield _static("", classes="dlg-preview", id="preview")
             yield _static("", classes="dlg-meta", id="note")
             yield _static("", classes="dlg-err", id="err")
-            yield _static(self.HINT, classes="dlg-meta")
+            yield _static(t(self.HINT), classes="dlg-meta")
             yield self.buttons(("OK", "ok"), ("Cancel", "cancel"))
 
     def on_resize(self, event) -> None:
@@ -774,9 +1241,16 @@ class PresetWheelDialog(Dialog):
         self._update_preview()
         if isinstance(self.value, list) and len(self.value) > 1:
             shown = ", ".join(str(v) for v in self.value)
-            self.query_one("#note", Static).update(Text(
-                f"Currently {len(self.value)} presets ({shown}); only one can be kept.",
-                style="#e5c07b"))
+            self.query_one("#note", Static).update(
+                Text(
+                    t(
+                        "Currently {n} presets ({shown}); only one can be kept.",
+                        n=len(self.value),
+                        shown=shown,
+                    ),
+                    style="#e5c07b",
+                )
+            )
 
     def _token(self) -> str:
         return self.query_one(WheelPicker).values()[0]
@@ -790,7 +1264,9 @@ class PresetWheelDialog(Dialog):
 
     def _update_preview(self) -> None:
         shown = M.format_value(self.field, self._result(), 30)
-        self.query_one("#preview", Static).update(Text("= " + shown, style="bold #e5c07b"))
+        self.query_one("#preview", Static).update(
+            Text("= " + shown, style="bold #e5c07b")
+        )
 
     def on_wheel_picker_accepted(self, event: WheelPicker.Accepted) -> None:
         event.stop()
@@ -812,16 +1288,16 @@ class PresetWheelDialog(Dialog):
 
 
 class MapDialog(Dialog):
-    """出擊海域:世界 / 海域編號 / 目標節點三個滾輪(auto 時後兩者無效)。
+    """Sortie map: three wheels for world / map number / target node (the last two are ignored for auto).
 
-    目標節點只提供 noro6 內「確實有對應預設」的選項,例如 2-2 有 B-2-2-A,
-    就能選到 ``2-2-A``;「—」代表不指定節點(``2-2``)。
+    Target nodes only offer options that "really have a matching preset" in noro6, e.g. 2-2 has B-2-2-A, so ``2-2-A`` can be picked; "—" means no node specified (``2-2``).
     """
 
     HINT = "← →  world / map / node    ↑ ↓  scroll    Enter  OK    Esc  cancel"
 
-    def __init__(self, field: Field, value: Any,
-                 nodes: Optional[M.NodeIndex] = None) -> None:
+    def __init__(
+        self, field: Field, value: Any, nodes: Optional[M.NodeIndex] = None
+    ) -> None:
         super().__init__()
         self.field = field
         self.node_index = nodes or {}
@@ -834,12 +1310,19 @@ class MapDialog(Dialog):
         numbers = M.map_number_items(self.world, self.number)
         number_index = (self.number - 1) if self.number and self.world != "auto" else 0
         shown_number = numbers[min(number_index, len(numbers) - 1)]
-        node_items = M.map_node_items(self.node_index, self.world, shown_number, self.node)
+        node_items = M.map_node_items(
+            self.node_index, self.world, shown_number, self.node
+        )
         node_index = node_items.index(self.node) if self.node in node_items else 0
         wheels = [
             Wheel(worlds, worlds.index(self.world), label="world", wrap=False),
-            Wheel(numbers, min(number_index, len(numbers) - 1), label="map",
-                  wrap=False, gap=2),
+            Wheel(
+                numbers,
+                min(number_index, len(numbers) - 1),
+                label="map",
+                wrap=False,
+                gap=2,
+            ),
             Wheel(node_items, node_index, label="node", wrap=False, gap=2),
         ]
         with Vertical(classes="dlg"):
@@ -848,7 +1331,7 @@ class MapDialog(Dialog):
             yield _static("", classes="dlg-preview", id="preview")
             yield _static("", classes="dlg-meta", id="note")
             yield _static("", classes="dlg-err", id="err")
-            yield _static(self.HINT, classes="dlg-meta")
+            yield _static(t(self.HINT), classes="dlg-meta")
             yield self.buttons(("OK", "ok"), ("Cancel", "cancel"))
 
     def on_resize(self, event) -> None:
@@ -867,12 +1350,15 @@ class MapDialog(Dialog):
     def on_wheel_picker_changed(self, event: WheelPicker.Changed) -> None:
         event.stop()
         picker = self.query_one(WheelPicker)
-        if event.column == 0:                       # 換世界 → 編號範圍跟著變
+        if event.column == 0:  # changing the world changes the map number range
             world = picker.wheels[0].items[picker.wheels[0].index]
             old = picker.wheels[1]
             keep = old.index if old.items != ["—"] else 0
             picker.set_wheel(1, M.map_number_items(world), keep)
-        if event.column in (0, 1):                  # 換世界或編號 → 節點選項重算
+        if event.column in (
+            0,
+            1,
+        ):  # changing the world or map number recomputes the node options
             world, number, _ = picker.values()
             picker.set_wheel(2, M.map_node_items(self.node_index, world, number), 0)
         self._update_preview()
@@ -881,14 +1367,15 @@ class MapDialog(Dialog):
         picker = self.query_one(WheelPicker)
         world, number, node = picker.values()
         self.query_one("#preview", Static).update(
-            Text("= " + self._current(), style="bold #e5c07b"))
+            Text("= " + self._current(), style="bold #e5c07b")
+        )
         options = [n for n in picker.wheels[2].items if n != M.NO_NODE]
         if world == "auto":
             note = ""
         elif options:
-            note = "noro6 node presets for this map: " + ", ".join(options)
+            note = t("noro6 node presets for this map: ") + ", ".join(options)
         else:
-            note = "No node-specific noro6 preset for this map."
+            note = t("No node-specific noro6 preset for this map.")
         self.query_one("#note", Static).update(Text(note, style=DIM))
 
     def on_wheel_picker_accepted(self, event: WheelPicker.Accepted) -> None:
@@ -912,19 +1399,23 @@ class MapDialog(Dialog):
 
 # ---------------------------------------------------------------------- #
 class QuestDialog(Dialog):
-    """任務勾選清單,依前綴分組。Space 勾選(在群組標題上 = 整組),Enter 確定。"""
+    """Quest checklist grouped by prefix (events first). A group header = fold / unfold; Space ticks a quest, Enter confirms."""
 
     FIT = {"quests": (14, 14)}
 
-    def __init__(self, field: Field, selected: Sequence[Any],
-                 catalog: Sequence[M.QuestInfo]) -> None:
+    def __init__(
+        self, field: Field, selected: Sequence[Any], catalog: Sequence[M.QuestInfo]
+    ) -> None:
         super().__init__()
         self.field = field
         self.old = list(selected)
         self.chosen: set[str] = {str(s) for s in selected}
         self.groups = M.group_quests(catalog, selected)
         self.notes = {q.id: q.note for q in catalog}
-        self._row_ids: list[tuple[str, Optional[str]]] = []     # (群組, 任務 ID 或 None=標題)
+        self._row_ids: list[
+            tuple[str, Optional[str]]
+        ] = []  # (group, quest ID or None = header)
+        self.collapsed: set[str] = {g for g, _ in self.groups}  # all folded by default
 
     BINDINGS = [
         *Dialog.BINDINGS,
@@ -935,8 +1426,12 @@ class QuestDialog(Dialog):
     def compose(self) -> ComposeResult:
         with Vertical(classes="dlg"):
             yield from self.header(self.field.label, self.field.help)
-            yield _static("Space = tick · a / n = all / none in group · Enter = OK",
-                          classes="dlg-meta")
+            yield _static(
+                t(
+                    "Enter/click header = fold · Space = tick · a / n = all / none in group"
+                ),
+                classes="dlg-meta",
+            )
             yield PickList(self._build_rows(), max_visible=14, id="quests")
             yield _static("", classes="dlg-meta", id="count")
             yield self.buttons(("OK", "ok"), ("Cancel", "cancel"))
@@ -945,20 +1440,35 @@ class QuestDialog(Dialog):
         rows, self._row_ids = [], []
         for group, ids in self.groups:
             n = sum(1 for i in ids if i in self.chosen)
-            rows.append(Row(f"── {M.quest_group_title(group)}  ({n}/{len(ids)}) ──",
-                            toggle=True, style="bold #e5c07b"))
+            fold = "▸" if group in self.collapsed else "▾"
+            rows.append(
+                Row(
+                    f"{fold} {M.quest_group_title(group)}  ({n}/{len(ids)})",
+                    toggle=True,
+                    style="bold #e5c07b",
+                )
+            )
             self._row_ids.append((group, None))
+            if group in self.collapsed:
+                continue
             for qid in ids:
                 note = self.notes.get(qid, "")
-                rows.append(Row(f"{qid:<8} {note}".rstrip(), checked=qid in self.chosen,
-                                toggle=True))
+                rows.append(
+                    Row(
+                        f"{qid:<8} {note}".rstrip(),
+                        checked=qid in self.chosen,
+                        toggle=True,
+                    )
+                )
                 self._row_ids.append((group, qid))
         return rows
 
     def _redraw(self) -> None:
         lst = self.query_one("#quests", PickList)
         lst.set_rows(self._build_rows(), lst.cursor)
-        self.query_one("#count", Static).update(Text(f"{len(self.chosen)} selected", style=DIM))
+        self.query_one("#count", Static).update(
+            Text(t("{n} selected", n=len(self.chosen)), style=DIM)
+        )
 
     def on_mount(self) -> None:
         self.query_one("#quests", PickList).focus()
@@ -975,12 +1485,16 @@ class QuestDialog(Dialog):
         event.stop()
         group, qid = self._row_ids[event.index]
         if qid is None:
-            ids = self._group_ids(group)
-            self._set_group(group, not all(i in self.chosen for i in ids))
+            self._fold(group)
+            return
         elif qid in self.chosen:
             self.chosen.discard(qid)
         else:
             self.chosen.add(qid)
+        self._redraw()
+
+    def _fold(self, group: str) -> None:
+        self.collapsed.symmetric_difference_update({group})
         self._redraw()
 
     def action_group(self, on: int) -> None:
@@ -991,7 +1505,11 @@ class QuestDialog(Dialog):
 
     def on_pick_list_chosen(self, event: PickList.Chosen) -> None:
         event.stop()
-        self._finish()
+        group, qid = self._row_ids[event.index]
+        if qid is None:
+            self._fold(group)
+        else:
+            self._finish()
 
     def _finish(self) -> None:
         order = [q for _, ids in self.groups for q in ids if q in self.chosen]
@@ -1006,11 +1524,13 @@ class QuestDialog(Dialog):
 
 # ---------------------------------------------------------------------- #
 class JsonDialog(Dialog):
-    """JSON 編輯器(ship_switcher.slots、未知 key)。Ctrl+S 或點 OK 套用。"""
+    """JSON editor (ship_switcher.slots, unknown keys). Ctrl+S or click OK to apply."""
 
     BINDINGS = [*Dialog.BINDINGS, Binding("ctrl+s", "apply", show=False)]
 
-    def __init__(self, title: str, help_text: str, value: Any, *, want_object: bool) -> None:
+    def __init__(
+        self, title: str, help_text: str, value: Any, *, want_object: bool
+    ) -> None:
         super().__init__()
         self.title_text, self.help_text = title, help_text
         self.value = value
@@ -1021,11 +1541,12 @@ class JsonDialog(Dialog):
             yield from self.header(self.title_text, self.help_text)
             if TextArea is not None:
                 yield TextArea(M.dump_json(self.value), id="json")
-            else:                                           # pragma: no cover
+            else:  # pragma: no cover
                 import json
+
                 yield Input(value=json.dumps(self.value, ensure_ascii=False), id="json")
             yield _static("", classes="dlg-err", id="err")
-            yield _static("Ctrl+S = apply · Esc = cancel", classes="dlg-meta")
+            yield _static(t("Ctrl+S = apply · Esc = cancel"), classes="dlg-meta")
             yield self.buttons(("OK", "ok"), ("Cancel", "cancel"))
 
     def on_mount(self) -> None:
@@ -1034,7 +1555,11 @@ class JsonDialog(Dialog):
 
     def _text(self) -> str:
         widget = self.query_one("#json")
-        return widget.text if TextArea is not None and isinstance(widget, TextArea) else widget.value
+        return (
+            widget.text
+            if TextArea is not None and isinstance(widget, TextArea)
+            else widget.value
+        )
 
     def _check(self) -> Any:
         try:
@@ -1049,7 +1574,7 @@ class JsonDialog(Dialog):
         event.stop()
         self._check()
 
-    def on_input_changed(self, event: Input.Changed) -> None:       # pragma: no cover
+    def on_input_changed(self, event: Input.Changed) -> None:  # pragma: no cover
         event.stop()
         self._check()
 
@@ -1067,10 +1592,15 @@ class JsonDialog(Dialog):
 
 # ---------------------------------------------------------------------- #
 class ValueDialog(Dialog):
-    """單行文字輸入(字串、小數、key 名稱)。parse(text) → (值, 錯誤訊息)。"""
+    """Single-line text input (strings, decimals, key names). parse(text) → (value, error message)."""
 
-    def __init__(self, title: str, help_text: str, initial: str,
-                 parse: Callable[[str], tuple[Any, str]]) -> None:
+    def __init__(
+        self,
+        title: str,
+        help_text: str,
+        initial: str,
+        parse: Callable[[str], tuple[Any, str]],
+    ) -> None:
         super().__init__()
         self.title_text, self.help_text = title, help_text
         self.initial = initial
@@ -1112,14 +1642,18 @@ class ValueDialog(Dialog):
 
 
 _KIND_HELP = {
-    "str": "text", "int": "whole number (wheel)", "float": "decimal number",
-    "bool": "on / off", "null": "empty value", "object": "group of named items { }",
+    "str": "text",
+    "int": "whole number (wheel)",
+    "float": "decimal number",
+    "bool": "on / off",
+    "null": "empty value",
+    "object": "group of named items { }",
     "list": "ordered list [ ]",
 }
 
 
 class NewItemDialog(Dialog):
-    """新增樹狀項目:object 底下要先輸入 key,再選型別;list 底下只選型別。"""
+    """Add a tree item: under an object enter a key first, then pick a type; under a list only pick a type."""
 
     FIT = {"kinds": (13, 7)}
 
@@ -1130,10 +1664,13 @@ class NewItemDialog(Dialog):
 
     def compose(self) -> ComposeResult:
         with Vertical(classes="dlg"):
-            yield _static("Add item" if self.needs_key else "Add list item", classes="dlg-title")
+            yield _static(
+                t("Add item") if self.needs_key else t("Add list item"),
+                classes="dlg-title",
+            )
             if self.needs_key:
-                yield Input(placeholder="key name, then Enter", id="key")
-            rows = [Row(f"{k:<7} {_KIND_HELP[k]}") for k in TR.KINDS]
+                yield Input(placeholder=t("key name, then Enter"), id="key")
+            rows = [Row(f"{k:<7} {t(_KIND_HELP[k])}") for k in TR.KINDS]
             yield PickList(rows, max_visible=7, id="kinds")
             yield _static("", classes="dlg-err", id="err")
             yield self.buttons(("Cancel", "cancel"))
@@ -1182,14 +1719,16 @@ class NewItemDialog(Dialog):
 
 
 class TreeDialog(Dialog):
-    """JSON 的樹狀表格編輯:展開 / 收合、新增、改名、刪除、改型別,數字用滾輪。
+    """Tree-table editor for JSON: expand / collapse, add, rename, delete, change type; numbers use wheels.
 
-    給結構不固定的設定用(ship_switcher.slots、未知 key)。結構已知的欄位請用專用控制項。
+    For settings whose structure is not fixed (ship_switcher.slots, unknown keys). Use the dedicated control for fields with a known structure.
     """
 
     FIT = {"tree": (15, 12)}
-    HINT = ("↑↓ move  →← open/close  Enter edit  a add  x remove  r rename  t type  "
-            "j raw JSON  Ctrl+S apply  Esc cancel")
+    HINT = (
+        "↑↓ move  →← open/close  Enter edit  a add  x remove  r rename  t type  "
+        "j raw JSON  Ctrl+S apply  Esc cancel"
+    )
 
     BINDINGS = [
         *Dialog.BINDINGS,
@@ -1203,8 +1742,9 @@ class TreeDialog(Dialog):
         Binding("ctrl+s", "apply", show=False),
     ]
 
-    def __init__(self, title: str, help_text: str, value: Any, *,
-                 field: Optional[Field] = None) -> None:
+    def __init__(
+        self, title: str, help_text: str, value: Any, *, field: Optional[Field] = None
+    ) -> None:
         super().__init__()
         self.title_text, self.help_text = title, help_text
         self.field = field
@@ -1217,23 +1757,30 @@ class TreeDialog(Dialog):
         with Vertical(classes="dlg dlg-wide"):
             yield from self.header(self.title_text, self.help_text)
             yield _static("", classes="dlg-meta", id="crumb")
-            yield PickList([], max_visible=12, empty="(empty)  —  press a to add", id="tree")
+            yield PickList(
+                [], max_visible=12, empty=t("(empty)  —  press a to add"), id="tree"
+            )
             yield _static("", classes="dlg-err", id="err")
-            yield _static(self.HINT, classes="dlg-meta")
-            yield self.buttons(("OK", "ok"), ("Add", "add"), ("Remove", "remove"),
-                               ("Cancel", "cancel"))
+            yield _static(t(self.HINT), classes="dlg-meta")
+            yield self.buttons(
+                ("OK", "ok"), ("Add", "add"), ("Remove", "remove"), ("Cancel", "cancel")
+            )
 
     def on_mount(self) -> None:
         self._rebuild()
         self.query_one("#tree", PickList).focus()
 
-    # --- 表格 ------------------------------------------------------------- #
+    # --- table -------------------------------------------------------------- #
     def _tree(self) -> PickList:
         return self.query_one("#tree", PickList)
 
     def _selected(self) -> Optional[TR.TreeRow]:
         lst = self._tree()
-        return self.flat[lst.cursor] if self.flat and 0 <= lst.cursor < len(self.flat) else None
+        return (
+            self.flat[lst.cursor]
+            if self.flat and 0 <= lst.cursor < len(self.flat)
+            else None
+        )
 
     def _rebuild(self, select: Optional[TR.Path] = None) -> None:
         lst = self._tree()
@@ -1241,8 +1788,10 @@ class TreeDialog(Dialog):
         self.flat = TR.flatten(self.doc, self.expanded)
         width = max(lst.size.width, 30)
         key_w = TR.key_column_width(self.flat, width)
-        rows = [Row(TR.row_text(r, key_w, width),
-                    toggle=r.expandable or r.kind == "bool") for r in self.flat]
+        rows = [
+            Row(TR.row_text(r, key_w, width), toggle=r.expandable or r.kind == "bool")
+            for r in self.flat
+        ]
         cursor = keep
         if select is not None:
             for i, r in enumerate(self.flat):
@@ -1257,10 +1806,12 @@ class TreeDialog(Dialog):
         text = TR.path_text(row.path) if row else TR.path_text(())
         self.query_one("#crumb", Static).update(Text(text, style=DIM))
 
-    def on_pick_list_moved(self, event) -> None:       # 預留:游標移動時更新路徑
+    def on_pick_list_moved(
+        self, event
+    ) -> None:  # reserved: update the path when the cursor moves
         self._update_crumb()
 
-    # --- 展開 / 收合 ------------------------------------------------------ #
+    # --- expand / collapse -------------------------------------------------- #
     def _toggle_open(self, row: TR.TreeRow) -> None:
         if row.path in self.expanded:
             self.expanded.discard(row.path)
@@ -1279,7 +1830,7 @@ class TreeDialog(Dialog):
             return
         if row.expanded:
             self._toggle_open(row)
-        elif len(row.path) > 1:                         # 回到上一層
+        elif len(row.path) > 1:  # back to the parent level
             self._rebuild(TR.parent_path(row.path))
 
     def on_pick_list_toggled(self, event: PickList.Toggled) -> None:
@@ -1296,7 +1847,7 @@ class TreeDialog(Dialog):
         self._activate(self.flat[event.index])
 
     def _activate(self, row: TR.TreeRow) -> None:
-        """Enter:容器 = 展開/收合;布林 = 切換;其他 = 開編輯器。"""
+        """Enter: container = expand / collapse; bool = toggle; anything else = open the editor."""
         if row.expandable:
             self._toggle_open(row)
         elif row.kind == "bool":
@@ -1305,7 +1856,7 @@ class TreeDialog(Dialog):
         else:
             self._edit(row)
 
-    # --- 編輯值 ----------------------------------------------------------- #
+    # --- edit value ---------------------------------------------------------- #
     def _edit(self, row: TR.TreeRow) -> None:
         label = TR.path_text(row.path)
         done = partial(self._edited, row.path)
@@ -1313,15 +1864,24 @@ class TreeDialog(Dialog):
             limit = max(9_999_999, 10 ** len(str(abs(row.value))) - 1)
             field = Field(label, Kind.INT, 0, label, "", min=-limit, max=limit)
             self.app.push_screen(
-                NumberDialog(field, label, [NumSpec("value", row.value, -limit, limit)],
-                             as_list=False), done)
+                NumberDialog(
+                    field,
+                    label,
+                    [NumSpec("value", row.value, -limit, limit)],
+                    as_list=False,
+                ),
+                done,
+            )
         elif row.kind == "float":
-            self.app.push_screen(ValueDialog(label, "Decimal number", repr(row.value),
-                                             _parse_float), done)
+            self.app.push_screen(
+                ValueDialog(label, t("Decimal number"), repr(row.value), _parse_float),
+                done,
+            )
         elif row.kind == "str":
-            self.app.push_screen(ValueDialog(label, "Text", row.value,
-                                             lambda text: (text, "")), done)
-        else:                                           # null → 選一個型別
+            self.app.push_screen(
+                ValueDialog(label, t("Text"), row.value, lambda text: (text, "")), done
+            )
+        else:  # null → pick a type
             self.action_retype()
 
     def _edited(self, path: TR.Path, result: Optional[Picked]) -> None:
@@ -1329,7 +1889,7 @@ class TreeDialog(Dialog):
             TR.set_at(self.doc, path, result.value)
             self._rebuild(path)
 
-    # --- 新增 / 刪除 / 改名 / 改型別 -------------------------------------- #
+    # --- add / delete / rename / change type ------------------------------- #
     def _container_target(self) -> TR.Path:
         row = self._selected()
         if row is None:
@@ -1340,9 +1900,12 @@ class TreeDialog(Dialog):
         target = self._container_target()
         container = TR.get_at(self.doc, target)
         self.app.push_screen(
-            NewItemDialog(isinstance(container, dict),
-                          list(container) if isinstance(container, dict) else []),
-            partial(self._added, target))
+            NewItemDialog(
+                isinstance(container, dict),
+                list(container) if isinstance(container, dict) else [],
+            ),
+            partial(self._added, target),
+        )
 
     def _added(self, target: TR.Path, result: Optional[Picked]) -> None:
         if result is None:
@@ -1356,14 +1919,14 @@ class TreeDialog(Dialog):
         self._rebuild(path)
         row = self._selected()
         if row is not None and row.kind in ("str", "int", "float"):
-            self._edit(row)                             # 新增完直接輸入內容
+            self._edit(row)  # after adding, type the content straight away
 
     def action_remove(self) -> None:
         row = self._selected()
         if row is None:
             return
         TR.delete_at(self.doc, row.path)
-        self.expanded = {p for p in self.expanded if p[:len(row.path)] != row.path}
+        self.expanded = {p for p in self.expanded if p[: len(row.path)] != row.path}
         self._rebuild()
 
     def action_rename(self) -> None:
@@ -1375,27 +1938,38 @@ class TreeDialog(Dialog):
         def parse(text: str) -> tuple[Any, str]:
             return text.strip(), TR.key_error(parent, text.strip(), row.key) or ""
 
-        self.app.push_screen(ValueDialog("Rename key", TR.path_text(row.path), row.key, parse),
-                             partial(self._renamed, row))
+        self.app.push_screen(
+            ValueDialog(t("Rename key"), TR.path_text(row.path), row.key, parse),
+            partial(self._renamed, row),
+        )
 
     def _renamed(self, row: TR.TreeRow, result: Optional[Picked]) -> None:
         if result is None or result.value == row.key:
             return
         new_path = TR.rename_key(self.doc, row.path, result.value)
-        self.expanded = {new_path + p[len(row.path):] if p[:len(row.path)] == row.path else p
-                         for p in self.expanded}
+        self.expanded = {
+            new_path + p[len(row.path) :] if p[: len(row.path)] == row.path else p
+            for p in self.expanded
+        }
         self._rebuild(new_path)
 
     def action_retype(self) -> None:
         row = self._selected()
         if row is None:
             return
-        options = [(f"{k:<7} {_KIND_HELP[k]}", k) for k in TR.KINDS]
+        options = [(f"{k:<7} {t(_KIND_HELP[k])}", k) for k in TR.KINDS]
         self.app.push_screen(
-            ChoiceDialog("Change type", "Content is kept when it converts cleanly "
-                         "(\"12\" → 12); otherwise the new type starts empty.",
-                         options, row.kind),
-            partial(self._retyped, row))
+            ChoiceDialog(
+                t("Change type"),
+                t(
+                    "Content is kept when it converts cleanly "
+                    '("12" → 12); otherwise the new type starts empty.'
+                ),
+                options,
+                row.kind,
+            ),
+            partial(self._retyped, row),
+        )
 
     def _retyped(self, row: TR.TreeRow, result: Optional[Picked]) -> None:
         if result is None or result.value == row.kind:
@@ -1403,11 +1977,17 @@ class TreeDialog(Dialog):
         TR.set_at(self.doc, row.path, TR.convert(row.value, result.value))
         self._rebuild(row.path)
 
-    # --- 原始 JSON / 套用 --------------------------------------------------- #
+    # --- raw JSON / apply ---------------------------------------------------- #
     def action_raw_json(self) -> None:
         self.app.push_screen(
-            JsonDialog(self.title_text, "Raw JSON", self.doc,
-                       want_object=isinstance(self.doc, dict)), self._raw_done)
+            JsonDialog(
+                self.title_text,
+                t("Raw JSON"),
+                self.doc,
+                want_object=isinstance(self.doc, dict),
+            ),
+            self._raw_done,
+        )
 
     def _raw_done(self, result: Optional[Picked]) -> None:
         if result is None:
@@ -1421,7 +2001,7 @@ class TreeDialog(Dialog):
 
     def _finish(self) -> None:
         if TR.kind_of(self.doc) != self.root_kind:
-            self.show_error(f"Top level must stay a {self.root_kind}")
+            self.show_error(t("Top level must stay a {kind}", kind=self.root_kind))
             return
         if self.field is not None:
             errors = self.field.validate(self.doc)
@@ -1445,12 +2025,12 @@ def _parse_float(text: str) -> tuple[Any, str]:
     try:
         return float(text), ""
     except ValueError:
-        return None, "Enter a number such as 1.5"
+        return None, t("Enter a number such as 1.5")
 
 
 # ---------------------------------------------------------------------- #
 class DangerDialog(Dialog):
-    """高風險設定的二次確認。y / n。"""
+    """Second confirmation for high-risk settings. y / n."""
 
     BINDINGS = [
         Binding("y", "answer(1)", show=False),
@@ -1464,17 +2044,22 @@ class DangerDialog(Dialog):
 
     def compose(self) -> ComposeResult:
         body = Text()
-        body.append("⚠ Dangerous setting\n", style="bold #e06c75")
+        body.append(t("⚠ Dangerous setting") + "\n", style="bold #e06c75")
         body.append(f"{self.field.label}\n", style="bold")
         body.append(self.field.help + "\n\n")
         if self.added:
-            body.append("Adding: " + ", ".join(str(a) for a in self.added) + "\n\n",
-                        style="#e5c07b")
-        body.append("Apply this change?")
+            body.append(
+                t("Adding: ") + ", ".join(str(a) for a in self.added) + "\n\n",
+                style="#e5c07b",
+            )
+        body.append(t("Apply this change?"))
         with Vertical(classes="dlg dlg-danger"):
             yield Static(body)
-            yield Horizontal(ActionLabel("Apply", "yes", hotkey="y"),
-                             ActionLabel("Cancel", "no", hotkey="n"), classes="dlg-buttons")
+            yield Horizontal(
+                ActionLabel("Apply", "yes", hotkey="y"),
+                ActionLabel("Cancel", "no", hotkey="n"),
+                classes="dlg-buttons",
+            )
 
     def action_answer(self, yes: int) -> None:
         self.dismiss(bool(yes))
@@ -1485,7 +2070,7 @@ class DangerDialog(Dialog):
 
 # ---------------------------------------------------------------------- #
 class SearchDialog(Dialog):
-    """/ 搜尋全部欄位。↑↓ 選擇,Enter 跳過去。"""
+    """/ searches all fields. ↑↓ select, Enter jumps there."""
 
     FIT = {"hits": (10, 12)}
 
@@ -1502,10 +2087,10 @@ class SearchDialog(Dialog):
 
     def compose(self) -> ComposeResult:
         with Vertical(classes="dlg dlg-wide"):
-            yield _static("Search settings", classes="dlg-title")
-            yield Input(placeholder="key, label or description…", id="q")
-            yield PickList([], max_visible=12, empty="type to search", id="hits")
-            yield _static("↑↓ select · Enter jump · Esc close", classes="dlg-meta")
+            yield _static(t("Search settings"), classes="dlg-title")
+            yield Input(placeholder=t("key, label or description…"), id="q")
+            yield PickList([], max_visible=12, empty=t("type to search"), id="hits")
+            yield _static(t("↑↓ select · Enter jump · Esc close"), classes="dlg-meta")
 
     def on_mount(self) -> None:
         self.query_one("#q", Input).focus()
@@ -1520,9 +2105,9 @@ class SearchDialog(Dialog):
             for key in self.unknown:
                 if query in key.lower():
                     self.hits.append(key)
-                    rows.append(Row(M.pad_cells(key, 34) + " (unknown key)"))
+                    rows.append(Row(M.pad_cells(key, 34) + t(" (unknown key)")))
         lst = self.query_one("#hits", PickList)
-        lst.empty = "no match" if query else "type to search"
+        lst.empty = t("no match") if query else t("type to search")
         lst.set_rows(rows, 0)
 
     def action_move(self, delta: int) -> None:

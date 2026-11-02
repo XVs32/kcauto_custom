@@ -1,7 +1,12 @@
 import unittest
 
 from tui.ansi import (
-    ERROR_STYLE, LOG_STYLE, STATUS_STYLE, WARNING_STYLE, parse_ansi, plain_text,
+    ERROR_STYLE,
+    LOG_STYLE,
+    STATUS_STYLE,
+    WARNING_STYLE,
+    parse_ansi,
+    plain_text,
 )
 from tui.procstats import SPARK_CHARS, fmt_bytes, fmt_duration, sparkline
 
@@ -12,27 +17,35 @@ class AnsiParsing(unittest.TestCase):
         self.assertEqual(parse_ansi(""), [])
 
     def test_four_kcauto_colors(self):
-        cases = {"91": ERROR_STYLE, "92": STATUS_STYLE,
-                 "93": WARNING_STYLE, "94": LOG_STYLE}
+        cases = {
+            "91": ERROR_STYLE,
+            "92": STATUS_STYLE,
+            "93": WARNING_STYLE,
+            "94": LOG_STYLE,
+        }
         for code, style in cases.items():
             self.assertEqual(parse_ansi(f"\x1b[{code}mmsg\x1b[0m"), [("msg", style)])
 
     def test_reset_and_mixed_segments(self):
         segs = parse_ansi("a \x1b[92mgreen\x1b[0m b \x1b[91mred\x1b[0m")
-        self.assertEqual(segs, [("a ", ""), ("green", STATUS_STYLE), (" b ", ""),
-                                ("red", ERROR_STYLE)])
+        self.assertEqual(
+            segs,
+            [("a ", ""), ("green", STATUS_STYLE), (" b ", ""), ("red", ERROR_STYLE)],
+        )
         self.assertEqual(plain_text(segs), "a green b red")
 
     def test_unknown_codes_are_debug_default(self):
         self.assertEqual(parse_ansi("\x1b[37mdebug\x1b[0m"), [("debug", "")])
 
     def test_compound_parameters_do_not_leak_as_text(self):
-        # 舊版 isdigit() 判斷會把 "91;1" 當文字印出來
+        # the old isdigit() check would print "91;1" as text
         self.assertEqual(parse_ansi("\x1b[1;91mboom\x1b[0m"), [("boom", ERROR_STYLE)])
         self.assertEqual(parse_ansi("\x1b[91;1mboom"), [("boom", ERROR_STYLE)])
 
     def test_bare_reset_without_params(self):
-        self.assertEqual(parse_ansi("\x1b[92mx\x1b[my"), [("x", STATUS_STYLE), ("y", "")])
+        self.assertEqual(
+            parse_ansi("\x1b[92mx\x1b[my"), [("x", STATUS_STYLE), ("y", "")]
+        )
 
     def test_non_color_sequences_are_stripped(self):
         self.assertEqual(parse_ansi("\x1b[2K\x1b[1Gloading"), [("loading", "")])
@@ -48,7 +61,9 @@ class AnsiParsing(unittest.TestCase):
         self.assertEqual(segs, [("ab", STATUS_STYLE)])
 
     def test_unicode_survives(self):
-        self.assertEqual(plain_text(parse_ansi("\x1b[93m⚠ 出擊 6-4\x1b[0m")), "⚠ 出擊 6-4")
+        self.assertEqual(
+            plain_text(parse_ansi("\x1b[93m⚠ 出擊 6-4\x1b[0m")), "⚠ 出擊 6-4"
+        )
 
 
 class Sparkline(unittest.TestCase):
@@ -59,7 +74,7 @@ class Sparkline(unittest.TestCase):
     def test_scaling(self):
         self.assertEqual(sparkline([0], width=1), SPARK_CHARS[0])
         self.assertEqual(sparkline([100], width=1), SPARK_CHARS[-1])
-        self.assertEqual(sparkline([500], width=1), SPARK_CHARS[-1])   # 超過上限
+        self.assertEqual(sparkline([500], width=1), SPARK_CHARS[-1])  # over the limit
         self.assertEqual(sparkline([-5], width=1), SPARK_CHARS[0])
         self.assertEqual(sparkline([50], maximum=200, width=1), SPARK_CHARS[2])
 
@@ -86,10 +101,10 @@ class Formatting(unittest.TestCase):
         self.assertEqual(fmt_bytes(0), "0B")
         self.assertEqual(fmt_bytes(512), "512B")
         self.assertEqual(fmt_bytes(512 * 1024), "512K")
-        self.assertEqual(fmt_bytes(180 * 1024 ** 2), "180M")
-        self.assertEqual(fmt_bytes(int(1.5 * 1024 ** 2)), "1.5M")
-        self.assertEqual(fmt_bytes(1024 ** 3), "1G")
-        self.assertEqual(fmt_bytes(int(1.2 * 1024 ** 3)), "1.2G")
+        self.assertEqual(fmt_bytes(180 * 1024**2), "180M")
+        self.assertEqual(fmt_bytes(int(1.5 * 1024**2)), "1.5M")
+        self.assertEqual(fmt_bytes(1024**3), "1G")
+        self.assertEqual(fmt_bytes(int(1.2 * 1024**3)), "1.2G")
 
 
 if __name__ == "__main__":

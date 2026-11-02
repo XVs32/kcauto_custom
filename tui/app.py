@@ -1,20 +1,20 @@
-"""kcauto_custom CUI 主程式(btop 風格儀表板)。
+"""kcauto_custom CUI main program (btop-style dashboard).
 
-階段 3:kcauto 行程控制(套用並重啟、暫停、停止)、日誌、狀態列的行程資訊。
-階段 4:全螢幕編輯器(Enter / 雙擊方框開啟,見 editor/screen.py)。
+Stage 3: kcauto process control (apply and restart, pause, stop), log, process info in the status bar.
+Stage 4: full-screen editor (open with Enter / double-click on a box, see editor/screen.py).
 
-按鍵
-    方向鍵        在方框間移動(日誌方框取得焦點時改為捲動日誌)
-    c e p u s f r h v g   直接跳到該模組方框
-    space         切換模組 enabled;焦點在日誌時改為暫停/繼續 kcauto
-    enter         開啟編輯器;焦點在日誌且 kcauto 在等待時送出 Enter
-    a             套用:存檔後(重新)啟動 kcauto
-    b             暫停/繼續 kcauto(任何位置皆可)
-    k             停止 kcauto
-    l             聚焦日誌;日誌被隱藏時改為全螢幕檢視
-    esc           離開日誌 / 全螢幕日誌
-    w             存檔      q  離開
+Keys
+    arrows        move between boxes (scroll the log while the log box has focus)
+    c e p u s f r h v g   jump straight to that module's box
+    space         pause / resume kcauto (works anywhere)
+    x             toggle enabled on the focused box
+    enter         open the editor; on the log: forward Enter if kcauto is waiting, otherwise same as a
+    a             apply: save, then (re)start kcauto
+    l             focus the log; when the log is hidden, show it full screen
+    esc           leave the log / full-screen log
+    w             save      q  quit
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -30,9 +30,17 @@ from textual.css.query import NoMatches
 from textual.screen import ModalScreen
 from textual.widgets import Static
 
+from . import i18n
+from .editor.dialogs import ChoiceDialog
 from .editor.screen import EditorScreen
 from .layout import (
-    ALL_CLASSES, LOG_HIDDEN, LayoutPlan, card_heights, choose_layout,
+    ALL_CLASSES,
+    LOG_BOTTOM,
+    LOG_HIDDEN,
+    LOG_RIGHT,
+    LayoutPlan,
+    card_heights,
+    choose_layout,
 )
 from .modules import CARDS, CARD_BY_MODULE, CardSpec, hotkey_markup, move_index
 from .runner import LOG_SYSTEM, RunState, Runner
@@ -42,13 +50,13 @@ from .widgets.box import Box
 from .widgets.card import ModuleCard
 from .widgets.logbox import LogBox
 
-CPU_HISTORY = 60   # 狀態列迷你圖的取樣數(每秒一筆)
+CPU_HISTORY = 60  # number of samples in the status bar sparkline (one per second)
 
 
 class ConfirmQuit(ModalScreen[str]):
-    """離開確認。回傳 'save' / 'discard' / 'cancel'。
+    """Quit confirmation. Returns 'save' / 'discard' / 'cancel'.
 
-    dirty:有未儲存修改;running:kcauto 仍在執行(離開會一併終止它)。
+    dirty: there are unsaved changes; running: kcauto is still running (quitting stops it too).
     """
 
     BINDINGS = [
@@ -65,20 +73,20 @@ class ConfirmQuit(ModalScreen[str]):
     def compose(self) -> ComposeResult:
         body = Text()
         if self.dirty:
-            body.append("有尚未儲存的修改\n", style="bold #e5c07b")
+            body.append("You have unsaved changes\n", style="bold #e5c07b")
         else:
-            body.append("kcauto 仍在執行\n", style="bold #e5c07b")
+            body.append("kcauto is still running\n", style="bold #e5c07b")
         if self.running:
-            body.append("離開時會一併終止 kcauto\n", style="#9aa0a6")
+            body.append("Quitting will also stop kcauto\n", style="#9aa0a6")
         body.append("\n")
 
         options = []
         if self.dirty:
-            options.append(("s", "儲存並離開"))
-            options.append(("d", "放棄修改並離開"))
+            options.append(("s", "Save and quit"))
+            options.append(("d", "Discard changes and quit"))
         else:
-            options.append(("d", "終止 kcauto 並離開"))
-        options.append(("esc", "取消"))
+            options.append(("d", "Stop kcauto and quit"))
+        options.append(("esc", "Cancel"))
         for key, desc in options:
             body.append(f" {key} ", style="bold #0f1115 on #e5c07b")
             body.append(f" {desc}\n")
@@ -94,17 +102,17 @@ class ConfirmQuit(ModalScreen[str]):
 class KcautoCui(App):
     CSS_PATH = "theme.tcss"
     TITLE = "kcauto_custom"
-    ENABLE_COMMAND_PALETTE = False     # Ctrl+P 的命令面板用不到
+    ENABLE_COMMAND_PALETTE = False  # the Ctrl+P command palette is not needed
 
     BINDINGS = [
         Binding("q", "request_quit", "Quit"),
         Binding("w", "save_config", "Save"),
         Binding("a", "apply_config", "Apply"),
-        Binding("b", "toggle_pause", "Pause"),
-        Binding("k", "stop_kcauto", "Stop"),
+        Binding("space", "toggle_pause", "Pause"),
         Binding("l", "focus_log", "Log"),
+        Binding("t", "choose_language", "Language", show=False),
         Binding("escape", "leave_log", "Back", show=False),
-        Binding("space", "toggle_focused", "Toggle", show=False),
+        Binding("x", "toggle_focused", "Toggle", show=False),
         Binding("enter", "edit_focused", "Edit", show=False),
         Binding("up", "move_focus(0,-1)", "Up", show=False),
         Binding("down", "move_focus(0,1)", "Down", show=False),
@@ -116,8 +124,13 @@ class KcautoCui(App):
         ),
     ]
 
-    def __init__(self, store: ConfigStore, runner: Runner | None = None,
-                 *, autostart: bool = False) -> None:
+    def __init__(
+        self,
+        store: ConfigStore,
+        runner: Runner | None = None,
+        *,
+        autostart: bool = False,
+    ) -> None:
         super().__init__()
         self.store = store
         self.runner = runner or Runner(config_name=Path(store.path).stem)
@@ -130,7 +143,7 @@ class KcautoCui(App):
         self._last_card_id = CARDS[0].card_id
 
     # ------------------------------------------------------------------ #
-    # 版面
+    # layout
     # ------------------------------------------------------------------ #
     def compose(self) -> ComposeResult:
         yield StatusBar(id="status")
@@ -149,14 +162,16 @@ class KcautoCui(App):
         self._apply_layout(self.size.width, self.size.height)
         self._dash.query_one(f"#{CARDS[0].card_id}", ModuleCard).focus()
         self._dash.query_one(LogBox).add(
-            LOG_SYSTEM, "kcauto 尚未啟動 — 按 a 存檔並啟動(已在執行時為重新啟動)")
+            LOG_SYSTEM,
+            "kcauto is not running — press a to save and start (restarts if already running)",
+        )
         self.set_interval(1.0, self._tick)
         if self.autostart:
             self._spawn(self._do_restart())
 
     def on_unmount(self) -> None:
         self.store.unsubscribe(self._on_store_change)
-        self.runner.kill_now()      # 不論如何離開,都不留下孤兒行程
+        self.runner.kill_now()  # never leave an orphan process behind, however we exit
 
     def on_resize(self, event: events.Resize) -> None:
         self._apply_layout(event.size.width, event.size.height)
@@ -167,9 +182,9 @@ class KcautoCui(App):
             self._last_card_id = event.widget.id
 
     def _apply_layout(self, width: int, height: int) -> None:
-        """依終端機大小(與方框內容高度)決定欄數與日誌位置。
+        """Choose the column count and log position from the terminal size (and card content height).
 
-        版面 class 設在 #main 上而不是 Screen,這樣對話框開著時縮放視窗也不會錯位。
+        The layout classes live on #main rather than on the Screen, so resizing the window while a dialog is open does not misplace anything.
         """
         plan = choose_layout(width, height, card_heights(self.store.as_dict()))
         if plan == self.layout_plan:
@@ -179,7 +194,9 @@ class KcautoCui(App):
         for name in ALL_CLASSES:
             main.set_class(name in plan.classes, name)
         if plan.log != LOG_HIDDEN:
-            main.remove_class("log-full")       # 日誌已經看得到,不需要全螢幕
+            main.remove_class(
+                "log-full"
+            )  # the log is already visible; no need for full screen
         self._sync_log_later()
 
     def _sync_log_later(self) -> None:
@@ -197,6 +214,20 @@ class KcautoCui(App):
     # store → UI
     # ------------------------------------------------------------------ #
     def _on_store_change(self, key: str | None) -> None:
+        for note in self.store.pop_forced():
+            if note == "akashi":
+                self.notify(
+                    i18n.t("Akashi repair is off while combat is enabled"),
+                    severity="warning",
+                    timeout=4,
+                )
+            elif note == "combat_off":
+                self.notify(
+                    i18n.t(
+                        "Combat is off: Akashi repair and passive repair were turned on"
+                    ),
+                    timeout=4,
+                )
         values = self.store.as_dict()
         if key is None:
             for card in self._dash.query(ModuleCard):
@@ -206,12 +237,12 @@ class KcautoCui(App):
             if spec is not None:
                 self._dash.query_one(f"#{spec.card_id}", ModuleCard).show(values)
         self._dash.query_one(StatusBar).refresh_from(self.store)
-        # 方框內容的行數會影響「日誌放下方是否放得下」,內容變動時重新評估
+        # card content height affects whether the log fits below, so re-evaluate when content changes
         if self.layout_plan is not None:
             self._apply_layout(self.size.width, self.size.height)
 
     # ------------------------------------------------------------------ #
-    # runner → UI(callback 在 asyncio 任務中呼叫,與 UI 同一個事件迴圈)
+    # runner → UI (callbacks run in an asyncio task, on the same event loop as the UI)
     # ------------------------------------------------------------------ #
     def _on_runner_log(self, kind: str, text: str) -> None:
         log = self._query_or_none(LogBox)
@@ -227,12 +258,15 @@ class KcautoCui(App):
             self._cpu_history.clear()
         bar.refresh_from(self.store)
         if waiting:
-            self.notify("kcauto 在等待 Enter:在日誌方框按 Enter 繼續",
-                        severity="warning", timeout=10)
+            self.notify(
+                "kcauto is waiting for Enter: press Enter in the log box to continue",
+                severity="warning",
+                timeout=10,
+            )
             self._reveal_log()
 
     def _tick(self) -> None:
-        """每秒更新行程資訊(CPU、記憶體、執行時間)。"""
+        """Refresh process info (CPU, memory, uptime) every second."""
         bar = self._query_or_none(StatusBar)
         if bar is None:
             return
@@ -247,20 +281,18 @@ class KcautoCui(App):
         bar.refresh_from(self.store)
 
     # ------------------------------------------------------------------ #
-    # 動作:方框導覽與編輯
+    # actions: box navigation and editing
     # ------------------------------------------------------------------ #
     @property
     def _dash(self):
-        """儀表板本體(最底層的 screen)。
+        """The dashboard itself (the bottom-most screen).
 
-        App.query 只會搜尋「目前最上層」的 screen;編輯器或對話框開著時,
-        儀表板的元件(日誌、狀態列、方框)必須從最底層 screen 找,
-        否則 kcauto 的輸出會在編輯期間遺失,store 通知也會找不到狀態列。
+        App.query only searches the current top screen; while the editor or a dialog is open, dashboard widgets (log, status bar, boxes) must be looked up on the bottom screen, otherwise kcauto output is lost during editing and store notifications cannot find the status bar.
         """
         return self.screen_stack[0]
 
     def _modal_open(self) -> bool:
-        """儀表板之上有任何畫面(對話框或編輯器)時,儀表板的快捷鍵一律停用。"""
+        """While any screen (dialog or editor) is above the dashboard, dashboard shortcuts are all disabled."""
         return len(self.screen_stack) > 1
 
     def _focused_card(self) -> ModuleCard | None:
@@ -284,14 +316,41 @@ class KcautoCui(App):
             return
         index = CARDS.index(card.spec)
         columns = self.layout_plan.columns if self.layout_plan else 2
-        target = CARDS[move_index(index, dx, dy, columns=columns)]
-        self.action_focus_card(target.module)
+        target_index = move_index(index, dx, dy, columns=columns)
+        if target_index == index and self._log_in_direction(dx, dy):
+            self._dash.query_one(
+                LogBox
+            ).focus()  # walked past the edge toward the log → enter the log
+            return
+        self.action_focus_card(CARDS[target_index].module)
+
+    def _log_in_direction(self, dx: int, dy: int) -> bool:
+        """Log on the right: walk right into it; log below: walk down into it; cannot enter when hidden."""
+        plan = self.layout_plan
+        if plan is None:
+            return False
+        return (plan.log == LOG_RIGHT and dx > 0) or (plan.log == LOG_BOTTOM and dy > 0)
+
+    def log_arrow(self, dx: int, dy: int, at_top: bool) -> bool:
+        """Arrow keys while the log has focus. Returns True = left the log (do not scroll).
+
+        ← always returns to the boxes; when the log is below (or full screen), ↑ at the very top returns too.
+        """
+        if self._modal_open():
+            return False
+        plan = self.layout_plan
+        full = self._dash.query_one("#main").has_class("log-full")
+        leave = dx < 0 or (
+            dy < 0
+            and at_top
+            and (full or (plan is not None and plan.log == LOG_BOTTOM))
+        )
+        if leave:
+            self._leave_log()
+        return leave
 
     def action_toggle_focused(self) -> None:
         if self._modal_open():
-            return
-        if self._focused_log():
-            self.action_toggle_pause()
             return
         card = self._focused_card()
         if card is not None and card.spec.toggleable:
@@ -301,12 +360,38 @@ class KcautoCui(App):
         if self._modal_open():
             return
         if self._focused_log():
-            if self.runner.waiting_enter:
+            if self.runner.waiting_enter:  # kcauto is waiting for Enter: forward it
                 self._spawn(self._send_enter())
+            else:  # otherwise same as pressing "a"
+                self.action_apply_config()
             return
         card = self._focused_card()
         if card is not None:
             self._edit(card.spec)
+
+    def action_choose_language(self) -> None:
+        if self._modal_open():
+            return
+        options = [(f"{name}  ({code})", code) for code, name in i18n.available()]
+        self.push_screen(
+            ChoiceDialog(
+                "Language / 言語 / 語言",
+                "The editor uses this language from the next time you open it. "
+                "The dashboard stays in English.",
+                options,
+                i18n.language(),
+            ),
+            self._language_chosen,
+        )
+
+    def _language_chosen(self, result) -> None:
+        if result is None or not i18n.set_language(result.value):
+            return
+        i18n.save_pref(result.value)
+        self.notify(
+            f"Language: {dict(i18n.available()).get(result.value, result.value)}",
+            timeout=2,
+        )
 
     def action_save_config(self) -> None:
         if self._modal_open():
@@ -314,34 +399,29 @@ class KcautoCui(App):
         self._save()
 
     # ------------------------------------------------------------------ #
-    # 動作:kcauto 行程
+    # actions: kcauto process
     # ------------------------------------------------------------------ #
     def action_apply_config(self) -> None:
-        """存檔後(重新)啟動 kcauto。有錯誤時不啟動。"""
+        """Save, then (re)start kcauto. Does not start if there are errors."""
         if self._modal_open():
             return
         if self.store.has_errors():
             count = sum(1 for i in self.store.issues() if i.level == "error")
-            self.notify(f"設定有 {count} 個錯誤,未啟動 kcauto", severity="error",
-                        timeout=6)
+            self.notify(
+                f"Config has {count} error(s); kcauto not started",
+                severity="error",
+                timeout=6,
+            )
             return
         if (self.store.changed_keys() or self.store.is_new_file) and not self._save():
             return
         self._spawn(self._do_restart())
 
-    def action_stop_kcauto(self) -> None:
-        if self._modal_open():
-            return
-        if self.runner.state is RunState.STOPPED:
-            self.notify("kcauto 沒有在執行", timeout=2)
-            return
-        self._spawn(self._do_stop())
-
     def action_toggle_pause(self) -> None:
         if self._modal_open():
             return
         if self.runner.toggle_pause() is None:
-            self.notify("kcauto 沒有在執行", timeout=2)
+            self.notify("kcauto is not running", timeout=2)
 
     def action_focus_log(self) -> None:
         if self._modal_open():
@@ -363,7 +443,7 @@ class KcautoCui(App):
             self._leave_log()
 
     def _reveal_log(self) -> None:
-        """讓日誌可見並取得焦點(版面放不下時改成全螢幕日誌)。"""
+        """Make the log visible and focus it (full-screen log when the layout has no room)."""
         if self._modal_open():
             return
         main = self._dash.query_one("#main")
@@ -386,21 +466,17 @@ class KcautoCui(App):
         self.run_worker(self._guarded(coroutine), group="runner", exclusive=False)
 
     async def _guarded(self, coroutine) -> None:
-        """worker 內的未預期例外只記到日誌,不讓整個 UI 結束。"""
+        """Unexpected exceptions inside a worker are only written to the log; they never end the whole UI."""
         try:
             await coroutine
         except asyncio.CancelledError:
             raise
         except Exception as exc:  # noqa: BLE001
-            self._on_runner_log(LOG_SYSTEM, f"內部錯誤:{exc!r}")
+            self._on_runner_log(LOG_SYSTEM, f"Internal error: {exc!r}")
 
     async def _do_restart(self) -> None:
         async with self._runner_lock:
             await self.runner.restart()
-
-    async def _do_stop(self) -> None:
-        async with self._runner_lock:
-            await self.runner.stop()
 
     async def _send_enter(self) -> None:
         await self.runner.send_enter()
@@ -410,10 +486,10 @@ class KcautoCui(App):
             async with self._runner_lock:
                 await self.runner.stop()
         finally:
-            self.exit()          # 即使停止失敗也要離開;on_unmount 會再保險地 kill
+            self.exit()  # leave even if stopping failed; on_unmount will kill again as a safeguard
 
     # ------------------------------------------------------------------ #
-    # 離開
+    # quit
     # ------------------------------------------------------------------ #
     def action_request_quit(self) -> None:
         if self._modal_open():
@@ -423,8 +499,9 @@ class KcautoCui(App):
         if not dirty and not running:
             self.exit()
             return
-        self.push_screen(ConfirmQuit(dirty=dirty, running=running),
-                         self._on_quit_choice)
+        self.push_screen(
+            ConfirmQuit(dirty=dirty, running=running), self._on_quit_choice
+        )
 
     def _on_quit_choice(self, choice: str | None) -> None:
         if choice == "save":
@@ -434,11 +511,13 @@ class KcautoCui(App):
             self._spawn(self._shutdown())
 
     # ------------------------------------------------------------------ #
-    # 實作
+    # implementation
     # ------------------------------------------------------------------ #
     def _toggle(self, spec: CardSpec) -> None:
         current = self.store.get(spec.enabled_key)
-        self.store.set(spec.enabled_key, (not current) if isinstance(current, bool) else True)
+        self.store.set(
+            spec.enabled_key, (not current) if isinstance(current, bool) else True
+        )
 
     def _edit(self, spec: CardSpec) -> None:
         self.push_screen(EditorScreen(self.store, spec.module, save=self._save))
@@ -448,17 +527,20 @@ class KcautoCui(App):
             path = self.store.save()
         except ConfigValidationError as exc:
             first = exc.issues[0].message
-            self.notify(f"有 {len(exc.issues)} 個錯誤,未儲存:{first}",
-                        severity="error", timeout=6)
+            self.notify(
+                f"{len(exc.issues)} error(s), not saved: {first}",
+                severity="error",
+                timeout=6,
+            )
             return False
         except OSError as exc:
-            self.notify(f"寫入失敗:{exc}", severity="error", timeout=6)
+            self.notify(f"Write failed: {exc}", severity="error", timeout=6)
             return False
-        self.notify(f"已儲存 {path.name}", timeout=2)
+        self.notify(f"Saved {path.name}", timeout=2)
         return True
 
     # ------------------------------------------------------------------ #
-    # 滑鼠事件(由 Box 送出)
+    # mouse events (sent by Box)
     # ------------------------------------------------------------------ #
     @on(Box.Toggled)
     def _box_toggled(self, event: Box.Toggled) -> None:

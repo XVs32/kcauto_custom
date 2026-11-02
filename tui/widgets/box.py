@@ -1,10 +1,11 @@
-"""btop 風格方框:圓角邊框、標題嵌在上緣、右下角開關、可聚焦、可點擊。
+"""btop-style box: rounded border, title embedded in the top edge, switch at the bottom right, focusable and clickable.
 
-互動
-  * 單擊:聚焦。
-  * 點右下角的 ON/OFF:切換(送出 ``Box.Toggled``)。
-  * 雙擊:開啟編輯(送出 ``Box.Activated``)。Enter 由 App 層處理。
+Interaction
+  * Single click: focus.
+  * Click ON/OFF at the bottom right: toggle (sends ``Box.Toggled``).
+  * Double click: open editing (sends ``Box.Activated``). Enter is handled by the App.
 """
+
 from __future__ import annotations
 
 from textual import events
@@ -16,7 +17,7 @@ OFF_MARKUP = "[#7f848e]○ OFF[/]"
 
 
 class Box(Static, can_focus=True):
-    # 右下角開關的點擊範圍(字元數)。subtitle 由 Textual 畫在下邊框、靠右。
+    # click area (in characters) of the bottom-right switch. Textual draws the subtitle on the bottom border, right-aligned.
     TOGGLE_HIT_WIDTH = 12
 
     class Toggled(Message):
@@ -51,7 +52,7 @@ class Box(Static, can_focus=True):
         self.is_on = True
 
     def set_state(self, on: bool) -> None:
-        """更新開關外觀;不可切換的方框恆為 on(不顯示開關)。"""
+        """Update the switch appearance; a box that cannot be toggled is always on (no switch is shown)."""
         self.is_on = on
         self.set_class(not on, "off")
         if self.toggleable:

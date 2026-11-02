@@ -1,4 +1,5 @@
-"""頂部狀態列與底部快捷鍵提示列。"""
+"""Top status bar and bottom shortcut hint bar."""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -18,12 +19,12 @@ DIM = "#6b7280"
 
 HINTS: tuple[tuple[str, str], ...] = (
     ("←↑↓→", "move"),
-    ("space", "toggle"),
+    ("space", "pause"),
+    ("x", "toggle"),
     ("enter", "edit"),
     ("a", "apply"),
-    ("b", "pause"),
-    ("k", "stop"),
     ("l", "log"),
+    ("t", "lang"),
     ("w", "save"),
     ("q", "quit"),
 )
@@ -35,13 +36,13 @@ STATE_STYLES = {
 }
 
 
-# 一行放不下時,依序丟掉(先丟最不重要的)
-HINT_DROP_ORDER = ("toggle", "move", "pause", "log", "edit", "stop", "apply")
+# When a line does not fit, drop in this order (least important first)
+HINT_DROP_ORDER = ("lang", "toggle", "move", "pause", "log", "edit", "apply")
 STATUS_DROP_ORDER = ("title", "mode", "spark", "mem", "uptime", "cpu")
 
 
 def hint_text(width: int = 0) -> Text:
-    """底部提示列;視窗太窄時丟掉次要的提示,保留存檔 / 離開。"""
+    """Bottom hint bar; on a narrow window drop the minor hints and keep save / quit."""
     lengths = [(desc, len(key) + len(desc) + 3) for key, desc in HINTS]
     kept = fit_segments(lengths, HINT_DROP_ORDER, width - 1 if width else 0)
     text = Text(no_wrap=True, overflow="ellipsis")
@@ -61,9 +62,9 @@ class HintBar(Static):
 
 
 class StatusBar(Static):
-    """執行狀態、行程資訊、操作模式、設定檔與驗證問題數。
+    """Run state, process info, interaction mode, config file and number of validation issues.
 
-    由左到右依重要性排列,視窗太窄時右側會被截斷。
+    Ordered by importance from left to right; on a narrow window the right side is cut off.
     """
 
     def __init__(self, **kwargs) -> None:
@@ -81,8 +82,9 @@ class StatusBar(Static):
             self.sample = None
             self.cpu_history = ()
 
-    def set_process(self, sample: Optional[ProcSample],
-                    cpu_history: Sequence[float] = ()) -> None:
+    def set_process(
+        self, sample: Optional[ProcSample], cpu_history: Sequence[float] = ()
+    ) -> None:
         self.sample = sample
         self.cpu_history = cpu_history
 
@@ -91,7 +93,7 @@ class StatusBar(Static):
             self.refresh_from(self.config_store)
 
     def refresh_from(self, store: ConfigStore) -> None:
-        """依目前寬度組出狀態列;太窄時先丟次要資訊,檔名(含 *)與問題數永遠保留。"""
+        """Build the status bar for the current width; when too narrow drop minor info first; the file name (with *) and the issue count are always kept."""
         self.config_store = store
         issues = store.issues()
         errors = sum(1 for i in issues if i.level == "error")
@@ -109,7 +111,7 @@ class StatusBar(Static):
         seg("title", (" kcauto_custom  ", "bold"))
         seg("state", ("● ", state_style), (self.run_state.upper(), state_style))
         if self.waiting_enter:
-            seg("waiting", ("  ⏎ 等待 Enter", "bold #e5c07b"))
+            seg("waiting", ("  ⏎ waiting for Enter", "bold #e5c07b"))
         if self.sample is not None:
             s = self.sample
             seg("uptime", (f"  {fmt_duration(s.uptime)}", DESC_STYLE))
@@ -119,20 +121,28 @@ class StatusBar(Static):
 
         mode = store.get("general.interaction_mode")
         jst = store.get("general.jst_offset")
-        jst_text = f"{jst:+d}" if isinstance(jst, int) and not isinstance(jst, bool) else str(jst)
+        jst_text = (
+            f"{jst:+d}"
+            if isinstance(jst, int) and not isinstance(jst, bool)
+            else str(jst)
+        )
         seg("mode", ("  │  ", DIM), (f"{mode} JST{jst_text}", DESC_STYLE))
 
         name = Path(store.path).name
         dirty = bool(store.changed_keys())
-        seg("file", ("  │  ", DIM),
-            (name + ("*" if dirty else ""), "bold #e5c07b" if dirty else DESC_STYLE))
+        seg(
+            "file",
+            ("  │  ", DIM),
+            (name + ("*" if dirty else ""), "bold #e5c07b" if dirty else DESC_STYLE),
+        )
         if errors:
             seg("errors", (f"  ✖ {errors}", "bold #e06c75"))
         if warnings:
             seg("warnings", (f"  ⚠ {warnings}", "#e5c07b"))
 
-        kept = fit_segments([(n, t.cell_len) for n, t in parts], STATUS_DROP_ORDER,
-                            self.size.width)
+        kept = fit_segments(
+            [(n, t.cell_len) for n, t in parts], STATUS_DROP_ORDER, self.size.width
+        )
         text = Text(no_wrap=True, overflow="ellipsis")
         for n, t in parts:
             if n in kept:

@@ -4,15 +4,22 @@ import unittest
 from pathlib import Path
 
 from tui.schema import (
-    SCHEMA, MODULES, defaults, fields_of, groups_of, validate_field, parse_rule,
+    SCHEMA,
+    MODULES,
+    defaults,
+    fields_of,
+    groups_of,
+    validate_field,
+    parse_rule,
 )
 
-# Wiki Ch5 列出的全部欄位(依文件順序)。漏掉任何一個,測試就會失敗。
+# All fields listed in Wiki Ch5 (in document order). Missing any one makes the test fail.
 CH5_KEYS = """
 general.interaction_mode general.jst_offset general.chrome_dev_port
 general.poi_api_port general.poi_control_port general.paused
 combat.enabled combat.sortie_map combat.fleet_mode combat.fleet_presets
 combat.check_fatigue combat.check_lbas_fatigue combat.clear_stop
+combat.paused_after_fleetswitch
 combat.port_check combat.reserve_repair_dock combat.retreat_limit
 combat.repair_limit combat.repair_bucket_threshold
 combat.repair_timelimit_hours combat.repair_timelimit_minutes
@@ -23,6 +30,7 @@ combat.lbas_group_3_nodes combat.override
 expedition.enabled expedition.fleet_2 expedition.fleet_3 expedition.fleet_4
 expedition.fleet_preset expedition.desire_oil expedition.desire_ammo
 expedition.desire_steel expedition.desire_bauxite expedition.desire_bucket
+expedition.desire_devmat
 pvp.enabled pvp.fleet_preset
 quest.enabled quest.quests
 factory.enabled factory.build_recipe factory.build_secretary
@@ -38,7 +46,7 @@ event_reset.reset_difficulty event_reset.frequency
 
 class SchemaCompleteness(unittest.TestCase):
     def test_covers_exactly_the_ch5_keys(self):
-        self.assertEqual(len(CH5_KEYS), 61)
+        self.assertEqual(len(CH5_KEYS), 63)
         self.assertEqual(set(SCHEMA), set(CH5_KEYS))
 
     def test_schema_order_follows_ch5(self):
@@ -54,14 +62,15 @@ class SchemaCompleteness(unittest.TestCase):
             self.assertTrue(field.help.strip(), field.key)
 
     def test_groups_are_stable(self):
-        self.assertEqual(groups_of("combat"),
-                         ["basic", "fatigue", "repair", "routing", "lbas"])
+        self.assertEqual(
+            groups_of("combat"), ["basic", "fatigue", "repair", "routing", "lbas"]
+        )
 
     def test_template_is_covered_when_available(self):
-        """設定 KCAUTO_TEMPLATE 指向 config_cui_template.json 即可檢查實際模板。"""
+        """Set KCAUTO_TEMPLATE to point at config_cui_template.json to check the real template."""
         path = os.environ.get("KCAUTO_TEMPLATE")
         if not path or not Path(path).is_file():
-            self.skipTest("未設定 KCAUTO_TEMPLATE")
+            self.skipTest("KCAUTO_TEMPLATE is not set")
         with open(path, encoding="utf-8") as fh:
             template = json.load(fh)
         self.assertEqual(sorted(set(template) - set(SCHEMA)), [])
@@ -196,13 +205,17 @@ class FieldValidation(unittest.TestCase):
 
 class SchedulerRules(unittest.TestCase):
     def test_parse_roundtrip(self):
-        for text in ("time:0230:stop:kcauto", "sorties_run:15:stop:combat",
-                     "a:b:c:d:e"):
+        for text in (
+            "time:0230:stop:kcauto",
+            "sorties_run:15:stop:combat",
+            "a:b:c:d:e",
+        ):
             self.assertEqual(parse_rule(text).format(), text)
 
     def test_field_accepts_examples(self):
-        issues = validate_field("scheduler.rules",
-                                ["time:0230:stop:kcauto", "sorties_run:15:stop:combat"])
+        issues = validate_field(
+            "scheduler.rules", ["time:0230:stop:kcauto", "sorties_run:15:stop:combat"]
+        )
         self.assertEqual(issues, [])
 
     def test_bad_rules(self):
@@ -219,6 +232,7 @@ if __name__ == "__main__":
 class SecretaryIntOrStrTest(unittest.TestCase):
     def test_accepts_int_and_str(self):
         from tui.schema.fields import SCHEMA as F
+
         for key in ("factory.build_secretary", "factory.develop_secretary"):
             f = F[key]
             self.assertEqual(f.validate(1234), [])
@@ -229,3 +243,75 @@ class SecretaryIntOrStrTest(unittest.TestCase):
             self.assertTrue(f.validate(1.5))
             self.assertTrue(f.validate(True))
             self.assertTrue(f.validate(None))
+
+
+class NewKeys(unittest.TestCase):
+    def test_defaults_and_ranges(self):
+        d = defaults()
+        self.assertEqual(d["expedition.desire_devmat"], 3000)
+        self.assertIs(d["combat.paused_after_fleetswitch"], False)
+        f = SCHEMA["expedition.desire_devmat"]
+        self.assertEqual(f.validate(3000), [])
+        self.assertTrue(f.validate(3001))
+        self.assertTrue(f.validate(-1))
+        self.assertEqual(SCHEMA["combat.paused_after_fleetswitch"].validate(True), [])
+
+    def test_modules(self):
+        self.assertIn(
+            "combat.paused_after_fleetswitch", [f.key for f in fields_of("combat")]
+        )
+        self.assertIn(
+            "expedition.desire_devmat", [f.key for f in fields_of("expedition")]
+        )
+
+    def test_override_text_matches_the_wiki(self):
+        f = SCHEMA["combat.override"]
+        self.assertEqual(f.label, "Allow config override")
+        self.assertEqual(
+            f.help, "Set false to use default combat settings in data/combat"
+        )
+
+
+class IgnoredByOverride(unittest.TestCase):
+    def test_only_enabled_preset_and_map_are_always_used(self):
+        from tui.schema import ignored_by_override
+
+        for key in (
+            "combat.enabled",
+            "combat.fleet_presets",
+            "combat.sortie_map",
+            "combat.override",
+        ):
+            self.assertFalse(ignored_by_override(key, False), key)
+        combat_keys = [f.key for f in fields_of("combat")]
+        ignored = [k for k in combat_keys if ignored_by_override(k, False)]
+        self.assertEqual(len(ignored), len(combat_keys) - 4)
+        self.assertIn("combat.fleet_mode", ignored)
+        self.assertIn("combat.paused_after_fleetswitch", ignored)
+
+    def test_nothing_is_ignored_when_override_is_true(self):
+        from tui.schema import ignored_by_override
+
+        self.assertFalse(
+            any(ignored_by_override(f.key, True) for f in fields_of("combat"))
+        )
+
+    def test_other_modules_are_never_ignored(self):
+        from tui.schema import ignored_by_override
+
+        self.assertFalse(
+            any(
+                ignored_by_override(f.key, False)
+                for m in ("expedition", "pvp", "factory")
+                for f in fields_of(m)
+            )
+        )
+
+    def test_help_panel_explains_why(self):
+        from tui.editor import model as M
+
+        f = SCHEMA["combat.retreat_limit"]
+        lines = M.describe(f, 3, f.make_default(), [], changed=False, ignored=True)
+        self.assertTrue(any("combat.override" in line.text for line in lines))
+        lines = M.describe(f, 3, f.make_default(), [], changed=False)
+        self.assertFalse(any("combat.override" in line.text for line in lines))

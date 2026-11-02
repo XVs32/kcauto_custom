@@ -1,8 +1,8 @@
-"""編輯器的純 Python 邏輯(不依賴 Textual,可在沙盒測試)。
+"""Pure Python logic of the editor (no Textual dependency, testable in a sandbox).
 
-畫面與對話框只負責顯示與按鍵,所有「值怎麼顯示、怎麼解析、怎麼搜尋、
-修改前要不要二次確認」都在這裡。
+The screens and dialogs only display and handle keys; everything about "how a value is shown, how it is parsed, how it is searched, and whether a second confirmation is needed before changing" lives here.
 """
+
 from __future__ import annotations
 
 import json
@@ -13,27 +13,36 @@ from pathlib import Path
 from typing import Any, Callable, Iterable, Mapping, Optional, Sequence
 
 from ..modules import CARDS
-from ..schema import SCHEMA, Field, Kind, Issue, fields_of
 from ..schema.scheduler_rule import parse_rule
+from ..i18n import t
+from ..schema import SCHEMA, Field, Kind, Issue, fields_of
 
 GROUP_TITLES = {
-    "basic": "Basic", "fatigue": "Fatigue", "repair": "Repair",
-    "routing": "Routing", "lbas": "LBAS", "ports": "Ports",
-    "fleets": "Fleets", "resources": "Resources",
-    "build": "Build", "develop": "Develop",
+    "basic": "Basic",
+    "fatigue": "Fatigue",
+    "repair": "Repair",
+    "routing": "Routing",
+    "lbas": "LBAS",
+    "ports": "Ports",
+    "fleets": "Fleets",
+    "resources": "Resources",
+    "build": "Build",
+    "develop": "Develop",
 }
-OTHER = "other"     # 編輯器左側最後一項:schema 沒有的未知 key
+OTHER = (
+    "other"  # last entry on the editor's left: unknown keys that are not in the schema
+)
 
 
 def group_title(group: str) -> str:
-    return GROUP_TITLES.get(group, group.capitalize())
+    return t(GROUP_TITLES.get(group, group.capitalize()))
 
 
 # ---------------------------------------------------------------------- #
-# 文字寬度工具(中文字佔 2 格)
+# text width helpers (a CJK character takes 2 cells)
 # ---------------------------------------------------------------------- #
 def cell_len(text: str) -> int:
-    """顯示寬度:全形/寬字元 2 格,組合字元 0 格。"""
+    """Display width: full-width / wide characters take 2 cells, combining characters 0."""
     total = 0
     for ch in text:
         if unicodedata.combining(ch):
@@ -43,7 +52,7 @@ def cell_len(text: str) -> int:
 
 
 def pad_cells(text: str, width: int) -> str:
-    """依顯示寬度補空白或截斷(截斷時結尾加 …)。"""
+    """Pad with spaces or truncate to the display width (an ellipsis … is appended when truncating)."""
     if width <= 0:
         return ""
     length = cell_len(text)
@@ -62,7 +71,7 @@ def clip_cells(text: str, width: int) -> str:
 
 
 # ---------------------------------------------------------------------- #
-# 值的顯示
+# value display
 # ---------------------------------------------------------------------- #
 def gauge(value: int, lo: int, hi: int, width: int = 8) -> str:
     if hi <= lo:
@@ -98,7 +107,7 @@ def type_label(field: Field) -> str:
 
 
 DISABLE = "disable"
-# 這幾個「艦隊 preset」欄位:空清單 / null / 0 都表示不使用,一律顯示成 disable
+# These "fleet preset" fields: an empty list / null / 0 all mean not used and are always shown as disable
 DISABLE_KEYS = ("combat.fleet_presets", "pvp.fleet_preset", "expedition.fleet_preset")
 
 
@@ -111,22 +120,31 @@ def is_disabled_preset(field: Field, value: Any) -> bool:
 
 
 def format_value(field: Field, value: Any, width: int = 40) -> str:
-    """單行摘要;不合法或型別不符的值也要能顯示(編輯器會用紅字標示)。"""
+    """One-line summary; invalid or wrongly typed values must be displayable too (the editor marks them in red)."""
     if is_disabled_preset(field, value):
         text = DISABLE
     elif value is None:
         text = "null"
     elif isinstance(value, bool):
-        text = "on" if value else "off"
-    elif field.kind is Kind.INT and isinstance(value, int) and field.min is not None \
-            and field.max is not None and field.max - field.min <= 20:
+        text = t("on") if value else t("off")
+    elif (
+        field.kind is Kind.INT
+        and isinstance(value, int)
+        and field.min is not None
+        and field.max is not None
+        and field.max - field.min <= 20
+    ):
         text = f"{gauge(value, field.min, field.max)} {value}"
     elif field.kind is Kind.RECIPE and isinstance(value, list):
         text = " / ".join(str(v) for v in value)
     elif field.kind is Kind.LIST and isinstance(value, list):
         text = _list_summary(value, width)
     elif field.kind is Kind.OBJECT and isinstance(value, dict):
-        text = f"{len(value)} entr{'y' if len(value) == 1 else 'ies'}" if value else "(empty)"
+        text = (
+            (t("1 entry") if len(value) == 1 else t("{n} entries", n=len(value)))
+            if value
+            else t("(empty)")
+        )
     elif isinstance(value, (dict, list)):
         text = json.dumps(value, ensure_ascii=False)
     else:
@@ -136,11 +154,11 @@ def format_value(field: Field, value: Any, width: int = 40) -> str:
 
 def _list_summary(items: list, width: int) -> str:
     if not items:
-        return "(empty)"
+        return t("(empty)")
     joined = ", ".join(str(i) for i in items)
     if cell_len(joined) <= width:
         return joined
-    return f"{len(items)} items: {joined}"
+    return t("{n} items: {joined}", n=len(items), joined=joined)
 
 
 @dataclass(frozen=True)
@@ -149,28 +167,61 @@ class HelpLine:
     style: str = ""
 
 
-def describe(field: Field, value: Any, default: Any, issues: Sequence[Issue],
-             *, changed: bool, saved: Any = None) -> list[HelpLine]:
-    """底部說明面板的內容。"""
+def describe(
+    field: Field,
+    value: Any,
+    default: Any,
+    issues: Sequence[Issue],
+    *,
+    changed: bool,
+    saved: Any = None,
+    ignored: bool = False,
+    forced_off: bool = False,
+) -> list[HelpLine]:
+    """Content of the bottom help panel."""
     lines = [
         HelpLine(field.key, "bold"),
         HelpLine(field.help, ""),
         HelpLine(
-            f"type: {type_label(field)}   default: {format_value(field, default, 60)}"
-            f"   now: {format_value(field, value, 60)}" + ("   (modified)" if changed else ""),
+            t(
+                "type: {type}   default: {default}   now: {now}",
+                type=type_label(field),
+                default=format_value(field, default, 60),
+                now=format_value(field, value, 60),
+            )
+            + (t("   (modified)") if changed else ""),
             "#9aa0a6",
         ),
     ]
+    if forced_off:
+        lines.append(
+            HelpLine(t("Akashi repair is off while combat is enabled"), "#6b7280")
+        )
+    if ignored:
+        lines.append(
+            HelpLine(
+                t(
+                    "ignored while combat.override is off — kcauto uses the defaults in data/combat"
+                ),
+                "#6b7280",
+            )
+        )
     if field.advanced:
-        lines.append(HelpLine("advanced setting — change only if you know what it does", "#6b7280"))
+        lines.append(
+            HelpLine(
+                t("advanced setting — change only if you know what it does"), "#6b7280"
+            )
+        )
     for issue in issues:
-        style = {"error": "bold #e06c75", "danger": "bold #c678dd"}.get(issue.level, "#e5c07b")
-        lines.append(HelpLine(f"{issue.level}: {issue.message}", style))
+        style = {"error": "bold #e06c75", "danger": "bold #c678dd"}.get(
+            issue.level, "#e5c07b"
+        )
+        lines.append(HelpLine(f"{t(issue.level)}: {issue.message}", style))
     return lines
 
 
 def row_flag(issues: Sequence[Issue]) -> str:
-    """列尾旗標:error / danger / warning / ''。"""
+    """Row-end flag: error / danger / warning / ''."""
     levels = {i.level for i in issues}
     for level in ("error", "danger", "warning"):
         if level in levels:
@@ -179,7 +230,7 @@ def row_flag(issues: Sequence[Issue]) -> str:
 
 
 # ---------------------------------------------------------------------- #
-# 模組清單
+# module list
 # ---------------------------------------------------------------------- #
 @dataclass(frozen=True)
 class ModuleEntry:
@@ -198,23 +249,32 @@ def unknown_keys(values: Mapping[str, Any]) -> list[str]:
     return [k for k in values if k not in SCHEMA]
 
 
+# Fields the editor does not show directly (driven by another control, e.g. the Akashi repair switch)
+HIDDEN_KEYS = frozenset({"ship_switcher.slots"})
+
+
 def module_keys(module: str, values: Mapping[str, Any]) -> list[str]:
     if module == OTHER:
         return unknown_keys(values)
-    return [f.key for f in fields_of(module)]
+    return [f.key for f in fields_of(module) if f.key not in HIDDEN_KEYS]
 
 
 # ---------------------------------------------------------------------- #
-# 搜尋
+# search
 # ---------------------------------------------------------------------- #
 def search_fields(query: str, limit: int = 30) -> list[Field]:
-    """搜尋 key / 標籤 / 說明。key 與標籤命中優先,其次說明。"""
+    """Search key / label / help. Key and label matches come first, then help."""
     terms = [t for t in query.lower().split() if t]
     if not terms:
         return []
     scored: list[tuple[int, int, Field]] = []
     for order, f in enumerate(SCHEMA.values()):
-        key, label, help_ = f.key.lower(), f.label.lower(), f.help.lower()
+        if f.key in HIDDEN_KEYS:
+            continue
+        # Both the current language and English are searchable (English is the common wording in docs and the community)
+        key = f.key.lower()
+        label = (f.label + " " + f._label).lower()
+        help_ = (f.help + " " + f._help).lower()
         score = 0
         for t in terms:
             if t in f.name.lower():
@@ -235,7 +295,7 @@ def search_fields(query: str, limit: int = 30) -> list[Field]:
 
 
 # ---------------------------------------------------------------------- #
-# 危險欄位的二次確認
+# second confirmation for dangerous fields
 # ---------------------------------------------------------------------- #
 def added_items(old: Any, new: Any) -> list[Any]:
     old_set = {str(x) for x in old} if isinstance(old, list) else set()
@@ -245,7 +305,7 @@ def added_items(old: Any, new: Any) -> list[Any]:
 
 
 def needs_danger_confirm(field: Field, old: Any, new: Any) -> bool:
-    """danger 欄位:只有「新增了原本沒有的項目」才需要確認(移除是安全的)。"""
+    """danger fields: confirmation is only needed when an item is added that was not there before (removing is safe)."""
     if not field.danger:
         return False
     if isinstance(new, list):
@@ -254,26 +314,26 @@ def needs_danger_confirm(field: Field, old: Any, new: Any) -> bool:
 
 
 # ---------------------------------------------------------------------- #
-# 單值輸入解析
+# parsing single-value input
 # ---------------------------------------------------------------------- #
 class ParseError(ValueError):
     pass
 
 
 def parse_input(field: Field, text: str) -> Any:
-    """對話框 Input 的文字 → 值。解析失敗丟 ParseError;範圍由 Field.validate 判斷。"""
+    """Text of a dialog Input → value. Raises ParseError on failure; the range is checked by Field.validate."""
     raw = text.strip()
     if field.kind is Kind.INT:
         if not re.fullmatch(r"-?\d+", raw):
-            raise ParseError("Enter a whole number")
+            raise ParseError(t("Enter a whole number"))
         return int(raw)
     if field.kind is Kind.INT_STR:
         if not raw:
-            raise ParseError("Value cannot be empty")
+            raise ParseError(t("Value cannot be empty"))
         return int(raw) if re.fullmatch(r"-?\d+", raw) else raw
     if field.kind is Kind.STR:
         return raw
-    raise ParseError(f"Unsupported kind {field.kind.value}")
+    raise ParseError(t("Unsupported kind {kind}", kind=field.kind.value))
 
 
 def check_value(field: Field, value: Any) -> Optional[str]:
@@ -282,8 +342,12 @@ def check_value(field: Field, value: Any) -> Optional[str]:
 
 
 def step_int(field: Field, value: Any, delta: int) -> Optional[int]:
-    """+ / - 微調;不是整數或已到邊界時回傳 None。"""
-    if field.kind is not Kind.INT or isinstance(value, bool) or not isinstance(value, int):
+    """Nudge with + / -; returns None when not an integer or already at the limit."""
+    if (
+        field.kind is not Kind.INT
+        or isinstance(value, bool)
+        or not isinstance(value, int)
+    ):
         return None
     new = value + delta
     if field.min is not None:
@@ -304,7 +368,7 @@ def cycle_choice(options: Sequence[Any], current: Any, step: int = 1) -> Any:
 
 
 def enum_options(field: Field) -> list[tuple[str, Any]]:
-    """(顯示文字, 值)。nullable 時「停用」(null)放第一項,接著才是各選項(例如 disable、auto)。"""
+    """(display text, value). When nullable, "disabled" (null) comes first, followed by the options (e.g. disable, auto)."""
     opts: list[tuple[str, Any]] = []
     if field.nullable:
         opts.append((DISABLE, None))
@@ -313,10 +377,10 @@ def enum_options(field: Field) -> list[tuple[str, Any]]:
 
 
 # ---------------------------------------------------------------------- #
-# 清單(chip)編輯
+# list (chip) editing
 # ---------------------------------------------------------------------- #
 def coerce_like(items: Sequence[Any], text: str) -> Any:
-    """新增項目時,沿用既有項目的型別:既有的數字都是 int → 數字文字轉 int。"""
+    """When adding an item, follow the type of the existing items: if the existing numbers are all int → convert numeric text to int."""
     text = text.strip()
     if re.fullmatch(r"\d+", text):
         existing = [i for i in items if re.fullmatch(r"\d+", str(i))]
@@ -325,12 +389,15 @@ def coerce_like(items: Sequence[Any], text: str) -> Any:
     return text
 
 
-def list_item_error(field: Field, items: Sequence[Any], candidate: Any) -> Optional[str]:
-    """候選項目加進清單後,若會產生「該項目本身」的錯誤就回傳訊息。"""
+def list_item_error(
+    field: Field, items: Sequence[Any], candidate: Any
+) -> Optional[str]:
+    """After adding a candidate item to the list, return a message if it would produce an error for that item itself."""
     errors = field.validate(list(items) + [candidate])
     index = len(items) + 1
+    prefix = re.escape(t("item {index}", index=index))
     for e in errors:
-        if e.startswith(f"第 {index} 項"):
+        if re.match(prefix + r"(?!\d)", e):
             return e
     return None
 
@@ -341,16 +408,18 @@ def list_length_error(field: Field, items: Sequence[Any]) -> Optional[str]:
     if len(items) in field.lengths:
         return None
     allowed = "/".join(str(n) for n in field.lengths)
-    return f"needs exactly {allowed} item(s), has {len(items)}"
+    return t("needs exactly {allowed} item(s), has {n}", allowed=allowed, n=len(items))
 
 
 # ---------------------------------------------------------------------- #
-# 表格(多欄)編輯:node_selects / node_formations / node_night_battles / scheduler.rules
+# table (multi-column) editing: node_selects / node_formations / node_night_battles
 # ---------------------------------------------------------------------- #
 @dataclass(frozen=True)
 class Column:
     name: str
-    choices: tuple[str, ...] = ()       # 有值時以選單循環輸入
+    choices: tuple[
+        str, ...
+    ] = ()  # when there are known values, cycle through them with a menu
     optional: bool = False
     width: int = 12
 
@@ -358,7 +427,7 @@ class Column:
 @dataclass(frozen=True)
 class TableSpec:
     columns: tuple[Column, ...]
-    separator: str                      # 欄位分隔字元:">" 或 ":"
+    separator: str  # column separator: ">" or ":"
     note: str = ""
 
     def parse(self, item: Any) -> tuple[str, ...]:
@@ -366,7 +435,7 @@ class TableSpec:
         n = len(self.columns)
         if len(parts) > n:
             if self.separator == ":" and n >= 2:
-                parts = parts[: n - 1] + [":".join(parts[n - 1:])]
+                parts = parts[: n - 1] + [":".join(parts[n - 1 :])]
             else:
                 parts = parts[:n]
         parts += [""] * (n - len(parts))
@@ -381,34 +450,46 @@ class TableSpec:
     def missing(self, cells: Sequence[str]) -> Optional[str]:
         for col, cell in zip(self.columns, cells):
             if not cell.strip() and not col.optional:
-                return f"{col.name} is required"
+                return t("{name} is required", name=col.name)
         return None
 
 
 def _formations() -> tuple[str, ...]:
     from ..schema import FORMATIONS
+
     return tuple(FORMATIONS)
 
 
 TABLES: dict[str, TableSpec] = {
     "combat.node_selects": TableSpec(
-        (Column("from"), Column("to")), ">",
-        "Pick the next node at a branch: from > to"),
+        (Column("from"), Column("to")), ">", "Pick the next node at a branch: from > to"
+    ),
     "combat.node_formations": TableSpec(
-        (Column("node"), Column("formation", _formations(), width=18)), ":",
-        "Formation used at a node"),
+        (Column("node"), Column("formation", _formations(), width=18)),
+        ":",
+        "Formation used at a node",
+    ),
     "combat.node_night_battles": TableSpec(
-        (Column("node"), Column("night battle", ("True", "False"))), ":",
-        "Whether to fight the night battle at a node"),
+        (Column("node"), Column("night battle", ("True", "False"))),
+        ":",
+        "Whether to fight the night battle at a node",
+    ),
     "scheduler.rules": TableSpec(
-        (Column("condition"), Column("value", width=10), Column("action"),
-         Column("module"), Column("extra", optional=True)), ":",
-        "condition : value : action : module [: extra]   e.g. time:0230:stop:kcauto"),
+        (
+            Column("condition"),
+            Column("value", width=10),
+            Column("action"),
+            Column("module"),
+            Column("extra", optional=True),
+        ),
+        ":",
+        "condition : value : action : module [: extra]   e.g. time:0230:stop:kcauto",
+    ),
 }
 
 
 def table_suggestions(items: Iterable[Any], spec: TableSpec) -> list[list[str]]:
-    """每欄把「目前已出現過的值」列出來當提示(scheduler 的合法值由 kcauto 本體決定)。"""
+    """For each column list the values that have already appeared as hints (valid scheduler values are decided by kcauto itself)."""
     seen: list[list[str]] = [[] for _ in spec.columns]
     for item in items:
         for i, cell in enumerate(spec.parse(item)):
@@ -417,8 +498,13 @@ def table_suggestions(items: Iterable[Any], spec: TableSpec) -> list[list[str]]:
     return seen
 
 
-def check_table_row(field: Field, spec: TableSpec, cells: Sequence[str],
-                    items: Sequence[Any], replacing: Optional[int]) -> Optional[str]:
+def check_table_row(
+    field: Field,
+    spec: TableSpec,
+    cells: Sequence[str],
+    items: Sequence[Any],
+    replacing: Optional[int],
+) -> Optional[str]:
     problem = spec.missing(cells)
     if problem:
         return problem
@@ -434,7 +520,7 @@ def check_table_row(field: Field, spec: TableSpec, cells: Sequence[str],
 
 
 # ---------------------------------------------------------------------- #
-# 艦隊 preset
+# fleet preset
 # ---------------------------------------------------------------------- #
 PRESET_NUMBERS = tuple(str(n) for n in range(1, 16))
 
@@ -457,7 +543,7 @@ def preset_selection(value: Any) -> list[str]:
 
 
 def preset_value(tokens: Sequence[str], like: Sequence[Any] = ()) -> list[Any]:
-    """多選結果 → 清單,數字沿用既有型別(預設 int)。"""
+    """Multi-select result → list; numbers keep the existing type (int by default)."""
     as_str = [i for i in like if isinstance(i, str) and i.isdigit()]
     as_int = [i for i in like if isinstance(i, int) and not isinstance(i, bool)]
     use_str = bool(as_str) and not as_int
@@ -468,12 +554,12 @@ def preset_value(tokens: Sequence[str], like: Sequence[Any] = ()) -> list[Any]:
 
 
 def preset_wheel_tokens(field: Field) -> list[str]:
-    """滾輪的項目:disable 第一,auto 第二,接著 1~15。"""
+    """Wheel entries: disable first, auto second, then 1-15."""
     return [DISABLE, "auto", *PRESET_NUMBERS]
 
 
 def preset_wheel_current(field: Field, value: Any) -> str:
-    """目前值對應的滾輪項目;空清單 / null / 0 = disable;對不上時也回到 disable。"""
+    """Wheel entry for the current value; empty list / null / 0 = disable; anything that does not match also falls back to disable."""
     if is_disabled_preset(field, value):
         return DISABLE
     token = str(value[0]) if isinstance(value, list) else str(value)
@@ -481,8 +567,9 @@ def preset_wheel_current(field: Field, value: Any) -> str:
 
 
 def preset_wheel_result(field: Field, token: str, like: Any = None) -> Any:
-    """滾輪結果 → 欄位值。清單欄位固定只寫一個元素(數字沿用既有型別);
-    disable:清單欄位 = [];pvp = null(原本是 0 就維持 0,不悄悄改掉)。"""
+    """Wheel result → field value. List fields always write exactly one element (numbers keep the existing type);
+    disable: list field = []; pvp = null (if it was 0 it stays 0, so it is not silently changed).
+    """
     if field.kind is Kind.LIST:
         if token == DISABLE:
             return []
@@ -508,16 +595,16 @@ def has_duplicates(items: Sequence[Any]) -> bool:
 
 
 # ---------------------------------------------------------------------- #
-# 任務目錄(quest 勾選清單)
+# quest catalogue (quest checklist)
 # ---------------------------------------------------------------------- #
-# 只讀這兩個檔案的「頂層 key」(任務 ID);第一個存在的檔案為準。
+# Only the top-level keys (quest IDs) of these two files are read; the first file that exists wins.
 QUEST_FILES = ("data/quests/quests.json", "template/data/quests/quests.json")
 
 
 @dataclass(frozen=True)
 class QuestInfo:
     id: str
-    note: str = ""          # 例如 "#201 daily"
+    note: str = ""  # e.g. "#201 daily"
 
 
 def find_quest_file(root: Path | str = ".") -> Optional[Path]:
@@ -530,7 +617,7 @@ def find_quest_file(root: Path | str = ".") -> Optional[Path]:
 
 
 def load_quest_catalog(root: Path | str = ".") -> list[QuestInfo]:
-    """依檔案順序回傳 quests.json 內有出現的任務。找不到或格式不對時回傳空清單。"""
+    """Return the quests that appear in quests.json, in file order. Returns an empty list when the file is missing or malformed."""
     path = find_quest_file(root)
     if path is None:
         return []
@@ -553,13 +640,20 @@ def load_quest_catalog(root: Path | str = ".") -> list[QuestInfo]:
     return out
 
 
-_CATEGORY = {"A": "composition", "B": "sortie", "C": "exercise", "D": "expedition",
-             "E": "supply/docking", "F": "arsenal", "G": "modernization"}
+_CATEGORY = {
+    "A": "composition",
+    "B": "sortie",
+    "C": "exercise",
+    "D": "expedition",
+    "E": "supply/docking",
+    "F": "arsenal",
+    "G": "modernization",
+}
 _PERIOD = {"d": "daily", "w": "weekly", "m": "monthly", "q": "quarterly", "y": "yearly"}
 
 
 def quest_group(quest_id: str) -> str:
-    """Bd1 → Bd;2610B2 → 2610(活動任務依年月分組);其他 → misc。"""
+    """Bd1 → Bd; 2610B2 → 2610 (event quests are grouped by year-month); anything else → misc."""
     m = re.fullmatch(r"([A-Z][a-z]?)\d+", quest_id)
     if m:
         return m.group(1)
@@ -571,33 +665,38 @@ def quest_group(quest_id: str) -> str:
 
 def quest_group_title(group: str) -> str:
     if group == "other":
-        return "other (not in quests.json)"
+        return t("other (not in quests.json)")
     if group.isdigit():
-        return f"{group} · event"
+        return t("{group} · event", group=group)
     cat = _CATEGORY.get(group[:1])
     per = _PERIOD.get(group[1:])
     if cat and per:
-        return f"{group} · {cat} {per}"
+        return f"{group} · {t(cat)} {t(per)}"
     return group
 
 
-def group_quests(catalog: Sequence[QuestInfo | str],
-                 selected: Sequence[Any]) -> list[tuple[str, list[str]]]:
-    """依前綴分組(保持檔案順序);已選但不在目錄的歸到 'other',避免被悄悄丟掉。"""
+def group_quests(
+    catalog: Sequence[QuestInfo | str], selected: Sequence[Any]
+) -> list[tuple[str, list[str]]]:
+    """Group by prefix (keeping file order); selected quests that are not in the catalogue go to 'other' so they are not silently dropped."""
     ids = [c.id if isinstance(c, QuestInfo) else str(c) for c in catalog]
     groups: dict[str, list[str]] = {}
     for qid in ids:
         groups.setdefault(quest_group(qid), []).append(qid)
     known = set(ids)
     extra = [str(x) for x in selected if str(x) not in known]
-    result = list(groups.items())
+    # event quests (four-digit year-month) come first, newest first; the rest keep file order
+    events = sorted(
+        (g for g in groups.items() if g[0].isdigit()), key=lambda g: g[0], reverse=True
+    )
+    result = events + [g for g in groups.items() if not g[0].isdigit()]
     if extra:
         result.append(("other", extra))
     return result
 
 
 def merge_selection(old: Sequence[Any], chosen: Iterable[str]) -> list[Any]:
-    """勾選結果 → 清單:保留原本的順序,新勾的接在後面。"""
+    """Ticked result → list: keep the original order, newly ticked items are appended."""
     chosen = list(chosen)
     chosen_set = set(chosen)
     out = [x for x in old if str(x) in chosen_set]
@@ -617,16 +716,128 @@ def parse_json(text: str, *, want_object: bool = False) -> Any:
     try:
         value = json.loads(text)
     except json.JSONDecodeError as exc:
-        raise ParseError(f"line {exc.lineno}, col {exc.colno}: {exc.msg}") from exc
+        raise ParseError(
+            t(
+                "line {line}, col {col}: {msg}",
+                line=exc.lineno,
+                col=exc.colno,
+                msg=exc.msg,
+            )
+        ) from exc
     if want_object and not isinstance(value, dict):
-        raise ParseError("Must be a JSON object { ... }")
+        raise ParseError(t("Must be a JSON object { ... }"))
     return value
 
 
-# 資源配色(對應遊戲內的圖示色)與配方的 2×2 排版:上 燃料/鋼材,下 彈藥/鋁土。
-# 設定檔內的順序是 [燃料, 彈藥, 鋼材, 鋁土],排版只影響畫面,不影響存檔順序。
+# Resource colours (matching the in-game icons) and the recipe's 2×2 layout: top fuel/steel, bottom ammo/bauxite.
+# The order in the config file is [fuel, ammo, steel, bauxite]; the layout only affects the screen, not the saved order.
+# Ship types selectable for the secretary (display order); a specific ship can also be chosen by production ID.
+SHIP_TYPES: tuple[
+    tuple[str, str], ...
+] = (  # (code, English name); the code stays English in every language
+    ("DE", "Escort"),
+    ("DD", "Destroyer"),
+    ("CL", "Light Cruiser"),
+    ("CLT", "Torpedo Cruiser"),
+    ("CA", "Heavy Cruiser"),
+    ("CAV", "Aviation Cruiser"),
+    ("CVL", "Light Carrier"),
+    ("FBB", "Fast Battleship"),
+    ("BB", "Battleship"),
+    ("BBV", "Aviation Battleship"),
+    ("CV", "Carrier"),
+    ("SS", "Submarine"),
+    ("SSV", "Submarine Carrier"),
+    ("AV", "Seaplane Tender"),
+    ("LHA", "Amphibious Assault Ship"),
+    ("CVB", "Armored Carrier"),
+    ("AR", "Repair Ship"),
+    ("AS", "Submarine Tender"),
+    ("CT", "Training Cruiser"),
+    ("AO", "Oiler"),
+)
+SHIP_TYPE_CODES = tuple(code for code, _ in SHIP_TYPES)
+SECRETARY_ID_MAX = 999999
+
+
+def is_secretary_field(field: Field) -> bool:
+    return field.kind is Kind.INT_STR and field.key.endswith("_secretary")
+
+
+@dataclass(frozen=True)
+class RecipePreset:
+    name: str
+    recipe: tuple[
+        int, int, int, int
+    ]  # [fuel, ammo, steel, bauxite] (same order as the config file)
+    secretary: Any = None  # None = no secretary specified by the preset
+    comment: str = ""
+
+
+RECIPE_PRESET_FILES = {
+    "build": "construct_recipe_preset.json",
+    "develop": "develop_recipe_preset.json",
+}
+
+
+def load_recipe_presets(root: Path | str, kind: str) -> list[RecipePreset]:
+    """Read data/factory/{construct,develop}_recipe_preset.json (fallback template/data/factory/).
+
+    kind = "build" | "develop". Malformed entries are skipped; an empty list is returned when no file is found.
+    """
+    name = RECIPE_PRESET_FILES.get(kind)
+    if name is None:
+        return []
+    base = Path(root)
+    for path in (
+        base / "data" / "factory" / name,
+        base / "template" / "data" / "factory" / name,
+    ):
+        if not path.is_file():
+            continue
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            return []
+        if not isinstance(data, dict):
+            return []
+        out: list[RecipePreset] = []
+        for title, body in data.items():
+            if not isinstance(body, dict):
+                continue
+            recipe = body.get(f"factory.{kind}_recipe")
+            if not (
+                isinstance(recipe, list)
+                and len(recipe) == 4
+                and all(
+                    isinstance(n, int) and not isinstance(n, bool) and n >= 0
+                    for n in recipe
+                )
+            ):
+                continue
+            sec = body.get(f"factory.{kind}_secretary")
+            if isinstance(sec, bool) or not isinstance(sec, (int, str)):
+                sec = None
+            comment = body.get("comment")
+            out.append(
+                RecipePreset(
+                    str(title),
+                    tuple(recipe),
+                    sec,
+                    comment if isinstance(comment, str) else "",
+                )
+            )
+        return out
+    return []
+
+
+def recipe_preset_row(p: RecipePreset, name_w: int = 16) -> str:
+    sec = "-" if p.secretary is None else str(p.secretary)
+    return f"{pad_cells(p.name, name_w)} {pad_cells('/'.join(map(str, p.recipe)), 15)} {sec}"
+
+
 RESOURCES: tuple[tuple[str, str, int, int], ...] = (
-    # (名稱, 顏色, 排, 欄)
+    # (name, colour, row, column)
     ("fuel", "#7fc36b", 0, 0),
     ("ammo", "#b8935a", 1, 0),
     ("steel", "#9aa5b1", 0, 1),
@@ -635,33 +846,40 @@ RESOURCES: tuple[tuple[str, str, int, int], ...] = (
 
 
 # ---------------------------------------------------------------------- #
-# 數字:滾輪(逐位數)與小範圍直接調整
+# numbers: wheels (digit by digit) and direct adjustment for small ranges
 # ---------------------------------------------------------------------- #
-SMALL_INT_SPAN = 8          # max-min ≤ 8(最多 9 個等級)視為「等級」型欄位
-DEFAULT_PLACES = 4          # 沒有上限的數字,滾輪至少幾位
+SMALL_INT_SPAN = 8  # max-min ≤ 8 (at most 9 levels) counts as a "level" type field
+DEFAULT_PLACES = (
+    4  # for numbers without an upper limit, the minimum number of digits on the wheel
+)
 
 
 def is_small_int(field: Optional[Field]) -> bool:
-    return (field is not None and field.kind is Kind.INT
-            and field.min is not None and field.max is not None
-            and field.max - field.min <= SMALL_INT_SPAN)
+    return (
+        field is not None
+        and field.kind is Kind.INT
+        and field.min is not None
+        and field.max is not None
+        and field.max - field.min <= SMALL_INT_SPAN
+    )
 
 
 def adjustable(field: Optional[Field]) -> bool:
-    """可以直接用 ← → 調整的欄位:開關、enum、只有幾個等級的整數。"""
+    """Fields that can be adjusted directly with ← →: switches, enums, integers with only a few levels."""
     if field is None:
         return False
     return field.kind in (Kind.BOOL, Kind.ENUM) or is_small_int(field)
 
 
-def adjust_value(field: Field, value: Any, direction: int, *, wrap: bool = False) -> Any:
-    """← → 的結果;沒有變化時回傳原值。
+def adjust_value(
+    field: Field, value: Any, direction: int, *, wrap: bool = False
+) -> Any:
+    """Result of ← →; returns the original value when nothing changes.
 
-    開關:→ = on、← = off。enum 循環。整數預設到頭就停;``wrap=True``(Enter / Space
-    「往下一個」)時到頭會繞回另一端。
+    Switches and enums cycle: ← and → both flip a switch, and enums wrap around. Integers stop at the end by default; with ``wrap=True`` (Enter / Space "next") they wrap around to the other end.
     """
     if field.kind is Kind.BOOL:
-        return (not value) if wrap else direction > 0
+        return not value
     if field.kind is Kind.ENUM:
         return cycle_choice([v for _, v in enum_options(field)], value, direction)
     new = step_int(field, value, direction)
@@ -677,8 +895,8 @@ def _is_plain_int(value: Any) -> bool:
 
 
 def can_adjust(field: Field, value: Any, direction: int) -> bool:
-    """該方向還能不能再調(用來把到頭的箭頭顯示成暗色)。"""
-    if field.kind is Kind.ENUM:
+    """Whether it can still be adjusted in that direction (used to dim an arrow that is at its end)."""
+    if field.kind in (Kind.ENUM, Kind.BOOL):  # these cycle, so both arrows always work
         return True
     return adjust_value(field, value, direction) != value
 
@@ -687,9 +905,10 @@ def int_options(field: Field) -> list[tuple[str, Any]]:
     return [(str(n), n) for n in range(field.min, field.max + 1)]
 
 
-def number_layout(lo: Optional[int], hi: Optional[int], value: Any,
-                  min_places: int = 1) -> tuple[bool, int]:
-    """(是否有正負號輪, 位數)。有上限就用上限的位數;沒有上限至少 DEFAULT_PLACES 位。"""
+def number_layout(
+    lo: Optional[int], hi: Optional[int], value: Any, min_places: int = 1
+) -> tuple[bool, int]:
+    """(has a sign wheel, number of digits). With an upper limit use its digit count; without one use at least DEFAULT_PLACES digits."""
     signed = lo is not None and lo < 0
     nums = [abs(v) for v in (lo, hi) if isinstance(v, int)]
     if isinstance(value, int) and not isinstance(value, bool):
@@ -718,18 +937,18 @@ def clamp_number(value: int, lo: Optional[int], hi: Optional[int]) -> int:
 
 
 # ---------------------------------------------------------------------- #
-# 出擊海域
+# sortie map
 # ---------------------------------------------------------------------- #
 MAP_COUNTS = {"1": 6, "2": 5, "3": 5, "4": 5, "5": 5, "6": 5, "7": 4}
 EVENT_MAPS = 9
 WORLDS = ("auto", "1", "2", "3", "4", "5", "6", "7", "E")
 _MAP_RE = re.compile(r"([A-Za-z0-9]+)-(\d+)(?:-([A-Za-z0-9]+))?")
-NO_NODE = "—"                       # 節點滾輪的「不指定」
+NO_NODE = "—"  # the node wheel's "not specified"
 NodeIndex = Mapping[tuple[str, int], Sequence[str]]
 
 
 def parse_map(value: Any) -> Optional[tuple[str, Optional[int], str]]:
-    """'3-5' → ('3', 5, '');'2-2-A' → ('2', 2, 'A');'auto' → ('auto', None, '');不符 → None。"""
+    """'3-5' → ('3', 5, ''); '2-2-A' → ('2', 2, 'A'); 'auto' → ('auto', None, ''); anything else → None."""
     if value == "auto":
         return "auto", None, ""
     if isinstance(value, str):
@@ -755,11 +974,12 @@ def map_number_items(world: str, current: Optional[int] = None) -> list[str]:
     return [str(n) for n in range(1, count + 1)]
 
 
-def map_node_items(nodes: Optional[NodeIndex], world: str, number: str,
-                   current: str = "") -> list[str]:
-    """節點滾輪:「—」(不指定)+ noro6 內有指定該節點預設的節點。
+def map_node_items(
+    nodes: Optional[NodeIndex], world: str, number: str, current: str = ""
+) -> list[str]:
+    """Node wheel: "—" (not specified) + the nodes that have a preset in noro6.
 
-    目前值若不在 noro6 內(預設被刪、檔案讀不到)也保留,避免打開就被悄悄改掉。
+    A current value that is not in noro6 (preset deleted, file unreadable) is kept too, so opening the dialog does not silently change it.
     """
     items = [NO_NODE]
     if world != "auto" and number.isdigit() and nodes:
@@ -776,12 +996,18 @@ def build_map(world: str, number: str, node: str = "") -> str:
 
 
 # ---------------------------------------------------------------------- #
-# 遠征:一次設定 2、3、4 艦隊
+# expeditions: set fleets 2, 3 and 4 at once
 # ---------------------------------------------------------------------- #
-EXPEDITION_FLEET_KEYS = ("expedition.fleet_2", "expedition.fleet_3", "expedition.fleet_4")
-BULK_EXPEDITION = "@expedition.all_fleets"      # 虛擬列,不對應任何設定 key
+EXPEDITION_FLEET_KEYS = (
+    "expedition.fleet_2",
+    "expedition.fleet_3",
+    "expedition.fleet_4",
+)
+BULK_EXPEDITION = (
+    "@expedition.all_fleets"  # virtual row, does not correspond to any config key
+)
 
-# (顯示名稱, 寫進每個艦隊的清單)。要增加預設就在這裡加一行。
+# (display name, list written to every fleet). Add a line here to add a preset.
 EXPEDITION_PRESETS: tuple[tuple[str, list[str]], ...] = (
     ("auto", ["auto"]),
     ("overnight", ["overnight"]),
@@ -792,8 +1018,8 @@ CLEAR = "__clear__"
 
 def expedition_bulk_options() -> list[tuple[str, Any]]:
     opts: list[tuple[str, Any]] = [(name, name) for name, _ in EXPEDITION_PRESETS]
-    opts.append(("custom list…   (same destinations for fleets 2/3/4)", CUSTOM))
-    opts.append(("clear all   (no expedition)", CLEAR))
+    opts.append((t("custom list…   (same destinations for fleets 2/3/4)"), CUSTOM))
+    opts.append((t("clear all   (no expedition)"), CLEAR))
     return opts
 
 
@@ -805,7 +1031,7 @@ def expedition_preset_items(name: str) -> list[str]:
 
 
 def expedition_common(values: Mapping[str, Any]) -> Optional[str]:
-    """三個艦隊的設定一致時,回傳對應的預設名稱;否則 None。"""
+    """When the three fleets have the same setting, return the matching preset name; otherwise None."""
     lists = [values.get(k) for k in EXPEDITION_FLEET_KEYS]
     if not all(isinstance(x, list) for x in lists) or any(x != lists[0] for x in lists):
         return None
@@ -818,16 +1044,19 @@ def expedition_common(values: Mapping[str, Any]) -> Optional[str]:
 def bulk_summary(values: Mapping[str, Any]) -> str:
     lists = [values.get(k) for k in EXPEDITION_FLEET_KEYS]
     if all(isinstance(x, list) for x in lists) and all(x == lists[0] for x in lists):
-        return "all: " + (", ".join(str(i) for i in lists[0]) if lists[0] else "(none)")
-    return "(differs per fleet)"
+        return t("all: ") + (
+            ", ".join(str(i) for i in lists[0]) if lists[0] else t("(none)")
+        )
+    return t("(differs per fleet)")
 
 
 # ---------------------------------------------------------------------- #
-# 控制項分派:這個欄位按 Enter 要開哪種對話框
+# control dispatch: which dialog Enter opens for this field
 # ---------------------------------------------------------------------- #
 def editor_for(field: Optional[Field], value: Any = None) -> str:
-    """回傳:bool | choice | choice_int | wheel | map | text | preset_wheel |
-    tokens | recipe | table | quest | list | tree | json。"""
+    """Returns: bool | choice | choice_int | wheel | map | text | preset_wheel |
+    tokens | recipe | table | quest | list | tree | json.
+    """
     if field is None:
         return "json"
     k = field.kind
@@ -838,7 +1067,7 @@ def editor_for(field: Optional[Field], value: Any = None) -> str:
     if k is Kind.INT:
         return "choice_int" if is_small_int(field) else "wheel"
     if k in (Kind.INT_STR,):
-        return "text"
+        return "secretary" if is_secretary_field(field) else "text"
     if k is Kind.STR:
         return "map" if field.key == "combat.sortie_map" else "text"
     if k is Kind.PRESET:
@@ -847,6 +1076,8 @@ def editor_for(field: Optional[Field], value: Any = None) -> str:
         return "recipe"
     if k is Kind.OBJECT:
         return "tree"
+    if field.key == "scheduler.rules":
+        return "scheduler"
     if field.key in TABLES:
         return "table"
     if field.key == "quest.quests":
@@ -859,7 +1090,7 @@ def editor_for(field: Optional[Field], value: Any = None) -> str:
 
 
 def format_raw(value: Any, width: int = 40) -> str:
-    """未知 key 的值:單行 JSON。"""
+    """Value of an unknown key: single-line JSON."""
     try:
         text = json.dumps(value, ensure_ascii=False)
     except (TypeError, ValueError):

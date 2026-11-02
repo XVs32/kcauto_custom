@@ -1,21 +1,22 @@
-"""JSON 樹狀表格編輯的純邏輯(不依賴 Textual)。
+"""Pure logic of the JSON tree-table editor (no Textual dependency).
 
-用在結構不固定的設定:``ship_switcher.slots``、以及 schema 不認得的 key。
-畫面把樹攤平成一列一個節點:
+Used for settings whose structure is not fixed: ``ship_switcher.slots`` and keys the schema does not know.
+The screen flattens the tree into one node per row:
 
     ▾ 1                     object {2}
         ship_id             int     12345
       ▸ rules               list [3]
     ▸ 2                     object {1}
 
-所有修改函式都「就地」修改傳入的樹並回傳新的根(根本身被取代時才會是新物件),
-呼叫端應先 ``copy.deepcopy`` 出工作副本。路徑是 key / 索引組成的 tuple;``()`` 是根。
+All modification functions modify the given tree "in place" and return the new root (a new object only when the root itself is replaced); callers should first make a working copy with ``copy.deepcopy``. A path is a tuple of keys / indexes; ``()`` is the root.
 """
+
 from __future__ import annotations
 
 import copy
 import re
 from dataclasses import dataclass
+from ..i18n import t
 from typing import Any, Optional
 
 from .model import cell_len, clip_cells, pad_cells
@@ -45,18 +46,33 @@ def kind_of(value: Any) -> str:
 
 
 def default_for(kind: str) -> Any:
-    return {"str": "", "int": 0, "float": 0.0, "bool": False, "null": None,
-            "object": {}, "list": []}[kind]
+    return {
+        "str": "",
+        "int": 0,
+        "float": 0.0,
+        "bool": False,
+        "null": None,
+        "object": {},
+        "list": [],
+    }[kind]
 
 
 def convert(value: Any, kind: str) -> Any:
-    """盡量保留內容地換型別:"12"→12、1→"1"、0→False;換不過去就用該型別的預設值。"""
+    """Change the type while keeping the content where possible: "12"→12, 1→"1", 0→False; when it cannot be converted use the type's default value."""
     if kind_of(value) == kind:
         return value
     if kind == "str":
-        return "" if value is None else (str(value).lower() if isinstance(value, bool)
-                                         else str(value) if not isinstance(value, (dict, list))
-                                         else "")
+        return (
+            ""
+            if value is None
+            else (
+                str(value).lower()
+                if isinstance(value, bool)
+                else str(value)
+                if not isinstance(value, (dict, list))
+                else ""
+            )
+        )
     if kind == "int":
         if isinstance(value, bool):
             return int(value)
@@ -85,7 +101,7 @@ def is_container(value: Any) -> bool:
 
 
 # ---------------------------------------------------------------------- #
-# 存取
+# access
 # ---------------------------------------------------------------------- #
 def get_at(root: Any, path: Path) -> Any:
     node = root
@@ -123,14 +139,14 @@ def unique_key(existing: Any, base: str = "new") -> str:
 
 def key_error(parent: dict, key: str, current: Optional[str] = None) -> Optional[str]:
     if not key.strip():
-        return "Key cannot be empty"
+        return t("Key cannot be empty")
     if key != current and key in parent:
-        return f"Key “{key}” already exists"
+        return t("Key “{key}” already exists", key=key)
     return None
 
 
 def add_child(root: Any, parent_path: Path, key: Optional[str], value: Any) -> Path:
-    """在容器下新增子項,回傳新子項的路徑。dict 需要 key;list 附加在最後。"""
+    """Add a child under a container and return the new child's path. A dict needs a key; a list appends at the end."""
     parent = get_at(root, parent_path)
     if isinstance(parent, dict):
         if key is None:
@@ -142,7 +158,7 @@ def add_child(root: Any, parent_path: Path, key: Optional[str], value: Any) -> P
 
 
 def rename_key(root: Any, path: Path, new_key: str) -> Path:
-    """改 key 並保持原本的順序。"""
+    """Rename a key while keeping the original order."""
     parent = get_at(root, path[:-1])
     if not isinstance(parent, dict):
         raise ValueError("only object keys can be renamed")
@@ -157,7 +173,7 @@ def parent_path(path: Path) -> Path:
 
 
 # ---------------------------------------------------------------------- #
-# 攤平成一列一個節點
+# flatten into one node per row
 # ---------------------------------------------------------------------- #
 @dataclass(frozen=True)
 class TreeRow:
@@ -179,7 +195,7 @@ def children_of(value: Any) -> list[tuple[Any, Any]]:
 
 
 def flatten(root: Any, expanded: set[Path]) -> list[TreeRow]:
-    """根本身不列出,從根的子項開始(depth 0)。"""
+    """The root itself is not listed; start from the root's children (depth 0)."""
     rows: list[TreeRow] = []
 
     def walk(value: Any, path: Path, depth: int) -> None:
@@ -210,7 +226,7 @@ def all_container_paths(root: Any) -> set[Path]:
 
 
 def initial_expanded(root: Any, limit: int = 60) -> set[Path]:
-    """內容不多就全部展開,太多就只展開第一層。"""
+    """Expand everything when there is not much content; otherwise only expand the first level."""
     everything = all_container_paths(root)
     if len(flatten(root, everything)) <= limit:
         return everything
@@ -220,12 +236,14 @@ def initial_expanded(root: Any, limit: int = 60) -> set[Path]:
 def path_text(path: Path) -> str:
     out = ""
     for step in path:
-        out += f"[{step}]" if isinstance(step, int) else (("." if out else "") + str(step))
+        out += (
+            f"[{step}]" if isinstance(step, int) else (("." if out else "") + str(step))
+        )
     return out or "(root)"
 
 
 # ---------------------------------------------------------------------- #
-# 顯示
+# display
 # ---------------------------------------------------------------------- #
 def value_text(row: TreeRow, width: int = 40) -> str:
     v = row.value
@@ -247,7 +265,7 @@ def key_text(row: TreeRow) -> str:
 
 
 def row_text(row: TreeRow, key_width: int, width: int) -> str:
-    """`  ▾ key        type   value`;太窄時省略型別欄。"""
+    """`  ▾ key        type   value`; the type column is omitted when too narrow."""
     indent = "  " * row.depth
     mark = ("▾ " if row.expanded else "▸ ") if row.expandable else "  "
     left = indent + mark + key_text(row)
@@ -259,7 +277,9 @@ def row_text(row: TreeRow, key_width: int, width: int) -> str:
 
 
 def key_column_width(rows: list[TreeRow], width: int) -> int:
-    longest = max((cell_len("  " * r.depth + "▸ " + key_text(r)) for r in rows), default=8)
+    longest = max(
+        (cell_len("  " * r.depth + "▸ " + key_text(r)) for r in rows), default=8
+    )
     return max(8, min(longest + 1, max(8, width // 2)))
 
 

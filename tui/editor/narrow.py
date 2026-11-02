@@ -1,36 +1,57 @@
-"""編輯器在窄視窗下的版面規則(純函式,不依賴 Textual,方便測試)。
+"""Layout rules of the editor in narrow windows (pure functions, no Textual dependency, easy to test).
 
-寬度(欄)分三級,由寬到窄:
-  >= 72   完整:左側模組清單 + 右側表單,一欄一列
-  <  72   窄:隱藏左側模組清單,改在上方顯示可點擊的模組切換列(ModuleTabs)
-  <  50   緊湊:每個欄位佔兩列(標籤一列、值一列),值才有足夠空間顯示
-對話框另外在寬度 < 70 時進入窄版(縮小留白、表格儲存格改直式排列)。
+Width (columns) has three levels, from wide to narrow:
+  >= 72   full: module list on the left + form on the right, one row per field
+  <  72   narrow: hide the module list; show a clickable module switcher on top (ModuleTabs)
+  <  50   compact: every field takes two rows (label row, value row) so the value has enough room
+Dialogs additionally switch to narrow mode below width 70 (less padding, table cells laid out vertically).
 """
+
 from __future__ import annotations
 
 from typing import Sequence
 
 from .model import cell_len
 
-NARROW_WIDTH = 72        # 低於此值隱藏模組清單
-COMPACT_WIDTH = 50       # 低於此值欄位改成兩列
-DIALOG_NARROW = 70       # 低於此值對話框用窄版
+NARROW_WIDTH = 72  # below this the module list is hidden
+COMPACT_WIDTH = 50  # below this fields become two rows
+DIALOG_NARROW = 70  # below this dialogs use the narrow layout
 
 EDITOR_HINTS: tuple[tuple[str, str], ...] = (
-    ("↑↓", "move"), ("←→", "adjust"), ("enter", "edit"), ("space", "toggle"),
-    ("d", "default"), ("z", "undo"), ("/", "search"), ("[ ]", "module"),
-    ("w", "save"), ("esc", "back"),
+    ("↑↓", "move"),
+    ("←→", "adjust"),
+    ("enter", "edit"),
+    ("space", "toggle"),
+    ("d", "default"),
+    ("z", "undo"),
+    ("/", "search"),
+    ("[ ]", "module"),
+    ("w", "save"),
+    ("esc", "back"),
 )
-# 一行放不下時依序丟掉(用說明文字當名稱);save / back 永遠保留
-# 編輯某個調整型欄位(第二層)時的提示
-EDIT_HINTS: tuple[tuple[str, str], ...] = (("←→", "change"), ("enter", "confirm"), ("esc", "cancel"))
+# when a line does not fit, drop in this order (using the description text as the name); save / back are always kept
+# hints while editing an adjustable field (second level)
+EDIT_HINTS: tuple[tuple[str, str], ...] = (
+    ("←→", "change"),
+    ("enter", "confirm"),
+    ("esc", "cancel"),
+)
 EDIT_HINT_DROP = ("change",)
-EDITOR_HINT_DROP = ("module", "undo", "default", "toggle", "adjust", "move", "search", "edit")
+EDITOR_HINT_DROP = (
+    "module",
+    "undo",
+    "default",
+    "toggle",
+    "adjust",
+    "move",
+    "search",
+    "edit",
+)
 TOP_DROP = ("badge", "file")
 
 
 def row_columns(width: int, compact: bool) -> tuple[int, int]:
-    """欄位列的 (標籤寬, 值寬)。緊湊模式標籤與值各佔整行(扣掉旗標與縮排)。"""
+    """(label width, value width) of a field row. In compact mode the label and the value each take a whole line (minus the flag and indent)."""
     if compact:
         usable = max(8, width - 3)
         return usable, usable
@@ -39,22 +60,34 @@ def row_columns(width: int, compact: bool) -> tuple[int, int]:
 
 
 def tabs_layout(labels: Sequence[str], index: int, width: int) -> list[tuple[str, str]]:
-    """窄版的模組切換列,回傳 (文字, 角色);角色:arrow / side / current / pos / gap。
+    """The module switcher bar for narrow windows; returns (text, role); role: arrow / side / current / pos / gap.
 
-    由詳細到簡略,挑第一個放得下的:
+    From detailed to brief, pick the first one that fits:
       ‹ combat  [ expedition ]  pvp ›
       ‹ [ expedition ] 2/11 ›
       ‹ expedition ›
-    模組切換是循環的,所以最前面與最後面的左右鄰居會接到另一端。
+    Switching modules is cyclic, so the first and last modules have neighbours wrapping to the other end.
     """
     n = len(labels)
     cur = labels[index]
     prev, nxt = labels[(index - 1) % n], labels[(index + 1) % n]
     pos = f"{index + 1}/{n}"
     options = [
-        [("‹ ", "arrow"), (prev, "side"), ("  ", "gap"), (f"[ {cur} ]", "current"),
-         ("  ", "gap"), (nxt, "side"), (" ›", "arrow")],
-        [("‹ ", "arrow"), (f"[ {cur} ]", "current"), (f" {pos}", "pos"), (" ›", "arrow")],
+        [
+            ("‹ ", "arrow"),
+            (prev, "side"),
+            ("  ", "gap"),
+            (f"[ {cur} ]", "current"),
+            ("  ", "gap"),
+            (nxt, "side"),
+            (" ›", "arrow"),
+        ],
+        [
+            ("‹ ", "arrow"),
+            (f"[ {cur} ]", "current"),
+            (f" {pos}", "pos"),
+            (" ›", "arrow"),
+        ],
         [("‹ ", "arrow"), (cur, "current"), (" ›", "arrow")],
     ]
     for segments in options:
@@ -63,8 +96,62 @@ def tabs_layout(labels: Sequence[str], index: int, width: int) -> list[tuple[str
     return options[-1]
 
 
+def tabs_centered(
+    labels: Sequence[str], index: int, width: int
+) -> list[tuple[str, str]]:
+    """Centre the "current module"; the neighbours sit on either side and are shortened or omitted when they do not fit.
+
+    Returns segments including spaces, with a total width not exceeding width.
+    """
+    n = len(labels)
+    cur = f"[ {labels[index]} ]"
+    cl = cell_len(cur)
+    start = max(0, (width - cl) // 2)
+    right_room = width - start - cl
+    prev, nxt = labels[(index - 1) % n], labels[(index + 1) % n]
+
+    def fit(label: str, room: int) -> str:
+        if room < 1:
+            return ""
+        if cell_len(label) <= room:
+            return label
+        return label[: room - 1] + "…" if room >= 2 else ""
+
+    # left: "‹ " + prev + "  "; right: "  " + nxt + " ›"
+    lroom, rroom = start - 4, right_room - 4
+    lp, rn = fit(prev, lroom), fit(nxt, rroom)
+    if (
+        lp
+        and rn
+        and cell_len(lp) >= min(3, cell_len(prev))
+        and cell_len(rn) >= min(3, cell_len(nxt))
+    ):
+        left_len = 2 + cell_len(lp) + 2
+        out = [
+            (" " * (start - left_len), "gap"),
+            ("‹ ", "arrow"),
+            (lp, "side"),
+            ("  ", "gap"),
+            (cur, "current"),
+            ("  ", "gap"),
+            (rn, "side"),
+            (" ›", "arrow"),
+        ]
+        return out
+    # neighbours do not fit: arrows are fixed at the ends and the current module is centred
+    if width >= cl + 4:
+        return [
+            ("‹", "arrow"),
+            (" " * (start - 1), "gap"),
+            (cur, "current"),
+            (" " * max(0, right_room - 1), "gap"),
+            ("›", "arrow"),
+        ]
+    return [(fit(labels[index], width), "current")]
+
+
 def tabs_step(x: int, width: int) -> int:
-    """點擊切換列的位置 → -1(上一個)/ +1(下一個)/ 0(中間,不動作)。"""
+    """Position clicked on the switcher → -1 (previous) / +1 (next) / 0 (middle, no action)."""
     third = max(1, width // 3)
     if x < third:
         return -1
@@ -74,17 +161,19 @@ def tabs_step(x: int, width: int) -> int:
 
 
 # ---------------------------------------------------------------------- #
-# 欄位列上的 ‹ › 箭頭(開關 / enum / 少數等級的整數)
+# ‹ › arrows on a field row (switches / enums / integers with few levels)
 # ---------------------------------------------------------------------- #
-ARROW_SLOT = 2           # 箭頭加空白佔用的寬度;沒聚焦時保留空白,值的位置不會跳動
+ARROW_SLOT = 2  # width taken by an arrow plus a space; blanks are kept when not focused so the value does not jump
 
 
-def arrow_zones(label_w: int, shown_w: int, compact: bool) -> tuple[int, tuple[int, int], tuple[int, int]]:
-    """回傳 (所在列, 左箭頭可點範圍, 右箭頭可點範圍),範圍含頭尾,座標為列內 x。
+def arrow_zones(
+    label_w: int, shown_w: int, compact: bool
+) -> tuple[int, tuple[int, int], tuple[int, int]]:
+    """Returns (row, clickable range of the left arrow, clickable range of the right arrow); ranges include both ends, x is the column within the row.
 
-    列的排版:旗標 1 + 修改標記 1 + 空白 1,標籤佔 label_w,再空 2 格才是值
-    (緊湊模式的值在第二列,縮排 3 格)。值前面是「‹ 」,後面是「 ›」。
-    每個箭頭的可點範圍是 3 格寬(含旁邊一格),方便滑鼠點中。
+    Row layout: flag 1 + modified mark 1 + space 1, the label takes label_w, then 2 blank cells before the value
+    (in compact mode the value is on the second row, indented 3 cells). Before the value is "‹ ", after it " ›".
+    Each arrow's clickable range is 3 cells wide (including the neighbouring cell) so it is easy to hit with the mouse.
     """
     x0 = 3 if compact else 3 + label_w + 2
     left = x0
@@ -92,8 +181,10 @@ def arrow_zones(label_w: int, shown_w: int, compact: bool) -> tuple[int, tuple[i
     return (1 if compact else 0), (left - 1, left + 1), (right - 1, right + 1)
 
 
-def arrow_hit(zones: tuple[int, tuple[int, int], tuple[int, int]], x: int, y: int) -> int:
-    """點擊位置 → -1(左箭頭)/ +1(右箭頭)/ 0(都不是)。"""
+def arrow_hit(
+    zones: tuple[int, tuple[int, int], tuple[int, int]], x: int, y: int
+) -> int:
+    """Click position → -1 (left arrow) / +1 (right arrow) / 0 (neither)."""
     line, (l0, l1), (r0, r1) = zones
     if y != line:
         return 0

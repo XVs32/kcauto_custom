@@ -1,4 +1,4 @@
-"""LZString.compressToUTF16 的移植(只給測試產生固定資料用,執行期不需要)。"""
+"""Port of LZString.compressToUTF16 (only used by tests to generate fixed data; not needed at runtime)."""
 
 
 def compress_utf16(text: str) -> str:
@@ -69,8 +69,8 @@ def _compress(uncompressed, bits_per_char, to_char):
         if enlarge == 0:
             enlarge = 1 << nbits
             nbits += 1
-    put_bits(2, nbits)                      # 結束標記
-    while True:                             # 補滿最後一個字元
+    put_bits(2, nbits)  # end marker
+    while True:  # pad the last character
         val <<= 1
         if pos == bits_per_char - 1:
             data.append(to_char(val))

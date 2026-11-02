@@ -1,13 +1,14 @@
-"""scheduler.rules 字串的解析與格式化。
+"""Parsing and formatting of scheduler.rules strings.
 
-格式(Ch5):``condition:value:action:module`` 或 ``condition:value:action:module:extra``
-例如:``time:0230:stop:kcauto``、``sorties_run:15:stop:combat``
+Format (Ch5): ``condition:value:action:module`` or ``condition:value:action:module:extra``
+For example: ``time:0230:stop:kcauto``, ``sorties_run:15:stop:combat``
 
-CUI 只負責「結構」(4~5 個非空欄位),不限制 condition / action / module
-的合法值,因為這些值由 kcauto 本體決定;未知值一律保留,不會被改寫。
+The CUI only handles the "structure" (4-5 non-empty fields) and does not restrict the valid values of condition / action / module, because kcauto itself decides them; unknown values are always kept and never rewritten.
 """
+
 from __future__ import annotations
 
+from ..i18n import t
 from typing import NamedTuple, Optional
 
 
@@ -26,24 +27,26 @@ class SchedulerRule(NamedTuple):
 
 
 def parse_rule(text: str) -> SchedulerRule:
-    """解析規則字串;格式不合時丟出 ValueError。"""
+    """Parse a rule string; raise ValueError when the format is wrong."""
     if not isinstance(text, str):
-        raise ValueError("規則必須是字串")
+        raise ValueError(t("rule must be a string"))
     parts = text.split(":")
     if len(parts) not in (4, 5):
         raise ValueError(
-            "規則需為 condition:value:action:module[:extra],"
-            f"目前有 {len(parts)} 個欄位"
+            t(
+                "rule must be condition:value:action:module[:extra]; it has {n} fields",
+                n=len(parts),
+            )
         )
     names = ("condition", "value", "action", "module", "extra")
     for name, part in zip(names, parts):
         if part.strip() == "":
-            raise ValueError(f"欄位 {name} 不可為空")
+            raise ValueError(t("field {name} cannot be empty", name=name))
     return SchedulerRule(*[p.strip() for p in parts])
 
 
 def check_rule(item: object) -> Optional[str]:
-    """供 Field.item_check 使用:合法回傳 None,否則回傳錯誤訊息。"""
+    """For Field.item_check: returns None when valid, otherwise an error message."""
     try:
         parse_rule(item)  # type: ignore[arg-type]
     except ValueError as exc:

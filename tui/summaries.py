@@ -1,9 +1,13 @@
-"""各方框的摘要內容。純函式:設定值 → 顯示行,不依賴 Textual / Rich。
+"""Summary content of each box. Pure functions: config values → display lines, no Textual / Rich dependency.
 
-每一行是 ``(文字, 樣式)``,樣式是 Rich 樣式字串(空字串代表預設)。
+Each line is ``(text, style)``; style is a Rich style string (empty string means default).
 """
+
 from __future__ import annotations
 
+from . import akashi
+from .schema import ignored_by_override
+from .schema.scheduler_rule import parse_rule
 from typing import Any, Mapping
 
 Line = tuple[str, str]
@@ -11,8 +15,8 @@ Line = tuple[str, str]
 BAR_FULL = "█"
 BAR_EMPTY = "░"
 
-# 每行最多字元數:方框最小寬度 34 − 邊框/padding 4 − 捲軸 2 = 28。
-# 固定上限讓每行恰好佔一列,版面高度才能事先估算。
+# maximum characters per line: minimum box width 34 − border/padding 4 − scrollbar 2 = 28.
+# A fixed limit makes every line take exactly one row, so the layout height can be estimated in advance.
 LINE_MAX = 28
 
 
@@ -26,7 +30,7 @@ def fmt_amount(value: Any) -> str:
 
 
 def meter(value: Any, maximum: int, width: int = 8) -> str:
-    """文字量表,例如 ``████░░░░``。非數字或最大值為 0 時視為空。"""
+    """Text meter, e.g. ``████░░░░``. Treated as empty when not a number or when the maximum is 0."""
     if isinstance(value, bool) or not isinstance(value, (int, float)) or maximum <= 0:
         fraction = 0.0
     else:
@@ -48,7 +52,9 @@ def _truncate(text: str, limit: int) -> str:
 # ---------------------------------------------------------------------- #
 def _general(v: Mapping[str, Any]) -> list[Line]:
     jst = v["general.jst_offset"]
-    jst_text = f"{jst:+d}" if isinstance(jst, int) and not isinstance(jst, bool) else str(jst)
+    jst_text = (
+        f"{jst:+d}" if isinstance(jst, int) and not isinstance(jst, bool) else str(jst)
+    )
     return [
         (f"mode  {v['general.interaction_mode']}", ""),
         (f"JST   {jst_text}", ""),
@@ -60,21 +66,34 @@ def _combat(v: Mapping[str, Any]) -> list[Line]:
         (f"{v['combat.sortie_map']}  {v['combat.fleet_mode']}", "bold"),
         (f"preset {_join(v['combat.fleet_presets'])}", ""),
     ]
-    if v["combat.lbas_groups"]:
-        lines.append((f"LBAS {_join(v['combat.lbas_groups'])}", ""))
+    ignored = ignored_by_override("combat.lbas_groups", v.get("combat.override"))
+    if v[
+        "combat.lbas_groups"
+    ]:  # these settings have no effect while override is off, so show them in grey
+        lines.append(
+            (f"LBAS {_join(v['combat.lbas_groups'])}", "dim" if ignored else "")
+        )
     if v["combat.push_nodes"]:
-        lines.append((f"⚠ push {_join(v['combat.push_nodes'])}", "bold red"))
+        lines.append(
+            (
+                f"⚠ push {_join(v['combat.push_nodes'])}",
+                "dim" if ignored else "bold red",
+            )
+        )
     return lines
 
 
 def _expedition(v: Mapping[str, Any]) -> list[Line]:
-    """只顯示各艦隊的目的地與 fleet preset(資源目標量請進編輯器看)。"""
-    lines: list[Line] = [
-        (f"fleet {n}  {_join(v[f'expedition.fleet_{n}'])}", "cyan") for n in (2, 3, 4)
+    """First line: the current setting of fleets 2/3/4 (auto / overnight or destinations); second line: whether auto assign is on."""
+    names = []
+    for n in (2, 3, 4):
+        dest = v[f"expedition.fleet_{n}"]
+        names.append(_join(dest) if dest else "-")
+    auto = v["expedition.fleet_preset"] == "auto"
+    return [
+        ("  ".join(names), "cyan"),
+        ("auto assign" if auto else "no auto assign", "bold" if auto else "dim"),
     ]
-    preset = v["expedition.fleet_preset"]
-    lines.append((f"preset   {preset if preset else '-'}", ""))
-    return lines
 
 
 def _pvp(v: Mapping[str, Any]) -> list[Line]:
@@ -95,7 +114,9 @@ def _quest(v: Mapping[str, Any]) -> list[Line]:
 def _factory(v: Mapping[str, Any]) -> list[Line]:
     def recipe(key: str) -> str:
         value = v[key]
-        return "/".join(str(x) for x in value) if isinstance(value, list) else str(value)
+        return (
+            "/".join(str(x) for x in value) if isinstance(value, list) else str(value)
+        )
 
     return [
         (f"build   {recipe('factory.build_recipe')}", ""),
@@ -104,14 +125,28 @@ def _factory(v: Mapping[str, Any]) -> list[Line]:
 
 
 def _scheduler(v: Mapping[str, Any]) -> list[Line]:
+    """The CUI only manages two rules: when to stop kcauto and after how many sorties to stop combat."""
     rules = v["scheduler.rules"]
-    count = len(rules) if isinstance(rules, list) else 0
-    lines: list[Line] = [(f"{count} rule{'s' if count != 1 else ''}", "bold")]
-    if isinstance(rules, list):
-        lines += [(_truncate(str(r), 30), "") for r in rules[:3]]
-        if count > 3:
-            lines.append((f"… +{count - 3} more", "dim"))
-    return lines
+    lines: list[Line] = []
+    for item in rules if isinstance(rules, list) else []:
+        try:
+            r = parse_rule(item)
+        except ValueError:
+            continue
+        if (
+            (r.condition, r.action, r.module) == ("time", "stop", "kcauto")
+            and len(r.value) == 4
+            and r.value.isdigit()
+        ):
+            lines.append((f"stop kcauto at {r.value[:2]}:{r.value[2:]}", ""))
+        elif (r.condition, r.action, r.module) == (
+            "sorties_run",
+            "stop",
+            "combat",
+        ) and r.value.isdigit():
+            n = int(r.value)
+            lines.append((f"stop combat at {n} sortie{'s' if n != 1 else ''}", ""))
+    return lines or [("no stop rules", "dim")]
 
 
 def _passive_repair(v: Mapping[str, Any]) -> list[Line]:
@@ -122,15 +157,25 @@ def _passive_repair(v: Mapping[str, Any]) -> list[Line]:
 
 
 def _ship_switcher(v: Mapping[str, Any]) -> list[Line]:
-    slots = v["ship_switcher.slots"]
-    count = len(slots) if isinstance(slots, dict) else 0
-    return [(f"{count} slot rule{'s' if count != 1 else ''}", "")]
+    state = akashi.state(v)
+    if state == "akashi":
+        return [("Akashi repair  on", "bold")]
+    if state == "custom":
+        slots = v["ship_switcher.slots"]
+        n = len(slots) if isinstance(slots, dict) else 0
+        return [(f"custom rules ({n} slots)", "")]
+    if akashi.forced_off(v):
+        return [("Akashi  off (combat on)", "dim")]
+    return [("Akashi repair  off", "dim")]
 
 
 def _event_reset(v: Mapping[str, Any]) -> list[Line]:
     return [
-        (f"farm d{v['event_reset.farm_difficulty']} → "
-         f"reset d{v['event_reset.reset_difficulty']}", ""),
+        (
+            f"farm d{v['event_reset.farm_difficulty']} → "
+            f"reset d{v['event_reset.reset_difficulty']}",
+            "",
+        ),
         (f"every {v['event_reset.frequency']} runs", ""),
     ]
 
@@ -150,9 +195,11 @@ _SUMMARIES = {
 
 
 def summarize(module: str, values: Mapping[str, Any]) -> list[Line]:
-    """回傳某模組方框要顯示的行。值損壞時回傳提示行,不會丟例外。"""
+    """Return the lines to show for a module's box. Returns a hint line, never raises, when values are corrupt."""
     try:
         lines = _SUMMARIES[module](values)
-    except Exception:  # 使用者正在輸入不合法的值時,儀表板不能壞掉
-        lines = [("(無法顯示,請開啟編輯器)", "red")]
+    except (
+        Exception
+    ):  # the dashboard must not break while the user is typing an invalid value
+        lines = [("(cannot display; open the editor)", "red")]
     return [(_truncate(text, LINE_MAX), style) for text, style in lines]
