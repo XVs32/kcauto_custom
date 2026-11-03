@@ -583,21 +583,33 @@ class ApiWrapper(object):
 
     def _process_free_equipment_data(self, data):
         equ.equipment.equipment_pool[equ.equipment.FREE] = []
+
+        # --- diagnostic state ---
+        stage = "start"
+        cur_key = None
+        cur_prod_id = None
+        equipment_pool_temp = {}
+        slot_data = None
+        # ------------------------
+
         try:
+            stage = "read api_slot_data"
             slot_data = data["api_slot_data"]
 
             equipment_pool_temp: dict[str, list[Equipment]] = {}
 
+            stage = "build pool"
             for key in slot_data:
+                cur_key = key
                 equipment_pool_temp[key] = []
 
                 for equipment_production_id in slot_data[key]:
+                    cur_prod_id = equipment_production_id
                     equipment_temp = equ.equipment.get_equipment_by_production_id(
                         equ.equipment.equipment_pool[equ.equipment.ID],
                         equipment_production_id,
                     )
                     equipment_temp.category = int(key[len("api_slottype") :])
-                    # Equipment.category_patch(equipment_temp.model_id, int(key[len("api_slottype"):]))
                     equipment_pool_temp[key].append(equipment_temp)
 
             keys = slot_data.keys()
@@ -605,12 +617,12 @@ class ApiWrapper(object):
             SECONDARY_GUN = "api_slottype4"
             EVENT_SECONDARY_GUN = "api_slottype95"
             if EVENT_SECONDARY_GUN in keys:
+                stage = "merge secondary guns"
                 Log.log_debug_1(
                     f"Found {EVENT_SECONDARY_GUN} in equipment pool, merging them"
                 )
 
                 temp = []
-
                 secondary_gun_count = len(equipment_pool_temp[SECONDARY_GUN])
                 event_secondary_gun_count = len(
                     equipment_pool_temp[EVENT_SECONDARY_GUN]
@@ -618,11 +630,9 @@ class ApiWrapper(object):
 
                 i = 0
                 j = 0
-
                 while i < secondary_gun_count and j < event_secondary_gun_count:
                     secondary_gun = equipment_pool_temp[SECONDARY_GUN][i]
                     event_secondary_gun = equipment_pool_temp[EVENT_SECONDARY_GUN][j]
-
                     if secondary_gun.model_id > event_secondary_gun.model_id:
                         temp.append(event_secondary_gun)
                         j += 1
@@ -631,30 +641,55 @@ class ApiWrapper(object):
                         i += 1
 
                 while i < secondary_gun_count:
-                    secondary_gun = equipment_pool_temp[SECONDARY_GUN][i]
-                    temp.append(secondary_gun)
+                    temp.append(equipment_pool_temp[SECONDARY_GUN][i])
                     i += 1
                 while j < event_secondary_gun_count:
-                    event_secondary_gun = equipment_pool_temp[EVENT_SECONDARY_GUN][j]
-                    temp.append(event_secondary_gun)
+                    temp.append(equipment_pool_temp[EVENT_SECONDARY_GUN][j])
+                    j += 1  # fixed: was missing, infinite loop
 
                 equipment_pool_temp[SECONDARY_GUN] = temp
                 del equipment_pool_temp[EVENT_SECONDARY_GUN]
 
+            stage = "flatten"
             sorted_keys = sorted(keys, key=lambda x: (len(x), x))
             for key in sorted_keys:
+                cur_key = key
                 for equipment in equipment_pool_temp[key]:
                     equ.equipment.equipment_pool[equ.equipment.FREE].append(equipment)
+
             equ.equipment.free_equipment_initialized = True
-            Log.log_debug_1(f"equipment updated")
+            Log.log_debug_1("equipment updated")
 
-            # for i, equipment in enumerate(equ.equipment.equipment_pool[equ.equipment.FREE]):
-            #    if i %10 == 0:
-            #        Log.log_debug(f'Page {i // 10 + 1}')
-            #    Log.log_debug(f'{i}: {equipment.name} {equipment.stars} (Production id: {equipment.production_id}, Model id: {equipment.model_id}), category id: {equipment.category}')
+        except KeyError as e:
+            import traceback
 
-        except KeyError:
-            Log.log_debug_1("No provisional equipment data found in API response")
+            try:
+                id_pool = equ.equipment.equipment_pool.get(equ.equipment.ID)
+                info = {
+                    "missing_key": repr(e),
+                    "stage": stage,
+                    "current_slot_key": cur_key,
+                    "current_production_id": cur_prod_id,
+                    "data_type": type(data).__name__,
+                    "data_keys": list(data.keys()) if isinstance(data, dict) else None,
+                    "slot_data_type": type(slot_data).__name__,
+                    "slot_data_keys": list(slot_data.keys())
+                    if isinstance(slot_data, dict)
+                    else None,
+                    "slot_data_sizes": {k: len(v) for k, v in slot_data.items()}
+                    if isinstance(slot_data, dict)
+                    else None,
+                    "temp_pool_keys": list(equipment_pool_temp.keys()),
+                    "equipment_pool_keys": list(equ.equipment.equipment_pool.keys()),
+                    "id_pool_size": len(id_pool) if id_pool is not None else None,
+                }
+                Log.log_debug_1(
+                    "No provisional equipment data found / KeyError:\n"
+                    f"{info}\n{traceback.format_exc()}"
+                )
+            except Exception:
+                # never let diagnostics hide the original error
+                Log.log_debug_1(f"KeyError {e!r}\n{traceback.format_exc()}")
 
     def _filter_equipment(self, equipment_data: list):
         """Filter equipment based on ignore_equipment.json
