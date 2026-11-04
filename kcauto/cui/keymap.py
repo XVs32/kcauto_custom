@@ -1,4 +1,4 @@
-"""User-customisable shortcut keys (data layer, no UI dependency).
+r"""User-customisable shortcut keys (data layer, no UI dependency).
 
 Only *command* keys can be changed: the dashboard commands, the module jump keys and a handful
 of editor commands. Navigation and editing keys (arrows, Enter, Esc, Tab, PgUp/PgDn, Home/End,
@@ -9,10 +9,10 @@ missing there is taken from ``template/configs/cui_prefs.json`` (see prefs.py)::
 
     {"lang": "en", "keys": {"pause": "p", "module.combat": "1"}}
 
-* Keys are a single lowercase letter or digit, one of ``/ [ ] , . ;``, ``space``, ``f1``..``f12`` or
-  ``shift+enter`` (the default of ``toggle``) or ``ctrl+enter``. A bare Shift key cannot be detected in a
-  terminal, so ``"shift"`` is read as ``shift+enter``. Many terminals cannot tell Shift+Enter / Ctrl+Enter
-  from Enter; if it does nothing in yours, give ``toggle`` a plain key, e.g. ``{"keys": {"toggle": "x"}}``.
+* Keys are a single lowercase letter or digit, one of ``/ [ ] , . ; \``, ``space``, ``f1``..``f12``,
+  ``shift+enter`` or ``ctrl+enter``. The default of ``toggle`` is the backslash ``\``; in the JSON file it
+  must be written escaped: ``{"keys": {"toggle": "\\"}}``. The Shift key on its own cannot be used (a
+  terminal does not report it), and many terminals cannot tell Shift+Enter / Ctrl+Enter from Enter.
 * There is no save or apply key: the config is saved when it is applied (Enter or a click on the log
   panel, then confirm) or when you choose "save and quit". Old ``save`` / ``apply`` entries are ignored.
 * The same key cannot be used twice inside one screen (dashboard / editor). Offending overrides
@@ -66,12 +66,7 @@ ACTIONS: tuple[Action, ...] = (
     Action("pause", "space", (DASHBOARD,), "Pause / resume kcauto"),
     Action("log", "l", (DASHBOARD,), "Focus the log (full screen when hidden)"),
     Action("language", "t", (DASHBOARD,), "Choose the editor language"),
-    Action(
-        "toggle",
-        "shift+enter",
-        (DASHBOARD,),
-        "Toggle the focused module's enabled switch",
-    ),
+    Action("toggle", "\\", (DASHBOARD,), "Toggle the focused module's enabled switch"),
     Action(
         "debug",
         "d",
@@ -122,7 +117,7 @@ RESERVED = frozenset(
 # Reserved only on one screen: Space is the editor's "Enter-like" key.
 SCOPE_RESERVED: dict[str, frozenset[str]] = {EDITOR: frozenset({"space"})}
 
-PUNCTUATION = "/[],.;"
+PUNCTUATION = "/[],.;\\"
 _ALIASES = {
     "spacebar": "space",
     "space bar": "space",
@@ -133,6 +128,7 @@ _ALIASES = {
     "full_stop": ".",
     "period": ".",
     "semicolon": ";",
+    "backslash": "\\",
 }
 # Textual names for the punctuation we allow (a Binding takes "name,char" so either form matches).
 _BINDING_NAMES = {
@@ -142,14 +138,13 @@ _BINDING_NAMES = {
     ",": "comma",
     ".": "full_stop",
     ";": "semicolon",
+    "\\": "backslash",
 }
 _FUNCTION_KEYS = frozenset(f"f{n}" for n in range(1, 13))
 CTRL_ENTER = "ctrl+enter"
 SHIFT_ENTER = "shift+enter"
 MODIFIED_ENTER = frozenset({CTRL_ENTER, SHIFT_ENTER})
-_ALIASES.update(
-    {"ctrl+return": CTRL_ENTER, "shift+return": SHIFT_ENTER, "shift": SHIFT_ENTER}
-)
+_ALIASES.update({"ctrl+return": CTRL_ENTER, "shift+return": SHIFT_ENTER})
 # Terminals that cannot send a distinct Ctrl+Enter often send Ctrl+J (a line feed) instead.
 _BINDING_EXTRA = {CTRL_ENTER: "ctrl+j"}
 
@@ -178,11 +173,11 @@ def normalize(raw: Any) -> tuple[Optional[str], str]:
             return text, ""
         return (
             None,
-            f"{text!r} is not allowed (letters, digits, / [ ] , . ; space, f1-f12, shift+enter, ctrl+enter)",
+            f"{text!r} is not allowed (letters, digits, / [ ] , . ; space, backslash, f1-f12, shift+enter, ctrl+enter)",
         )
     return (
         None,
-        f"{text!r} is not a valid key (letters, digits, / [ ] , . ; space, f1-f12, shift+enter, ctrl+enter)",
+        f"{text!r} is not a valid key (letters, digits, / [ ] , . ; space, backslash, f1-f12, shift+enter, ctrl+enter)",
     )
 
 

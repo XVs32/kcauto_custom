@@ -43,7 +43,7 @@ python -m unittest discover -s tests -t . -v
 |---|---|
 | arrow keys | move between boxes; walking past the edge toward the log enters the log |
 | `c e p u s f r h v g` | jump straight to that module's box |
-| Shift+Enter / click on the ON·OFF switch | toggle the box's `enabled` (see the note on terminals below); only the switch on the bottom border counts, not the rest of the box |
+| `\` / click on the ON·OFF switch | toggle the box's `enabled` (see the note on the key below); only the switch on the bottom border counts, not the rest of the box |
 | `d` | toggle debug mode (`--debug-output`, applies on the next start) |
 | Space | pause / resume kcauto (works anywhere on the dashboard) |
 | Enter / click on the focused box | open the editor on that module (the first click on another box only focuses it; a double click also opens it) |
@@ -67,9 +67,9 @@ focuses the log does nothing.
 
 **There is no save key.** The config file is written when you apply, or with "save and quit" when leaving.
 
-**Shift+Enter** needs a terminal that reports it (kitty-protocol terminals, ...); many terminals send a plain Enter instead.
-If it does nothing in yours, give `toggle` a plain key in `configs/cui_prefs.json`, e.g. `{"keys": {"toggle": "x"}}`
-(a bare `"shift"` is read as `shift+enter`, because a terminal cannot report the Shift key alone; `ctrl+enter` is accepted too).
+**The backslash `\` key** is the default of `toggle` (Ctrl+Enter, Shift+Enter and the Shift key alone are not reported
+by most terminals, so they cannot be used as a default). In the JSON file a backslash must be escaped, so to set it
+explicitly write `{"keys": {"toggle": "\\"}}`; any other key works too, e.g. `{"keys": {"toggle": "x"}}`.
 
 The dashboard text is English only. The editor (labels, help, dialogs, messages) follows the
 selected language.
@@ -243,12 +243,12 @@ Add a `keys` section to `configs/cui_prefs.json` with only the keys you want to 
 
 | Action id | Default | Where |
 |---|---|---|
-| `quit` `pause` `log` `language` `toggle` `debug` | `q space l t shift+enter d` | dashboard |
+| `quit` `pause` `log` `language` `toggle` `debug` | `q space l t \ d` | dashboard |
 | `module.combat` `.expedition` `.pvp` `.quest` `.scheduler` `.factory` `.passive_repair` `.ship_switcher` `.event_reset` `.general` | `c e p u s f r h v g` | dashboard and editor |
 | `module.other` | `o` | editor only (unknown keys) |
 | `editor.reset_default` `editor.undo` `editor.search` `editor.module_prev` `editor.module_next` | `d z / [ ]` | editor |
 
-- A key is one lowercase letter or digit, one of `/ [ ] , . ;`, `space`, `f1`-`f12`, `shift+enter` or `ctrl+enter`.
+- A key is one lowercase letter or digit, one of `/ [ ] , . ;`, `space`, `f1`-`f12`, `\` (backslash), `shift+enter` or `ctrl+enter` (the last two only work in terminals that report them).
 - There are no `save` / `apply` actions any more; old entries with those names are ignored silently.
 - A key can be used once per screen (the dashboard and the editor are separate screens, but the
   module keys count on both). Swapping two keys is fine.

@@ -7,7 +7,7 @@ Keys
     arrows        move between boxes (scroll the log while the log box has focus)
     c e p u s f r h v g   jump straight to that module's box
     space         pause / resume kcauto (works anywhere)
-    shift         toggle enabled on the focused box
+    \\            toggle enabled on the focused box
     enter         open the editor; on the log (or a click on a focused log): forward Enter if kcauto is
                   waiting, otherwise apply = confirm, save the config, then (re)start kcauto
     l             focus the log (not shown in the hint bar); when the log is hidden, show it full screen
