@@ -56,7 +56,10 @@ set "icon_path=..\..\assets\cui\bot.ico"
 
 echo Building Launcher: kcauto_cui with icon...
 :: 加入 --icon "%icon_path%"
-python -m PyInstaller -F --clean --icon "%icon_path%" %src_cui% -p ..\..\kcauto\ -p %python_site_package% --distpath %ROOT_PATH% --name "kcauto_cui"
+python -m PyInstaller -F --clean --icon "%icon_path%" %src_cui% -p ..\..\kcauto\ -p %python_site_package% --distpath %ROOT_PATH% --name "kcauto_cui" ^
+    --add-data "..\..\kcauto\cui\theme.tcss;cui" ^
+    --add-data "..\..\kcauto\cui\locales;cui\locales" ^
+    --collect-all textual
 
 
 :: ---------------------------------------------------------

@@ -13,13 +13,14 @@ _You need to do this no matter what_
     * :x: 若看到以下畫面，請關閉所有 POI 程序並重新嘗試：  
 ![debug_port_fail](./assets/debug_port_fail.png)  
 
-* 安裝 `poi-plugin-noro6-exporter` 及 `poi-plugin-forwarder` 擴充外掛
+* 安裝 `poi-plugin-noro6-exporter`、`poi-plugin-forwarder` 及 `poi-plugin-interaction` 擴充外掛
     * 請注意，Noro6 Exporter **不會**將配置匯出至原版的 Noro6 網站，  
-      而是匯出到 XVs32 改版（Noro6 審 Pull Request 的速度實在太慢了，沒辦法，只能自己架一個，LOL）。
+      而是匯出到 XVs32 改版（Noro6 審 Pull Request 的速度實在太慢了，沒辦法，只能自己架一個）
 
 ![image](./assets/poi-plugin-tab.png)  
 ![image](./assets/poi-plugin-noro6-exporter.png)  
 ![image](./assets/poi-plugin-forwarder.png)  
+![image](./assets/poi-plugin-interaction.png)  
 
 * **Linux (Ubuntu) 使用者須知**：  
   Ubuntu 的 Wayland 顯示協定對 `kcauto` 相容性不佳（對很多其他軟體也是，LOL）。  
