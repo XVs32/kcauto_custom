@@ -25,9 +25,9 @@ from textual.screen import Screen
 from textual.widget import Widget
 from textual.widgets import Static
 
-from ..modules import CARD_BY_MODULE
-from .. import akashi
+from .. import akashi, keymap
 from ..i18n import t
+from ..modules import CARD_BY_MODULE, split_hotkey
 from ..schema import (
     OVERRIDE_KEY,
     SCHEMA,
@@ -74,6 +74,9 @@ HINTS = N.EDITOR_HINTS
 
 
 # ---------------------------------------------------------------------- #
+_KEYS = keymap.active()  # loaded once at start-up (see keymap.py)
+
+
 class ModuleList(Widget, can_focus=True):
     """Module list on the left. Up/Down switch module; Enter / Right enter the form.
 
@@ -185,7 +188,7 @@ class ModuleList(Widget, can_focus=True):
                 )
             else:
                 line.append("  ")
-            before, hot, after = _split_hotkey(entry.label, entry.hotkey)
+            before, hot, after = split_hotkey(entry.label, entry.hotkey)
             line.append(before)
             line.append(hot, style="bold #e5c07b")
             line.append(after)
@@ -245,13 +248,6 @@ class ModuleTabs(Widget):
             style = f"bold {color}" if role == "current" else self.ROLE_STYLE[role]
             text.append(piece, style=style)
         return text
-
-
-def _split_hotkey(label: str, hotkey: str) -> tuple[str, str, str]:
-    index = label.lower().find(hotkey.lower())
-    if index < 0:
-        return label, "", ""
-    return label[:index], label[index], label[index + 1 :]
 
 
 # ---------------------------------------------------------------------- #
@@ -487,33 +483,28 @@ class EditorScreen(Screen):
         Binding("end", "row(999)", show=False),
         Binding("left", "horizontal(-1)", show=False),
         Binding("right", "horizontal(1)", show=False),
-        Binding("left_square_bracket,[", "module(-1)", show=False),
-        Binding("right_square_bracket,]", "module(1)", show=False),
+        Binding(_KEYS.binding_key("editor.module_prev"), "module(-1)", show=False),
+        Binding(_KEYS.binding_key("editor.module_next"), "module(1)", show=False),
         Binding("enter", "edit", show=False),
         Binding("space", "quick", show=False),
         Binding("plus,+,equals_sign,=", "adjust(1)", show=False),
         Binding("minus,-", "adjust(-1)", show=False),
-        Binding("d", "reset_default", show=False),
-        Binding("z", "undo", show=False),
-        Binding("slash,/", "search", show=False),
-        Binding("w", "save", show=False),
+        Binding(_KEYS.binding_key("editor.reset_default"), "reset_default", show=False),
+        Binding(_KEYS.binding_key("editor.undo"), "undo", show=False),
+        Binding(_KEYS.binding_key("editor.search"), "search", show=False),
         *(
-            Binding(e.hotkey, f"goto_module('{e.module}')", show=False)
+            Binding(
+                _KEYS.binding_key(f"module.{e.module}"),
+                f"goto_module('{e.module}')",
+                show=False,
+            )
             for e in M.MODULE_ENTRIES
         ),
     ]
 
-    def __init__(
-        self,
-        store: ConfigStore,
-        module: str,
-        *,
-        save: Callable[[], bool] | None = None,
-        root: str = ".",
-    ) -> None:
+    def __init__(self, store: ConfigStore, module: str, *, root: str = ".") -> None:
         super().__init__()
         self.store = store
-        self.save_callback = save
         self.project_root = root  # project root (used to find data/quests/quests.json)
         self._catalog: Optional[list[M.QuestInfo]] = None
         self._edit_row: Optional[FieldRow] = (
@@ -543,7 +534,7 @@ class EditorScreen(Screen):
 
     @staticmethod
     def _hints(width: int, editing: bool = False) -> Text:
-        """Bottom hints; on narrow windows the minor ones are dropped and enter / search / save / back are kept.
+        """Bottom hints; on narrow windows the minor ones are dropped and enter / search / back are kept.
         While editing a row (second level) only ←→ change, Enter confirm and Esc cancel are shown.
         """
         hints = N.EDIT_HINTS if editing else HINTS
@@ -876,13 +867,6 @@ class EditorScreen(Screen):
                 self.store.revert_key(key)
         elif row is not None:
             self.store.revert_key(row.key)
-
-    def action_save(self) -> None:
-        if self._edit_row is not None:
-            return
-        if self.save_callback is not None:
-            self.save_callback()
-        self._refresh_top()
 
     def action_close(self) -> None:
         """Esc: second level = discard this edit and return to the list; first level = leave the editor."""

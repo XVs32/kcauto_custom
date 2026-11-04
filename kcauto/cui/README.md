@@ -8,8 +8,8 @@ controls the kcauto process, and shows its log.
 
 ```
 pip install "textual>=0.86" psutil     # Python 3.11+
-python -m tui                          # run from the project root; reads configs/config_cui.json
-python -m tui --config PATH --template PATH --lang ja --autostart
+python kcauto/kcauto_cui.py            # run from the project root; reads configs/config_cui.json
+python kcauto/kcauto_cui.py --config PATH --template PATH --lang ja --autostart --debug-output
 ```
 
 Run it from the project root: the CUI starts kcauto from the current working directory
@@ -22,6 +22,7 @@ Run it from the project root: the CUI starts kcauto from the current working dir
 | `--template PATH` | template file used for defaults |
 | `--lang CODE` | editor language: `en` (default), `zh_TW`, `ja` |
 | `--autostart` | start kcauto right after opening (off by default) |
+| `--debug-output` | start in debug mode: kcauto is started with `--debug-output` (see below) |
 
 ## Tests
 
@@ -42,14 +43,14 @@ python -m unittest discover -s tests -t . -v
 |---|---|
 | arrow keys | move between boxes; walking past the edge toward the log enters the log |
 | `c e p u s f r h v g` | jump straight to that module's box |
-| `x` / click ON·OFF at the bottom right | toggle the box's `enabled` |
+| Ctrl+Enter / click ON·OFF at the bottom right | toggle the box's `enabled` (see the note on terminals below) |
+| `d` | toggle debug mode (`--debug-output`, applies on the next start) |
 | Space | pause / resume kcauto (works anywhere on the dashboard) |
 | Enter / double-click | open the editor on that module |
-| `a` | apply: save, then (re)start kcauto (not started if there are errors) |
-| `l` | focus the log; when the log is hidden by the layout, show it full screen |
+| `l` | focus the log; when the log is hidden by the layout, show it full screen (works, but is not shown in the hint bar) |
 | Esc | leave the log / full-screen log |
 | `t` | choose the editor language |
-| `w` / `q` | save / quit (asks if there are unsaved changes or kcauto is running) |
+| `q` | quit (asks if there are unsaved changes, which are discarded, or kcauto is running) |
 
 On the log:
 
@@ -57,7 +58,14 @@ On the log:
 |---|---|
 | ↑ ↓ / PgUp PgDn | scroll |
 | ← | back to the boxes (with the log below, ↑ at the very top also goes back) |
-| Enter | if kcauto is waiting at `Press Enter to continue`, send Enter; otherwise same as `a` |
+| Enter | if kcauto is waiting at `Press Enter to continue`, send Enter; otherwise **apply**: save the config, then (re)start kcauto (not started if there are errors) |
+
+**There is no separate save key.** The config file is written only when it is applied (Enter on the log; also
+reached with the arrow keys or `l`). Quitting with unsaved changes discards them.
+
+**Ctrl+Enter** needs a terminal that reports it (kitty-protocol terminals, Windows Terminal, ...). The dashboard
+also accepts Ctrl+J, which many terminals send instead. If neither works in yours, give `toggle` another key in
+`configs/tui_prefs.json`, e.g. `{"keys": {"toggle": "x"}}`.
 
 The dashboard text is English only. The editor (labels, help, dialogs, messages) follows the
 selected language.
@@ -70,7 +78,7 @@ selected language.
 | not enough width, enough height | log below the dashboard; cards use 1-4 columns by width |
 | neither | log hidden, cards fill the screen (`l` shows the log full screen) |
 
-The numbers live in `tui/layout.py`; `tui/theme.tcss` must match (`tests/test_layout.py` checks it).
+The numbers live in `kcauto/cui/layout.py`; `kcauto/cui/theme.tcss` must match (`tests/test_layout.py` checks it).
 
 ### kcauto process control
 
@@ -80,7 +88,7 @@ Kept from the old CUI: the start command, `--cli --cfg <name>`, the ANSI colour 
 
 Different (all fixes):
 
-- **Never starts automatically** (use `a`, or `--autostart`).
+- **Never starts automatically** (apply with Enter on the log, or use `--autostart`).
 - Ending kcauto also ends its **child processes**, and leaving the CUI always cleans kcauto up.
 - Child processes get `PYTHONUNBUFFERED=1` and `PYTHONIOENCODING=utf-8`, so the log is not delayed
   and does not turn into garbage on Windows.
@@ -88,7 +96,13 @@ Different (all fixes):
 - Compound ANSI parameters such as `91;1` are parsed correctly.
 - The log keeps the latest 3000 lines, even while hidden.
 
-There is no separate "stop" key: quit the CUI (`q`) to end kcauto, or apply (`a`) to restart it.
+**Debug mode.** `d` toggles debug mode, which appends `--debug-output` to the kcauto command line
+(`... --cli --cfg <name> --debug-output`). It applies from the **next** start: if kcauto is running,
+apply (Enter on the log) to restart it. The status bar shows `DEBUG` while the mode is on, and the choice is
+remembered in `configs/tui_prefs.json` (`"debug": true`). `--debug-output` on the CUI command line
+turns it on for that session as well.
+
+There is no separate "stop" key: quit the CUI (`q`) to end kcauto, or apply (Enter on the log) to restart it.
 
 The status bar shows: run state, uptime, CPU sparkline and percentage, memory, and a hint when
 kcauto is waiting for Enter.
@@ -96,7 +110,7 @@ kcauto is waiting for Enter.
 ## Editor
 
 Open it with Enter or a double-click on a box. All edits are applied to the in-memory config
-immediately and shown on the dashboard; `w` saves. kcauto's log keeps accumulating while you edit.
+immediately and shown on the dashboard; they are written to the file when you apply on the dashboard (Enter on the log). kcauto's log keeps accumulating while you edit.
 
 | Key | Action |
 |---|---|
@@ -110,7 +124,6 @@ immediately and shown on the dashboard; `w` saves. kcauto's log keeps accumulati
 | `d` | reset to the default |
 | `z` | revert to the last saved value |
 | `/` | search all fields (key, label, help; the current language and English) |
-| `w` | save (refused while there are errors) |
 | Esc | leave the editor |
 
 The first row of the module list is `..`: select it (↑ from the first module, then Enter or a
@@ -207,18 +220,47 @@ You edit a working copy, and the top level must keep its type (an object cannot 
 | < 72 columns | the module list is hidden; a one-row "‹ previous [ current ] next ›" switcher is shown on top, centred on the current module (click the left / right third, or use `[` `]` and the module shortcuts) |
 | < 50 columns | every field takes two rows (label, value) |
 | dialogs < 70 columns | less padding; table inputs are laid out vertically |
-| any narrow width | the top info row, hint bar and dashboard status bar drop minor items first; **save / quit, the file name (with `*`) and the error / warning count are always kept** |
+| any narrow width | the top info row, hint bar and dashboard status bar drop minor items first; **quit, the file name (with `*`) and the error / warning count are always kept** |
 | short terminal | lists inside dialogs shorten and wheels shrink to 3 rows so the bottom buttons are never cut off; ↑ ↓ in the form always move rows (the focused row scrolls into view) |
 
 **Mouse:** wheel widgets can be clicked above / below the centre to scroll to that item, and the mouse
 wheel scrolls them (up = previous value); buttons can be clicked; the mouse wheel also scrolls lists.
+
+## Custom shortcut keys
+
+The **command keys** can be changed; navigation keys (arrows, Enter, Esc, Tab, PgUp/PgDn, Home/End,
+Space and `+` `-` inside the editor) and everything inside dialogs are fixed.
+
+Add a `keys` section to `configs/tui_prefs.json` with only the keys you want to change:
+
+```json
+{"lang": "en", "keys": {"pause": "n", "module.combat": "1", "editor.search": "k"}}
+```
+
+| Action id | Default | Where |
+|---|---|---|
+| `quit` `pause` `log` `language` `toggle` `debug` | `q space l t ctrl+enter d` | dashboard |
+| `module.combat` `.expedition` `.pvp` `.quest` `.scheduler` `.factory` `.passive_repair` `.ship_switcher` `.event_reset` `.general` | `c e p u s f r h v g` | dashboard and editor |
+| `module.other` | `o` | editor only (unknown keys) |
+| `editor.reset_default` `editor.undo` `editor.search` `editor.module_prev` `editor.module_next` | `d z / [ ]` | editor |
+
+- A key is one lowercase letter or digit, one of `/ [ ] , . ;`, `space`, `f1`-`f12`, or `ctrl+enter`.
+- There are no `save` / `apply` actions any more; old entries with those names are ignored silently.
+- A key can be used once per screen (the dashboard and the editor are separate screens, but the
+  module keys count on both). Swapping two keys is fine.
+- Mistakes never stop the CUI: a bad or conflicting override is dropped (the default is used) and
+  every problem is written to the log on start-up with a warning.
+- Keys are read once at start-up; restart the CUI after changing them.
+- `python kcauto/kcauto_cui.py --show-keys` lists every action id with its current and default key.
+- Module shortcut display: a key that is a letter of the label is highlighted in place (`c`ombat);
+  any other key (`1`, `f5`, ...) is not marked at all. The hint bar follows the keymap; it does not list `log`.
 
 ## Languages
 
 English is the default. Press `t` on the dashboard, or use `--lang CODE` / `KCAUTO_LANG`, to switch;
 the choice is saved in `configs/tui_prefs.json` and the editor uses it the next time it opens.
 
-To add a language, drop `tui/locales/<code>.json` next to the existing ones:
+To add a language, drop `kcauto/cui/locales/<code>.json` next to the existing ones:
 
 ```json
 {
@@ -234,9 +276,15 @@ Anything that is not translated falls back to English, so a file can cover only 
 
 ## Packaging
 
-`tui/theme.tcss` and `tui/locales/*.json` must be bundled with the program. PyInstaller example:
+`cui/theme.tcss` and `cui/locales/*.json` must be bundled with the program. The packaged launcher
+(`kcauto/kcauto_cui.py`, built by `tool/execution_packer/x_packer.sh` / `exe_packer.bat`) uses:
 
 ```
---add-data "kcauto/tui/theme.tcss:tui" --add-data "kcauto/tui/locales:tui/locales"
-# on Windows use ; instead of :
+--add-data "../../kcauto/cui/theme.tcss:cui" --add-data "../../kcauto/cui/locales:cui/locales" --collect-all textual
+# on Windows use ; instead of : in --add-data
 ```
+
+The destination must be the package directory `cui`: both files are found relative to the module
+(`Path(__file__).parent`). The package is imported as the top-level `cui` (kcauto's own directory is on
+`sys.path`, as for the rest of kcauto). In a packaged build the CUI changes to the folder holding the
+launcher, starts `bin/kcauto_custom/kcauto_custom[.exe]` and never falls back to `python kcauto`.

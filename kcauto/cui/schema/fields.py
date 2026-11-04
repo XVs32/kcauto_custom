@@ -79,7 +79,7 @@ class Field:
     key: str
     kind: Kind
     default: Any
-    _label: str  # English (the default language); other languages are in tui/locales
+    _label: str  # English (the default language); other languages are in cui/locales
     _help: str
     group: str = "basic"
     choices: tuple = ()  # valid values of ENUM

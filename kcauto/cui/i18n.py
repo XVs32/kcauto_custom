@@ -1,6 +1,6 @@
 """Multi-language support (data layer, no UI dependency).
 
-* Language files live in ``tui/locales/<code>.json``. **Dropping a file in is enough for it to be detected**; to add a language just add one file::
+* Language files live in ``cui/locales/<code>.json``. **Dropping a file in is enough for it to be detected**; to add a language just add one file::
 
       {
         "_name": "日本語",                       # name shown in the language menu

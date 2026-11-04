@@ -14,6 +14,7 @@ from typing import Any, Callable, Iterable, Mapping, Optional, Sequence
 
 from ..modules import CARDS
 from ..schema.scheduler_rule import parse_rule
+from .. import keymap
 from ..i18n import t
 from ..schema import SCHEMA, Field, Kind, Issue, fields_of
 
@@ -242,7 +243,7 @@ class ModuleEntry:
 
 MODULE_ENTRIES: tuple[ModuleEntry, ...] = tuple(
     ModuleEntry(c.module, c.label, c.hotkey, c.color) for c in CARDS
-) + (ModuleEntry(OTHER, "other", "o", "#7f848e"),)
+) + (ModuleEntry(OTHER, "other", keymap.active().module_key("other"), "#7f848e"),)
 
 
 def unknown_keys(values: Mapping[str, Any]) -> list[str]:

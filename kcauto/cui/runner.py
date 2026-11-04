@@ -2,7 +2,7 @@
 
 Keeps the behaviour of the old CUI (``cui/util.py``)
   * Command: prefer ``./bin/kcauto_custom/kcauto_custom[.exe]``, otherwise ``python kcauto``,
-    with fixed arguments ``--cli --cfg <config name>``.
+    with fixed arguments ``--cli --cfg <config name>`` (plus ``--debug-output`` in debug mode).
   * Pause: suspend / resume the process with psutil (the whole process is frozen).
   * When the output contains ``Press Enter to continue`` it enters "waiting for Enter" and the user decides when to write a newline to stdin.
   * Reloading config = end the process and start it again (kcauto has no hot reload).
@@ -29,6 +29,8 @@ import psutil
 PROMPT = "Press Enter to continue"
 READ_LIMIT = 1 << 20  # per-line output limit (the default 64 KiB is too small)
 
+DEBUG_FLAG = "--debug-output"  # appended to the kcauto command line in debug mode
+
 LOG_OUTPUT = "output"  # kcauto output (may contain ANSI)
 LOG_SYSTEM = "system"  # messages from the CUI itself
 
@@ -39,7 +41,15 @@ class RunState(str, Enum):
     PAUSED = "paused"
 
 
-class UnsupportedPlatform(RuntimeError):
+class StartError(RuntimeError):
+    """kcauto cannot be started (the message is shown in the log)."""
+
+
+class KcautoNotFound(StartError):
+    """Packaged CUI, but ``bin/kcauto_custom`` is missing: there is no Python fallback in a frozen build."""
+
+
+class UnsupportedPlatform(StartError):
     pass
 
 
@@ -56,9 +66,11 @@ def build_command(
     cwd: str | os.PathLike,
     *,
     config_name: str = "config_cui",
+    debug: bool = False,
     platform: str = sys.platform,
     python: str = sys.executable,
     isfile: Callable[[str], bool] = os.path.isfile,
+    frozen: bool = bool(getattr(sys, "frozen", False)),
 ) -> tuple[list[str], str]:
     """Return (command, a note to show in the log)."""
     if platform.startswith("linux"):
@@ -69,10 +81,14 @@ def build_command(
         raise UnsupportedPlatform(f"Unsupported platform: {platform}")
 
     args = ["--cli", "--cfg", config_name]
+    if debug:
+        args.append(DEBUG_FLAG)
     # Use an absolute path: on Windows CreateProcess resolves relative executable paths differently from the cwd argument
     exec_path = os.path.join(os.path.abspath(cwd), "bin", "kcauto_custom", filename)
     if isfile(exec_path):
         return [exec_path, *args], f"Starting kcauto from {filename}"
+    if frozen:
+        raise KcautoNotFound(f"{exec_path} not found")
     return [
         python,
         "kcauto",
@@ -112,6 +128,7 @@ class Runner:
         *,
         cwd: str | os.PathLike | None = None,
         config_name: str = "config_cui",
+        debug: bool = False,
         command_builder: Callable[[], tuple[Sequence[str], str]] | None = None,
         env: dict[str, str] | None = None,
         on_log: LogCallback | None = None,
@@ -120,6 +137,9 @@ class Runner:
     ) -> None:
         self.cwd = os.fspath(cwd) if cwd is not None else os.getcwd()
         self.config_name = config_name
+        self.debug = (
+            debug  # read at every start, so a change applies from the next start
+        )
         self.on_log = on_log
         self.on_state = on_state
         self.stop_timeout = stop_timeout
@@ -173,7 +193,7 @@ class Runner:
     def _build(self) -> tuple[Sequence[str], str]:
         if self._command_builder is not None:
             return self._command_builder()
-        return build_command(self.cwd, config_name=self.config_name)
+        return build_command(self.cwd, config_name=self.config_name, debug=self.debug)
 
     def _env(self) -> dict[str, str]:
         env = dict(os.environ)
@@ -187,7 +207,7 @@ class Runner:
             return False
         try:
             command, note = self._build()
-        except UnsupportedPlatform as exc:
+        except StartError as exc:
             self._log(LOG_SYSTEM, f"Cannot start kcauto: {exc}")
             return False
         self._log(LOG_SYSTEM, note)

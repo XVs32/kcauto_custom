@@ -8,6 +8,7 @@ from typing import Optional, Sequence
 from rich.text import Text
 from textual.widgets import Static
 
+from .. import keymap
 from ..layout import fit_segments
 from ..procstats import fmt_bytes, fmt_duration, sparkline
 from ..runner import ProcSample
@@ -17,17 +18,24 @@ KEY_STYLE = "bold #e5c07b"
 DESC_STYLE = "#9aa0a6"
 DIM = "#6b7280"
 
-HINTS: tuple[tuple[str, str], ...] = (
-    ("←↑↓→", "move"),
-    ("space", "pause"),
-    ("x", "toggle"),
-    ("enter", "edit"),
-    ("a", "apply"),
-    ("l", "log"),
-    ("t", "lang"),
-    ("w", "save"),
-    ("q", "quit"),
-)
+
+def dashboard_hints(
+    keys: Optional[keymap.Keymap] = None,
+) -> tuple[tuple[str, str], ...]:
+    """Bottom hint bar of the dashboard; the command keys follow the keymap."""
+    k = keys or keymap.active()
+    return (
+        ("←↑↓→", "move"),
+        (k.display("pause"), "pause"),
+        (k.display("toggle"), "toggle"),
+        (k.display("debug"), "debug"),
+        ("enter", "edit"),
+        (k.display("language"), "lang"),
+        (k.display("quit"), "quit"),
+    )
+
+
+HINTS: tuple[tuple[str, str], ...] = dashboard_hints()
 
 STATE_STYLES = {
     "running": "#98c379",
@@ -37,12 +45,12 @@ STATE_STYLES = {
 
 
 # When a line does not fit, drop in this order (least important first)
-HINT_DROP_ORDER = ("lang", "toggle", "move", "pause", "log", "edit", "apply")
-STATUS_DROP_ORDER = ("title", "mode", "spark", "mem", "uptime", "cpu")
+HINT_DROP_ORDER = ("lang", "debug", "toggle", "move", "pause", "edit")
+STATUS_DROP_ORDER = ("title", "mode", "spark", "mem", "uptime", "cpu", "debug")
 
 
 def hint_text(width: int = 0) -> Text:
-    """Bottom hint bar; on a narrow window drop the minor hints and keep save / quit."""
+    """Bottom hint bar; on a narrow window drop the minor hints and keep quit."""
     lengths = [(desc, len(key) + len(desc) + 3) for key, desc in HINTS]
     kept = fit_segments(lengths, HINT_DROP_ORDER, width - 1 if width else 0)
     text = Text(no_wrap=True, overflow="ellipsis")
@@ -71,6 +79,7 @@ class StatusBar(Static):
         super().__init__("", **kwargs)
         self.run_state = "stopped"
         self.waiting_enter = False
+        self.debug = False
         self.sample: Optional[ProcSample] = None
         self.cpu_history: Sequence[float] = ()
         self.config_store: Optional[ConfigStore] = None
@@ -110,6 +119,8 @@ class StatusBar(Static):
         state_style = STATE_STYLES.get(self.run_state, DIM)
         seg("title", (" kcauto_custom  ", "bold"))
         seg("state", ("● ", state_style), (self.run_state.upper(), state_style))
+        if self.debug:
+            seg("debug", ("  DEBUG", "bold #c678dd"))
         if self.waiting_enter:
             seg("waiting", ("  ⏎ waiting for Enter", "bold #e5c07b"))
         if self.sample is not None:

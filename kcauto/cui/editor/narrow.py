@@ -9,7 +9,9 @@ Dialogs additionally switch to narrow mode below width 70 (less padding, table c
 
 from __future__ import annotations
 
-from typing import Sequence
+from typing import Optional, Sequence
+
+from .. import keymap
 
 from .model import cell_len
 
@@ -17,19 +19,28 @@ NARROW_WIDTH = 72  # below this the module list is hidden
 COMPACT_WIDTH = 50  # below this fields become two rows
 DIALOG_NARROW = 70  # below this dialogs use the narrow layout
 
-EDITOR_HINTS: tuple[tuple[str, str], ...] = (
-    ("↑↓", "move"),
-    ("←→", "adjust"),
-    ("enter", "edit"),
-    ("space", "toggle"),
-    ("d", "default"),
-    ("z", "undo"),
-    ("/", "search"),
-    ("[ ]", "module"),
-    ("w", "save"),
-    ("esc", "back"),
-)
-# when a line does not fit, drop in this order (using the description text as the name); save / back are always kept
+
+def editor_hints(keys: Optional[keymap.Keymap] = None) -> tuple[tuple[str, str], ...]:
+    """Bottom hint bar of the editor; the command keys follow the keymap."""
+    k = keys or keymap.active()
+    return (
+        ("↑↓", "move"),
+        ("←→", "adjust"),
+        ("enter", "edit"),
+        ("space", "toggle"),
+        (k.display("editor.reset_default"), "default"),
+        (k.display("editor.undo"), "undo"),
+        (k.display("editor.search"), "search"),
+        (
+            f"{k.display('editor.module_prev')} {k.display('editor.module_next')}",
+            "module",
+        ),
+        ("esc", "back"),
+    )
+
+
+EDITOR_HINTS: tuple[tuple[str, str], ...] = editor_hints()
+# when a line does not fit, drop in this order (using the description text as the name); back is always kept
 # hints while editing an adjustable field (second level)
 EDIT_HINTS: tuple[tuple[str, str], ...] = (
     ("←→", "change"),
