@@ -12,7 +12,7 @@
 * Sentences with variables use ``t("{n} selected", n=3)``; keep the same ``{n}`` in the translation file.
 * Game abbreviations (DD, CV, ...), config keys, and most dashboard text stay English and do not go through here.
 
-Language priority: ``--lang`` > environment variable ``KCAUTO_LANG`` > preference file (``configs/tui_prefs.json``, defaults from ``template/configs/tui_prefs.json``) > en.
+Language priority: ``--lang`` > environment variable ``KCAUTO_LANG`` > preference file (``configs/cui_prefs.json``, defaults from ``template/configs/cui_prefs.json``) > en.
 """
 
 from __future__ import annotations

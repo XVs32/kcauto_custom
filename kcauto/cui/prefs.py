@@ -3,9 +3,9 @@
 Same mechanism as ``config_cui.json``: **defaults in the code ← template file ← user file**, each layer
 overriding the previous one.
 
-* user file:      ``configs/tui_prefs.json`` (written by the CUI; it holds only what the user changed)
-* template file:  ``template/configs/tui_prefs.json`` (read only; used for everything the user file lacks,
-  so it is the whole preference set while ``configs/tui_prefs.json`` does not exist)
+* user file:      ``configs/cui_prefs.json`` (written by the CUI; it holds only what the user changed)
+* template file:  ``template/configs/cui_prefs.json`` (read only; used for everything the user file lacks,
+  so it is the whole preference set while ``configs/cui_prefs.json`` does not exist)
 
 Keys: ``lang`` (editor language code), ``debug`` (bool, start kcauto with ``--debug-output``) and ``keys``
 (shortcut overrides, see keymap.py). The ``keys`` object is merged entry by entry, every other value is
@@ -18,8 +18,8 @@ import json
 from pathlib import Path
 from typing import Any
 
-PREF_FILE = Path("configs") / "tui_prefs.json"
-TEMPLATE_FILE = Path("template") / "configs" / "tui_prefs.json"
+PREF_FILE = Path("configs") / "cui_prefs.json"
+TEMPLATE_FILE = Path("template") / "configs" / "cui_prefs.json"
 MERGED_SECTIONS = ("keys",)
 
 

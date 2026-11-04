@@ -68,7 +68,7 @@ focuses the log does nothing.
 **There is no save key.** The config file is written when you apply, or with "save and quit" when leaving.
 
 **Shift+Enter** needs a terminal that reports it (kitty-protocol terminals, ...); many terminals send a plain Enter instead.
-If it does nothing in yours, give `toggle` a plain key in `configs/tui_prefs.json`, e.g. `{"keys": {"toggle": "x"}}`
+If it does nothing in yours, give `toggle` a plain key in `configs/cui_prefs.json`, e.g. `{"keys": {"toggle": "x"}}`
 (a bare `"shift"` is read as `shift+enter`, because a terminal cannot report the Shift key alone; `ctrl+enter` is accepted too).
 
 The dashboard text is English only. The editor (labels, help, dialogs, messages) follows the
@@ -103,7 +103,7 @@ Different (all fixes):
 **Debug mode.** `d` toggles debug mode, which appends `--debug-output` to the kcauto command line
 (`... --cli --cfg <name> --debug-output`). It applies from the **next** start: if kcauto is running,
 apply (Enter on the log) to restart it. The status bar shows `DEBUG` while the mode is on, and the choice is
-remembered in `configs/tui_prefs.json` (`"debug": true`). `--debug-output` on the CUI command line
+remembered in `configs/cui_prefs.json` (`"debug": true`). `--debug-output` on the CUI command line
 turns it on for that session as well.
 
 There is no separate "stop" key: quit the CUI (`q`) to end kcauto, or apply (Enter on the log) to restart it.
@@ -235,7 +235,7 @@ wheel scrolls them (up = previous value); buttons can be clicked; the mouse whee
 The **command keys** can be changed; navigation keys (arrows, Enter, Esc, Tab, PgUp/PgDn, Home/End,
 Space and `+` `-` inside the editor) and everything inside dialogs are fixed.
 
-Add a `keys` section to `configs/tui_prefs.json` with only the keys you want to change:
+Add a `keys` section to `configs/cui_prefs.json` with only the keys you want to change:
 
 ```json
 {"lang": "en", "keys": {"pause": "n", "module.combat": "1", "editor.search": "k"}}
@@ -261,8 +261,8 @@ Add a `keys` section to `configs/tui_prefs.json` with only the keys you want to 
 
 ## Preference file
 
-`configs/tui_prefs.json` is a **file** with the CUI's own preferences (not a folder, and not part of kcauto's
-settings). It is layered like `config_cui.json`: **code defaults ← `template/configs/tui_prefs.json` ← `configs/tui_prefs.json`**.
+`configs/cui_prefs.json` is a **file** with the CUI's own preferences (not a folder, and not part of kcauto's
+settings). It is layered like `config_cui.json`: **code defaults ← `template/configs/cui_prefs.json` ← `configs/cui_prefs.json`**.
 
 | Key | Meaning |
 |---|---|
@@ -270,7 +270,7 @@ settings). It is layered like `config_cui.json`: **code defaults ← `template/c
 | `debug` | `true` = start kcauto with `--debug-output`; written by the `d` key |
 | `keys` | shortcut overrides (see below); merged entry by entry with the template's `keys` |
 
-- Without `configs/tui_prefs.json` the template is used as it is. The CUI creates the user file the first time
+- Without `configs/cui_prefs.json` the template is used as it is. The CUI creates the user file the first time
   it saves a preference, and writes **only what the user changed** into it; the template is never modified.
 - Everything the user file does not mention comes from the template, so a template shipped with the release can
   carry site-wide defaults (a language, a few shortcut keys) that users override in their own file.
@@ -279,7 +279,7 @@ settings). It is layered like `config_cui.json`: **code defaults ← `template/c
 ## Languages
 
 English is the default. Press `t` on the dashboard, or use `--lang CODE` / `KCAUTO_LANG`, to switch;
-the choice is saved in `configs/tui_prefs.json` and the editor uses it the next time it opens.
+the choice is saved in `configs/cui_prefs.json` and the editor uses it the next time it opens.
 
 To add a language, drop `kcauto/cui/locales/<code>.json` next to the existing ones:
 

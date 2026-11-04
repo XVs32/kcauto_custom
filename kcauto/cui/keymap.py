@@ -4,8 +4,8 @@ Only *command* keys can be changed: the dashboard commands, the module jump keys
 of editor commands. Navigation and editing keys (arrows, Enter, Esc, Tab, PgUp/PgDn, Home/End,
 Space inside the editor, + / - nudging) and everything inside dialogs are fixed.
 
-Overrides live in ``configs/tui_prefs.json`` under ``"keys"`` (only the entries you changed); anything
-missing there is taken from ``template/configs/tui_prefs.json`` (see prefs.py)::
+Overrides live in ``configs/cui_prefs.json`` under ``"keys"`` (only the entries you changed); anything
+missing there is taken from ``template/configs/cui_prefs.json`` (see prefs.py)::
 
     {"lang": "en", "keys": {"pause": "p", "module.combat": "1"}}
 
@@ -273,7 +273,7 @@ class Keymap:
             )
         lines.append("")
         lines.append(
-            "* = changed.  Edit configs/tui_prefs.json (defaults: template/configs/tui_prefs.json):  "
+            "* = changed.  Edit configs/cui_prefs.json (defaults: template/configs/cui_prefs.json):  "
             '{"keys": {"pause": "p", "module.combat": "1"}}'
         )
         return "\n".join(lines)
@@ -310,7 +310,7 @@ def load_overrides(root: Path | str = ".") -> tuple[dict[str, Any], list[str]]:
 
 
 def init(root: Path | str = ".") -> Keymap:
-    """Read the overrides from ``configs/tui_prefs.json`` and make them the active keymap."""
+    """Read the overrides from ``configs/cui_prefs.json`` and make them the active keymap."""
     global _active
     overrides, problems = load_overrides(root)
     _active = Keymap(overrides)
