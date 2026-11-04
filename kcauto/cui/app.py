@@ -1,13 +1,13 @@
 """kcauto_custom CUI main program (btop-style dashboard).
 
 Stage 3: kcauto process control (apply and restart, pause, stop), log, process info in the status bar.
-Stage 4: full-screen editor (open with Enter / double-click on a box, see editor/screen.py).
+Stage 4: full-screen editor (open with Enter or a click on the focused box, see editor/screen.py).
 
 Keys
     arrows        move between boxes (scroll the log while the log box has focus)
     c e p u s f r h v g   jump straight to that module's box
     space         pause / resume kcauto (works anywhere)
-    shift+enter   toggle enabled on the focused box
+    shift         toggle enabled on the focused box
     enter         open the editor; on the log (or a click on a focused log): forward Enter if kcauto is
                   waiting, otherwise apply = confirm, save the config, then (re)start kcauto
     l             focus the log (not shown in the hint bar); when the log is hidden, show it full screen

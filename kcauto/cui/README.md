@@ -43,10 +43,10 @@ python -m unittest discover -s tests -t . -v
 |---|---|
 | arrow keys | move between boxes; walking past the edge toward the log enters the log |
 | `c e p u s f r h v g` | jump straight to that module's box |
-| Shift+Enter / click ON·OFF at the bottom right | toggle the box's `enabled` (see the note on terminals below) |
+| Shift+Enter / click on the ON·OFF switch | toggle the box's `enabled` (see the note on terminals below); only the switch on the bottom border counts, not the rest of the box |
 | `d` | toggle debug mode (`--debug-output`, applies on the next start) |
 | Space | pause / resume kcauto (works anywhere on the dashboard) |
-| Enter / double-click | open the editor on that module |
+| Enter / click on the focused box | open the editor on that module (the first click on another box only focuses it; a double click also opens it) |
 | `l` | focus the log; when the log is hidden by the layout, show it full screen (works, but is not shown in the hint bar) |
 | Esc | leave the log / full-screen log |
 | `t` | choose the editor language |
@@ -113,7 +113,7 @@ kcauto is waiting for Enter.
 
 ## Editor
 
-Open it with Enter or a double-click on a box. All edits are applied to the in-memory config
+Open it with Enter or a click on the focused box. All edits are applied to the in-memory config
 immediately and shown on the dashboard; they are written to the file when you apply on the dashboard (Enter or a click on the log, then confirm) or choose "save and quit". kcauto's log keeps accumulating while you edit.
 
 | Key | Action |
@@ -258,6 +258,23 @@ Add a `keys` section to `configs/tui_prefs.json` with only the keys you want to 
 - `python kcauto/kcauto_cui.py --show-keys` lists every action id with its current and default key.
 - Module shortcut display: a key that is a letter of the label is highlighted in place (`c`ombat);
   any other key (`1`, `f5`, ...) is not marked at all. The hint bar follows the keymap; it does not list `log`.
+
+## Preference file
+
+`configs/tui_prefs.json` is a **file** with the CUI's own preferences (not a folder, and not part of kcauto's
+settings). It is layered like `config_cui.json`: **code defaults ← `template/configs/tui_prefs.json` ← `configs/tui_prefs.json`**.
+
+| Key | Meaning |
+|---|---|
+| `lang` | editor language code (`en`, `zh_TW`, `ja`, ...); written by the `t` menu |
+| `debug` | `true` = start kcauto with `--debug-output`; written by the `d` key |
+| `keys` | shortcut overrides (see below); merged entry by entry with the template's `keys` |
+
+- Without `configs/tui_prefs.json` the template is used as it is. The CUI creates the user file the first time
+  it saves a preference, and writes **only what the user changed** into it; the template is never modified.
+- Everything the user file does not mention comes from the template, so a template shipped with the release can
+  carry site-wide defaults (a language, a few shortcut keys) that users override in their own file.
+- A broken file is skipped and reported (shortcut problems appear in the log on start-up); unknown keys are kept.
 
 ## Languages
 

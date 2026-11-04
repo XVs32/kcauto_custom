@@ -4,7 +4,8 @@ Only *command* keys can be changed: the dashboard commands, the module jump keys
 of editor commands. Navigation and editing keys (arrows, Enter, Esc, Tab, PgUp/PgDn, Home/End,
 Space inside the editor, + / - nudging) and everything inside dialogs are fixed.
 
-Overrides live in ``configs/tui_prefs.json`` under ``"keys"`` (only the entries you changed)::
+Overrides live in ``configs/tui_prefs.json`` under ``"keys"`` (only the entries you changed); anything
+missing there is taken from ``template/configs/tui_prefs.json`` (see prefs.py)::
 
     {"lang": "en", "keys": {"pause": "p", "module.combat": "1"}}
 
@@ -23,12 +24,13 @@ Run ``python kcauto/kcauto_cui.py --show-keys`` to list every action id with its
 
 from __future__ import annotations
 
-import json
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Mapping, Optional
 
-PREF_FILE = Path("configs") / "tui_prefs.json"
+from . import prefs
+
+PREF_FILE = prefs.PREF_FILE
 SECTION = "keys"
 
 DASHBOARD = "dashboard"
@@ -271,7 +273,7 @@ class Keymap:
             )
         lines.append("")
         lines.append(
-            "* = changed.  Edit configs/tui_prefs.json:  "
+            "* = changed.  Edit configs/tui_prefs.json (defaults: template/configs/tui_prefs.json):  "
             '{"keys": {"pause": "p", "module.combat": "1"}}'
         )
         return "\n".join(lines)
@@ -295,19 +297,16 @@ def reset() -> Keymap:
 
 
 def load_overrides(root: Path | str = ".") -> tuple[dict[str, Any], list[str]]:
-    path = Path(root) / PREF_FILE
-    if not path.is_file():
-        return {}, []
-    try:
-        data = json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, ValueError) as exc:
-        return {}, [f"{path}: cannot read key settings ({exc}); using defaults"]
-    section = data.get(SECTION) if isinstance(data, dict) else None
+    """The ``keys`` overrides: template file ← user file (see prefs.py), plus the problems found."""
+    data, problems = prefs.load(root)
+    section = data.get(SECTION)
     if section is None:
-        return {}, []
+        return {}, problems
     if not isinstance(section, dict):
-        return {}, [f'{path}: "{SECTION}" must be an object; using defaults']
-    return dict(section), []
+        return {}, problems + [
+            f'"{SECTION}" in the preference file must be an object; using defaults'
+        ]
+    return dict(section), problems
 
 
 def init(root: Path | str = ".") -> Keymap:

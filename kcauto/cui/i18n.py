@@ -12,7 +12,7 @@
 * Sentences with variables use ``t("{n} selected", n=3)``; keep the same ``{n}`` in the translation file.
 * Game abbreviations (DD, CV, ...), config keys, and most dashboard text stay English and do not go through here.
 
-Language priority: ``--lang`` > environment variable ``KCAUTO_LANG`` > preference file (``configs/tui_prefs.json``) > en.
+Language priority: ``--lang`` > environment variable ``KCAUTO_LANG`` > preference file (``configs/tui_prefs.json``, defaults from ``template/configs/tui_prefs.json``) > en.
 """
 
 from __future__ import annotations
@@ -22,9 +22,11 @@ import os
 from pathlib import Path
 from typing import Any, Optional
 
+from . import prefs
+
 DEFAULT = "en"
 LOCALE_DIR = Path(__file__).resolve().parent / "locales"
-PREF_FILE = Path("configs") / "tui_prefs.json"
+PREF_FILE = prefs.PREF_FILE
 ENV_VAR = "KCAUTO_LANG"
 
 _ALIASES = {
@@ -140,35 +142,15 @@ def field_text(key: str, part: str, default: str) -> str:
 
 
 # ---------------------------------------------------------------------- #
-# Preference file (only stores the language chosen in the menu)
+# Preference file (see prefs.py; the language chosen in the menu is saved in it)
 # ---------------------------------------------------------------------- #
 def load_pref(root: Path | str = ".") -> Optional[str]:
-    try:
-        data = json.loads((Path(root) / PREF_FILE).read_text(encoding="utf-8"))
-    except (OSError, ValueError):
-        return None
-    return normalize(data.get("lang")) if isinstance(data, dict) else None
+    """The saved language: user file, else the template file (see prefs.py)."""
+    return normalize(prefs.load_value("lang", None, root))
 
 
 def save_pref(code: str, root: Path | str = ".") -> bool:
-    path = Path(root) / PREF_FILE
-    try:
-        data: dict[str, Any] = {}
-        if path.is_file():
-            try:
-                old = json.loads(path.read_text(encoding="utf-8"))
-                if isinstance(old, dict):
-                    data = old
-            except ValueError:
-                pass
-        data["lang"] = code
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(
-            json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
-        )
-        return True
-    except OSError:
-        return False
+    return prefs.save_value("lang", code, root)
 
 
 def init(cli_lang: Optional[str] = None, root: Path | str = ".") -> str:

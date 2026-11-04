@@ -75,6 +75,25 @@ def hotkey_markup(label: str, hotkey: str, style: str = "bold #e5c07b") -> str:
     return f"{before}[{style}]{hot.replace('[', chr(92) + '[')}[/]{after}"
 
 
+# Plain text of the ON / OFF switch drawn on the bottom border (see widgets/box.py).
+SWITCH_ON_TEXT = "● ON"
+SWITCH_OFF_TEXT = "○ OFF"
+SWITCH_HIT_PADDING = (
+    4  # the spaces around the text, the corner and one column of tolerance
+)
+
+
+def in_toggle_zone(col: int, row: int, width: int, height: int, on: bool) -> bool:
+    """Is the point inside the ON/OFF switch of a box?
+
+    ``col`` / ``row`` are measured from the top-left corner of the box *including its border*, and
+    ``width`` / ``height`` are the outer size. The switch sits on the bottom border row, right-aligned,
+    so only that row and the few columns around the text count.
+    """
+    text = SWITCH_ON_TEXT if on else SWITCH_OFF_TEXT
+    return row == height - 1 and width - len(text) - SWITCH_HIT_PADDING <= col < width
+
+
 def move_index(
     index: int, dx: int, dy: int, count: int = len(CARDS), columns: int = GRID_COLUMNS
 ) -> int:
