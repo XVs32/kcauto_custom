@@ -194,6 +194,15 @@ _SUMMARIES = {
 }
 
 
+# The choices of the apply confirmation: (label, shortcut hint). The first one is selected when it opens.
+APPLY_CONFIRM_OPTIONS = (("OK", "y"), ("Cancel", "n / esc"))
+
+
+def step_choice(index: int, step: int, count: int = len(APPLY_CONFIRM_OPTIONS)) -> int:
+    """Move the selection of a short list of choices one step up (-1) or down (+1), wrapping around."""
+    return (index + step) % count
+
+
 def apply_confirm_lines(
     changes: int, running: bool, new_file: bool, file_name: str
 ) -> list[str]:

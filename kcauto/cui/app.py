@@ -43,7 +43,7 @@ from .layout import (
     card_heights,
     choose_layout,
 )
-from .summaries import apply_confirm_lines
+from .summaries import APPLY_CONFIRM_OPTIONS, apply_confirm_lines, step_choice
 from .modules import CARDS, CARD_BY_MODULE, CardSpec, hotkey_markup, move_index
 from .runner import LOG_SYSTEM, RunState, Runner
 from .store import ConfigStore, ConfigValidationError
@@ -115,10 +115,17 @@ class ClickLabel(Static):
 
 
 class ConfirmApply(ModalScreen[bool]):
-    """Asked before the config is saved and kcauto is (re)started. Returns True to go ahead."""
+    """Asked before the config is saved and kcauto is (re)started. Returns True to go ahead.
+
+    Up / down select OK or Cancel (OK is selected first), Enter takes the selected one; ``y`` / ``n`` / Esc
+    and a click on a line are shortcuts.
+    """
 
     BINDINGS = [
-        Binding("y,enter", "choose('yes')", "Apply"),
+        Binding("up", "select(-1)", "Up", show=False),
+        Binding("down", "select(1)", "Down", show=False),
+        Binding("enter", "activate", "Select"),
+        Binding("y", "choose('yes')", "OK"),
         Binding("n,escape", "choose('no')", "Cancel"),
     ]
 
@@ -127,20 +134,41 @@ class ConfirmApply(ModalScreen[bool]):
     ) -> None:
         super().__init__()
         self.lines = apply_confirm_lines(changes, running, new_file, file_name)
+        self.selected = 0
+        self._labels: list[ClickLabel] = []
 
     def compose(self) -> ComposeResult:
         with Vertical(id="apply-dialog"):
-            title = Text("Apply the config?\n", style="bold #e5c07b")
-            yield Static(title)
+            yield Static(Text("Apply the config?\n", style="bold #e5c07b"))
             yield Static(Text("\n".join(self.lines) + "\n", style="#9aa0a6"))
-            for key, desc, choice in (
-                ("y/enter", "Apply", "yes"),
-                ("n/esc", "Cancel", "no"),
-            ):
-                line = Text()
-                line.append(f" {key} ", style="bold #0f1115 on #e5c07b")
-                line.append(f" {desc}")
-                yield ClickLabel(line, choice)
+            self._labels = [
+                ClickLabel(self._option_text(n), "yes" if n == 0 else "no")
+                for n in range(len(APPLY_CONFIRM_OPTIONS))
+            ]
+            yield from self._labels
+            yield Static(Text("\n↑↓ select   enter confirm", style="#6b7280"))
+
+    def _option_text(self, index: int) -> Text:
+        label, hint = APPLY_CONFIRM_OPTIONS[index]
+        line = Text(no_wrap=True)
+        if index == self.selected:
+            line.append(f" ▶ {label:<8}", style="bold #0f1115 on #e5c07b")
+            line.append(f" {hint:>8} ", style="#0f1115 on #e5c07b")
+        else:
+            line.append(f"   {label:<8}")
+            line.append(f" {hint:>8} ", style="#6b7280")
+        return line
+
+    def _refresh_options(self) -> None:
+        for n, label in enumerate(self._labels):
+            label.update(self._option_text(n))
+
+    def action_select(self, step: int) -> None:
+        self.selected = step_choice(self.selected, step)
+        self._refresh_options()
+
+    def action_activate(self) -> None:
+        self.dismiss(self.selected == 0)
 
     def action_choose(self, choice: str) -> None:
         self.dismiss(choice == "yes")

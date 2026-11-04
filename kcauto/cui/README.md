@@ -61,7 +61,8 @@ On the log:
 | Enter, or a mouse click on the log | if kcauto is waiting at `Press Enter to continue`, send Enter; otherwise **apply**: ask for confirmation, then save the config and (re)start kcauto |
 
 **Apply asks first.** The dialog says how many settings will be saved and whether kcauto will be started or restarted;
-`y` / Enter / a click on "Apply" goes ahead, `n` / Esc / a click on "Cancel" does nothing. It is not offered while the config has errors.
+↑ / ↓ select **OK** (selected when it opens) or **Cancel** and Enter takes the selected one; `y` = OK, `n` / Esc = Cancel, and a click on either line works too.
+It is not offered while the config has errors.
 A click applies only when the log already had the focus (focus it with `l` or the arrow keys first): the click that merely
 focuses the log does nothing.
 
