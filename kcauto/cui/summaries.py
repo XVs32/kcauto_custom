@@ -194,6 +194,19 @@ _SUMMARIES = {
 }
 
 
+def apply_confirm_lines(
+    changes: int, running: bool, new_file: bool, file_name: str
+) -> list[str]:
+    """What the "apply" confirmation says: what is saved and whether kcauto is started or restarted."""
+    if changes:
+        first = f"{changes} changed setting(s) will be saved to {file_name}"
+    elif new_file:
+        first = f"{file_name} will be created"
+    else:
+        first = "No changes to save"
+    return [first, "kcauto will be restarted" if running else "kcauto will be started"]
+
+
 def summarize(module: str, values: Mapping[str, Any]) -> list[Line]:
     """Return the lines to show for a module's box. Returns a hint line, never raises, when values are corrupt."""
     try:

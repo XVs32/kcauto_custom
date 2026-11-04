@@ -9,10 +9,11 @@ Overrides live in ``configs/tui_prefs.json`` under ``"keys"`` (only the entries 
     {"lang": "en", "keys": {"pause": "p", "module.combat": "1"}}
 
 * Keys are a single lowercase letter or digit, one of ``/ [ ] , . ;``, ``space``, ``f1``..``f12`` or
-  ``ctrl+enter`` (the default of ``toggle``). Many terminals cannot tell Ctrl+Enter from Enter; if it does
-  nothing in yours, give ``toggle`` another key, e.g. ``{"keys": {"toggle": "x"}}``.
-* There is no save or apply key: the config is saved when it is applied (Enter on the log panel).
-  Old ``save`` / ``apply`` entries are ignored.
+  ``shift+enter`` (the default of ``toggle``) or ``ctrl+enter``. A bare Shift key cannot be detected in a
+  terminal, so ``"shift"`` is read as ``shift+enter``. Many terminals cannot tell Shift+Enter / Ctrl+Enter
+  from Enter; if it does nothing in yours, give ``toggle`` a plain key, e.g. ``{"keys": {"toggle": "x"}}``.
+* There is no save or apply key: the config is saved when it is applied (Enter or a click on the log
+  panel, then confirm) or when you choose "save and quit". Old ``save`` / ``apply`` entries are ignored.
 * The same key cannot be used twice inside one screen (dashboard / editor). Offending overrides
   are dropped and every problem is reported (see :attr:`Keymap.problems`); defaults are used instead.
 * Keys are read **once at start-up**; changes take effect the next time the CUI is started.
@@ -65,7 +66,7 @@ ACTIONS: tuple[Action, ...] = (
     Action("language", "t", (DASHBOARD,), "Choose the editor language"),
     Action(
         "toggle",
-        "ctrl+enter",
+        "shift+enter",
         (DASHBOARD,),
         "Toggle the focused module's enabled switch",
     ),
@@ -142,7 +143,11 @@ _BINDING_NAMES = {
 }
 _FUNCTION_KEYS = frozenset(f"f{n}" for n in range(1, 13))
 CTRL_ENTER = "ctrl+enter"
-_ALIASES["ctrl+return"] = CTRL_ENTER
+SHIFT_ENTER = "shift+enter"
+MODIFIED_ENTER = frozenset({CTRL_ENTER, SHIFT_ENTER})
+_ALIASES.update(
+    {"ctrl+return": CTRL_ENTER, "shift+return": SHIFT_ENTER, "shift": SHIFT_ENTER}
+)
 # Terminals that cannot send a distinct Ctrl+Enter often send Ctrl+J (a line feed) instead.
 _BINDING_EXTRA = {CTRL_ENTER: "ctrl+j"}
 
@@ -160,7 +165,7 @@ def normalize(raw: Any) -> tuple[Optional[str], str]:
     aliased = _ALIASES.get(low, low)
     if aliased != low:  # "slash" → "/", "spacebar" → "space", ...
         low = text = aliased
-    if low == "space" or low == CTRL_ENTER or low in _FUNCTION_KEYS:
+    if low == "space" or low in MODIFIED_ENTER or low in _FUNCTION_KEYS:
         return low, ""
     if len(text) == 1:
         if text.isascii() and text.isalpha() and text.isupper():
@@ -171,11 +176,11 @@ def normalize(raw: Any) -> tuple[Optional[str], str]:
             return text, ""
         return (
             None,
-            f"{text!r} is not allowed (letters, digits, / [ ] , . ; space, f1-f12, ctrl+enter)",
+            f"{text!r} is not allowed (letters, digits, / [ ] , . ; space, f1-f12, shift+enter, ctrl+enter)",
         )
     return (
         None,
-        f"{text!r} is not a valid key (letters, digits, / [ ] , . ; space, f1-f12, ctrl+enter)",
+        f"{text!r} is not a valid key (letters, digits, / [ ] , . ; space, f1-f12, shift+enter, ctrl+enter)",
     )
 
 

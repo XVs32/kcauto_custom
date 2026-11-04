@@ -9,9 +9,11 @@ Design notes
 
 from __future__ import annotations
 
+import time
 from collections import deque
 
 from rich.text import Text
+from textual import events
 from textual.binding import Binding
 from textual.widgets import RichLog
 
@@ -30,6 +32,23 @@ class LogBox(RichLog, can_focus=True):
         Binding("left", "log_arrow(-1,0)", show=False),
         Binding("right", "log_arrow(1,0)", show=False),
     ]
+
+    # A click that merely gives the log the focus must not apply; the focus arrives on mouse-down, a moment
+    # before the click, so only a click on a log that has had the focus for a while counts.
+    CLICK_FOCUS_GRACE = 0.4
+
+    def on_focus(self, event: events.Focus) -> None:
+        self._focused_at = time.monotonic()
+
+    def on_click(self, event: events.Click) -> None:
+        if event.chain != 1 or not self.has_focus:
+            return
+        if time.monotonic() - self._focused_at < self.CLICK_FOCUS_GRACE:
+            return
+        activate = getattr(self.app, "activate_log", None)
+        if activate is not None:
+            event.stop()
+            activate()
 
     def action_log_arrow(self, dx: int, dy: int) -> None:
         """Arrow keys: leave the log when appropriate by handing over to the App, otherwise scroll the log."""
@@ -54,6 +73,7 @@ class LogBox(RichLog, can_focus=True):
         self._stale = False
         self._rewrap_timer = None
         self._last_width = 0
+        self._focused_at = 0.0
 
     # ------------------------------------------------------------------ #
     # writing

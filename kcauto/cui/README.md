@@ -43,14 +43,14 @@ python -m unittest discover -s tests -t . -v
 |---|---|
 | arrow keys | move between boxes; walking past the edge toward the log enters the log |
 | `c e p u s f r h v g` | jump straight to that module's box |
-| Ctrl+Enter / click ON·OFF at the bottom right | toggle the box's `enabled` (see the note on terminals below) |
+| Shift+Enter / click ON·OFF at the bottom right | toggle the box's `enabled` (see the note on terminals below) |
 | `d` | toggle debug mode (`--debug-output`, applies on the next start) |
 | Space | pause / resume kcauto (works anywhere on the dashboard) |
 | Enter / double-click | open the editor on that module |
 | `l` | focus the log; when the log is hidden by the layout, show it full screen (works, but is not shown in the hint bar) |
 | Esc | leave the log / full-screen log |
 | `t` | choose the editor language |
-| `q` | quit (asks if there are unsaved changes, which are discarded, or kcauto is running) |
+| `q` | quit; asks when there are unsaved changes (**save and quit** / discard / cancel) or kcauto is running |
 
 On the log:
 
@@ -58,14 +58,18 @@ On the log:
 |---|---|
 | ↑ ↓ / PgUp PgDn | scroll |
 | ← | back to the boxes (with the log below, ↑ at the very top also goes back) |
-| Enter | if kcauto is waiting at `Press Enter to continue`, send Enter; otherwise **apply**: save the config, then (re)start kcauto (not started if there are errors) |
+| Enter, or a mouse click on the log | if kcauto is waiting at `Press Enter to continue`, send Enter; otherwise **apply**: ask for confirmation, then save the config and (re)start kcauto |
 
-**There is no separate save key.** The config file is written only when it is applied (Enter on the log; also
-reached with the arrow keys or `l`). Quitting with unsaved changes discards them.
+**Apply asks first.** The dialog says how many settings will be saved and whether kcauto will be started or restarted;
+`y` / Enter / a click on "Apply" goes ahead, `n` / Esc / a click on "Cancel" does nothing. It is not offered while the config has errors.
+A click applies only when the log already had the focus (focus it with `l` or the arrow keys first): the click that merely
+focuses the log does nothing.
 
-**Ctrl+Enter** needs a terminal that reports it (kitty-protocol terminals, Windows Terminal, ...). The dashboard
-also accepts Ctrl+J, which many terminals send instead. If neither works in yours, give `toggle` another key in
-`configs/tui_prefs.json`, e.g. `{"keys": {"toggle": "x"}}`.
+**There is no save key.** The config file is written when you apply, or with "save and quit" when leaving.
+
+**Shift+Enter** needs a terminal that reports it (kitty-protocol terminals, ...); many terminals send a plain Enter instead.
+If it does nothing in yours, give `toggle` a plain key in `configs/tui_prefs.json`, e.g. `{"keys": {"toggle": "x"}}`
+(a bare `"shift"` is read as `shift+enter`, because a terminal cannot report the Shift key alone; `ctrl+enter` is accepted too).
 
 The dashboard text is English only. The editor (labels, help, dialogs, messages) follows the
 selected language.
@@ -110,7 +114,7 @@ kcauto is waiting for Enter.
 ## Editor
 
 Open it with Enter or a double-click on a box. All edits are applied to the in-memory config
-immediately and shown on the dashboard; they are written to the file when you apply on the dashboard (Enter on the log). kcauto's log keeps accumulating while you edit.
+immediately and shown on the dashboard; they are written to the file when you apply on the dashboard (Enter or a click on the log, then confirm) or choose "save and quit". kcauto's log keeps accumulating while you edit.
 
 | Key | Action |
 |---|---|
@@ -239,12 +243,12 @@ Add a `keys` section to `configs/tui_prefs.json` with only the keys you want to 
 
 | Action id | Default | Where |
 |---|---|---|
-| `quit` `pause` `log` `language` `toggle` `debug` | `q space l t ctrl+enter d` | dashboard |
+| `quit` `pause` `log` `language` `toggle` `debug` | `q space l t shift+enter d` | dashboard |
 | `module.combat` `.expedition` `.pvp` `.quest` `.scheduler` `.factory` `.passive_repair` `.ship_switcher` `.event_reset` `.general` | `c e p u s f r h v g` | dashboard and editor |
 | `module.other` | `o` | editor only (unknown keys) |
 | `editor.reset_default` `editor.undo` `editor.search` `editor.module_prev` `editor.module_next` | `d z / [ ]` | editor |
 
-- A key is one lowercase letter or digit, one of `/ [ ] , . ;`, `space`, `f1`-`f12`, or `ctrl+enter`.
+- A key is one lowercase letter or digit, one of `/ [ ] , . ;`, `space`, `f1`-`f12`, `shift+enter` or `ctrl+enter`.
 - There are no `save` / `apply` actions any more; old entries with those names are ignored silently.
 - A key can be used once per screen (the dashboard and the editor are separate screens, but the
   module keys count on both). Swapping two keys is fine.

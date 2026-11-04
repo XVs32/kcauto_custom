@@ -132,13 +132,13 @@ ModuleCard.off:focus {
 }
 
 /* ---- quit confirmation --------------------------------------------------------- */
-ConfirmQuit {
+ConfirmQuit, ConfirmApply {
     align: center middle;
     background: rgba(0, 0, 0, 0.55);
 }
 
-#quit-dialog {
-    width: 40;
+#quit-dialog, #apply-dialog {
+    width: 46;
     height: auto;
     padding: 1 2;
     border: round #e5c07b;

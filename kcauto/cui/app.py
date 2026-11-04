@@ -7,13 +7,13 @@ Keys
     arrows        move between boxes (scroll the log while the log box has focus)
     c e p u s f r h v g   jump straight to that module's box
     space         pause / resume kcauto (works anywhere)
-    ctrl+enter    toggle enabled on the focused box
-    enter         open the editor; on the log: forward Enter if kcauto is waiting, otherwise apply
-                  (save the config, then (re)start kcauto); this is the only way to save
+    shift+enter   toggle enabled on the focused box
+    enter         open the editor; on the log (or a click on a focused log): forward Enter if kcauto is
+                  waiting, otherwise apply = confirm, save the config, then (re)start kcauto
     l             focus the log (not shown in the hint bar); when the log is hidden, show it full screen
     d             toggle debug output     t  language
     esc           leave the log / full-screen log
-    q             quit (unsaved changes are discarded)
+    q             quit (offers: save and quit / discard / cancel)
 """
 
 from __future__ import annotations
@@ -43,6 +43,7 @@ from .layout import (
     card_heights,
     choose_layout,
 )
+from .summaries import apply_confirm_lines
 from .modules import CARDS, CARD_BY_MODULE, CardSpec, hotkey_markup, move_index
 from .runner import LOG_SYSTEM, RunState, Runner
 from .store import ConfigStore, ConfigValidationError
@@ -55,14 +56,14 @@ CPU_HISTORY = 60  # number of samples in the status bar sparkline (one per secon
 
 
 class ConfirmQuit(ModalScreen[str]):
-    """Quit confirmation. Returns 'discard' / 'cancel'.
+    """Quit confirmation. Returns 'save' / 'discard' / 'cancel'.
 
-    There is no separate save: changes are saved only when applied (Enter on the log), so quitting
-    with unsaved changes discards them.
+    "Save and quit" is the only way to save without applying (applying also restarts kcauto).
     dirty: there are unsaved changes; running: kcauto is still running (quitting stops it too).
     """
 
     BINDINGS = [
+        Binding("s", "choose('save')", "Save"),
         Binding("d", "choose('discard')", "Discard"),
         Binding("escape", "choose('cancel')", "Cancel"),
     ]
@@ -76,9 +77,6 @@ class ConfirmQuit(ModalScreen[str]):
         body = Text()
         if self.dirty:
             body.append("You have unsaved changes\n", style="bold #e5c07b")
-            body.append(
-                "They are saved only when applied (Enter on the log)\n", style="#9aa0a6"
-            )
         else:
             body.append("kcauto is still running\n", style="bold #e5c07b")
         if self.running:
@@ -87,6 +85,7 @@ class ConfirmQuit(ModalScreen[str]):
 
         options = []
         if self.dirty:
+            options.append(("s", "Save and quit"))
             options.append(("d", "Discard changes and quit"))
         else:
             options.append(("d", "Stop kcauto and quit"))
@@ -98,7 +97,53 @@ class ConfirmQuit(ModalScreen[str]):
             yield Static(body)
 
     def action_choose(self, choice: str) -> None:
+        if choice == "save" and not self.dirty:
+            return
         self.dismiss(choice)
+
+
+class ClickLabel(Static):
+    """A line of a confirmation dialog that can be clicked (the keys work as well)."""
+
+    def __init__(self, content: Text, choice: str) -> None:
+        super().__init__(content)
+        self.choice = choice
+
+    def on_click(self, event: events.Click) -> None:
+        event.stop()
+        self.screen.action_choose(self.choice)
+
+
+class ConfirmApply(ModalScreen[bool]):
+    """Asked before the config is saved and kcauto is (re)started. Returns True to go ahead."""
+
+    BINDINGS = [
+        Binding("y,enter", "choose('yes')", "Apply"),
+        Binding("n,escape", "choose('no')", "Cancel"),
+    ]
+
+    def __init__(
+        self, *, changes: int, running: bool, new_file: bool, file_name: str
+    ) -> None:
+        super().__init__()
+        self.lines = apply_confirm_lines(changes, running, new_file, file_name)
+
+    def compose(self) -> ComposeResult:
+        with Vertical(id="apply-dialog"):
+            title = Text("Apply the config?\n", style="bold #e5c07b")
+            yield Static(title)
+            yield Static(Text("\n".join(self.lines) + "\n", style="#9aa0a6"))
+            for key, desc, choice in (
+                ("y/enter", "Apply", "yes"),
+                ("n/esc", "Cancel", "no"),
+            ):
+                line = Text()
+                line.append(f" {key} ", style="bold #0f1115 on #e5c07b")
+                line.append(f" {desc}")
+                yield ClickLabel(line, choice)
+
+    def action_choose(self, choice: str) -> None:
+        self.dismiss(choice == "yes")
 
 
 _KEYS = keymap.active()  # loaded once at start-up (see keymap.py)
@@ -180,8 +225,8 @@ class KcautoCui(App):
         log = self._dash.query_one(LogBox)
         log.add(
             LOG_SYSTEM,
-            "kcauto is not running — focus the log and press Enter to save and "
-            "start (restarts if already running)",
+            "kcauto is not running — focus the log and press Enter (or click it) to "
+            "save and start (restarts if already running)",
         )
         for problem in _KEYS.problems:  # mistakes in the custom key settings
             log.add(LOG_SYSTEM, f"Key settings: {problem}")
@@ -386,10 +431,7 @@ class KcautoCui(App):
         if self._modal_open():
             return
         if self._focused_log():
-            if self.runner.waiting_enter:  # kcauto is waiting for Enter: forward it
-                self._spawn(self._send_enter())
-            else:  # otherwise apply: save, then (re)start kcauto
-                self.action_apply_config()
+            self.activate_log()
             return
         card = self._focused_card()
         if card is not None:
@@ -423,7 +465,7 @@ class KcautoCui(App):
     # actions: kcauto process
     # ------------------------------------------------------------------ #
     def action_apply_config(self) -> None:
-        """Save, then (re)start kcauto. Does not start if there are errors."""
+        """Ask for confirmation, then save and (re)start kcauto. Not offered if there are errors."""
         if self._modal_open():
             return
         if self.store.has_errors():
@@ -434,9 +476,33 @@ class KcautoCui(App):
                 timeout=6,
             )
             return
+        self.push_screen(
+            ConfirmApply(
+                changes=len(self.store.changed_keys()),
+                running=self.runner.state is not RunState.STOPPED,
+                new_file=self.store.is_new_file,
+                file_name=Path(self.store.path).name,
+            ),
+            self._on_apply_choice,
+        )
+
+    def _on_apply_choice(self, go: bool | None) -> None:
+        if not go:
+            return
+        if self.store.has_errors():  # cannot change while the dialog is open; be safe
+            return
         if (self.store.changed_keys() or self.store.is_new_file) and not self._save():
             return
         self._spawn(self._do_restart())
+
+    def activate_log(self) -> None:
+        """Enter on the log or a click on it: send Enter if kcauto waits for it, otherwise apply."""
+        if self._modal_open():
+            return
+        if self.runner.waiting_enter:
+            self._spawn(self._send_enter())
+        else:
+            self.action_apply_config()
 
     def action_toggle_debug(self) -> None:
         """Switch debug mode: kcauto gets ``--debug-output`` from its next start on."""
@@ -539,7 +605,10 @@ class KcautoCui(App):
         )
 
     def _on_quit_choice(self, choice: str | None) -> None:
-        if choice == "discard":
+        if choice == "save":
+            if self._save():
+                self._spawn(self._shutdown())
+        elif choice == "discard":
             self._spawn(self._shutdown())
 
     # ------------------------------------------------------------------ #
