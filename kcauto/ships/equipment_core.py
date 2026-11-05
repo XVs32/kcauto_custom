@@ -98,7 +98,7 @@ class EquipmentCore(object):
                     production_id=raw_equipment["api_id"],
                     stars=raw_equipment["api_level"],
                     lock=raw_equipment["api_locked"],
-                    ace=raw_equipment.get("api_alv", Equipment.UNKNOWN_ACE),
+                    ace=raw_equipment.get("api_alv", 0),
                 )
             )
         self.equipment_pool[self.ID].append(Equipment())

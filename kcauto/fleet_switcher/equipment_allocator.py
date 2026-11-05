@@ -56,6 +56,7 @@ class EquipmentRequirement:
     model_id: int
     star_preference: EquipmentStarPreference
     stars: int
+    ace: int
 
     @classmethod
     def from_target_equipment(
@@ -70,6 +71,7 @@ class EquipmentRequirement:
             model_id=equipment.model_id,
             star_preference=star_preference,
             stars=equipment.stars,
+            ace=equipment.ace,
         )
 
     def star_priority(self, equipment: Equipment) -> int:
@@ -138,7 +140,7 @@ class EquipmentAllocator:
         requirement: EquipmentRequirement,
         movable_equipment: MovableEquipment,
         reserved_slot_refs: set[EquipmentSlotRef],
-    ) -> tuple[int, int, int, int, int]:
+    ) -> tuple[int, int, int, int, int, int]:
         equipment = movable_equipment.equipment
         same_slot = movable_equipment.source_ref == requirement.slot_ref
         same_slot_priority = int(not same_slot)
@@ -149,6 +151,7 @@ class EquipmentAllocator:
         source_priority = 0 if movable_equipment.is_free else 1
 
         return (
+            -equipment.ace,
             requirement.star_priority(equipment),
             same_slot_priority,
             reservation_priority,
@@ -290,8 +293,13 @@ class EquipmentAllocator:
                 selected_equipment=assignments[requirement.slot_ref],
             )
             for requirement in requirements
-            if requirement.star_preference is EquipmentStarPreference.CLOSEST
-            and assignments[requirement.slot_ref].stars != requirement.stars
+            if (
+                (
+                    requirement.star_preference is EquipmentStarPreference.CLOSEST
+                    and assignments[requirement.slot_ref].stars != requirement.stars
+                )
+                or assignments[requirement.slot_ref].ace < requirement.ace
+            )
         )
         return EquipmentAllocationResult(
             plan=plan,
