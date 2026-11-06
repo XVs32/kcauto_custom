@@ -323,7 +323,7 @@ class Kcauto(object):
 
                 Log.log_error(f"stage: {current_stage}")
                 cfg.config.combat._sortie_map = current_stage
-        
+
         com.combat.goto()
         com.combat.check_clear_stop()
         if not com.combat.enabled:
@@ -536,15 +536,25 @@ class Kcauto(object):
 
     def _run_fleetswitch_logic(self, context):
 
-        if not fsw.fleet_switcher.switch_fleet(context):
-            Log.log_error(f"Failed to switch ships for {context}.")
-            return -1
+        retry_times = 2
 
-        self.handle_back_to_home(True)
+        for i in range(retry_times):
+            if not fsw.fleet_switcher.switch_fleet(context):
+                Log.log_error(f"Failed to switch ships for {context}.")
+                return -1
 
-        if not fsw.fleet_switcher.verify_equipment_plan():
+            self.handle_back_to_home(True)
+
+            if fsw.fleet_switcher.verify_equipment_plan():
+                break
+
             Log.log_error(f"Failed to verify fleet equipment for {context}.")
-            return -1
+            if i == 0:
+                Log.log_msg(f"Re-executing fleet equipment switching for {context}...")
+            else:
+                Log.log_warn(
+                    f"Failed to verify fleet equipment for {context}, will go for it anyway."
+                )
 
         return 0
 

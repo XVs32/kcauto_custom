@@ -45,7 +45,11 @@ SRC_CUI="../../kcauto/kcauto_cui.py"
 rm -f "${ROOT_PATH}kcauto_cui"
 
 echo "Building Launcher: kcauto_cui..."
-python -m PyInstaller -F --clean $SRC_CUI -p ../../kcauto/ -p $PYTHON_SITE_PACKAGE --distpath $ROOT_PATH --name "kcauto_cui"
+# theme.tcss and locales/*.json are read relative to the cui package, so they go to the "cui" folder inside the bundle
+python -m PyInstaller -F --clean $SRC_CUI -p ../../kcauto/ -p $PYTHON_SITE_PACKAGE --distpath $ROOT_PATH --name "kcauto_cui" \
+	--add-data "../../kcauto/cui/theme.tcss:cui" \
+	--add-data "../../kcauto/cui/locales:cui/locales" \
+	--collect-all textual
 
 # ---------------------------------------------------------
 # 3. Clean up temporary files

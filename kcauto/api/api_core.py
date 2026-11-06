@@ -311,6 +311,8 @@ class ApiWrapper(object):
             return self._process_free_equipment_data(data)
         elif request_url is KCSAPIEnum.MAP_INFO_JSON:
             return self._process_map_info_json(data)
+        elif request_url is KCSAPIEnum.DEVELOP_EQUIPMENT:
+            return self._process_develop_equipment_data(data)
 
         return None
 
@@ -340,9 +342,13 @@ class ApiWrapper(object):
             JsonData.dump_json(equipment_static_data, "data|temp|equipment_static.json")
             Equipment.staic_data_reload()
 
-            JsonData.dump_json(data["api_mst_stype"], "data|temp|ship_type.json")
+            ship_type_data = data["api_mst_stype"]
+            equ.equipment.update_ship_type_static(ship_type_data)
+            JsonData.dump_json(ship_type_data, "data|temp|ship_type.json")
+            equipment_special_data = data["api_mst_equip_ship"]
+            equ.equipment.update_equipment_special(equipment_special_data)
             JsonData.dump_json(
-                data["api_mst_equip_ship"],
+                equipment_special_data,
                 "data|temp|equipment_ship_special.json",
             )
 
@@ -597,64 +603,49 @@ class ApiWrapper(object):
                         equipment_production_id,
                     )
                     equipment_temp.category = int(key[len("api_slottype") :])
-                    # Equipment.category_patch(equipment_temp.model_id, int(key[len("api_slottype"):]))
                     equipment_pool_temp[key].append(equipment_temp)
-
-            keys = slot_data.keys()
 
             SECONDARY_GUN = "api_slottype4"
             EVENT_SECONDARY_GUN = "api_slottype95"
-            if EVENT_SECONDARY_GUN in keys:
+            if EVENT_SECONDARY_GUN in equipment_pool_temp:
                 Log.log_debug_1(
                     f"Found {EVENT_SECONDARY_GUN} in equipment pool, merging them"
                 )
 
+                regular = equipment_pool_temp.get(SECONDARY_GUN, [])
+                event = equipment_pool_temp[EVENT_SECONDARY_GUN]
+
                 temp = []
-
-                secondary_gun_count = len(equipment_pool_temp[SECONDARY_GUN])
-                event_secondary_gun_count = len(
-                    equipment_pool_temp[EVENT_SECONDARY_GUN]
-                )
-
                 i = 0
                 j = 0
-
-                while i < secondary_gun_count and j < event_secondary_gun_count:
-                    secondary_gun = equipment_pool_temp[SECONDARY_GUN][i]
-                    event_secondary_gun = equipment_pool_temp[EVENT_SECONDARY_GUN][j]
-
-                    if secondary_gun.model_id > event_secondary_gun.model_id:
-                        temp.append(event_secondary_gun)
+                while i < len(regular) and j < len(event):
+                    if regular[i].model_id > event[j].model_id:
+                        temp.append(event[j])
                         j += 1
                     else:
-                        temp.append(secondary_gun)
+                        temp.append(regular[i])
                         i += 1
-
-                while i < secondary_gun_count:
-                    secondary_gun = equipment_pool_temp[SECONDARY_GUN][i]
-                    temp.append(secondary_gun)
-                    i += 1
-                while j < event_secondary_gun_count:
-                    event_secondary_gun = equipment_pool_temp[EVENT_SECONDARY_GUN][j]
-                    temp.append(event_secondary_gun)
+                temp.extend(regular[i:])
+                temp.extend(event[j:])
 
                 equipment_pool_temp[SECONDARY_GUN] = temp
                 del equipment_pool_temp[EVENT_SECONDARY_GUN]
 
-            sorted_keys = sorted(keys, key=lambda x: (len(x), x))
+            # Sort the keys of the dict actually built (after the merge),
+            # not the original response keys.
+            sorted_keys = sorted(equipment_pool_temp.keys(), key=lambda x: (len(x), x))
             for key in sorted_keys:
-                for equipment in equipment_pool_temp[key]:
-                    equ.equipment.equipment_pool[equ.equipment.FREE].append(equipment)
+                equ.equipment.equipment_pool[equ.equipment.FREE].extend(
+                    equipment_pool_temp[key]
+                )
+
             equ.equipment.free_equipment_initialized = True
-            Log.log_debug_1(f"equipment updated")
+            Log.log_debug_1("equipment updated")
 
-            # for i, equipment in enumerate(equ.equipment.equipment_pool[equ.equipment.FREE]):
-            #    if i %10 == 0:
-            #        Log.log_debug(f'Page {i // 10 + 1}')
-            #    Log.log_debug(f'{i}: {equipment.name} {equipment.stars} (Production id: {equipment.production_id}, Model id: {equipment.model_id}), category id: {equipment.category}')
-
-        except KeyError:
-            Log.log_debug_1("No provisional equipment data found in API response")
+        except KeyError as e:
+            Log.log_debug_1(
+                f"No provisional equipment data found in API response, missing key {e}"
+            )
 
     def _filter_equipment(self, equipment_data: list):
         """Filter equipment based on ignore_equipment.json
@@ -694,6 +685,24 @@ class ApiWrapper(object):
         filename = os.path.basename(data.get("url"))
         Log.log_debug_1(f"map info json received: {filename}")
         com.combat.gimmick_startup_judge(filename)
+
+        return
+
+    def _process_develop_equipment_data(self, data):
+        """
+        method to add develop equipment to pool
+
+        Args:
+            data (dict): the data of develop equipment, typically from "api_req_kousaku/get_material"
+        """
+        for raw_equipment in data["api_get_items"]:
+            if raw_equipment["api_slotitem_id"] != 0:
+                equ.equipment.add_equipment_to_pool(
+                    Equipment(
+                        model_id=raw_equipment["api_slotitem_id"],
+                        production_id=raw_equipment["api_id"],
+                    )
+                )
 
         return
 

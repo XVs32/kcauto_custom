@@ -61,6 +61,9 @@ class KCSAPIEnum(EnumBase):
     FREE_EQUIPMENT = "kcsapi/api_get_member/ship3"
     # static resources
     MAP_INFO_JSON = "kcs2/resources/map"
+    # factory
+    DEVELOP_EQUIPMENT = "kcsapi/api_req_kousaku/createitem"
+    
 
     @classmethod
     def get_by_value(cls, value):

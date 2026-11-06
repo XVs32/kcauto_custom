@@ -48,16 +48,27 @@ class EquipmentCore(object):
             self.reinforce_special = JsonData.load_json(
                 "data|temp|reinforce_special.json"
             )
-            self.ship_type_static = JsonData.load_json("data|temp|ship_type.json")
-            self.ship_type_static.insert(
-                0, "dummy"
-            )  # insert a dummy at index 0 to align with ship type id
-            self.equipment_special = JsonData.load_json(
-                "data|temp|equipment_ship_special.json"
-            )
         except FileNotFoundError as e:
             Log.log_error(
                 "Reinforce equipment data not found, please start kcauto from splash screen"
+            )
+            Log.log_error(e)
+
+        try:
+            self.update_ship_type_static(JsonData.load_json("data|temp|ship_type.json"))
+        except FileNotFoundError as e:
+            Log.log_error(
+                "Ship type data not found, please start kcauto from splash screen"
+            )
+            Log.log_error(e)
+
+        try:
+            self.update_equipment_special(
+                JsonData.load_json("data|temp|equipment_ship_special.json")
+            )
+        except FileNotFoundError as e:
+            Log.log_error(
+                "Equipment ship special data not found, please start kcauto from splash screen"
             )
             Log.log_error(e)
 
@@ -71,6 +82,13 @@ class EquipmentCore(object):
             )
             Log.log_error(e)
 
+    def update_ship_type_static(self, ship_type_data):
+        # Ship type IDs start at 1, so keep index 0 as a placeholder.
+        self.ship_type_static = ["dummy", *ship_type_data]
+
+    def update_equipment_special(self, equipment_special_data):
+        self.equipment_special = equipment_special_data
+
     def update_equipment_pool(self, equipment_data):
         self.equipment_pool[self.ID] = []
         for raw_equipment in equipment_data:
@@ -80,10 +98,13 @@ class EquipmentCore(object):
                     production_id=raw_equipment["api_id"],
                     stars=raw_equipment["api_level"],
                     lock=raw_equipment["api_locked"],
-                    ace=raw_equipment.get("api_alv", Equipment.UNKNOWN_ACE),
+                    ace=raw_equipment.get("api_alv", 0),
                 )
             )
         self.equipment_pool[self.ID].append(Equipment())
+
+    def add_equipment_to_pool(self, equipment):
+        self.equipment_pool[self.ID].append(equipment)
 
     def goto(self):
         nav.navigate.to("equipment")

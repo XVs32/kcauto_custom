@@ -12,6 +12,8 @@ class Equipment:
     UNKNOWN_LOCK = -1
     UNKNOWN_ACE = -1
 
+    PROFICIENCY_SYMBOLS = ("", "|", "||", "|||", "\\", "\\\\", "\\\\\\", ">>")
+
     equipment_static_data = {}
 
     model_id = 0
@@ -38,7 +40,7 @@ class Equipment:
     def __repr__(self) -> str:
         return (
             f"Equipment(model={self.model_id}, production={self.production_id}, "
-            f"stars={self.stars})"
+            f"stars={self.stars}, ace={self.ace})"
         )
 
     def staic_data_reload():
@@ -145,3 +147,9 @@ class Equipment:
     @property
     def is_unknown_equipment(self):
         return self.model_id == self.UNKNOWN_EQUIPMENT
+
+    @staticmethod
+    def format_proficiency(ace: int) -> str:
+        if 0 <= ace < len(Equipment.PROFICIENCY_SYMBOLS):
+            return Equipment.PROFICIENCY_SYMBOLS[ace]
+        return ""

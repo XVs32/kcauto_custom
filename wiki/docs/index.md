@@ -1,10 +1,10 @@
 # kcauto_custom
 
-### ***Latest download(2026/07/27)*** [***here***](https://github.com/XVs32/kcauto_custom/releases/tag/v3.2.0) 
+### ***Latest download(2026/10/30)*** [***here***](https://github.com/XVs32/kcauto_custom/releases/tag/v4.0.0) 
 
 ***Warnning*** : Althought kcauto_custom could theoretically run on Windows, it was originally made for Linux, I might or might not fix any compatibility issues.
 
-**[kcauto_custom](https://github.com/XVs32/kcauto_custom)** is a customized version of an archived project [kcauto](https://github.com/perryhuynh/kcauto) that includes additional features and functionality.  
+**[kcauto_custom](https://github.com/XVs32/kcauto_custom)** is a automation tool(BOT) made for Kancolle, it is a fork of archived project [kcauto](https://github.com/perryhuynh/kcauto) that includes additional features and functionality.  
 In comparison with **kcauto**, **kcauto_custom** is less flexible while being more automatic for easy daily use.  
 Executable file is provided for those don't want to build their own python env.  
 User can setup their fleet and equipment configuration in [Noro6](https://noro6.github.io/kc-web/#/aircalc), then excute the plan with kcauto_custom.  
