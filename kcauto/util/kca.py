@@ -1,4 +1,5 @@
 import cv2
+import re
 import numpy as np
 import os
 import glob
@@ -679,6 +680,9 @@ class Kca(object):
             return None
 
         quest_record = records[quest_id]
+        # questGoals holds the static quest definition (same keys as records);
+        # used as a fallback source of `description` in the new poi format.
+        quest_goal = (poi_quest_stats.get("questGoals") or {}).get(quest_id) or {}
         action = {}
 
         def get_remaining(obj):
@@ -696,12 +700,21 @@ class Kca(object):
             if remaining <= 0:
                 continue
 
+            # "battle_boss_win_rank_s@12" -> "12" ; "mission_success@警備任務" -> "警備任務"
+            key_suffix = key.split("@", 1)[1] if "@" in key else None
+
+            # description: records (old format) -> questGoals (new format) -> None
+            goal_val = quest_goal.get(key)
+            desc = val.get("description") or (
+                goal_val.get("description") if isinstance(goal_val, dict) else None
+            )
+
             if target_quest.category.is_expedition():
                 import expedition.expedition_core as exp
 
-                exp_name = val.get("description", None)
-
-                if exp_name == None:
+                # prefer expedition id such as "3" / "A1"; fall back to the name in key
+                exp_name = desc or key_suffix
+                if exp_name is None:
                     continue
 
                 map_enum = exp.expedition.get_exp_enum_from_name(exp_name)
@@ -709,23 +722,43 @@ class Kca(object):
                     action[map_enum] = remaining
                 else:
                     continue
-            if target_quest.category.is_factory():
+
+            elif target_quest.category.is_factory():
                 if target_quest.is_factroy_development_quest():
                     action[fty.factory.DEVELOPMENT] = remaining
                 elif target_quest.is_factroy_construction_quest():
                     action[fty.factory.CONSTRUCTION] = remaining
                 else:
                     continue
+
             else:
-                desc = val.get("description", "")  # fallback for sortie without @
-                if "-" in desc:
-                    try:
-                        raw_num = desc.split(" ")[0]
-                        mapped_enum = self.string_to_mapenum(raw_num)
-                        if mapped_enum:
-                            action[mapped_enum] = remaining
-                    except Exception:
-                        continue
+                # sortie: map id comes from the key suffix ("12", "16", "722", "5-4"),
+                # which string_to_mapenum() can parse directly.
+                map_suffix = (
+                    key_suffix if key_suffix and re.fullmatch(r"[\d-]+", key_suffix) else None
+                )
+                # description like "1-2 S" -> "1-2" (only if it looks like a map)
+                desc_map = desc.split(" ")[0] if desc and "-" in desc else None
+
+                # poi quirk: quest 893 uses key "@62" for 7-1 (description "7-1 S").
+                # If a description is available and disagrees with the key, trust it.
+                if map_suffix and (
+                    not desc_map
+                    or desc_map.replace("-", "") == map_suffix.replace("-", "")
+                ):
+                    raw_num = map_suffix
+                else:
+                    raw_num = desc_map or map_suffix
+
+                if not raw_num:
+                    continue
+
+                try:
+                    mapped_enum = self.string_to_mapenum(raw_num)
+                    if mapped_enum:
+                        action[mapped_enum] = remaining
+                except Exception:
+                    continue
 
         return action if action else None
 
