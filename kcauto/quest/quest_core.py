@@ -211,7 +211,9 @@ class QuestCore(CoreBase):
             kca_u.kca.wait(
                 "left", "quest|filter_tab_active_active.png", similarity=NEAR_EXACT
             )
-            api.api.update_from_api({KCSAPIEnum.QUEST_LIST})  # update quest_list
+            api_results = api.api.update_from_api({KCSAPIEnum.QUEST_LIST})
+            if KCSAPIEnum.QUEST_LIST.name in api_results:
+                self._reconcile_tracked_quests()
 
         kca_u.kca.click_existing(
             "lower", "global|page_last.png", pad=PAGE_NAV
@@ -517,6 +519,17 @@ class QuestCore(CoreBase):
     def _untrack_quest(self, quest: Quest):
         Log.log_msg(f"No longer tracking quest {quest.name}.")
         self.next_check_intervals.pop(quest.quest_id, None)
+
+    def _reconcile_tracked_quests(self):
+        visible_quest_ids = {quest.quest_id for quest in self.current_quest_list}
+        stale_quest_ids = set(self.next_check_intervals) - visible_quest_ids
+
+        for quest_id in stale_quest_ids:
+            quest = self.next_check_intervals[quest_id]
+            Log.log_msg(
+                f"No longer tracking quest {quest.name}; it is not in the active quest list."
+            )
+            self.next_check_intervals.pop(quest_id)
 
     def _track_quest(self, quest: Quest):
         Log.log_msg(f"Tracking quest {quest.name}.")
